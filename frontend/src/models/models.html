@@ -1,0 +1,30 @@
+<div class="models">
+  <div class="model-selector">
+    <h1>Models</h1>
+    <div v-for="model in models">
+      <router-link :to="'/model/' + model" :class="model === currentModel ? 'bold' : ''">
+        {{model}}
+      </router-link>
+    </div>
+  </div>
+  <div class="documents">
+    <table>
+      <th v-for="path in schemaPaths">
+        {{path}}
+      </th>
+      <tr v-for="document in documents" @click="openEditModal(document)">
+        <td v-for="schemaPath in schemaPaths">
+          {{document[schemaPath]}}
+        </td>
+      </tr>
+    </table>
+    <modal v-if="shouldShowEditModal()">
+      <template v-slot:body>
+        <div>
+          <textarea v-model="docEdits" />
+        </div>
+        <async-button @click="saveDocEdits">Save</async-button>
+      </template>
+    </modal>
+  </div>
+</div>
