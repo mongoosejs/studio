@@ -31,7 +31,15 @@ module.exports = app => app.component('models', {
     if (this.currentModel != null) {
       const { docs, schemaPaths } = await api.Model.getDocuments({ model: this.currentModel });
       this.documents = docs;
-      this.schemaPaths = Object.keys(schemaPaths);
+      this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+        if (k1 === '_id' && k2 !== '_id') {
+          return -1;
+        }
+        if (k1 !== '_id' && k2 === '_id') {
+          return 1;
+        }
+        return 0;
+      });
     }
 
     this.status = 'loaded';

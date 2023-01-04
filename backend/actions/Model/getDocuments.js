@@ -13,7 +13,7 @@ const GetDocumentsParams = new Archetype({
   limit: {
     $type: 'number',
     $required: true,
-    $default: 10
+    $default: 50
   },
   skip: {
     $type: 'number',

@@ -6,6 +6,7 @@
     "extrovert": "0.0.12"
   },
   "peerDependencies": {
+    "express": "4.x",
     "mongoose": "6.x"
   },
   "devDependencies": {

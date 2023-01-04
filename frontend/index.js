@@ -2,11 +2,25 @@
 
 const webpack = require('webpack');
 
-const compiler = webpack(require('./webpack.config'));
-
-compiler.run((err) => {
-  if (err) {
-    process.nextTick(() => { throw new Error('Error compiling bundle: ' + err.stack); });
+module.exports = function(apiUrl) {
+  const config = { ...require('./webpack.config') };
+  if (apiUrl != null) {
+    config.plugins = [
+      new webpack.DefinePlugin({
+        config__baseURL: `'${apiUrl}'`
+      })
+    ]
   }
-  console.log('Webpack compiled successfully');
-});
+  const compiler = webpack(config);
+
+  return new Promise((resolve, reject) => {
+    compiler.run((err) => {
+      if (err) {
+        reject(err);
+        process.nextTick(() => { throw new Error('Error compiling bundle: ' + err.stack); });
+      }
+      resolve();
+      console.log('Webpack compiled successfully');
+    });
+  });
+};
