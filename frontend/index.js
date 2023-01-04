@@ -2,12 +2,13 @@
 
 const webpack = require('webpack');
 
-module.exports = function(apiUrl) {
+module.exports = function(apiUrl, isLambda) {
   const config = { ...require('./webpack.config') };
   if (apiUrl != null) {
     config.plugins = [
       new webpack.DefinePlugin({
-        config__baseURL: `'${apiUrl}'`
+        config__baseURL: `'${apiUrl}'`,
+        config__isLambda: `${!!isLambda}`
       })
     ]
   }

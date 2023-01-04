@@ -2,12 +2,11 @@
 
 const axios = require('axios');
 
-const baseURL = config__baseURL;
 const client = axios.create({
   baseURL: config__baseURL
 });
 
-if (baseURL.includes('.netlify')) {
+if (config__isLambda) {
   exports.Model = {
     getDocuments: function getDocuments(params) {
       return client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
