@@ -18,6 +18,8 @@
 
 .models .documents {
   flex-grow: 1;
+  overflow: scroll;
+  max-height: calc(100vh - 56px);
 }
 
 .models .documents table {
@@ -53,10 +55,6 @@
   word-wrap: break-word;
   white-space: normal;
   padding: 5px;
-}
-
-.models .documents table td {
-  word-break: break-all;
 }
 
 .models textarea {
