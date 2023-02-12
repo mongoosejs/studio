@@ -39,7 +39,7 @@ module.exports = app => app.component('models', {
           return 1;
         }
         return 0;
-      });
+      }).map(key => schemaPaths[key]);
     }
 
     this.status = 'loaded';
@@ -51,6 +51,12 @@ module.exports = app => app.component('models', {
     openEditModal(doc) {
       this.edittingDoc = doc;
       this.docEdits = JSON.stringify(doc, null, '  ');
+    },
+    getComponentForPath(schemaPath) {
+      if (schemaPath.instance === 'Array') {
+        return 'list-array';
+      }
+      return 'list-default';
     },
     async saveDocEdits() {
       const res = await api.Model.updateDocument({

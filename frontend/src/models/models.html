@@ -9,14 +9,18 @@
   </div>
   <div class="documents">
     <table>
-      <th v-for="path in schemaPaths">
-        {{path}}
-      </th>
-      <tr v-for="document in documents" @click="openEditModal(document)">
-        <td v-for="schemaPath in schemaPaths">
-          {{document[schemaPath]}}
-        </td>
-      </tr>
+      <thead>
+        <th v-for="path in schemaPaths">
+          {{path.path}}
+        </th>
+      </thead>
+      <tbody>
+        <tr v-for="document in documents" @click="openEditModal(document)">
+          <td v-for="schemaPath in schemaPaths">
+            <component :is="getComponentForPath(schemaPath)" :value="document[schemaPath.path]"></component>
+          </td>
+        </tr>
+      </tbody>
     </table>
     <modal v-if="shouldShowEditModal()">
       <template v-slot:body>

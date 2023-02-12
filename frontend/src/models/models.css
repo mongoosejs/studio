@@ -33,6 +33,7 @@
   white-space: nowrap;
   z-index: -1;
   border-collapse: collapse;
+  line-height: 1.5em;
 }
 
 .models .documents table tr {
@@ -50,11 +51,10 @@
 }
 
 .models .documents table th, td {
-  text-align: center;
-  border: 1px solid rgb(216, 216, 216);
-  word-wrap: break-word;
-  white-space: normal;
-  padding: 5px;
+  border-bottom: thin solid rgba(0,0,0,.12);
+  text-align: left;
+  padding: 0 16px;
+  height: 48px;
 }
 
 .models textarea {
