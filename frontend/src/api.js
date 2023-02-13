@@ -8,6 +8,9 @@ const client = axios.create({
 
 if (config__isLambda) {
   exports.Model = {
+    getDocument: function getDocument(params) {
+      return client.post('', { action: 'Model.getDocument', ...params }).then(res => res.data);
+    },
     getDocuments: function getDocuments(params) {
       return client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
     },
@@ -20,6 +23,9 @@ if (config__isLambda) {
   };
 } else {
   exports.Model = {
+    getDocument: function getDocument(params) {
+      return client.post('/Model/getDocument', params).then(res => res.data);
+    },
     getDocuments: function getDocuments(params) {
       return client.post('/Model/getDocuments', params).then(res => res.data);
     },

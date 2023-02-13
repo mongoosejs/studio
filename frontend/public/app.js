@@ -11,21 +11,27 @@
 
 
 const axios = __webpack_require__(/*! axios */ "./node_modules/axios/dist/browser/axios.cjs");
+
 const client = axios.create({
-  baseURL: '/.netlify/functions/admin'
+  baseURL: '/admin/api'
 });
 
-exports.Model = {
-  getDocuments: function getDocuments(params) {
-    return client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
-  },
-  listModels: function listModels() {
-    return client.post('', { action: 'Model.listModels' }).then(res => res.data);
-  },
-  updateDocument: function updateDocument(params) {
-    return client.post('', { action: 'Model.updateDocument', ...params }).then(res => res.data);
-  }
-};
+if (false) {} else {
+  exports.Model = {
+    getDocument: function getDocument(params) {
+      return client.post('/Model/getDocument', params).then(res => res.data);
+    },
+    getDocuments: function getDocuments(params) {
+      return client.post('/Model/getDocuments', params).then(res => res.data);
+    },
+    listModels: function listModels() {
+      return client.post('/Model/listModels', {}).then(res => res.data);
+    },
+    updateDocument: function updateDocument(params) {
+      return client.post('/Model/updateDocument', params).then(res => res.data);
+    }
+  };
+}
 
 
 /***/ }),
@@ -98,6 +104,187 @@ module.exports = app => app.component('async-button', {
 
 /***/ }),
 
+/***/ "./frontend/src/detail-array/detail-array.js":
+/*!***************************************************!*\
+  !*** ./frontend/src/detail-array/detail-array.js ***!
+  \***************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const template = __webpack_require__(/*! ./detail-array.html */ "./frontend/src/detail-array/detail-array.html");
+
+module.exports = app => app.component('detail-array', {
+  template: template,
+  props: ['value'],
+  computed: {
+    displayValue() {
+      return JSON.stringify(this.value, null, '  ').trim();
+    }
+  },
+  mounted() {
+    Prism.highlightElement(this.$refs.code);
+  }
+});
+
+/***/ }),
+
+/***/ "./frontend/src/detail-default/detail-default.js":
+/*!*******************************************************!*\
+  !*** ./frontend/src/detail-default/detail-default.js ***!
+  \*******************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const template = __webpack_require__(/*! ./detail-default.html */ "./frontend/src/detail-default/detail-default.html");
+
+module.exports = app => app.component('detail-default', {
+  template: template,
+  props: ['value'],
+  computed: {
+    displayValue() {
+      if (this.value === null) {
+        return 'null';
+      }
+      if (this.value === undefined) {
+        return 'undefined';
+      }
+      return this.value;
+    }
+  }
+});
+
+/***/ }),
+
+/***/ "./frontend/src/document/document.js":
+/*!*******************************************!*\
+  !*** ./frontend/src/document/document.js ***!
+  \*******************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const api = __webpack_require__(/*! ../api */ "./frontend/src/api.js");
+const template = __webpack_require__(/*! ./document.html */ "./frontend/src/document/document.html");
+
+const appendCSS = __webpack_require__(/*! ../appendCSS */ "./frontend/src/appendCSS.js");
+
+appendCSS(__webpack_require__(/*! ./document.css */ "./frontend/src/document/document.css"));
+
+module.exports = app => app.component('document', {
+  template: template,
+  props: ['model', 'documentId'],
+  data: () => ({
+    schemaPaths: [],
+    status: 'init',
+    document: null
+  }),
+  async mounted() {
+    const { doc, schemaPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
+    this.document = doc;
+    this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+      if (k1 === '_id' && k2 !== '_id') {
+        return -1;
+      }
+      if (k1 !== '_id' && k2 === '_id') {
+        return 1;
+      }
+      return 0;
+    }).map(key => schemaPaths[key]);
+
+    this.status = 'loaded';
+  },
+  methods: {
+    getComponentForPath(schemaPath) {
+      if (schemaPath.instance === 'Array') {
+        return 'detail-array';
+      }
+      return 'detail-default';
+    }
+  }
+});
+
+/***/ }),
+
+/***/ "./frontend/src/list-array/list-array.js":
+/*!***********************************************!*\
+  !*** ./frontend/src/list-array/list-array.js ***!
+  \***********************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const template = __webpack_require__(/*! ./list-array.html */ "./frontend/src/list-array/list-array.html");
+
+__webpack_require__(/*! ../appendCSS */ "./frontend/src/appendCSS.js")(__webpack_require__(/*! ./list-array.css */ "./frontend/src/list-array/list-array.css"));
+
+module.exports = app => app.component('list-array', {
+  template: template,
+  props: ['value'],
+  computed: {
+    displayValue() {
+      return JSON.stringify(this.value, (key, value) => {
+        if (typeof value === 'string' && value.length > 30) {
+          return value.slice(0, 27) + '...';
+        }
+        return value;
+      }, '  ').trim();
+    }
+  },
+  mounted() {
+    Prism.highlightElement(this.$refs.code);
+  }
+});
+
+/***/ }),
+
+/***/ "./frontend/src/list-default/list-default.js":
+/*!***************************************************!*\
+  !*** ./frontend/src/list-default/list-default.js ***!
+  \***************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const template = __webpack_require__(/*! ./list-default.html */ "./frontend/src/list-default/list-default.html");
+
+module.exports = app => app.component('list-default', {
+  template: template,
+  props: ['value'],
+  computed: {
+    displayValue() {
+      if (this.value === null) {
+        return 'null';
+      }
+      if (this.value === undefined) {
+        return 'undefined';
+      }
+      return this.value;
+    }
+  }
+});
+
+/***/ }),
+
+/***/ "./frontend/src/list-subdocument/list-subdocument.js":
+/*!***********************************************************!*\
+  !*** ./frontend/src/list-subdocument/list-subdocument.js ***!
+  \***********************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const api = __webpack_require__(/*! ../api */ "./frontend/src/api.js");
+const template = __webpack_require__(/*! ./list-subdocument.html */ "./frontend/src/list-subdocument/list-subdocument.html");
+
+module.exports = app => app.component('list-subdocument', {
+  template: template,
+  props: ['value']
+});
+
+/***/ }),
+
 /***/ "./frontend/src/modal/modal.js":
 /*!*************************************!*\
   !*** ./frontend/src/modal/modal.js ***!
@@ -156,7 +343,15 @@ module.exports = app => app.component('models', {
     if (this.currentModel != null) {
       const { docs, schemaPaths } = await api.Model.getDocuments({ model: this.currentModel });
       this.documents = docs;
-      this.schemaPaths = Object.keys(schemaPaths);
+      this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+        if (k1 === '_id' && k2 !== '_id') {
+          return -1;
+        }
+        if (k1 !== '_id' && k2 === '_id') {
+          return 1;
+        }
+        return 0;
+      }).map(key => schemaPaths[key]);
     }
 
     this.status = 'loaded';
@@ -168,6 +363,12 @@ module.exports = app => app.component('models', {
     openEditModal(doc) {
       this.edittingDoc = doc;
       this.docEdits = JSON.stringify(doc, null, '  ');
+    },
+    getComponentForPath(schemaPath) {
+      if (schemaPath.instance === 'Array') {
+        return 'list-array';
+      }
+      return 'list-default';
     },
     async saveDocEdits() {
       const res = await api.Model.updateDocument({
@@ -225,6 +426,11 @@ module.exports = [
     path: '/model/:model',
     name: 'model',
     component: 'models'
+  },
+  {
+    path: '/model/:model/document/:documentId',
+    name: 'document',
+    component: 'document'
   }
 ];
 
@@ -237,6 +443,86 @@ module.exports = [
 /***/ ((module) => {
 
 module.exports = "<button v-bind=\"attrsToBind\" :disabled=\"isDisabled\" @click=\"handleClick\">\n  <slot></slot>\n</button>";
+
+/***/ }),
+
+/***/ "./frontend/src/detail-array/detail-array.html":
+/*!*****************************************************!*\
+  !*** ./frontend/src/detail-array/detail-array.html ***!
+  \*****************************************************/
+/***/ ((module) => {
+
+module.exports = "<div class=\"detail-array\">\n  <pre><code ref=\"code\" class=\"language-javascript\" v-text=\"displayValue\"></code></pre>\n</div>";
+
+/***/ }),
+
+/***/ "./frontend/src/detail-default/detail-default.html":
+/*!*********************************************************!*\
+  !*** ./frontend/src/detail-default/detail-default.html ***!
+  \*********************************************************/
+/***/ ((module) => {
+
+module.exports = "<div>\n  {{value}}\n</div>";
+
+/***/ }),
+
+/***/ "./frontend/src/document/document.css":
+/*!********************************************!*\
+  !*** ./frontend/src/document/document.css ***!
+  \********************************************/
+/***/ ((module) => {
+
+module.exports = ".document {\n  max-width: 1200px;\n  margin-left: auto;\n  margin-right: auto;\n  padding-top: 25px;\n}\n\n.document .value {\n  padding-top: 10px;\n  padding-bottom: 10px;\n}\n\n.document .path-key {\n  background-color: #f0f0f0;\n  padding: 0.25em;\n  margin-bottom: 0.5em;\n}\n\n.document .path-type {\n  color: rgba(0,0,0,.36);\n  font-size: 0.8em;\n}\n\n.document .up-link {\n  font-size: 1.5em;\n  cursor: pointer;\n}";
+
+/***/ }),
+
+/***/ "./frontend/src/document/document.html":
+/*!*********************************************!*\
+  !*** ./frontend/src/document/document.html ***!
+  \*********************************************/
+/***/ ((module) => {
+
+module.exports = "<div class=\"document\">\n  <div>\n    <div class=\"up-link\" @click=\"$router.push('/model/' + this.model)\">&#8963;</div>\n  </div>\n  <div v-if=\"status === 'loaded'\">\n    <div v-for=\"path in schemaPaths\" class=\"value\">\n      <div class=\"path-key\">\n        {{path.path}}\n        <span class=\"path-type\">\n          ({{path.instance.toLowerCase()}})\n        </span>\n      </div>\n      <div>\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\n      </div>\n    </div>\n  </div>\n</div>";
+
+/***/ }),
+
+/***/ "./frontend/src/list-array/list-array.css":
+/*!************************************************!*\
+  !*** ./frontend/src/list-array/list-array.css ***!
+  \************************************************/
+/***/ ((module) => {
+
+module.exports = ".list-array pre {\n  max-height: 6.5em;\n  max-width: 60em;\n}\n\n.list-array pre.maximized {\n  max-height: auto;\n}";
+
+/***/ }),
+
+/***/ "./frontend/src/list-array/list-array.html":
+/*!*************************************************!*\
+  !*** ./frontend/src/list-array/list-array.html ***!
+  \*************************************************/
+/***/ ((module) => {
+
+module.exports = "<div class=\"list-array\">\n  <pre><code ref=\"code\" class=\"language-javascript\" v-text=\"displayValue\"></code></pre>\n</div>";
+
+/***/ }),
+
+/***/ "./frontend/src/list-default/list-default.html":
+/*!*****************************************************!*\
+  !*** ./frontend/src/list-default/list-default.html ***!
+  \*****************************************************/
+/***/ ((module) => {
+
+module.exports = "<div>\n  {{value}}\n</div>";
+
+/***/ }),
+
+/***/ "./frontend/src/list-subdocument/list-subdocument.html":
+/*!*************************************************************!*\
+  !*** ./frontend/src/list-subdocument/list-subdocument.html ***!
+  \*************************************************************/
+/***/ ((module) => {
+
+module.exports = "<div>\n  {{JSON.stringify(value, null, '  ')}}\n</div>";
 
 /***/ }),
 
@@ -266,7 +552,7 @@ module.exports = "<transition name=\"modal\">\n  <div class=\"modal-mask\">\n   
   \****************************************/
 /***/ ((module) => {
 
-module.exports = ".models {\n  position: relative;\n  display: flex;\n  flex-direction: row;\n  min-height: calc(100% - 56px);\n}\n\n.models .model-selector {\n  background-color: #eee;\n  flex-grow: 0; \n  padding: 15px;\n  padding-top: 0px;\n}\n\n.models h1 {\n  margin-top: 0px;\n}\n\n.models .documents {\n  flex-grow: 1;\n}\n\n.models .documents table {\n  /* max-width: -moz-fit-content;\n  max-width: fit-content; */\n  width: 100%;\n  table-layout: auto;\n  font-size: small;\n  padding: 0;\n  margin-right: 1em;\n  white-space: nowrap;\n  z-index: -1;\n  border-collapse: collapse;\n}\n\n.models .documents table tr {\n  color: black;\n  border-spacing: 0px 0px;\n  background-color: white;\n}\n\n.models .documents table tr:nth-child(even) {\n  background-color: #f5f5f5;\n}\n\n.models .documents table tr:hover {\n  background-color: #55A3D4;\n}\n\n.models .documents table th, td {\n  text-align: center;\n  border: 1px solid rgb(216, 216, 216);\n  word-wrap: break-word;\n  white-space: normal;\n  padding: 5px;\n}\n\n.models .documents table td {\n  word-break: break-all;\n}\n\n.models textarea {\n  width: 100%;\n  height: 6em;\n  font-size: 1.2em;\n}";
+module.exports = ".models {\n  position: relative;\n  display: flex;\n  flex-direction: row;\n  min-height: calc(100% - 56px);\n}\n\n.models .model-selector {\n  background-color: #eee;\n  flex-grow: 0; \n  padding: 15px;\n  padding-top: 0px;\n}\n\n.models h1 {\n  margin-top: 0px;\n}\n\n.models .documents {\n  flex-grow: 1;\n  overflow: scroll;\n  max-height: calc(100vh - 56px);\n}\n\n.models .documents table {\n  /* max-width: -moz-fit-content;\n  max-width: fit-content; */\n  width: 100%;\n  table-layout: auto;\n  font-size: small;\n  padding: 0;\n  margin-right: 1em;\n  white-space: nowrap;\n  z-index: -1;\n  border-collapse: collapse;\n  line-height: 1.5em;\n}\n\n.models .documents table th {\n  position: sticky;\n  top: 0px;\n  background-color: white;\n}\n\n.models .documents table th:after {\n  content: '';\n  position: absolute;\n  left: 0;\n  width: 100%;\n  bottom: -1px;\n  border-bottom: thin solid rgba(0,0,0,.12);\n}\n\n.models .documents table tr {\n  color: black;\n  border-spacing: 0px 0px;\n  background-color: white;\n  cursor: pointer;\n}\n\n.models .documents table tr:nth-child(even) {\n  background-color: #f5f5f5;\n}\n\n.models .documents table tr:hover {\n  background-color: #55A3D4;\n}\n\n.models .documents table th, td {\n  border-bottom: thin solid rgba(0,0,0,.12);\n  text-align: left;\n  padding: 0 16px;\n  height: 48px;\n}\n\n.models textarea {\n  width: 100%;\n  height: 600px;\n  font-size: 1.2em;\n}\n\n.models .path-type {\n  color: rgba(0,0,0,.36);\n  font-size: 0.8em;\n}";
 
 /***/ }),
 
@@ -276,7 +562,7 @@ module.exports = ".models {\n  position: relative;\n  display: flex;\n  flex-dir
   \*****************************************/
 /***/ ((module) => {
 
-module.exports = "<div class=\"models\">\n  <div class=\"model-selector\">\n    <h1>Models</h1>\n    <div v-for=\"model in models\">\n      <router-link :to=\"'/models/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\n        {{model}}\n      </router-link>\n    </div>\n  </div>\n  <div class=\"documents\">\n    <table>\n      <th v-for=\"path in schemaPaths\">\n        {{path}}\n      </th>\n      <tr v-for=\"document in documents\" @click=\"openEditModal(document)\">\n        <td v-for=\"schemaPath in schemaPaths\">\n          {{document[schemaPath]}}\n        </td>\n      </tr>\n    </table>\n    <modal v-if=\"shouldShowEditModal()\">\n      <template v-slot:body>\n        <div>\n          <textarea v-model=\"docEdits\" />\n        </div>\n        <async-button @click=\"saveDocEdits\">Save</async-button>\n      </template>\n    </modal>\n  </div>\n</div>";
+module.exports = "<div class=\"models\">\n  <div class=\"model-selector\">\n    <h1>Models</h1>\n    <div v-for=\"model in models\">\n      <router-link :to=\"'/model/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\n        {{model}}\n      </router-link>\n    </div>\n  </div>\n  <div class=\"documents\">\n    <table>\n      <thead>\n        <th v-for=\"path in schemaPaths\">\n          {{path.path}}\n          <span class=\"path-type\">\n            ({{path.instance.toLowerCase()}})\n          </span>\n        </th>\n      </thead>\n      <tbody>\n        <tr v-for=\"document in documents\" @click=\"$router.push('/model/' + currentModel + '/document/' + document._id)\">\n          <td v-for=\"schemaPath in schemaPaths\">\n            <component :is=\"getComponentForPath(schemaPath)\" :value=\"document[schemaPath.path]\"></component>\n          </td>\n        </tr>\n      </tbody>\n    </table>\n    <modal v-if=\"shouldShowEditModal()\">\n      <template v-slot:body>\n        <div>\n          <textarea v-model=\"docEdits\" />\n        </div>\n        <async-button @click=\"saveDocEdits\">Save</async-button>\n      </template>\n    </modal>\n  </div>\n</div>";
 
 /***/ }),
 
@@ -3518,6 +3804,12 @@ const app = Vue.createApp({
 });
 
 __webpack_require__(/*! ./async-button/async-button */ "./frontend/src/async-button/async-button.js")(app);
+__webpack_require__(/*! ./detail-array/detail-array */ "./frontend/src/detail-array/detail-array.js")(app);
+__webpack_require__(/*! ./detail-default/detail-default */ "./frontend/src/detail-default/detail-default.js")(app);
+__webpack_require__(/*! ./document/document */ "./frontend/src/document/document.js")(app);
+__webpack_require__(/*! ./list-array/list-array */ "./frontend/src/list-array/list-array.js")(app);
+__webpack_require__(/*! ./list-default/list-default */ "./frontend/src/list-default/list-default.js")(app);
+__webpack_require__(/*! ./list-subdocument/list-subdocument */ "./frontend/src/list-subdocument/list-subdocument.js")(app);
 __webpack_require__(/*! ./modal/modal */ "./frontend/src/modal/modal.js")(app);
 __webpack_require__(/*! ./models/models */ "./frontend/src/models/models.js")(app);
 __webpack_require__(/*! ./navbar/navbar */ "./frontend/src/navbar/navbar.js")(app);
@@ -3527,7 +3819,7 @@ app.component('app-component', {
   <div>
     <navbar />
     <div class="view">
-      <router-view />
+      <router-view :key="$route.fullPath" />
     </div>
   </div>
   `

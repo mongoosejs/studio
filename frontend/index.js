@@ -2,7 +2,7 @@
 
 const webpack = require('webpack');
 
-module.exports = function(apiUrl, isLambda) {
+module.exports = function(apiUrl, isLambda, options) {
   const config = { ...require('./webpack.config') };
   if (apiUrl != null) {
     config.plugins = [
@@ -14,14 +14,23 @@ module.exports = function(apiUrl, isLambda) {
   }
   const compiler = webpack(config);
 
-  return new Promise((resolve, reject) => {
-    compiler.run((err) => {
+  if (options && options.watch) {
+    compiler.watch({}, (err) => {
       if (err) {
-        reject(err);
         process.nextTick(() => { throw new Error('Error compiling bundle: ' + err.stack); });
       }
-      resolve();
       console.log('Webpack compiled successfully');
     });
-  });
+  } else {
+    return new Promise((resolve, reject) => {
+      compiler.run((err) => {
+        if (err) {
+          reject(err);
+          process.nextTick(() => { throw new Error('Error compiling bundle: ' + err.stack); });
+        }
+        resolve();
+        console.log('Webpack compiled successfully');
+      });
+    });
+  }
 };

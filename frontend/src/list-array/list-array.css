@@ -1,0 +1,8 @@
+.list-array pre {
+  max-height: 6.5em;
+  max-width: 60em;
+}
+
+.list-array pre.maximized {
+  max-height: auto;
+}

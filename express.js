@@ -5,7 +5,7 @@ const express = require('express');
 const frontend = require('./frontend');
 const { toRoute } = require('extrovert');
 
-module.exports = function(apiUrl, conn) {
+module.exports = function(apiUrl, conn, options) {
   const router = express.Router();
 
   apiUrl = apiUrl || '/admin/api';
@@ -28,7 +28,7 @@ module.exports = function(apiUrl, conn) {
 
   router.use('/api', apiRouter);
 
-  frontend(apiUrl);
+  frontend(apiUrl, false, options);
 
   router.use(express.static(`${__dirname}/frontend/public`));
 

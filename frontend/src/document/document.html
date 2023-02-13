@@ -1,0 +1,18 @@
+<div class="document">
+  <div>
+    <div class="up-link" @click="$router.push('/model/' + this.model)">&#8963;</div>
+  </div>
+  <div v-if="status === 'loaded'">
+    <div v-for="path in schemaPaths" class="value">
+      <div class="path-key">
+        {{path.path}}
+        <span class="path-type">
+          ({{path.instance.toLowerCase()}})
+        </span>
+      </div>
+      <div>
+        <component :is="getComponentForPath(path)" :value="document[path.path]"></component>
+      </div>
+    </div>
+  </div>
+</div>

@@ -36,10 +36,26 @@
   line-height: 1.5em;
 }
 
+.models .documents table th {
+  position: sticky;
+  top: 0px;
+  background-color: white;
+}
+
+.models .documents table th:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  bottom: -1px;
+  border-bottom: thin solid rgba(0,0,0,.12);
+}
+
 .models .documents table tr {
   color: black;
   border-spacing: 0px 0px;
   background-color: white;
+  cursor: pointer;
 }
 
 .models .documents table tr:nth-child(even) {
@@ -61,4 +77,9 @@
   width: 100%;
   height: 600px;
   font-size: 1.2em;
+}
+
+.models .path-type {
+  color: rgba(0,0,0,.36);
+  font-size: 0.8em;
 }
