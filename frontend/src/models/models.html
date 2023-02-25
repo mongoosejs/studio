@@ -8,23 +8,37 @@
     </div>
   </div>
   <div class="documents">
-    <table>
-      <thead>
-        <th v-for="path in schemaPaths">
-          {{path.path}}
-          <span class="path-type">
-            ({{path.instance.toLowerCase()}})
-          </span>
-        </th>
-      </thead>
-      <tbody>
-        <tr v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)">
-          <td v-for="schemaPath in schemaPaths">
-            <component :is="getComponentForPath(schemaPath)" :value="document[schemaPath.path]"></component>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div>
+      <div class="documents-menu">
+        <div class="search-input">
+          <form @submit.prevent="search">
+            <input class="search-text" type="text" placeholder="Filter or text" v-model="searchText" />
+          </form>
+        </div>
+        <div class="buttons">
+          <button>Export</button>
+        </div>
+      </div>
+    </div>
+    <div class="documents-container">
+      <table>
+        <thead>
+          <th v-for="path in schemaPaths">
+            {{path.path}}
+            <span class="path-type">
+              ({{path.instance.toLowerCase()}})
+            </span>
+          </th>
+        </thead>
+        <tbody>
+          <tr v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
+            <td v-for="schemaPath in schemaPaths">
+              <component :is="getComponentForPath(schemaPath)" :value="document[schemaPath.path]"></component>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <modal v-if="shouldShowEditModal()">
       <template v-slot:body>
         <div>

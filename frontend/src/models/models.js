@@ -17,7 +17,9 @@ module.exports = app => app.component('models', {
     schemaPaths: [],
     status: 'init',
     edittingDoc: null,
-    docEdits: null
+    docEdits: null,
+    filter: null,
+    searchText: ''
   }),
   created() {
     this.currentModel = this.model;
@@ -45,6 +47,31 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    async search() {
+      if (this.searchText) {
+        this.filter = eval(`(${this.searchText})`);
+      } else {
+        this.filter = {};
+      }
+      
+      await this.getDocuments();
+    },
+    async getDocuments() {
+      const { docs, schemaPaths } = await api.Model.getDocuments({
+        model: this.currentModel,
+        filter: this.filter
+      });
+      this.documents = docs;
+      this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+        if (k1 === '_id' && k2 !== '_id') {
+          return -1;
+        }
+        if (k1 !== '_id' && k2 === '_id') {
+          return 1;
+        }
+        return 0;
+      }).map(key => schemaPaths[key]);
+    },
     shouldShowEditModal() {
       return this.edittingDoc != null;
     },

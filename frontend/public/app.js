@@ -329,7 +329,9 @@ module.exports = app => app.component('models', {
     schemaPaths: [],
     status: 'init',
     edittingDoc: null,
-    docEdits: null
+    docEdits: null,
+    filter: null,
+    searchText: ''
   }),
   created() {
     this.currentModel = this.model;
@@ -357,6 +359,27 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    async search() {
+      console.log('X', this.searchText)
+      this.filter = eval(`(${this.searchText})`);
+      await this.getDocuments();
+    },
+    async getDocuments() {
+      const { docs, schemaPaths } = await api.Model.getDocuments({
+        model: this.currentModel,
+        filter: this.filter
+      });
+      this.documents = docs;
+      this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+        if (k1 === '_id' && k2 !== '_id') {
+          return -1;
+        }
+        if (k1 !== '_id' && k2 === '_id') {
+          return 1;
+        }
+        return 0;
+      }).map(key => schemaPaths[key]);
+    },
     shouldShowEditModal() {
       return this.edittingDoc != null;
     },
@@ -552,7 +575,7 @@ module.exports = "<transition name=\"modal\">\n  <div class=\"modal-mask\">\n   
   \****************************************/
 /***/ ((module) => {
 
-module.exports = ".models {\n  position: relative;\n  display: flex;\n  flex-direction: row;\n  min-height: calc(100% - 56px);\n}\n\n.models .model-selector {\n  background-color: #eee;\n  flex-grow: 0; \n  padding: 15px;\n  padding-top: 0px;\n}\n\n.models h1 {\n  margin-top: 0px;\n}\n\n.models .documents {\n  flex-grow: 1;\n  overflow: scroll;\n  max-height: calc(100vh - 56px);\n}\n\n.models .documents table {\n  /* max-width: -moz-fit-content;\n  max-width: fit-content; */\n  width: 100%;\n  table-layout: auto;\n  font-size: small;\n  padding: 0;\n  margin-right: 1em;\n  white-space: nowrap;\n  z-index: -1;\n  border-collapse: collapse;\n  line-height: 1.5em;\n}\n\n.models .documents table th {\n  position: sticky;\n  top: 0px;\n  background-color: white;\n}\n\n.models .documents table th:after {\n  content: '';\n  position: absolute;\n  left: 0;\n  width: 100%;\n  bottom: -1px;\n  border-bottom: thin solid rgba(0,0,0,.12);\n}\n\n.models .documents table tr {\n  color: black;\n  border-spacing: 0px 0px;\n  background-color: white;\n  cursor: pointer;\n}\n\n.models .documents table tr:nth-child(even) {\n  background-color: #f5f5f5;\n}\n\n.models .documents table tr:hover {\n  background-color: #55A3D4;\n}\n\n.models .documents table th, td {\n  border-bottom: thin solid rgba(0,0,0,.12);\n  text-align: left;\n  padding: 0 16px;\n  height: 48px;\n}\n\n.models textarea {\n  width: 100%;\n  height: 600px;\n  font-size: 1.2em;\n}\n\n.models .path-type {\n  color: rgba(0,0,0,.36);\n  font-size: 0.8em;\n}";
+module.exports = ".models {\n  position: relative;\n  display: flex;\n  flex-direction: row;\n  min-height: calc(100% - 56px);\n}\n\n.models .model-selector {\n  background-color: #eee;\n  flex-grow: 0; \n  padding: 15px;\n  padding-top: 0px;\n}\n\n.models h1 {\n  margin-top: 0px;\n}\n\n.models .documents {\n  flex-grow: 1;\n  overflow: scroll;\n  max-height: calc(100vh - 56px);\n}\n\n.models .documents .documents-container {\n  margin-top: 40px;\n}\n\n.models .documents table {\n  /* max-width: -moz-fit-content;\n  max-width: fit-content; */\n  width: 100%;\n  table-layout: auto;\n  font-size: small;\n  padding: 0;\n  margin-right: 1em;\n  white-space: nowrap;\n  z-index: -1;\n  border-collapse: collapse;\n  line-height: 1.5em;\n}\n\n.models .documents table th {\n  position: sticky;\n  top: 0px;\n  background-color: white;\n}\n\n.models .documents table th:after {\n  content: '';\n  position: absolute;\n  left: 0;\n  width: 100%;\n  bottom: -1px;\n  border-bottom: thin solid rgba(0,0,0,.12);\n}\n\n.models .documents table tr {\n  color: black;\n  border-spacing: 0px 0px;\n  background-color: white;\n  cursor: pointer;\n}\n\n.models .documents table tr:nth-child(even) {\n  background-color: #f5f5f5;\n}\n\n.models .documents table tr:hover {\n  background-color: #55A3D4;\n}\n\n.models .documents table th, td {\n  border-bottom: thin solid rgba(0,0,0,.12);\n  text-align: left;\n  padding: 0 16px;\n  height: 48px;\n}\n\n.models textarea {\n  width: 100%;\n  height: 600px;\n  font-size: 1.2em;\n}\n\n.models .path-type {\n  color: rgba(0,0,0,.36);\n  font-size: 0.8em;\n}\n\n.models .documents-menu {\n  display: flex;\n  margin: 0.25em;\n  position: fixed;\n  width: calc(100vw - 200px);\n}\n\n.models .documents-menu .search-input {\n  flex-grow: 1;\n}\n\n.models .search-input input {\n  padding: 0.25em 0.5em;\n  font-size: 1.1em;\n  border: 1px solid #ddd;\n  border-radius: 3px;\n  width: calc(100% - 1em);\n}";
 
 /***/ }),
 
@@ -562,7 +585,7 @@ module.exports = ".models {\n  position: relative;\n  display: flex;\n  flex-dir
   \*****************************************/
 /***/ ((module) => {
 
-module.exports = "<div class=\"models\">\n  <div class=\"model-selector\">\n    <h1>Models</h1>\n    <div v-for=\"model in models\">\n      <router-link :to=\"'/model/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\n        {{model}}\n      </router-link>\n    </div>\n  </div>\n  <div class=\"documents\">\n    <table>\n      <thead>\n        <th v-for=\"path in schemaPaths\">\n          {{path.path}}\n          <span class=\"path-type\">\n            ({{path.instance.toLowerCase()}})\n          </span>\n        </th>\n      </thead>\n      <tbody>\n        <tr v-for=\"document in documents\" @click=\"$router.push('/model/' + currentModel + '/document/' + document._id)\">\n          <td v-for=\"schemaPath in schemaPaths\">\n            <component :is=\"getComponentForPath(schemaPath)\" :value=\"document[schemaPath.path]\"></component>\n          </td>\n        </tr>\n      </tbody>\n    </table>\n    <modal v-if=\"shouldShowEditModal()\">\n      <template v-slot:body>\n        <div>\n          <textarea v-model=\"docEdits\" />\n        </div>\n        <async-button @click=\"saveDocEdits\">Save</async-button>\n      </template>\n    </modal>\n  </div>\n</div>";
+module.exports = "<div class=\"models\">\n  <div class=\"model-selector\">\n    <h1>Models</h1>\n    <div v-for=\"model in models\">\n      <router-link :to=\"'/model/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\n        {{model}}\n      </router-link>\n    </div>\n  </div>\n  <div class=\"documents\">\n    <div>\n      <div class=\"documents-menu\">\n        <div class=\"search-input\">\n          <form @submit.prevent=\"search\">\n            <input class=\"search-text\" type=\"text\" placeholder=\"Filter or text\" v-model=\"searchText\" />\n          </form>\n        </div>\n        <div class=\"buttons\">\n          <button>Export</button>\n        </div>\n      </div>\n    </div>\n    <div class=\"documents-container\">\n      <table>\n        <thead>\n          <th v-for=\"path in schemaPaths\">\n            {{path.path}}\n            <span class=\"path-type\">\n              ({{path.instance.toLowerCase()}})\n            </span>\n          </th>\n        </thead>\n        <tbody>\n          <tr v-for=\"document in documents\" @click=\"$router.push('/model/' + currentModel + '/document/' + document._id)\" :key=\"document._id\">\n            <td v-for=\"schemaPath in schemaPaths\">\n              <component :is=\"getComponentForPath(schemaPath)\" :value=\"document[schemaPath.path]\"></component>\n            </td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n    <modal v-if=\"shouldShowEditModal()\">\n      <template v-slot:body>\n        <div>\n          <textarea v-model=\"docEdits\" />\n        </div>\n        <async-button @click=\"saveDocEdits\">Save</async-button>\n      </template>\n    </modal>\n  </div>\n</div>";
 
 /***/ }),
 

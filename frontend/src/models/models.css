@@ -22,6 +22,10 @@
   max-height: calc(100vh - 56px);
 }
 
+.models .documents .documents-container {
+  margin-top: 40px;
+}
+
 .models .documents table {
   /* max-width: -moz-fit-content;
   max-width: fit-content; */
@@ -82,4 +86,23 @@
 .models .path-type {
   color: rgba(0,0,0,.36);
   font-size: 0.8em;
+}
+
+.models .documents-menu {
+  display: flex;
+  margin: 0.25em;
+  position: fixed;
+  width: calc(100vw - 200px);
+}
+
+.models .documents-menu .search-input {
+  flex-grow: 1;
+}
+
+.models .search-input input {
+  padding: 0.25em 0.5em;
+  font-size: 1.1em;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  width: calc(100% - 1em);
 }

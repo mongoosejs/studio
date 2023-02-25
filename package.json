@@ -3,11 +3,11 @@
   "version": "0.0.1",
   "dependencies": {
     "archetype": "0.13.0",
-    "extrovert": "0.0.12"
+    "extrovert": "0.0.20"
   },
   "peerDependencies": {
     "express": "4.x",
-    "mongoose": "6.x"
+    "mongoose": "6.x || 7.x || 7.0.0-rc0"
   },
   "devDependencies": {
     "axios": "1.2.2",
