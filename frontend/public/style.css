@@ -13,3 +13,17 @@ a {
 .bold {
   font-weight: bold !important;
 }
+
+button {
+  background-color: #15D4B7;
+  color: white;
+  padding: 0.25em 0.5em;
+  cursor: pointer;
+  border: 0;
+  border-radius: 4px;
+  font-size: 1.1em;
+}
+
+button.green {
+  background-color: #58D415;
+}

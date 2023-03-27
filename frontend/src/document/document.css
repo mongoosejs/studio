@@ -21,7 +21,15 @@
   font-size: 0.8em;
 }
 
-.document .up-link {
-  font-size: 1.5em;
-  cursor: pointer;
+.document .document-menu {
+  display: flex;
+}
+
+.document .document-menu .left {
+  flex-grow: 1;
+}
+
+.document .document-menu .right {
+  flex-grow: 1;
+  text-align: right;
 }

@@ -1,6 +1,19 @@
 <div class="document">
-  <div>
-    <div class="up-link" @click="$router.push('/model/' + this.model)">&#8963;</div>
+  <div class="document-menu">
+    <div class="left">
+      <button @click="$router.push('/model/' + this.model)">
+        &lsaquo; Back
+      </button>
+    </div>
+
+    <div class="right">
+      <button v-if="!editting" @click="editting = true">
+        &#x270E; Edit
+      </button>
+      <button v-if="editting" class="green" @click="save">
+        &#x1F4BE; Save
+      </button>
+    </div>
   </div>
   <div v-if="status === 'loaded'">
     <div v-for="path in schemaPaths" class="value">

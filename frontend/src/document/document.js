@@ -13,7 +13,8 @@ module.exports = app => app.component('document', {
   data: () => ({
     schemaPaths: [],
     status: 'init',
-    document: null
+    document: null,
+    editting: false
   }),
   async mounted() {
     const { doc, schemaPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
@@ -32,10 +33,17 @@ module.exports = app => app.component('document', {
   },
   methods: {
     getComponentForPath(schemaPath) {
+      if (this.editting) {
+        return 'edit-default';
+      }
+
       if (schemaPath.instance === 'Array') {
         return 'detail-array';
       }
       return 'detail-default';
+    },
+    async save() {
+      this.editting = false;
     }
   }
 });

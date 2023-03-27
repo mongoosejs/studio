@@ -178,7 +178,8 @@ module.exports = app => app.component('document', {
   data: () => ({
     schemaPaths: [],
     status: 'init',
-    document: null
+    document: null,
+    editting: false
   }),
   async mounted() {
     const { doc, schemaPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
@@ -197,10 +198,46 @@ module.exports = app => app.component('document', {
   },
   methods: {
     getComponentForPath(schemaPath) {
+      if (this.editting) {
+        return 'edit-default';
+      }
+
       if (schemaPath.instance === 'Array') {
         return 'detail-array';
       }
       return 'detail-default';
+    },
+    async save() {
+      this.editting = false;
+    }
+  }
+});
+
+/***/ }),
+
+/***/ "./frontend/src/edit-default/edit-default.js":
+/*!***************************************************!*\
+  !*** ./frontend/src/edit-default/edit-default.js ***!
+  \***************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const template = __webpack_require__(/*! ./edit-default.html */ "./frontend/src/edit-default/edit-default.html");
+
+module.exports = app => app.component('edit-default', {
+  template: template,
+  props: ['value'],
+  emits: ['input'],
+  computed: {
+    displayValue() {
+      if (this.value === null) {
+        return 'null';
+      }
+      if (this.value === undefined) {
+        return 'undefined';
+      }
+      return this.value;
     }
   }
 });
@@ -360,8 +397,12 @@ module.exports = app => app.component('models', {
   },
   methods: {
     async search() {
-      console.log('X', this.searchText)
-      this.filter = eval(`(${this.searchText})`);
+      if (this.searchText) {
+        this.filter = eval(`(${this.searchText})`);
+      } else {
+        this.filter = {};
+      }
+      
       await this.getDocuments();
     },
     async getDocuments() {
@@ -495,7 +536,7 @@ module.exports = "<div>\n  {{value}}\n</div>";
   \********************************************/
 /***/ ((module) => {
 
-module.exports = ".document {\n  max-width: 1200px;\n  margin-left: auto;\n  margin-right: auto;\n  padding-top: 25px;\n}\n\n.document .value {\n  padding-top: 10px;\n  padding-bottom: 10px;\n}\n\n.document .path-key {\n  background-color: #f0f0f0;\n  padding: 0.25em;\n  margin-bottom: 0.5em;\n}\n\n.document .path-type {\n  color: rgba(0,0,0,.36);\n  font-size: 0.8em;\n}\n\n.document .up-link {\n  font-size: 1.5em;\n  cursor: pointer;\n}";
+module.exports = ".document {\n  max-width: 1200px;\n  margin-left: auto;\n  margin-right: auto;\n  padding-top: 25px;\n}\n\n.document .value {\n  padding-top: 10px;\n  padding-bottom: 10px;\n}\n\n.document .path-key {\n  background-color: #f0f0f0;\n  padding: 0.25em;\n  margin-bottom: 0.5em;\n}\n\n.document .path-type {\n  color: rgba(0,0,0,.36);\n  font-size: 0.8em;\n}\n\n.document .document-menu {\n  display: flex;\n}\n\n.document .document-menu .left {\n  flex-grow: 1;\n}\n\n.document .document-menu .right {\n  flex-grow: 1;\n  text-align: right;\n}";
 
 /***/ }),
 
@@ -505,7 +546,17 @@ module.exports = ".document {\n  max-width: 1200px;\n  margin-left: auto;\n  mar
   \*********************************************/
 /***/ ((module) => {
 
-module.exports = "<div class=\"document\">\n  <div>\n    <div class=\"up-link\" @click=\"$router.push('/model/' + this.model)\">&#8963;</div>\n  </div>\n  <div v-if=\"status === 'loaded'\">\n    <div v-for=\"path in schemaPaths\" class=\"value\">\n      <div class=\"path-key\">\n        {{path.path}}\n        <span class=\"path-type\">\n          ({{path.instance.toLowerCase()}})\n        </span>\n      </div>\n      <div>\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\n      </div>\n    </div>\n  </div>\n</div>";
+module.exports = "<div class=\"document\">\n  <div class=\"document-menu\">\n    <div class=\"left\">\n      <button @click=\"$router.push('/model/' + this.model)\">\n        &lsaquo; Back\n      </button>\n    </div>\n\n    <div class=\"right\">\n      <button v-if=\"!editting\" @click=\"editting = true\">\n        &#x270E; Edit\n      </button>\n      <button v-if=\"editting\" class=\"green\" @click=\"save\">\n        &#x1F4BE; Save\n      </button>\n    </div>\n  </div>\n  <div v-if=\"status === 'loaded'\">\n    <div v-for=\"path in schemaPaths\" class=\"value\">\n      <div class=\"path-key\">\n        {{path.path}}\n        <span class=\"path-type\">\n          ({{path.instance.toLowerCase()}})\n        </span>\n      </div>\n      <div>\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\n      </div>\n    </div>\n  </div>\n</div>";
+
+/***/ }),
+
+/***/ "./frontend/src/edit-default/edit-default.html":
+/*!*****************************************************!*\
+  !*** ./frontend/src/edit-default/edit-default.html ***!
+  \*****************************************************/
+/***/ ((module) => {
+
+module.exports = "<div>\n  <input type=\"text\" :value=\"value\" @input=\"$emit('input', $event)\">\n</div>";
 
 /***/ }),
 
@@ -3830,6 +3881,7 @@ __webpack_require__(/*! ./async-button/async-button */ "./frontend/src/async-but
 __webpack_require__(/*! ./detail-array/detail-array */ "./frontend/src/detail-array/detail-array.js")(app);
 __webpack_require__(/*! ./detail-default/detail-default */ "./frontend/src/detail-default/detail-default.js")(app);
 __webpack_require__(/*! ./document/document */ "./frontend/src/document/document.js")(app);
+__webpack_require__(/*! ./edit-default/edit-default */ "./frontend/src/edit-default/edit-default.js")(app);
 __webpack_require__(/*! ./list-array/list-array */ "./frontend/src/list-array/list-array.js")(app);
 __webpack_require__(/*! ./list-default/list-default */ "./frontend/src/list-default/list-default.js")(app);
 __webpack_require__(/*! ./list-subdocument/list-subdocument */ "./frontend/src/list-subdocument/list-subdocument.js")(app);
