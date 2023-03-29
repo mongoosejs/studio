@@ -18,6 +18,16 @@ const client = axios.create({
 
 if (false) {} else {
   exports.Model = {
+    exportQueryResults(params) {
+      const anchor = document.createElement('a');
+      console.log('K', '/admin/api')
+      console.log('G', '/admin/api' + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString());
+      anchor.href = '/admin/api' + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString();
+      anchor.target = '_blank';
+      anchor.download = 'export.csv';
+      anchor.click();
+      return;
+    },
     getDocument: function getDocument(params) {
       return client.post('/Model/getDocument', params).then(res => res.data);
     },
@@ -258,6 +268,49 @@ module.exports = app => app.component('edit-default', {
 
 /***/ }),
 
+/***/ "./frontend/src/export-query-results/export-query-results.js":
+/*!*******************************************************************!*\
+  !*** ./frontend/src/export-query-results/export-query-results.js ***!
+  \*******************************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const api = __webpack_require__(/*! ../api */ "./frontend/src/api.js");
+const template = __webpack_require__(/*! ./export-query-results.html */ "./frontend/src/export-query-results/export-query-results.html");
+
+const appendCSS = __webpack_require__(/*! ../appendCSS */ "./frontend/src/appendCSS.js");
+
+appendCSS(__webpack_require__(/*! ./export-query-results.css */ "./frontend/src/export-query-results/export-query-results.css"));
+
+module.exports = app => app.component('export-query-results', {
+  template: template,
+  props: ['schemaPaths', 'filter', 'currentModel'],
+  emits: ['done'],
+  data: () => ({
+    shouldExport: {}
+  }),
+  mounted() {
+    this.shouldExport = {};
+    for (const { path } of this.schemaPaths) {
+      this.shouldExport[path] = true;
+    }
+  },
+  methods: {
+    async exportQueryResults() {
+      await api.Model.exportQueryResults({
+        model: this.currentModel,
+        filter: this.filter,
+        propertiesToInclude: Object.keys(this.shouldExport).filter(key => this.shouldExport[key])
+      });
+
+      this.$emit('done');
+    }
+  }
+});
+
+/***/ }),
+
 /***/ "./frontend/src/list-array/list-array.js":
 /*!***********************************************!*\
   !*** ./frontend/src/list-array/list-array.js ***!
@@ -382,7 +435,9 @@ module.exports = app => app.component('models', {
     edittingDoc: null,
     docEdits: null,
     filter: null,
-    searchText: ''
+    searchText: '',
+    shouldShowExportModal: false,
+    shouldExport: {}
   }),
   created() {
     this.currentModel = this.model;
@@ -405,6 +460,11 @@ module.exports = app => app.component('models', {
         }
         return 0;
       }).map(key => schemaPaths[key]);
+
+      this.shouldExport = {};
+      for (const { path } of this.schemaPaths) {
+        this.shouldExport[path] = true;
+      }
     }
 
     this.status = 'loaded';
@@ -434,13 +494,11 @@ module.exports = app => app.component('models', {
         }
         return 0;
       }).map(key => schemaPaths[key]);
-    },
-    shouldShowEditModal() {
-      return this.edittingDoc != null;
-    },
-    openEditModal(doc) {
-      this.edittingDoc = doc;
-      this.docEdits = JSON.stringify(doc, null, '  ');
+
+      this.shouldExport = {};
+      for (const { path } of this.schemaPaths) {
+        this.shouldExport[path] = true;
+      }
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
@@ -574,6 +632,26 @@ module.exports = "<div>\n  <input type=\"text\" :value=\"value\" @input=\"$emit(
 
 /***/ }),
 
+/***/ "./frontend/src/export-query-results/export-query-results.css":
+/*!********************************************************************!*\
+  !*** ./frontend/src/export-query-results/export-query-results.css ***!
+  \********************************************************************/
+/***/ ((module) => {
+
+module.exports = "";
+
+/***/ }),
+
+/***/ "./frontend/src/export-query-results/export-query-results.html":
+/*!*********************************************************************!*\
+  !*** ./frontend/src/export-query-results/export-query-results.html ***!
+  \*********************************************************************/
+/***/ ((module) => {
+
+module.exports = "<div class=\"export-query-results\">\n  <h2>Export as CSV</h2>\n  <div>\n    Choose fields to export\n  </div>\n  <div v-for=\"schemaPath in schemaPaths\">\n    <input type=\"checkbox\" v-model=\"shouldExport[schemaPath.path]\">\n    <span>{{schemaPath.path}}</span>\n  </div>\n  <async-button @click=\"exportQueryResults\">Export</async-button>\n</div>";
+
+/***/ }),
+
 /***/ "./frontend/src/list-array/list-array.css":
 /*!************************************************!*\
   !*** ./frontend/src/list-array/list-array.css ***!
@@ -650,7 +728,7 @@ module.exports = ".models {\n  position: relative;\n  display: flex;\n  flex-dir
   \*****************************************/
 /***/ ((module) => {
 
-module.exports = "<div class=\"models\">\n  <div class=\"model-selector\">\n    <h1>Models</h1>\n    <div v-for=\"model in models\">\n      <router-link :to=\"'/model/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\n        {{model}}\n      </router-link>\n    </div>\n  </div>\n  <div class=\"documents\">\n    <div>\n      <div class=\"documents-menu\">\n        <div class=\"search-input\">\n          <form @submit.prevent=\"search\">\n            <input class=\"search-text\" type=\"text\" placeholder=\"Filter or text\" v-model=\"searchText\" />\n          </form>\n        </div>\n        <div class=\"buttons\">\n          <button>Export</button>\n        </div>\n      </div>\n    </div>\n    <div class=\"documents-container\">\n      <table>\n        <thead>\n          <th v-for=\"path in schemaPaths\">\n            {{path.path}}\n            <span class=\"path-type\">\n              ({{path.instance.toLowerCase()}})\n            </span>\n          </th>\n        </thead>\n        <tbody>\n          <tr v-for=\"document in documents\" @click=\"$router.push('/model/' + currentModel + '/document/' + document._id)\" :key=\"document._id\">\n            <td v-for=\"schemaPath in schemaPaths\">\n              <component :is=\"getComponentForPath(schemaPath)\" :value=\"document[schemaPath.path]\"></component>\n            </td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n    <modal v-if=\"shouldShowEditModal()\">\n      <template v-slot:body>\n        <div>\n          <textarea v-model=\"docEdits\" />\n        </div>\n        <async-button @click=\"saveDocEdits\">Save</async-button>\n      </template>\n    </modal>\n  </div>\n</div>";
+module.exports = "<div class=\"models\">\n  <div class=\"model-selector\">\n    <h1>Models</h1>\n    <div v-for=\"model in models\">\n      <router-link :to=\"'/model/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\n        {{model}}\n      </router-link>\n    </div>\n  </div>\n  <div class=\"documents\">\n    <div>\n      <div class=\"documents-menu\">\n        <div class=\"search-input\">\n          <form @submit.prevent=\"search\">\n            <input class=\"search-text\" type=\"text\" placeholder=\"Filter or text\" v-model=\"searchText\" />\n          </form>\n        </div>\n        <div class=\"buttons\">\n          <button @click=\"shouldShowExportModal = true\">Export</button>\n        </div>\n      </div>\n    </div>\n    <div class=\"documents-container\">\n      <table>\n        <thead>\n          <th v-for=\"path in schemaPaths\">\n            {{path.path}}\n            <span class=\"path-type\">\n              ({{path.instance.toLowerCase()}})\n            </span>\n          </th>\n        </thead>\n        <tbody>\n          <tr v-for=\"document in documents\" @click=\"$router.push('/model/' + currentModel + '/document/' + document._id)\" :key=\"document._id\">\n            <td v-for=\"schemaPath in schemaPaths\">\n              <component :is=\"getComponentForPath(schemaPath)\" :value=\"document[schemaPath.path]\"></component>\n            </td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n    <modal v-if=\"shouldShowExportModal\">\n      <template v-slot:body>\n        <export-query-results\n          :schemaPaths=\"schemaPaths\"\n          :filter=\"filter\"\n          :currentModel=\"currentModel\"\n          @done=\"shouldShowExportModal = false\">\n        </export-query-results>\n      </template>\n    </modal>\n  </div>\n</div>";
 
 /***/ }),
 
@@ -3896,6 +3974,7 @@ __webpack_require__(/*! ./detail-array/detail-array */ "./frontend/src/detail-ar
 __webpack_require__(/*! ./detail-default/detail-default */ "./frontend/src/detail-default/detail-default.js")(app);
 __webpack_require__(/*! ./document/document */ "./frontend/src/document/document.js")(app);
 __webpack_require__(/*! ./edit-default/edit-default */ "./frontend/src/edit-default/edit-default.js")(app);
+__webpack_require__(/*! ./export-query-results/export-query-results */ "./frontend/src/export-query-results/export-query-results.js")(app);
 __webpack_require__(/*! ./list-array/list-array */ "./frontend/src/list-array/list-array.js")(app);
 __webpack_require__(/*! ./list-default/list-default */ "./frontend/src/list-default/list-default.js")(app);
 __webpack_require__(/*! ./list-subdocument/list-subdocument */ "./frontend/src/list-subdocument/list-subdocument.js")(app);

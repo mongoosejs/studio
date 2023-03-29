@@ -7,9 +7,6 @@ const GetDocumentsParams = new Archetype({
     $type: 'string',
     $required: true
   },
-  filter: {
-    $type: Object
-  },
   limit: {
     $type: 'number',
     $required: true,

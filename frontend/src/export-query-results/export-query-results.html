@@ -1,0 +1,11 @@
+<div class="export-query-results">
+  <h2>Export as CSV</h2>
+  <div>
+    Choose fields to export
+  </div>
+  <div v-for="schemaPath in schemaPaths">
+    <input type="checkbox" v-model="shouldExport[schemaPath.path]">
+    <span>{{schemaPath.path}}</span>
+  </div>
+  <async-button @click="exportQueryResults">Export</async-button>
+</div>

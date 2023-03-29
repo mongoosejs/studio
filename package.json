@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "dependencies": {
     "archetype": "0.13.0",
+    "csv-stringify": "6.3.0",
     "extrovert": "0.0.20"
   },
   "peerDependencies": {

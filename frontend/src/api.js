@@ -8,6 +8,9 @@ const client = axios.create({
 
 if (config__isLambda) {
   exports.Model = {
+    exportQueryResults(params) {
+      return client.post('', { action: 'Model.exportQueryResults', ...params }).then(res => res.data);
+    },
     getDocument: function getDocument(params) {
       return client.post('', { action: 'Model.getDocument', ...params }).then(res => res.data);
     },
@@ -23,6 +26,16 @@ if (config__isLambda) {
   };
 } else {
   exports.Model = {
+    exportQueryResults(params) {
+      const anchor = document.createElement('a');
+      console.log('K', config__baseURL)
+      console.log('G', config__baseURL + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString());
+      anchor.href = config__baseURL + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString();
+      anchor.target = '_blank';
+      anchor.download = 'export.csv';
+      anchor.click();
+      return;
+    },
     getDocument: function getDocument(params) {
       return client.post('/Model/getDocument', params).then(res => res.data);
     },

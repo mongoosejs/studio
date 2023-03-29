@@ -19,7 +19,9 @@ module.exports = app => app.component('models', {
     edittingDoc: null,
     docEdits: null,
     filter: null,
-    searchText: ''
+    searchText: '',
+    shouldShowExportModal: false,
+    shouldExport: {}
   }),
   created() {
     this.currentModel = this.model;
@@ -42,6 +44,11 @@ module.exports = app => app.component('models', {
         }
         return 0;
       }).map(key => schemaPaths[key]);
+
+      this.shouldExport = {};
+      for (const { path } of this.schemaPaths) {
+        this.shouldExport[path] = true;
+      }
     }
 
     this.status = 'loaded';
@@ -71,13 +78,11 @@ module.exports = app => app.component('models', {
         }
         return 0;
       }).map(key => schemaPaths[key]);
-    },
-    shouldShowEditModal() {
-      return this.edittingDoc != null;
-    },
-    openEditModal(doc) {
-      this.edittingDoc = doc;
-      this.docEdits = JSON.stringify(doc, null, '  ');
+
+      this.shouldExport = {};
+      for (const { path } of this.schemaPaths) {
+        this.shouldExport[path] = true;
+      }
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {

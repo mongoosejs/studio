@@ -16,7 +16,7 @@
           </form>
         </div>
         <div class="buttons">
-          <button>Export</button>
+          <button @click="shouldShowExportModal = true">Export</button>
         </div>
       </div>
     </div>
@@ -39,12 +39,14 @@
         </tbody>
       </table>
     </div>
-    <modal v-if="shouldShowEditModal()">
+    <modal v-if="shouldShowExportModal">
       <template v-slot:body>
-        <div>
-          <textarea v-model="docEdits" />
-        </div>
-        <async-button @click="saveDocEdits">Save</async-button>
+        <export-query-results
+          :schemaPaths="schemaPaths"
+          :filter="filter"
+          :currentModel="currentModel"
+          @done="shouldShowExportModal = false">
+        </export-query-results>
       </template>
     </modal>
   </div>
