@@ -92,7 +92,7 @@
   display: flex;
   margin: 0.25em;
   position: fixed;
-  width: calc(100vw - 200px);
+  width: calc(100vw - 220px);
 }
 
 .models .documents-menu .search-input {
