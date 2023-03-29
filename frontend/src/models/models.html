@@ -41,6 +41,7 @@
     </div>
     <modal v-if="shouldShowExportModal">
       <template v-slot:body>
+        <div class="modal-exit" @click="shouldShowExportModal = false">&times;</div>
         <export-query-results
           :schemaPaths="schemaPaths"
           :filter="filter"
