@@ -22,11 +22,14 @@ module.exports = app => app.component('export-query-results', {
   },
   methods: {
     async exportQueryResults() {
-      await api.Model.exportQueryResults({
+      const params = {
         model: this.currentModel,
-        filter: this.filter,
         propertiesToInclude: Object.keys(this.shouldExport).filter(key => this.shouldExport[key])
-      });
+      };
+      if (this.filter) {
+        params.filter = this.filter;
+      }
+      await api.Model.exportQueryResults(params);
 
       this.$emit('done');
     }
