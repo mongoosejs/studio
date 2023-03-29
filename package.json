@@ -1,5 +1,5 @@
 {
-  "name": "@mongoosejs/admin",
+  "name": "@mongoosejs/studio",
   "version": "0.0.1",
   "dependencies": {
     "archetype": "0.13.0",
