@@ -10,8 +10,11 @@
       <button v-if="!editting" @click="editting = true">
         &#x270E; Edit
       </button>
+      <button v-if="editting" class="grey" @click="editting = false">
+        &times; Cancel
+      </button>
       <button v-if="editting" class="green" @click="save">
-        &#x1F4BE; Save
+        &check; Save
       </button>
     </div>
   </div>
@@ -23,7 +26,15 @@
           ({{path.instance.toLowerCase()}})
         </span>
       </div>
-      <div>
+      <div v-if="editting && path.path !== '_id'">
+        <component
+          :is="getEditComponentForPath(path)"
+          :value="getEditValueForPath(path)"
+          @input="changes[path.path] = $event;"
+          >
+        </component>
+      </div>
+      <div v-else>
         <component :is="getComponentForPath(path)" :value="document[path.path]"></component>
       </div>
     </div>

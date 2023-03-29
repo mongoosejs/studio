@@ -33,3 +33,7 @@
   flex-grow: 1;
   text-align: right;
 }
+
+.document .document-menu .right button:not(:last-child) {
+  margin-right: 0.5em;
+}

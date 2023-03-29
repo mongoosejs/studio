@@ -27,3 +27,8 @@ button {
 button.green {
   background-color: #58D415;
 }
+
+button.grey {
+  color: black;
+  background-color: #ddd;
+}

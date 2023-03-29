@@ -179,6 +179,7 @@ module.exports = app => app.component('document', {
     schemaPaths: [],
     status: 'init',
     document: null,
+    changes: {},
     editting: false
   }),
   async mounted() {
@@ -198,16 +199,29 @@ module.exports = app => app.component('document', {
   },
   methods: {
     getComponentForPath(schemaPath) {
-      if (this.editting) {
-        return 'edit-default';
-      }
-
       if (schemaPath.instance === 'Array') {
         return 'detail-array';
       }
       return 'detail-default';
     },
+    getEditComponentForPath() {
+      return 'edit-default';
+    },
+    getEditValueForPath({ path }) {
+      return path in this.changes ? this.changes[path] : this.document[path];
+    },
+    cancelEdit() {
+      this.changes = {};
+      this.editting = false;
+    },
     async save() {
+      const { doc } = await api.Model.updateDocument({
+        model: this.model,
+        _id: this.document._id,
+        update: this.changes
+      });
+      this.document = doc;
+      this.changes = {};
       this.editting = false;
     }
   }
@@ -536,7 +550,7 @@ module.exports = "<div>\n  {{value}}\n</div>";
   \********************************************/
 /***/ ((module) => {
 
-module.exports = ".document {\n  max-width: 1200px;\n  margin-left: auto;\n  margin-right: auto;\n  padding-top: 25px;\n}\n\n.document .value {\n  padding-top: 10px;\n  padding-bottom: 10px;\n}\n\n.document .path-key {\n  background-color: #f0f0f0;\n  padding: 0.25em;\n  margin-bottom: 0.5em;\n}\n\n.document .path-type {\n  color: rgba(0,0,0,.36);\n  font-size: 0.8em;\n}\n\n.document .document-menu {\n  display: flex;\n}\n\n.document .document-menu .left {\n  flex-grow: 1;\n}\n\n.document .document-menu .right {\n  flex-grow: 1;\n  text-align: right;\n}";
+module.exports = ".document {\n  max-width: 1200px;\n  margin-left: auto;\n  margin-right: auto;\n  padding-top: 25px;\n}\n\n.document .value {\n  padding-top: 10px;\n  padding-bottom: 10px;\n}\n\n.document .path-key {\n  background-color: #f0f0f0;\n  padding: 0.25em;\n  margin-bottom: 0.5em;\n}\n\n.document .path-type {\n  color: rgba(0,0,0,.36);\n  font-size: 0.8em;\n}\n\n.document .document-menu {\n  display: flex;\n}\n\n.document .document-menu .left {\n  flex-grow: 1;\n}\n\n.document .document-menu .right {\n  flex-grow: 1;\n  text-align: right;\n}\n\n.document .document-menu .right button:not(:last-child) {\n  margin-right: 0.5em;\n}";
 
 /***/ }),
 
@@ -546,7 +560,7 @@ module.exports = ".document {\n  max-width: 1200px;\n  margin-left: auto;\n  mar
   \*********************************************/
 /***/ ((module) => {
 
-module.exports = "<div class=\"document\">\n  <div class=\"document-menu\">\n    <div class=\"left\">\n      <button @click=\"$router.push('/model/' + this.model)\">\n        &lsaquo; Back\n      </button>\n    </div>\n\n    <div class=\"right\">\n      <button v-if=\"!editting\" @click=\"editting = true\">\n        &#x270E; Edit\n      </button>\n      <button v-if=\"editting\" class=\"green\" @click=\"save\">\n        &#x1F4BE; Save\n      </button>\n    </div>\n  </div>\n  <div v-if=\"status === 'loaded'\">\n    <div v-for=\"path in schemaPaths\" class=\"value\">\n      <div class=\"path-key\">\n        {{path.path}}\n        <span class=\"path-type\">\n          ({{path.instance.toLowerCase()}})\n        </span>\n      </div>\n      <div>\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\n      </div>\n    </div>\n  </div>\n</div>";
+module.exports = "<div class=\"document\">\n  <div class=\"document-menu\">\n    <div class=\"left\">\n      <button @click=\"$router.push('/model/' + this.model)\">\n        &lsaquo; Back\n      </button>\n    </div>\n\n    <div class=\"right\">\n      <button v-if=\"!editting\" @click=\"editting = true\">\n        &#x270E; Edit\n      </button>\n      <button v-if=\"editting\" class=\"grey\" @click=\"editting = false\">\n        &times; Cancel\n      </button>\n      <button v-if=\"editting\" class=\"green\" @click=\"save\">\n        &check; Save\n      </button>\n    </div>\n  </div>\n  <div v-if=\"status === 'loaded'\">\n    <div v-for=\"path in schemaPaths\" class=\"value\">\n      <div class=\"path-key\">\n        {{path.path}}\n        <span class=\"path-type\">\n          ({{path.instance.toLowerCase()}})\n        </span>\n      </div>\n      <div v-if=\"editting && path.path !== '_id'\">\n        <component\n          :is=\"getEditComponentForPath(path)\"\n          :value=\"getEditValueForPath(path)\"\n          @input=\"changes[path.path] = $event;\"\n          >\n        </component>\n      </div>\n      <div v-else>\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\n      </div>\n    </div>\n  </div>\n</div>";
 
 /***/ }),
 
@@ -556,7 +570,7 @@ module.exports = "<div class=\"document\">\n  <div class=\"document-menu\">\n   
   \*****************************************************/
 /***/ ((module) => {
 
-module.exports = "<div>\n  <input type=\"text\" :value=\"value\" @input=\"$emit('input', $event)\">\n</div>";
+module.exports = "<div>\n  <input type=\"text\" :value=\"value\" @input=\"$emit('input', $event.target.value)\">\n</div>";
 
 /***/ }),
 

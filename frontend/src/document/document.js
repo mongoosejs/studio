@@ -14,6 +14,7 @@ module.exports = app => app.component('document', {
     schemaPaths: [],
     status: 'init',
     document: null,
+    changes: {},
     editting: false
   }),
   async mounted() {
@@ -33,16 +34,29 @@ module.exports = app => app.component('document', {
   },
   methods: {
     getComponentForPath(schemaPath) {
-      if (this.editting) {
-        return 'edit-default';
-      }
-
       if (schemaPath.instance === 'Array') {
         return 'detail-array';
       }
       return 'detail-default';
     },
+    getEditComponentForPath() {
+      return 'edit-default';
+    },
+    getEditValueForPath({ path }) {
+      return path in this.changes ? this.changes[path] : this.document[path];
+    },
+    cancelEdit() {
+      this.changes = {};
+      this.editting = false;
+    },
     async save() {
+      const { doc } = await api.Model.updateDocument({
+        model: this.model,
+        _id: this.document._id,
+        update: this.changes
+      });
+      this.document = doc;
+      this.changes = {};
       this.editting = false;
     }
   }
