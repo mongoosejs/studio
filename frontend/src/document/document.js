@@ -39,7 +39,10 @@ module.exports = app => app.component('document', {
       }
       return 'detail-default';
     },
-    getEditComponentForPath() {
+    getEditComponentForPath(path) {
+      if (path.instance == 'Number') {
+        return 'edit-number';
+      }
       return 'edit-default';
     },
     getEditValueForPath({ path }) {
