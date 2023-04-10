@@ -213,6 +213,10 @@ module.exports = app => app.component('document', {
       return 'detail-default';
     },
     getEditComponentForPath(path) {
+      console.log('what is path', path);
+      if (path.instance == 'Date') {
+        return 'edit-date';
+      }
       if (path.instance == 'Number') {
         return 'edit-number';
       }
@@ -234,6 +238,35 @@ module.exports = app => app.component('document', {
       this.document = doc;
       this.changes = {};
       this.editting = false;
+    }
+  }
+});
+
+/***/ }),
+
+/***/ "../frontend/src/edit-date/edit-date.js":
+/*!**********************************************!*\
+  !*** ../frontend/src/edit-date/edit-date.js ***!
+  \**********************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const template = __webpack_require__(/*! ./edit-date.html */ "../frontend/src/edit-date/edit-date.html");
+
+module.exports = app => app.component('edit-date', {
+  template: template,
+  props: ['value'],
+  emits: ['input'],
+  computed: {
+    displayValue() {
+      if (this.value === null) {
+        return 'null';
+      }
+      if (this.value === undefined) {
+        return 'undefined';
+      }
+      return this.value;
     }
   }
 });
@@ -652,6 +685,16 @@ module.exports = ".document {\r\n  max-width: 1200px;\r\n  margin-left: auto;\r\
 /***/ ((module) => {
 
 module.exports = "<div class=\"document\">\r\n  <div class=\"document-menu\">\r\n    <div class=\"left\">\r\n      <button @click=\"$router.push('/model/' + this.model)\">\r\n        &lsaquo; Back\r\n      </button>\r\n    </div>\r\n\r\n    <div class=\"right\">\r\n      <button v-if=\"!editting\" @click=\"editting = true\">\r\n        &#x270E; Edit\r\n      </button>\r\n      <button v-if=\"editting\" class=\"grey\" @click=\"editting = false\">\r\n        &times; Cancel\r\n      </button>\r\n      <button v-if=\"editting\" class=\"green\" @click=\"save\">\r\n        &check; Save\r\n      </button>\r\n    </div>\r\n  </div>\r\n  <div v-if=\"status === 'loaded'\">\r\n    <div v-for=\"path in schemaPaths\" class=\"value\">\r\n      <div class=\"path-key\">\r\n        {{path.path}}\r\n        <span class=\"path-type\">\r\n          ({{path.instance.toLowerCase()}})\r\n        </span>\r\n      </div>\r\n      <div v-if=\"editting && path.path !== '_id'\">\r\n        <component\r\n          :is=\"getEditComponentForPath(path)\"\r\n          :value=\"getEditValueForPath(path)\"\r\n          @input=\"changes[path.path] = $event;\"\r\n          >\r\n        </component>\r\n      </div>\r\n      <div v-else>\r\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</div>";
+
+/***/ }),
+
+/***/ "../frontend/src/edit-date/edit-date.html":
+/*!************************************************!*\
+  !*** ../frontend/src/edit-date/edit-date.html ***!
+  \************************************************/
+/***/ ((module) => {
+
+module.exports = "<div>\r\n  <input type=\"datetime-local\" :value=\"value\" @input=\"$emit('input', $event.target.value)\">\r\n</div>";
 
 /***/ }),
 
@@ -4018,6 +4061,7 @@ __webpack_require__(/*! ./detail-default/detail-default */ "../frontend/src/deta
 __webpack_require__(/*! ./document/document */ "../frontend/src/document/document.js")(app);
 __webpack_require__(/*! ./edit-default/edit-default */ "../frontend/src/edit-default/edit-default.js")(app);
 __webpack_require__(/*! ./edit-number/edit-number */ "../frontend/src/edit-number/edit-number.js")(app);
+__webpack_require__(/*! ./edit-date/edit-date */ "../frontend/src/edit-date/edit-date.js")(app);
 __webpack_require__(/*! ./export-query-results/export-query-results */ "../frontend/src/export-query-results/export-query-results.js")(app);
 __webpack_require__(/*! ./list-array/list-array */ "../frontend/src/list-array/list-array.js")(app);
 __webpack_require__(/*! ./list-default/list-default */ "../frontend/src/list-default/list-default.js")(app);

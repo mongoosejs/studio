@@ -40,6 +40,9 @@ module.exports = app => app.component('document', {
       return 'detail-default';
     },
     getEditComponentForPath(path) {
+      if (path.instance == 'Date') {
+        return 'edit-date';
+      }
       if (path.instance == 'Number') {
         return 'edit-number';
       }
