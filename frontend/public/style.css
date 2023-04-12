@@ -32,3 +32,7 @@ button.grey {
   color: black;
   background-color: #ddd;
 }
+
+button.red {
+  background-color: red;
+}
