@@ -1,5 +1,6 @@
 'use strict';
 
+exports.deleteDocument = require('./deleteDocument');
 exports.exportQueryResults = require('./exportQueryResults');
 exports.getDocument = require('./getDocument');
 exports.getDocuments = require('./getDocuments');

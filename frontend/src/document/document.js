@@ -64,6 +64,16 @@ module.exports = app => app.component('document', {
       this.document = doc;
       this.changes = {};
       this.editting = false;
+    },
+    async remove() {
+      const { doc } = await api.Model.deleteDocument({
+        model: this.model,
+        documentId: this.document._id
+      });
+      if (doc.acknowledged) {
+        this.editting = false;
+        this.document = {};
+      }
     }
   }
 });

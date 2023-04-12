@@ -18,6 +18,9 @@ const client = axios.create({
 
 if (false) {} else {
   exports.Model = {
+    deleteDocument: function (params) {
+      return client.post('/Model/deleteDocument', params).then(res => res.data);
+    },
     exportQueryResults(params) {
       const anchor = document.createElement('a');
       anchor.href = '/studio/api' + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString();
@@ -213,7 +216,6 @@ module.exports = app => app.component('document', {
       return 'detail-default';
     },
     getEditComponentForPath(path) {
-      console.log('what is path', path);
       if (path.instance == 'Date') {
         return 'edit-date';
       }
@@ -238,6 +240,16 @@ module.exports = app => app.component('document', {
       this.document = doc;
       this.changes = {};
       this.editting = false;
+    },
+    async remove() {
+      const { doc } = await api.Model.deleteDocument({
+        model: this.model,
+        documentId: this.document._id
+      });
+      if (doc.acknowledged) {
+        this.editting = false;
+        this.document = {};
+      }
     }
   }
 });
@@ -257,19 +269,9 @@ const template = __webpack_require__(/*! ./edit-date.html */ "../frontend/src/ed
 module.exports = app => app.component('edit-date', {
   template: template,
   props: ['value'],
-  emits: ['input'],
-  computed: {
-    displayValue() {
-      if (this.value === null) {
-        return 'null';
-      }
-      if (this.value === undefined) {
-        return 'undefined';
-      }
-      return this.value;
-    }
-  }
+  emits: ['input']
 });
+
 
 /***/ }),
 
@@ -684,7 +686,7 @@ module.exports = ".document {\r\n  max-width: 1200px;\r\n  margin-left: auto;\r\
   \**********************************************/
 /***/ ((module) => {
 
-module.exports = "<div class=\"document\">\r\n  <div class=\"document-menu\">\r\n    <div class=\"left\">\r\n      <button @click=\"$router.push('/model/' + this.model)\">\r\n        &lsaquo; Back\r\n      </button>\r\n    </div>\r\n\r\n    <div class=\"right\">\r\n      <button v-if=\"!editting\" @click=\"editting = true\">\r\n        &#x270E; Edit\r\n      </button>\r\n      <button v-if=\"editting\" class=\"grey\" @click=\"editting = false\">\r\n        &times; Cancel\r\n      </button>\r\n      <button v-if=\"editting\" class=\"green\" @click=\"save\">\r\n        &check; Save\r\n      </button>\r\n    </div>\r\n  </div>\r\n  <div v-if=\"status === 'loaded'\">\r\n    <div v-for=\"path in schemaPaths\" class=\"value\">\r\n      <div class=\"path-key\">\r\n        {{path.path}}\r\n        <span class=\"path-type\">\r\n          ({{path.instance.toLowerCase()}})\r\n        </span>\r\n      </div>\r\n      <div v-if=\"editting && path.path !== '_id'\">\r\n        <component\r\n          :is=\"getEditComponentForPath(path)\"\r\n          :value=\"getEditValueForPath(path)\"\r\n          @input=\"changes[path.path] = $event;\"\r\n          >\r\n        </component>\r\n      </div>\r\n      <div v-else>\r\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</div>";
+module.exports = "<div class=\"document\">\r\n  <div class=\"document-menu\">\r\n    <div class=\"left\">\r\n      <button @click=\"$router.push('/model/' + this.model)\">\r\n        &lsaquo; Back\r\n      </button>\r\n    </div>\r\n\r\n    <div class=\"right\">\r\n      <button v-if=\"!editting\" @click=\"editting = true\">\r\n        &#x270E; Edit\r\n      </button>\r\n      <button v-if=\"editting\" class=\"grey\" @click=\"editting = false\">\r\n        &times; Cancel\r\n      </button>\r\n      <button v-if=\"editting\" class=\"green\" @click=\"save\">\r\n        &check; Save\r\n      </button>\r\n      <button v-if=\"editting\" class=\"red\" @click=\"remove\">\r\n        &#x1F5D1; Delete\r\n      </button>\r\n    </div>\r\n  </div>\r\n  <div v-if=\"status === 'loaded'\">\r\n    <div v-for=\"path in schemaPaths\" class=\"value\">\r\n      <div class=\"path-key\">\r\n        {{path.path}}\r\n        <span class=\"path-type\">\r\n          ({{path.instance.toLowerCase()}})\r\n        </span>\r\n      </div>\r\n      <div v-if=\"editting && path.path !== '_id'\">\r\n        <component\r\n          :is=\"getEditComponentForPath(path)\"\r\n          :value=\"getEditValueForPath(path)\"\r\n          @input=\"changes[path.path] = $event;\"\r\n          >\r\n        </component>\r\n      </div>\r\n      <div v-else>\r\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</div>";
 
 /***/ }),
 

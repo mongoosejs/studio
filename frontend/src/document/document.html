@@ -16,6 +16,9 @@
       <button v-if="editting" class="green" @click="save">
         &check; Save
       </button>
+      <button v-if="editting" class="red" @click="remove">
+        &#x1F5D1; Delete
+      </button>
     </div>
   </div>
   <div v-if="status === 'loaded'">
