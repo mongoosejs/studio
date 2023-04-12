@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./document.html');
+const vanillatoast = require('vanillatoasts');
 
 const appendCSS = require('../appendCSS');
 
@@ -73,6 +74,13 @@ module.exports = app => app.component('document', {
       if (doc.acknowledged) {
         this.editting = false;
         this.document = {};
+        vanillatoast.create({
+          title: 'Document Deleted!',
+          type: 'success',
+          timeout: 3000,
+          positionClass: 'bottomRight'
+        });
+        this.$router.push({ path: `/model/${this.model}`});
       }
     }
   }

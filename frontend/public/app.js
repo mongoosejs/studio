@@ -1,5 +1,4 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
 /***/ "../frontend/src/api.js":
@@ -8,6 +7,7 @@
   \******************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
+"use strict";
 
 
 const axios = __webpack_require__(/*! axios */ "../node_modules/axios/dist/browser/axios.cjs");
@@ -53,6 +53,7 @@ if (false) {} else {
   \************************************/
 /***/ ((module) => {
 
+"use strict";
 
 
 module.exports = function appendCSS(css) {
@@ -73,6 +74,7 @@ module.exports = function appendCSS(css) {
   \****************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./async-button.html */ "../frontend/src/async-button/async-button.html");
@@ -121,6 +123,7 @@ module.exports = app => app.component('async-button', {
   \****************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./detail-array.html */ "../frontend/src/detail-array/detail-array.html");
@@ -146,6 +149,7 @@ module.exports = app => app.component('detail-array', {
   \********************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./detail-default.html */ "../frontend/src/detail-default/detail-default.html");
@@ -174,10 +178,12 @@ module.exports = app => app.component('detail-default', {
   \********************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const api = __webpack_require__(/*! ../api */ "../frontend/src/api.js");
 const template = __webpack_require__(/*! ./document.html */ "../frontend/src/document/document.html");
+const vanillatoast = __webpack_require__(/*! vanillatoasts */ "../node_modules/vanillatoasts/vanillatoasts.js");
 
 const appendCSS = __webpack_require__(/*! ../appendCSS */ "../frontend/src/appendCSS.js");
 
@@ -249,6 +255,13 @@ module.exports = app => app.component('document', {
       if (doc.acknowledged) {
         this.editting = false;
         this.document = {};
+        vanillatoast.create({
+          title: 'Document Deleted!',
+          type: 'success',
+          timeout: 3000,
+          positionClass: 'bottomRight'
+        });
+        this.$router.push({ path: `/model/${this.model}`});
       }
     }
   }
@@ -262,6 +275,7 @@ module.exports = app => app.component('document', {
   \**********************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./edit-date.html */ "../frontend/src/edit-date/edit-date.html");
@@ -281,6 +295,7 @@ module.exports = app => app.component('edit-date', {
   \****************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./edit-default.html */ "../frontend/src/edit-default/edit-default.html");
@@ -310,6 +325,7 @@ module.exports = app => app.component('edit-default', {
   \**************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./edit-number.html */ "../frontend/src/edit-number/edit-number.html");
@@ -339,6 +355,7 @@ module.exports = app => app.component('edit-number', {
   \********************************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const api = __webpack_require__(/*! ../api */ "../frontend/src/api.js");
@@ -385,6 +402,7 @@ module.exports = app => app.component('export-query-results', {
   \************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./list-array.html */ "../frontend/src/list-array/list-array.html");
@@ -417,6 +435,7 @@ module.exports = app => app.component('list-array', {
   \****************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./list-default.html */ "../frontend/src/list-default/list-default.html");
@@ -445,6 +464,7 @@ module.exports = app => app.component('list-default', {
   \************************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const api = __webpack_require__(/*! ../api */ "../frontend/src/api.js");
@@ -463,6 +483,7 @@ module.exports = app => app.component('list-subdocument', {
   \**************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const appendCSS = __webpack_require__(/*! ../appendCSS */ "../frontend/src/appendCSS.js");
@@ -482,6 +503,7 @@ module.exports = app => app.component('modal', {
   \****************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const api = __webpack_require__(/*! ../api */ "../frontend/src/api.js");
@@ -598,6 +620,7 @@ module.exports = app => app.component('models', {
   \****************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 
 const template = __webpack_require__(/*! ./navbar.html */ "../frontend/src/navbar/navbar.html");
@@ -618,6 +641,7 @@ module.exports = app => app.component('navbar', {
   \*********************************/
 /***/ ((module) => {
 
+"use strict";
 
 
 module.exports = [
@@ -640,12 +664,196 @@ module.exports = [
 
 /***/ }),
 
+/***/ "../node_modules/vanillatoasts/vanillatoasts.js":
+/*!******************************************************!*\
+  !*** ../node_modules/vanillatoasts/vanillatoasts.js ***!
+  \******************************************************/
+/***/ (function(module) {
+
+(function (root, factory) {
+  try {
+    // commonjs
+    if (true) {
+      module.exports = factory();
+      // global
+    } else {}
+  } catch (error) {
+    console.log('Isomorphic compatibility is not supported at this time for VanillaToasts.')
+  }
+})(this, function () {
+
+  // We need DOM to be ready
+  if (document.readyState === 'complete') {
+    init();
+  } else {
+    window.addEventListener('DOMContentLoaded', init);
+  }
+
+  // Create VanillaToasts object
+  VanillaToasts = {
+    // In case toast creation is attempted before dom has finished loading!
+    create: function () {
+      console.error([
+        'DOM has not finished loading.',
+        '\tInvoke create method when DOM\s readyState is complete'
+      ].join('\n'))
+    },
+    //function to manually set timeout after create
+    setTimeout: function () {
+      console.error([
+        'DOM has not finished loading.',
+        '\tInvoke create method when DOM\s readyState is complete'
+      ].join('\n'))
+    },
+    toasts: {} //store toasts to modify later
+  };
+  var autoincrement = 0;
+
+  // Initialize library
+  function init() {
+    // Toast container
+    var container = document.createElement('div');
+    container.id = 'vanillatoasts-container';
+    document.body.appendChild(container);
+
+    // @Override
+    // Replace create method when DOM has finished loading
+    VanillaToasts.create = function (options) {
+      var toast = document.createElement('div');
+      toast.id = ++autoincrement;
+      toast.id = 'toast-' + toast.id;
+      toast.className = 'vanillatoasts-toast';
+
+      // title
+      if (options.title) {
+        var h4 = document.createElement('h4');
+        h4.className = 'vanillatoasts-title';
+        h4.innerHTML = options.title;
+        toast.appendChild(h4);
+      }
+
+      // text
+      if (options.text) {
+        var p = document.createElement('p');
+        p.className = 'vanillatoasts-text';
+        p.innerHTML = options.text;
+        toast.appendChild(p);
+      }
+
+      // icon
+      if (options.icon) {
+        var img = document.createElement('img');
+        img.src = options.icon;
+        img.className = 'vanillatoasts-icon';
+        toast.appendChild(img);
+      }
+      
+      
+       if (options.onHide) {
+          // do something
+        }
+
+      // position
+      var position = options.positionClass
+      switch (position) {
+        case 'topLeft':
+          container.classList.add('toasts-top-left');
+          break;
+        case 'bottomLeft':
+          container.classList.add('toasts-bottom-left');
+          break;
+        case 'bottomRight':
+          container.classList.add('toasts-bottom-right');
+          break;
+        case 'topRight':
+          container.classList.add('toasts-top-right');
+          break;
+        case 'topCenter':
+          container.classList.add('toasts-top-center');
+          break;
+        case 'bottomCenter':
+          container.classList.add('toasts-bottom-center');
+          break;
+        default:
+          container.classList.add('toasts-top-right');
+          break;
+      }
+
+      // click callback
+      if (typeof options.callback === 'function') {
+        toast.addEventListener('click', options.callback);
+      }
+
+      // toast api
+      toast.hide = function () {
+        toast.className += ' vanillatoasts-fadeOut';
+        toast.addEventListener('animationend', removeToast, false);
+        
+      if (options.onHide) {
+          options.onHide();
+        }
+      }
+    
+     // single
+      if (options.single === true) {
+          var elements = document.getElementsByClassName('vanillatoasts-toast');
+          while (elements.length > 0) {
+          elements[0].parentNode.removeChild(elements[0]);
+        }
+      }
+
+      // autohide
+      if (options.timeout) {
+        setTimeout(toast.hide, options.timeout);
+      }
+
+      if (options.type) {
+        toast.className += ' vanillatoasts-' + options.type;
+      }
+
+      toast.addEventListener('click', toast.hide);
+
+
+      function removeToast() {
+        document.getElementById('vanillatoasts-container').removeChild(toast);
+        delete VanillaToasts.toasts[toast.id];  //remove toast from object
+      }
+
+      document.getElementById('vanillatoasts-container').appendChild(toast);
+
+      //add toast to object so its easily gettable by its id
+      VanillaToasts.toasts[toast.id] = toast;
+
+      return toast;
+    }
+
+    /*
+    custom function to manually initiate timeout of
+    the toast.  Useful if toast is created as persistant
+    because we don't want it to start to timeout until
+    we tell it to
+    */
+    VanillaToasts.setTimeout = function (toastid, val) {
+      if (VanillaToasts.toasts[toastid]) {
+        setTimeout(VanillaToasts.toasts[toastid].hide, val);
+      }
+    }
+  }
+
+  return VanillaToasts;
+
+});
+
+
+/***/ }),
+
 /***/ "../frontend/src/async-button/async-button.html":
 /*!******************************************************!*\
   !*** ../frontend/src/async-button/async-button.html ***!
   \******************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<button v-bind=\"attrsToBind\" :disabled=\"isDisabled\" @click=\"handleClick\">\r\n  <slot></slot>\r\n</button>";
 
 /***/ }),
@@ -656,6 +864,7 @@ module.exports = "<button v-bind=\"attrsToBind\" :disabled=\"isDisabled\" @click
   \******************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div class=\"detail-array\">\r\n  <pre><code ref=\"code\" class=\"language-javascript\" v-text=\"displayValue\"></code></pre>\r\n</div>";
 
 /***/ }),
@@ -666,6 +875,7 @@ module.exports = "<div class=\"detail-array\">\r\n  <pre><code ref=\"code\" clas
   \**********************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div>\r\n  {{value}}\r\n</div>";
 
 /***/ }),
@@ -676,6 +886,7 @@ module.exports = "<div>\r\n  {{value}}\r\n</div>";
   \*********************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = ".document {\r\n  max-width: 1200px;\r\n  margin-left: auto;\r\n  margin-right: auto;\r\n  padding-top: 25px;\r\n}\r\n\r\n.document .value {\r\n  padding-top: 10px;\r\n  padding-bottom: 10px;\r\n}\r\n\r\n.document .path-key {\r\n  background-color: #f0f0f0;\r\n  padding: 0.25em;\r\n  margin-bottom: 0.5em;\r\n}\r\n\r\n.document .path-type {\r\n  color: rgba(0,0,0,.36);\r\n  font-size: 0.8em;\r\n}\r\n\r\n.document .document-menu {\r\n  display: flex;\r\n}\r\n\r\n.document .document-menu .left {\r\n  flex-grow: 1;\r\n}\r\n\r\n.document .document-menu .right {\r\n  flex-grow: 1;\r\n  text-align: right;\r\n}\r\n\r\n.document .document-menu .right button:not(:last-child) {\r\n  margin-right: 0.5em;\r\n}";
 
 /***/ }),
@@ -686,6 +897,7 @@ module.exports = ".document {\r\n  max-width: 1200px;\r\n  margin-left: auto;\r\
   \**********************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div class=\"document\">\r\n  <div class=\"document-menu\">\r\n    <div class=\"left\">\r\n      <button @click=\"$router.push('/model/' + this.model)\">\r\n        &lsaquo; Back\r\n      </button>\r\n    </div>\r\n\r\n    <div class=\"right\">\r\n      <button v-if=\"!editting\" @click=\"editting = true\">\r\n        &#x270E; Edit\r\n      </button>\r\n      <button v-if=\"editting\" class=\"grey\" @click=\"editting = false\">\r\n        &times; Cancel\r\n      </button>\r\n      <button v-if=\"editting\" class=\"green\" @click=\"save\">\r\n        &check; Save\r\n      </button>\r\n      <button v-if=\"editting\" class=\"red\" @click=\"remove\">\r\n        &#x1F5D1; Delete\r\n      </button>\r\n    </div>\r\n  </div>\r\n  <div v-if=\"status === 'loaded'\">\r\n    <div v-for=\"path in schemaPaths\" class=\"value\">\r\n      <div class=\"path-key\">\r\n        {{path.path}}\r\n        <span class=\"path-type\">\r\n          ({{path.instance.toLowerCase()}})\r\n        </span>\r\n      </div>\r\n      <div v-if=\"editting && path.path !== '_id'\">\r\n        <component\r\n          :is=\"getEditComponentForPath(path)\"\r\n          :value=\"getEditValueForPath(path)\"\r\n          @input=\"changes[path.path] = $event;\"\r\n          >\r\n        </component>\r\n      </div>\r\n      <div v-else>\r\n        <component :is=\"getComponentForPath(path)\" :value=\"document[path.path]\"></component>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</div>";
 
 /***/ }),
@@ -696,6 +908,7 @@ module.exports = "<div class=\"document\">\r\n  <div class=\"document-menu\">\r\
   \************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div>\r\n  <input type=\"datetime-local\" :value=\"value\" @input=\"$emit('input', $event.target.value)\">\r\n</div>";
 
 /***/ }),
@@ -706,6 +919,7 @@ module.exports = "<div>\r\n  <input type=\"datetime-local\" :value=\"value\" @in
   \******************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div>\r\n  <input type=\"text\" :value=\"value\" @input=\"$emit('input', $event.target.value)\">\r\n</div>";
 
 /***/ }),
@@ -716,6 +930,7 @@ module.exports = "<div>\r\n  <input type=\"text\" :value=\"value\" @input=\"$emi
   \****************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div>\r\n  <input type=\"number\" :value=\"value\" @input=\"$emit('input', $event.target.value)\">\r\n</div>";
 
 /***/ }),
@@ -726,6 +941,7 @@ module.exports = "<div>\r\n  <input type=\"number\" :value=\"value\" @input=\"$e
   \*********************************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "";
 
 /***/ }),
@@ -736,6 +952,7 @@ module.exports = "";
   \**********************************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div class=\"export-query-results\">\r\n  <h2>Export as CSV</h2>\r\n  <div>\r\n    Choose fields to export\r\n  </div>\r\n  <div v-for=\"schemaPath in schemaPaths\">\r\n    <input type=\"checkbox\" v-model=\"shouldExport[schemaPath.path]\">\r\n    <span>{{schemaPath.path}}</span>\r\n  </div>\r\n  <async-button @click=\"exportQueryResults\">Export</async-button>\r\n</div>";
 
 /***/ }),
@@ -746,6 +963,7 @@ module.exports = "<div class=\"export-query-results\">\r\n  <h2>Export as CSV</h
   \*************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = ".list-array pre {\r\n  max-height: 6.5em;\r\n  max-width: 60em;\r\n}\r\n\r\n.list-array pre.maximized {\r\n  max-height: auto;\r\n}";
 
 /***/ }),
@@ -756,6 +974,7 @@ module.exports = ".list-array pre {\r\n  max-height: 6.5em;\r\n  max-width: 60em
   \**************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div class=\"list-array\">\r\n  <pre><code ref=\"code\" class=\"language-javascript\" v-text=\"displayValue\"></code></pre>\r\n</div>";
 
 /***/ }),
@@ -766,6 +985,7 @@ module.exports = "<div class=\"list-array\">\r\n  <pre><code ref=\"code\" class=
   \******************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div>\r\n  {{value}}\r\n</div>";
 
 /***/ }),
@@ -776,6 +996,7 @@ module.exports = "<div>\r\n  {{value}}\r\n</div>";
   \**************************************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div>\r\n  {{JSON.stringify(value, null, '  ')}}\r\n</div>";
 
 /***/ }),
@@ -786,6 +1007,7 @@ module.exports = "<div>\r\n  {{JSON.stringify(value, null, '  ')}}\r\n</div>";
   \***************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "/** Vue modal */\r\n\r\n.modal-mask {\r\n  position: fixed;\r\n  z-index: 9998;\r\n  top: 0;\r\n  left: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  background-color: rgba(0, 0, 0, 0.5);\r\n  display: table;\r\n  transition: opacity 0.3s ease;\r\n}\r\n\r\n.modal-wrapper {\r\n  display: table-cell;\r\n  vertical-align: middle;\r\n}\r\n\r\n.modal-container {\r\n  width: 600px;\r\n  margin: 0px auto;\r\n  padding: 20px 30px;\r\n  padding-bottom: 40px;\r\n  background-color: #fff;\r\n  border-radius: 2px;\r\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);\r\n  transition: all 0.3s ease;\r\n  font-family: Helvetica, Arial, sans-serif;\r\n  position: relative;\r\n}\r\n\r\n.modal-header {\r\n  margin-top: 0;\r\n  font-size: 18px;\r\n  font-weight: bold\r\n}\r\n\r\n.modal-header-success {\r\n  color: #42b983;\r\n}\r\n\r\n.modal-header-error {\r\n  color: #ff0000;\r\n}\r\n\r\n.modal-body {\r\n  margin: 20px 0;\r\n}\r\n\r\n.modal__button--default {\r\n  float: right;\r\n}\r\n\r\n/*\r\n * The following styles are auto-applied to elements with\r\n * transition=\"modal\" when their visibility is toggled\r\n * by Vue.js.\r\n *\r\n * You can easily play with the modal transition by editing\r\n * these styles.\r\n */\r\n\r\n.modal-enter {\r\n  opacity: 0;\r\n}\r\n\r\n.modal-leave-active {\r\n  opacity: 0;\r\n}\r\n\r\n.modal-enter .modal-container,\r\n.modal-leave-active .modal-container {\r\n  -webkit-transform: scale(1.1);\r\n  transform: scale(1.1);\r\n}\r\n\r\n.modal-container .modal-exit {\r\n  position: absolute;\r\n  right: 0.25em;\r\n  top: 0.25em;\r\n  cursor: pointer;\r\n}";
 
 /***/ }),
@@ -796,6 +1018,7 @@ module.exports = "/** Vue modal */\r\n\r\n.modal-mask {\r\n  position: fixed;\r\
   \****************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<transition name=\"modal\">\r\n  <div class=\"modal-mask\">\r\n    <div class=\"modal-wrapper\">\r\n      <div class=\"modal-container\">\r\n        <div class=\"modal-body\">\r\n          <slot name=\"body\">\r\n          </slot>\r\n        </div>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</transition>";
 
 /***/ }),
@@ -806,6 +1029,7 @@ module.exports = "<transition name=\"modal\">\r\n  <div class=\"modal-mask\">\r\
   \*****************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = ".models {\r\n  position: relative;\r\n  display: flex;\r\n  flex-direction: row;\r\n  min-height: calc(100% - 56px);\r\n}\r\n\r\n.models .model-selector {\r\n  background-color: #eee;\r\n  flex-grow: 0; \r\n  padding: 15px;\r\n  padding-top: 0px;\r\n}\r\n\r\n.models h1 {\r\n  margin-top: 0px;\r\n}\r\n\r\n.models .documents {\r\n  flex-grow: 1;\r\n  overflow: scroll;\r\n  max-height: calc(100vh - 56px);\r\n}\r\n\r\n.models .documents .documents-container {\r\n  margin-top: 40px;\r\n}\r\n\r\n.models .documents table {\r\n  /* max-width: -moz-fit-content;\r\n  max-width: fit-content; */\r\n  width: 100%;\r\n  table-layout: auto;\r\n  font-size: small;\r\n  padding: 0;\r\n  margin-right: 1em;\r\n  white-space: nowrap;\r\n  z-index: -1;\r\n  border-collapse: collapse;\r\n  line-height: 1.5em;\r\n}\r\n\r\n.models .documents table th {\r\n  position: sticky;\r\n  top: 0px;\r\n  background-color: white;\r\n}\r\n\r\n.models .documents table th:after {\r\n  content: '';\r\n  position: absolute;\r\n  left: 0;\r\n  width: 100%;\r\n  bottom: -1px;\r\n  border-bottom: thin solid rgba(0,0,0,.12);\r\n}\r\n\r\n.models .documents table tr {\r\n  color: black;\r\n  border-spacing: 0px 0px;\r\n  background-color: white;\r\n  cursor: pointer;\r\n}\r\n\r\n.models .documents table tr:nth-child(even) {\r\n  background-color: #f5f5f5;\r\n}\r\n\r\n.models .documents table tr:hover {\r\n  background-color: #55A3D4;\r\n}\r\n\r\n.models .documents table th, td {\r\n  border-bottom: thin solid rgba(0,0,0,.12);\r\n  text-align: left;\r\n  padding: 0 16px;\r\n  height: 48px;\r\n}\r\n\r\n.models textarea {\r\n  width: 100%;\r\n  height: 600px;\r\n  font-size: 1.2em;\r\n}\r\n\r\n.models .path-type {\r\n  color: rgba(0,0,0,.36);\r\n  font-size: 0.8em;\r\n}\r\n\r\n.models .documents-menu {\r\n  display: flex;\r\n  margin: 0.25em;\r\n  position: fixed;\r\n  width: calc(100vw - 220px);\r\n}\r\n\r\n.models .documents-menu .search-input {\r\n  flex-grow: 1;\r\n}\r\n\r\n.models .search-input input {\r\n  padding: 0.25em 0.5em;\r\n  font-size: 1.1em;\r\n  border: 1px solid #ddd;\r\n  border-radius: 3px;\r\n  width: calc(100% - 1em);\r\n}";
 
 /***/ }),
@@ -816,6 +1040,7 @@ module.exports = ".models {\r\n  position: relative;\r\n  display: flex;\r\n  fl
   \******************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div class=\"models\">\r\n  <div class=\"model-selector\">\r\n    <h1>Models</h1>\r\n    <div v-for=\"model in models\">\r\n      <router-link :to=\"'/model/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\r\n        {{model}}\r\n      </router-link>\r\n    </div>\r\n  </div>\r\n  <div class=\"documents\">\r\n    <div>\r\n      <div class=\"documents-menu\">\r\n        <div class=\"search-input\">\r\n          <form @submit.prevent=\"search\">\r\n            <input class=\"search-text\" type=\"text\" placeholder=\"Filter or text\" v-model=\"searchText\" />\r\n          </form>\r\n        </div>\r\n        <div class=\"buttons\">\r\n          <button @click=\"shouldShowExportModal = true\">Export</button>\r\n        </div>\r\n      </div>\r\n    </div>\r\n    <div class=\"documents-container\">\r\n      <table>\r\n        <thead>\r\n          <th v-for=\"path in schemaPaths\">\r\n            {{path.path}}\r\n            <span class=\"path-type\">\r\n              ({{path.instance.toLowerCase()}})\r\n            </span>\r\n          </th>\r\n        </thead>\r\n        <tbody>\r\n          <tr v-for=\"document in documents\" @click=\"$router.push('/model/' + currentModel + '/document/' + document._id)\" :key=\"document._id\">\r\n            <td v-for=\"schemaPath in schemaPaths\">\r\n              <component :is=\"getComponentForPath(schemaPath)\" :value=\"document[schemaPath.path]\"></component>\r\n            </td>\r\n          </tr>\r\n        </tbody>\r\n      </table>\r\n    </div>\r\n    <modal v-if=\"shouldShowExportModal\">\r\n      <template v-slot:body>\r\n        <div class=\"modal-exit\" @click=\"shouldShowExportModal = false\">&times;</div>\r\n        <export-query-results\r\n          :schemaPaths=\"schemaPaths\"\r\n          :filter=\"filter\"\r\n          :currentModel=\"currentModel\"\r\n          @done=\"shouldShowExportModal = false\">\r\n        </export-query-results>\r\n      </template>\r\n    </modal>\r\n  </div>\r\n</div>";
 
 /***/ }),
@@ -826,6 +1051,7 @@ module.exports = "<div class=\"models\">\r\n  <div class=\"model-selector\">\r\n
   \*****************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = ".navbar {\r\n  width: 100%;\r\n  background-color: #eee;\r\n}\r\n\r\n.navbar .nav-left {\r\n  float: left;\r\n  line-height: 54px;\r\n  font-size: 20px;\r\n  padding-left: 20px;\r\n}\r\n\r\n.navbar .nav-left a {\r\n  color: #232323;\r\n}\r\n\r\n.navbar {\r\n  border-bottom: 1px solid #ddd;\r\n  height: 55px;\r\n}\r\n\r\n.navbar .nav-left img {\r\n  height: 24px;\r\n  vertical-align: middle;\r\n  margin-right: 0.5em;\r\n  margin-top: 16px;\r\n}\r\n\r\n.navbar .nav-right {\r\n  float: right;\r\n  display: flex;\r\n  flex-direction: row;\r\n  font-size: 16px;\r\n  line-height: 54px;\r\n  padding-right: 20px;\r\n}\r\n\r\n.navbar .nav-right .nav-item {\r\n  flex-grow: 1;\r\n  padding: 0px 12px;\r\n  position: relative;\r\n  z-index: 21000;\r\n}\r\n\r\n.navbar .nav-right .nav-item:hover {\r\n  flex-grow: 1;\r\n  padding: 0px 12px;\r\n  border-bottom: 1px solid #E1B9A0;\r\n}\r\n\r\n.navbar .nav-right .nav-item.active {\r\n  border-bottom: 1px solid #E1B9A0;\r\n}\r\n\r\n.navbar .nav-action {\r\n  cursor: pointer;\r\n  color: #E1B9A0;\r\n}\r\n\r\n.navbar .nav-action svg {\r\n  height: 1em;\r\n  vertical-align: middle;\r\n}\r\n\r\n.navbar .nav-right .nav-item .flyout {\r\n  position: absolute;\r\n  top: 55px;\r\n  right: 0px;\r\n  visibility: hidden;\r\n  opacity: 0;\r\n  transition: opacity .25s,visibility .25s,transform .25s;\r\n  width: auto;\r\n  box-shadow: 0 12px 32px rgba(0, 0, 0, .1), 0 2px 6px rgba(0, 0, 0, .08);\r\n  background-color: #393944;\r\n  padding-left: 0.5em;\r\n  padding-right: 0.5em;\r\n  z-index: 1000;\r\n  min-width: 192px;\r\n  font-size: 0.9em;\r\n}\r\n\r\n.navbar .nav-right .nav-item:hover .flyout a {\r\n  color: #E1B9A0;\r\n  margin-top: 0.25em;\r\n  margin-bottom: 0.25em;\r\n}\r\n\r\n.navbar .nav-right .nav-item:hover .flyout a:hover {\r\n  color: #E1B9A0;\r\n}\r\n\r\n.navbar .nav-right .nav-item:hover .flyout .nav-action {\r\n  color: #E1B9A0;\r\n  margin-top: 0.25em;\r\n  margin-bottom: 0.25em;\r\n}\r\n\r\n.navbar .nav-right .nav-item:hover .flyout .nav-action:hover {\r\n  color: #E1B9A0;\r\n}\r\n\r\n.navbar .nav-right .nav-item:hover .flyout {\r\n  visibility: visible;\r\n  opacity: 1;\r\n}\r\n\r\n#bar-1 {\r\n\ttransform: translateY(-4px);\r\n}\r\n#bar-3 {\r\n\ttransform: translateY(4px);\r\n}\r\n.menu {\r\n  display: none;\r\n}\r\n.menu {\r\n\twidth: 35px;\r\n\theight: 30px;\r\n\tmargin: 18px 2px 0px 0px;\r\n\tcursor: pointer;\r\n  float: right;\r\n}\r\n.bar {\r\n\theight: 5px;\r\n\twidth: 100%;\r\n\tbackground-color: #fff;\r\n\tdisplay: block;\r\n\tborder-radius: 5px;\r\n\ttransition: 0.4s ease;\r\n}\r\n.change-icon #bar-1 {\r\n  transform: translateY(4px) rotateZ(-405deg);\r\n}\r\n.change-icon #bar-2 {\r\n  opacity: 0;\r\n}\r\n.change-icon #bar-3 {\r\n  transform: translateY(-6px) rotateZ(405deg);\r\n}\r\n\r\n@media (max-width: 767px) {\r\n  .menu {\r\n    display: block;\r\n  }\r\n\r\n  .change-icon ~ div.nav-right {\r\n    left: 0;\r\n  }\r\n\r\n  .navbar .nav-right {\r\n\t\tposition: fixed;\r\n\t\ttop: 55px;\r\n\t\tleft: -130%;\r\n\t\tbackground: #111;\r\n\t\theight: 100vh;\r\n\t\twidth: 100%;\r\n\t\ttext-align: center;\r\n\t\tdisplay: block;\r\n\t\ttransition: all 0.3s ease;\r\n    z-index: 10000;\r\n\t}\r\n}";
 
 /***/ }),
@@ -836,6 +1062,7 @@ module.exports = ".navbar {\r\n  width: 100%;\r\n  background-color: #eee;\r\n}\
   \******************************************/
 /***/ ((module) => {
 
+"use strict";
 module.exports = "<div class=\"navbar\">\r\n  <div class=\"nav-left\">\r\n    <router-link to=\"/\">\r\n      <img src=\"images/mongoose.svg\" alt=\"Mongoose Logo\" />\r\n    </router-link>\r\n  </div>\r\n  <div class=\"nav-right\">\r\n  </div>\r\n  <div style=\"clear: both\"></div>\r\n</div>";
 
 /***/ }),
@@ -846,6 +1073,7 @@ module.exports = "<div class=\"navbar\">\r\n  <div class=\"nav-left\">\r\n    <r
   \****************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 // Axios v1.2.2 Copyright (c) 2022 Matt Zabriskie and contributors
 
 
@@ -4025,7 +4253,7 @@ module.exports = axios;
 /******/ 		};
 /******/ 	
 /******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
 /******/ 	
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
@@ -4046,8 +4274,9 @@ module.exports = axios;
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
 (() => {
+"use strict";
 /*!********************************!*\
   !*** ../frontend/src/index.js ***!
   \********************************/

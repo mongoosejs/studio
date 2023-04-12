@@ -27,5 +27,5 @@ module.exports = ({ db }) => async function DeleteDocument(params) {
     orFail();
     console.log('what is doc', doc);
   
-  return { doc, schemaPaths: Model.schema.paths };
+  return { doc };
 };
