@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
+const EJSON = require('ejson');
 
 const GetDocumentsParams = new Archetype({
   model: {
@@ -26,6 +27,10 @@ const GetDocumentsParams = new Archetype({
 module.exports = ({ db }) => async function getDocuments(params) {
   params = new GetDocumentsParams(params);
   let { filter } = params;
+  console.log('what is filter', filter);
+  if (filter != null) {
+    filter = EJSON.parse(filter);
+  }
   const { model, limit, skip } = params;
 
   const Model = db.models[model];
@@ -44,8 +49,10 @@ module.exports = ({ db }) => async function getDocuments(params) {
     skip(skip).
     sort({ _id: -1 });
 
+
   const schemaPaths = Model.schema.paths;
   removeSpecifiedPaths(schemaPaths, '.$*');
+  const numDocuments = await Model.countDocuments(filter == null ? {} : filter);
   
-  return { docs, schemaPaths };
+  return { docs, schemaPaths, numDocs: numDocuments };
 };

@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./models.html');
+const EJSON = require('ejson');
 
 const appendCSS = require('../appendCSS');
 
@@ -15,6 +16,7 @@ module.exports = app => app.component('models', {
     currentModel: null,
     documents: [],
     schemaPaths: [],
+    numDocuments: 0,
     status: 'init',
     edittingDoc: null,
     docEdits: null,
@@ -33,7 +35,7 @@ module.exports = app => app.component('models', {
     }
 
     if (this.currentModel != null) {
-      const { docs, schemaPaths } = await api.Model.getDocuments({ model: this.currentModel });
+      const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({ model: this.currentModel });
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
         if (k1 === '_id' && k2 !== '_id') {
@@ -44,6 +46,7 @@ module.exports = app => app.component('models', {
         }
         return 0;
       }).map(key => schemaPaths[key]);
+      this.numDocuments = numDocs;
 
       this.shouldExport = {};
       for (const { path } of this.schemaPaths) {
@@ -57,6 +60,7 @@ module.exports = app => app.component('models', {
     async search() {
       if (this.searchText) {
         this.filter = eval(`(${this.searchText})`);
+        this.filter = EJSON.stringify(this.filter);
       } else {
         this.filter = {};
       }
@@ -64,7 +68,7 @@ module.exports = app => app.component('models', {
       await this.getDocuments();
     },
     async getDocuments() {
-      const { docs, schemaPaths } = await api.Model.getDocuments({
+      const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
         filter: this.filter
       });
@@ -78,6 +82,7 @@ module.exports = app => app.component('models', {
         }
         return 0;
       }).map(key => schemaPaths[key]);
+      this.numDocuments = numDocs;
 
       this.shouldExport = {};
       for (const { path } of this.schemaPaths) {
