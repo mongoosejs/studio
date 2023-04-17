@@ -44,7 +44,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
     skip(skip).
     sort({ _id: -1 });
 
-  const schemaPaths = Model.schema.paths
+  const schemaPaths = Model.schema.paths;
   removeSpecifiedPaths(schemaPaths, '.$*');
   
   return { docs, schemaPaths };

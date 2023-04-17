@@ -26,7 +26,7 @@ module.exports = ({ db }) => async function getDocument(params) {
     findById(documentId).
     setOptions({ sanitizeFilter: true }).
     orFail();
-  const schemaPaths = Model.schema.paths
+  const schemaPaths = Model.schema.paths;
   removeSpecifiedPaths(schemaPaths, '.$*');
   
   return { doc, schemaPaths };
