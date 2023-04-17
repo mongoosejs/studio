@@ -13,7 +13,9 @@
         <div class="search-input">
           <form @submit.prevent="search">
             <input class="search-text" type="text" placeholder="Filter or text" v-model="searchText" />
+            <div>Number of Documents: {{numDocuments}}</div>
           </form>
+
         </div>
         <div class="buttons">
           <button @click="shouldShowExportModal = true">Export</button>

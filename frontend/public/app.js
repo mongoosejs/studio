@@ -521,6 +521,7 @@ module.exports = app => app.component('models', {
     currentModel: null,
     documents: [],
     schemaPaths: [],
+    numDocuments: 0,
     status: 'init',
     edittingDoc: null,
     docEdits: null,
@@ -539,7 +540,7 @@ module.exports = app => app.component('models', {
     }
 
     if (this.currentModel != null) {
-      const { docs, schemaPaths } = await api.Model.getDocuments({ model: this.currentModel });
+      const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({ model: this.currentModel });
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
         if (k1 === '_id' && k2 !== '_id') {
@@ -550,6 +551,7 @@ module.exports = app => app.component('models', {
         }
         return 0;
       }).map(key => schemaPaths[key]);
+      this.numDocuments = numDocs;
 
       this.shouldExport = {};
       for (const { path } of this.schemaPaths) {
@@ -570,7 +572,7 @@ module.exports = app => app.component('models', {
       await this.getDocuments();
     },
     async getDocuments() {
-      const { docs, schemaPaths } = await api.Model.getDocuments({
+      const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
         filter: this.filter
       });
@@ -584,6 +586,7 @@ module.exports = app => app.component('models', {
         }
         return 0;
       }).map(key => schemaPaths[key]);
+      this.numDocuments = numDocs;
 
       this.shouldExport = {};
       for (const { path } of this.schemaPaths) {
@@ -1030,7 +1033,7 @@ module.exports = "<transition name=\"modal\">\r\n  <div class=\"modal-mask\">\r\
 /***/ ((module) => {
 
 "use strict";
-module.exports = ".models {\r\n  position: relative;\r\n  display: flex;\r\n  flex-direction: row;\r\n  min-height: calc(100% - 56px);\r\n}\r\n\r\n.models .model-selector {\r\n  background-color: #eee;\r\n  flex-grow: 0; \r\n  padding: 15px;\r\n  padding-top: 0px;\r\n}\r\n\r\n.models h1 {\r\n  margin-top: 0px;\r\n}\r\n\r\n.models .documents {\r\n  flex-grow: 1;\r\n  overflow: scroll;\r\n  max-height: calc(100vh - 56px);\r\n}\r\n\r\n.models .documents .documents-container {\r\n  margin-top: 40px;\r\n}\r\n\r\n.models .documents table {\r\n  /* max-width: -moz-fit-content;\r\n  max-width: fit-content; */\r\n  width: 100%;\r\n  table-layout: auto;\r\n  font-size: small;\r\n  padding: 0;\r\n  margin-right: 1em;\r\n  white-space: nowrap;\r\n  z-index: -1;\r\n  border-collapse: collapse;\r\n  line-height: 1.5em;\r\n}\r\n\r\n.models .documents table th {\r\n  position: sticky;\r\n  top: 0px;\r\n  background-color: white;\r\n}\r\n\r\n.models .documents table th:after {\r\n  content: '';\r\n  position: absolute;\r\n  left: 0;\r\n  width: 100%;\r\n  bottom: -1px;\r\n  border-bottom: thin solid rgba(0,0,0,.12);\r\n}\r\n\r\n.models .documents table tr {\r\n  color: black;\r\n  border-spacing: 0px 0px;\r\n  background-color: white;\r\n  cursor: pointer;\r\n}\r\n\r\n.models .documents table tr:nth-child(even) {\r\n  background-color: #f5f5f5;\r\n}\r\n\r\n.models .documents table tr:hover {\r\n  background-color: #55A3D4;\r\n}\r\n\r\n.models .documents table th, td {\r\n  border-bottom: thin solid rgba(0,0,0,.12);\r\n  text-align: left;\r\n  padding: 0 16px;\r\n  height: 48px;\r\n}\r\n\r\n.models textarea {\r\n  width: 100%;\r\n  height: 600px;\r\n  font-size: 1.2em;\r\n}\r\n\r\n.models .path-type {\r\n  color: rgba(0,0,0,.36);\r\n  font-size: 0.8em;\r\n}\r\n\r\n.models .documents-menu {\r\n  display: flex;\r\n  margin: 0.25em;\r\n  position: fixed;\r\n  width: calc(100vw - 220px);\r\n}\r\n\r\n.models .documents-menu .search-input {\r\n  flex-grow: 1;\r\n}\r\n\r\n.models .search-input input {\r\n  padding: 0.25em 0.5em;\r\n  font-size: 1.1em;\r\n  border: 1px solid #ddd;\r\n  border-radius: 3px;\r\n  width: calc(100% - 1em);\r\n}";
+module.exports = ".models {\r\n  position: relative;\r\n  display: flex;\r\n  flex-direction: row;\r\n  min-height: calc(100% - 56px);\r\n}\r\n\r\n.models .model-selector {\r\n  background-color: #eee;\r\n  flex-grow: 0; \r\n  padding: 15px;\r\n  padding-top: 0px;\r\n}\r\n\r\n.models h1 {\r\n  margin-top: 0px;\r\n}\r\n\r\n.models .documents {\r\n  flex-grow: 1;\r\n  overflow: scroll;\r\n  max-height: calc(100vh - 56px);\r\n}\r\n\r\n.models .documents .documents-container {\r\n  margin-top: 60px;\r\n}\r\n\r\n.models .documents table {\r\n  /* max-width: -moz-fit-content;\r\n  max-width: fit-content; */\r\n  width: 100%;\r\n  table-layout: auto;\r\n  font-size: small;\r\n  padding: 0;\r\n  margin-right: 1em;\r\n  white-space: nowrap;\r\n  z-index: -1;\r\n  border-collapse: collapse;\r\n  line-height: 1.5em;\r\n}\r\n\r\n.models .documents table th {\r\n  position: sticky;\r\n  top: 0px;\r\n  background-color: white;\r\n}\r\n\r\n.models .documents table th:after {\r\n  content: '';\r\n  position: absolute;\r\n  left: 0;\r\n  width: 100%;\r\n  bottom: -1px;\r\n  border-bottom: thin solid rgba(0,0,0,.12);\r\n}\r\n\r\n.models .documents table tr {\r\n  color: black;\r\n  border-spacing: 0px 0px;\r\n  background-color: white;\r\n  cursor: pointer;\r\n}\r\n\r\n.models .documents table tr:nth-child(even) {\r\n  background-color: #f5f5f5;\r\n}\r\n\r\n.models .documents table tr:hover {\r\n  background-color: #55A3D4;\r\n}\r\n\r\n.models .documents table th, td {\r\n  border-bottom: thin solid rgba(0,0,0,.12);\r\n  text-align: left;\r\n  padding: 0 16px;\r\n  height: 48px;\r\n}\r\n\r\n.models textarea {\r\n  width: 100%;\r\n  height: 600px;\r\n  font-size: 1.2em;\r\n}\r\n\r\n.models .path-type {\r\n  color: rgba(0,0,0,.36);\r\n  font-size: 0.8em;\r\n}\r\n\r\n.models .documents-menu {\r\n  display: flex;\r\n  margin: 0.25em;\r\n  position: fixed;\r\n  width: calc(100vw - 220px);\r\n}\r\n\r\n.models .documents-menu .search-input {\r\n  flex-grow: 1;\r\n}\r\n\r\n.models .search-input input {\r\n  padding: 0.25em 0.5em;\r\n  font-size: 1.1em;\r\n  border: 1px solid #ddd;\r\n  border-radius: 3px;\r\n  width: calc(100% - 1em);\r\n}";
 
 /***/ }),
 
@@ -1041,7 +1044,7 @@ module.exports = ".models {\r\n  position: relative;\r\n  display: flex;\r\n  fl
 /***/ ((module) => {
 
 "use strict";
-module.exports = "<div class=\"models\">\r\n  <div class=\"model-selector\">\r\n    <h1>Models</h1>\r\n    <div v-for=\"model in models\">\r\n      <router-link :to=\"'/model/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\r\n        {{model}}\r\n      </router-link>\r\n    </div>\r\n  </div>\r\n  <div class=\"documents\">\r\n    <div>\r\n      <div class=\"documents-menu\">\r\n        <div class=\"search-input\">\r\n          <form @submit.prevent=\"search\">\r\n            <input class=\"search-text\" type=\"text\" placeholder=\"Filter or text\" v-model=\"searchText\" />\r\n          </form>\r\n        </div>\r\n        <div class=\"buttons\">\r\n          <button @click=\"shouldShowExportModal = true\">Export</button>\r\n        </div>\r\n      </div>\r\n    </div>\r\n    <div class=\"documents-container\">\r\n      <table>\r\n        <thead>\r\n          <th v-for=\"path in schemaPaths\">\r\n            {{path.path}}\r\n            <span class=\"path-type\">\r\n              ({{path.instance.toLowerCase()}})\r\n            </span>\r\n          </th>\r\n        </thead>\r\n        <tbody>\r\n          <tr v-for=\"document in documents\" @click=\"$router.push('/model/' + currentModel + '/document/' + document._id)\" :key=\"document._id\">\r\n            <td v-for=\"schemaPath in schemaPaths\">\r\n              <component :is=\"getComponentForPath(schemaPath)\" :value=\"document[schemaPath.path]\"></component>\r\n            </td>\r\n          </tr>\r\n        </tbody>\r\n      </table>\r\n    </div>\r\n    <modal v-if=\"shouldShowExportModal\">\r\n      <template v-slot:body>\r\n        <div class=\"modal-exit\" @click=\"shouldShowExportModal = false\">&times;</div>\r\n        <export-query-results\r\n          :schemaPaths=\"schemaPaths\"\r\n          :filter=\"filter\"\r\n          :currentModel=\"currentModel\"\r\n          @done=\"shouldShowExportModal = false\">\r\n        </export-query-results>\r\n      </template>\r\n    </modal>\r\n  </div>\r\n</div>";
+module.exports = "<div class=\"models\">\r\n  <div class=\"model-selector\">\r\n    <h1>Models</h1>\r\n    <div v-for=\"model in models\">\r\n      <router-link :to=\"'/model/' + model\" :class=\"model === currentModel ? 'bold' : ''\">\r\n        {{model}}\r\n      </router-link>\r\n    </div>\r\n  </div>\r\n  <div class=\"documents\">\r\n    <div>\r\n      <div class=\"documents-menu\">\r\n        <div class=\"search-input\">\r\n          <form @submit.prevent=\"search\">\r\n            <input class=\"search-text\" type=\"text\" placeholder=\"Filter or text\" v-model=\"searchText\" />\r\n            <div>Number of Documents: {{numDocuments}}</div>\r\n          </form>\r\n\r\n        </div>\r\n        <div class=\"buttons\">\r\n          <button @click=\"shouldShowExportModal = true\">Export</button>\r\n        </div>\r\n      </div>\r\n    </div>\r\n    <div class=\"documents-container\">\r\n      <table>\r\n        <thead>\r\n          <th v-for=\"path in schemaPaths\">\r\n            {{path.path}}\r\n            <span class=\"path-type\">\r\n              ({{path.instance.toLowerCase()}})\r\n            </span>\r\n          </th>\r\n        </thead>\r\n        <tbody>\r\n          <tr v-for=\"document in documents\" @click=\"$router.push('/model/' + currentModel + '/document/' + document._id)\" :key=\"document._id\">\r\n            <td v-for=\"schemaPath in schemaPaths\">\r\n              <component :is=\"getComponentForPath(schemaPath)\" :value=\"document[schemaPath.path]\"></component>\r\n            </td>\r\n          </tr>\r\n        </tbody>\r\n      </table>\r\n    </div>\r\n    <modal v-if=\"shouldShowExportModal\">\r\n      <template v-slot:body>\r\n        <div class=\"modal-exit\" @click=\"shouldShowExportModal = false\">&times;</div>\r\n        <export-query-results\r\n          :schemaPaths=\"schemaPaths\"\r\n          :filter=\"filter\"\r\n          :currentModel=\"currentModel\"\r\n          @done=\"shouldShowExportModal = false\">\r\n        </export-query-results>\r\n      </template>\r\n    </modal>\r\n  </div>\r\n</div>";
 
 /***/ }),
 

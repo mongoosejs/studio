@@ -42,6 +42,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
     limit(limit).
     skip(skip).
     sort({ _id: -1 });
+    const numDocuments = await Model.countDocuments(filter == null ? {} : filter);
   
-  return { docs, schemaPaths: Model.schema.paths };
+  return { docs, schemaPaths: Model.schema.paths, numDocs: numDocuments };
 };
