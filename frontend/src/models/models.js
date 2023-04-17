@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./models.html');
+const EJSON = require('ejson');
 
 const appendCSS = require('../appendCSS');
 
@@ -59,6 +60,7 @@ module.exports = app => app.component('models', {
     async search() {
       if (this.searchText) {
         this.filter = eval(`(${this.searchText})`);
+        this.filter = EJSON.stringify(this.filter);
       } else {
         this.filter = {};
       }
