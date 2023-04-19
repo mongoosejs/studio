@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./document.html');
+const vanillatoast = require('vanillatoasts');
 
 const appendCSS = require('../appendCSS');
 
@@ -39,7 +40,13 @@ module.exports = app => app.component('document', {
       }
       return 'detail-default';
     },
-    getEditComponentForPath() {
+    getEditComponentForPath(path) {
+      if (path.instance == 'Date') {
+        return 'edit-date';
+      }
+      if (path.instance == 'Number') {
+        return 'edit-number';
+      }
       return 'edit-default';
     },
     getEditValueForPath({ path }) {
@@ -58,6 +65,23 @@ module.exports = app => app.component('document', {
       this.document = doc;
       this.changes = {};
       this.editting = false;
+    },
+    async remove() {
+      const { doc } = await api.Model.deleteDocument({
+        model: this.model,
+        documentId: this.document._id
+      });
+      if (doc.acknowledged) {
+        this.editting = false;
+        this.document = {};
+        vanillatoast.create({
+          title: 'Document Deleted!',
+          type: 'success',
+          timeout: 3000,
+          positionClass: 'bottomRight'
+        });
+        this.$router.push({ path: `/model/${this.model}`});
+      }
     }
   }
 });

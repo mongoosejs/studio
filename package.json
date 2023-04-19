@@ -4,7 +4,9 @@
   "dependencies": {
     "archetype": "0.13.0",
     "csv-stringify": "6.3.0",
-    "extrovert": "0.0.20"
+    "ejson": "^2.2.3",
+    "extrovert": "0.0.20",
+    "vanillatoasts": "^1.6.0"
   },
   "peerDependencies": {
     "express": "4.x",
@@ -15,7 +17,7 @@
     "express": "4.x",
     "mocha": "10.2.0",
     "mongoose": "6.x",
-    "webpack": "5.75.0",
-    "vue": "3.x"
+    "vue": "3.x",
+    "webpack": "5.75.0"
   }
 }

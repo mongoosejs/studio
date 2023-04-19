@@ -8,6 +8,9 @@ const client = axios.create({
 
 if (config__isLambda) {
   exports.Model = {
+    deleteDocument(params) {
+      return client.post('', { action: 'Model.deleteDocument', ...params}).then(res => res.data);
+    },
     exportQueryResults(params) {
       return client.post('', { action: 'Model.exportQueryResults', ...params }).then(res => res.data);
     },
@@ -26,6 +29,9 @@ if (config__isLambda) {
   };
 } else {
   exports.Model = {
+    deleteDocument: function (params) {
+      return client.post('/Model/deleteDocument', params).then(res => res.data);
+    },
     exportQueryResults(params) {
       const anchor = document.createElement('a');
       anchor.href = config__baseURL + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString();

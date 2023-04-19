@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const EJSON = require('ejson');
 
 const GetDocumentsParams = new Archetype({
   model: {
@@ -25,6 +26,10 @@ const GetDocumentsParams = new Archetype({
 module.exports = ({ db }) => async function getDocuments(params) {
   params = new GetDocumentsParams(params);
   let { filter } = params;
+  console.log('what is filter', filter);
+  if (filter != null) {
+    filter = EJSON.parse(filter);
+  }
   const { model, limit, skip } = params;
 
   const Model = db.models[model];
@@ -42,6 +47,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
     limit(limit).
     skip(skip).
     sort({ _id: -1 });
+    const numDocuments = await Model.countDocuments(filter == null ? {} : filter);
   
-  return { docs, schemaPaths: Model.schema.paths };
+  return { docs, schemaPaths: Model.schema.paths, numDocs: numDocuments };
 };
