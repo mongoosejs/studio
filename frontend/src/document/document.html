@@ -23,7 +23,7 @@
       <div class="path-key">
         {{path.path}}
         <span class="path-type">
-          ({{path.instance.toLowerCase()}})
+          ({{(path.instance || 'unknown').toLowerCase()}})
         </span>
       </div>
       <div v-if="editting && path.path !== '_id'">

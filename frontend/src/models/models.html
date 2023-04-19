@@ -26,7 +26,7 @@
           <th v-for="path in schemaPaths">
             {{path.path}}
             <span class="path-type">
-              ({{path.instance.toLowerCase()}})
+              ({{(path.instance || 'unknown').toLowerCase()}})
             </span>
           </th>
         </thead>
