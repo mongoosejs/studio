@@ -93,6 +93,9 @@ module.exports = app => app.component('models', {
       if (schemaPath.instance === 'Array') {
         return 'list-array';
       }
+      if (schemaPath.instance === 'String') {
+        return 'list-string';
+      }
       return 'list-default';
     },
     async saveDocEdits() {
