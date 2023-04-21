@@ -2,6 +2,7 @@
 
 const template = require('./list-default.html');
 const appendCSS = require('../appendCSS');
+const vanillatoast = require('vanillatoasts');
 
 appendCSS(require('./list-default.css'));
 
@@ -10,16 +11,21 @@ module.exports = app => app.component('list-default', {
   props: ['value'],
   methods: {
     copyText(value) {
-      console.log('I have been clicked!')
       const storage = document.createElement('textarea');
       storage.value = value;
-      const elem = document.querySelector('#value-field');
+      const elem = this.$refs.itemData
       elem.appendChild(storage);
       storage.select();
       storage.setSelectionRange(0, 99999);
       document.execCommand('copy');
       elem.removeChild(storage);
-
+      vanillatoast.create({
+        title: 'Text copied!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/greencheck.jpeg',
+        positionClass: 'bottomRight'
+      });
     }
   },
   computed: {
