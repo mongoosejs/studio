@@ -23,7 +23,7 @@ module.exports = app => app.component('list-default', {
         title: 'Text copied!',
         type: 'success',
         timeout: 3000,
-        icon: 'images/greencheck.jpeg',
+        icon: 'images/success.png',
         positionClass: 'bottomRight'
       });
     }
