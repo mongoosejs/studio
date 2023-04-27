@@ -28,7 +28,7 @@
           <th v-for="path in schemaPaths">
             {{path.path}}
             <span class="path-type">
-              ({{(path.instance || 'unknown').toLowerCase()}})
+              ({{(path.instance ? path.instance : isSubdoc(path) ? 'subdocument' : 'unknown').toLowerCase()}})
             </span>
           </th>
         </thead>

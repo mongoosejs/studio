@@ -36,6 +36,7 @@ module.exports = app => app.component('models', {
 
     if (this.currentModel != null) {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({ model: this.currentModel });
+      console.log('what are schemaPaths', schemaPaths);
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
         if (k1 === '_id' && k2 !== '_id') {
@@ -67,6 +68,16 @@ module.exports = app => app.component('models', {
       
       await this.getDocuments();
     },
+    isSubdoc(schemaPath) {
+      console.log('what is schemaPath in isSubdoc', schemaPath);
+      if (typeof schemaPath.options?.type?.tree === 'undefined') {
+        return false;
+      }
+      if(Object.keys(schemaPath.options.type.tree).length) {
+        return true;
+      }
+      return false;
+    },
     async getDocuments() {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
@@ -95,6 +106,9 @@ module.exports = app => app.component('models', {
       }
       if (schemaPath.instance === 'String') {
         return 'list-string';
+      }
+      if (this.isSubdoc(schemaPath)) {
+        return 'list-subdocument';
       }
       return 'list-default';
     },
