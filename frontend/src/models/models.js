@@ -74,13 +74,13 @@ module.exports = app => app.component('models', {
       }
     },
     getComponentForPath(schemaPath) {
-      if (schemaPath.instance === 'Array') {
+      if (schemaPath.instance.instance === 'Array') {
         return 'list-array';
       }
-      if (schemaPath.instance === 'String') {
+      if (schemaPath.instance.instance === 'String') {
         return 'list-string';
       }
-      if (schemaPath.instance == 'Embedded') {
+      if (schemaPath.instance.instance == undefined) {
         return 'list-subdocument';
       }
       return 'list-default';
