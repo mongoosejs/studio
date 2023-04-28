@@ -52,7 +52,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
 
   let schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
-    schemaPaths[path] = { instance: Model.schema.paths[path]}
+    schemaPaths[path] = { instance: Model.schema.paths[path].instance, value: Model.schema.paths[path]}
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
   const numDocuments = await Model.countDocuments(filter == null ? {} : filter);

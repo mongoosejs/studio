@@ -56,6 +56,7 @@ module.exports = app => app.component('models', {
         model: this.currentModel,
         filter: this.filter
       });
+      console.log('what is schemaPaths', schemaPaths);
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
         if (k1 === '_id' && k2 !== '_id') {
@@ -74,13 +75,13 @@ module.exports = app => app.component('models', {
       }
     },
     getComponentForPath(schemaPath) {
-      if (schemaPath.instance.instance === 'Array') {
+      if (schemaPath.instance === 'Array') {
         return 'list-array';
       }
-      if (schemaPath.instance.instance === 'String') {
+      if (schemaPath.instance === 'String') {
         return 'list-string';
       }
-      if (schemaPath.instance.instance == undefined) {
+      if (schemaPath.instance == 'Embedded') {
         return 'list-subdocument';
       }
       return 'list-default';
