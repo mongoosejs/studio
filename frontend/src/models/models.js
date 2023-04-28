@@ -80,6 +80,9 @@ module.exports = app => app.component('models', {
       if (schemaPath.instance === 'String') {
         return 'list-string';
       }
+      if (schemaPath.instance == 'Embedded') {
+        return 'list-subdocument';
+      }
       return 'list-default';
     },
     async saveDocEdits() {
