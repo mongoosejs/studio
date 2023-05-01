@@ -35,23 +35,7 @@ module.exports = app => app.component('models', {
     }
 
     if (this.currentModel != null) {
-      const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({ model: this.currentModel });
-      this.documents = docs;
-      this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
-        if (k1 === '_id' && k2 !== '_id') {
-          return -1;
-        }
-        if (k1 !== '_id' && k2 === '_id') {
-          return 1;
-        }
-        return 0;
-      }).map(key => schemaPaths[key]);
-      this.numDocuments = numDocs;
-
-      this.shouldExport = {};
-      for (const { path } of this.schemaPaths) {
-        this.shouldExport[path] = true;
-      }
+      await this.getDocuments();
     }
 
     this.status = 'loaded';
@@ -72,6 +56,7 @@ module.exports = app => app.component('models', {
         model: this.currentModel,
         filter: this.filter
       });
+      console.log('what is schemaPaths', schemaPaths);
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
         if (k1 === '_id' && k2 !== '_id') {
@@ -95,6 +80,9 @@ module.exports = app => app.component('models', {
       }
       if (schemaPath.instance === 'String') {
         return 'list-string';
+      }
+      if (schemaPath.instance == 'Embedded') {
+        return 'list-subdocument';
       }
       return 'list-default';
     },

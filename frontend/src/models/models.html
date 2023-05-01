@@ -26,16 +26,16 @@
       <table>
         <thead>
           <th v-for="path in schemaPaths">
-            {{path.path}}
+            {{path.value.path}}
             <span class="path-type">
-              ({{(path.instance || 'unknown').toLowerCase()}})
+              ({{(path.instance || 'unknown')}})
             </span>
           </th>
         </thead>
         <tbody>
           <tr v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
             <td v-for="schemaPath in schemaPaths">
-              <component :is="getComponentForPath(schemaPath)" :value="document[schemaPath.path]"></component>
+              <component :is="getComponentForPath(schemaPath)" :value="document[schemaPath.value.path]"></component>
             </td>
           </tr>
         </tbody>
