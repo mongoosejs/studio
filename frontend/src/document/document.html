@@ -8,16 +8,16 @@
 
     <div class="right">
       <button v-if="!editting" @click="editting = true">
-        &#x270E; Edit
+        <img src="images/edit.svg" /> Edit
       </button>
       <button v-if="editting" class="grey" @click="editting = false">
         &times; Cancel
       </button>
       <button v-if="editting" class="green" @click="save">
-        &check; Save
+        <img src="images/save.svg" /> Save
       </button>
-      <button v-if="editting" class="red" @click="remove">
-        &#x1F5D1; Delete
+      <button class="red" @click="remove">
+        <img src="images/delete.svg" /> Delete
       </button>
     </div>
   </div>
