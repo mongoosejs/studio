@@ -37,3 +37,7 @@
 .document .document-menu .right button:not(:last-child) {
   margin-right: 0.5em;
 }
+
+.document button img {
+  height: 1em;
+}
