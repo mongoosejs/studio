@@ -8,7 +8,7 @@ appendCSS(require('./list-default.css'));
 
 module.exports = app => app.component('list-default', {
   template: template,
-  props: ['value'],
+  props: ['value', 'allude'],
   methods: {
     copyText(value) {
       const storage = document.createElement('textarea');
@@ -26,6 +26,9 @@ module.exports = app => app.component('list-default', {
         icon: 'images/success.png',
         positionClass: 'bottomRight'
       });
+    },
+    goToDoc(id) {
+      this.$router.push({ path: `/model/${this.allude}/document/${id}`});
     }
   },
   computed: {
@@ -37,6 +40,9 @@ module.exports = app => app.component('list-default', {
         return 'undefined';
       }
       return this.value;
+    },
+    hasReference() {
+      return this.allude;
     }
   }
 });
