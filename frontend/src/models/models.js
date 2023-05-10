@@ -86,9 +86,6 @@ module.exports = app => app.component('models', {
       return 'list-default';
     },
     getReferenceModel(schemaPath) {
-      if (schemaPath.instance !== 'ObjectId' || schemaPath.value.path == '_id') {
-        return null;
-      }
       return schemaPath.value?.options?.ref;
     },
     async saveDocEdits() {
