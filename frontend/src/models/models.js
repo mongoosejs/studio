@@ -42,13 +42,12 @@ module.exports = app => app.component('models', {
   },
   methods: {
     async search() {
-      if (this.searchText) {
+      if (this.searchText && Object.keys(this.searchText).length) {
         this.filter = eval(`(${this.searchText})`);
         this.filter = EJSON.stringify(this.filter);
       } else {
         this.filter = {};
       }
-      
       await this.getDocuments();
     },
     async getDocuments() {
