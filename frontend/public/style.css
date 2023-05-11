@@ -49,7 +49,7 @@ button.red {
   background-color: black;
   color: #fff;
   text-align: center;
-  padding: 5px 0;
+  padding: 5px 0px;
   border-radius: 6px;
   top: 100%;
   left: 50%;
@@ -61,6 +61,7 @@ button.red {
 }
 
 /* Show the tooltip text when you mouse over the tooltip container */
+
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }

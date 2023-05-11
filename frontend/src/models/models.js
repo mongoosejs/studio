@@ -56,7 +56,6 @@ module.exports = app => app.component('models', {
         model: this.currentModel,
         filter: this.filter
       });
-      console.log('what is schemaPaths', schemaPaths);
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
         if (k1 === '_id' && k2 !== '_id') {
@@ -85,6 +84,9 @@ module.exports = app => app.component('models', {
         return 'list-subdocument';
       }
       return 'list-default';
+    },
+    getReferenceModel(schemaPath) {
+      return schemaPath.value?.options?.ref;
     },
     async saveDocEdits() {
       const res = await api.Model.updateDocument({
