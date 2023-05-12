@@ -1,7 +1,7 @@
 <div ref="itemData" class="tooltip">
   {{displayValue}}
-  <div class="tooltiptext" style="display:flex; width: 100%; justify-content: space-around;">
-    <div v-if="allude" @click.stop="goToDoc(value)">View Document</div>
-    <div @click.stop="copyText(value)">copy &#x1F4CB;</div>
+  <div class="tooltiptext" style="display:flex; width: 100%; justify-content: space-around; align-items: center; min-width: 180px;">
+    <div class="tooltiptextchild" v-if="allude" @click.stop="goToDoc(value)">View Document</div>
+    <div class="tooltiptextchild" @click.stop="copyText(value)">copy &#x1F4CB;</div>
   </div>
 </div>

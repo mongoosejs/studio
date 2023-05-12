@@ -65,3 +65,7 @@ button.red {
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
+
+.tooltiptextchild {
+  margin: 5px;
+}
