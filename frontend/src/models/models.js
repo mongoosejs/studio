@@ -45,12 +45,19 @@ module.exports = app => app.component('models', {
       if (this.searchText && Object.keys(this.searchText).length) {
         this.filter = eval(`(${this.searchText})`);
         this.filter = EJSON.stringify(this.filter);
+        this.$router.push({ path: this.$route.path, query: { search: this.searchText }})
       } else {
         this.filter = {};
+        this.$router.push({ path: this.$route.path });
       }
       await this.getDocuments();
     },
     async getDocuments() {
+      if (this.$route.query?.search) {
+        this.searchText = this.$route.query.search;
+        this.filter = eval(`(${this.$route.query.search})`);
+        this.filter = EJSON.stringify(this.filter);
+      }
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
         filter: this.filter
