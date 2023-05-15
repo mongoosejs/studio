@@ -33,6 +33,11 @@ module.exports = app => app.component('models', {
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
     }
+    if (this.$route.query?.search) {
+      this.searchText = this.$route.query.search;
+      this.filter = eval(`(${this.$route.query.search})`);
+      this.filter = EJSON.stringify(this.filter);
+    }
 
     if (this.currentModel != null) {
       await this.getDocuments();
@@ -53,11 +58,6 @@ module.exports = app => app.component('models', {
       await this.getDocuments();
     },
     async getDocuments() {
-      if (this.$route.query?.search) {
-        this.searchText = this.$route.query.search;
-        this.filter = eval(`(${this.$route.query.search})`);
-        this.filter = EJSON.stringify(this.filter);
-      }
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
         filter: this.filter
