@@ -28,7 +28,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
   params = new GetDocumentsParams(params);
   let { filter } = params;
   console.log('what is filter', filter);
-  if (filter != null) {
+  if (filter != null && Object.keys(filter).length > 0) {
     filter = EJSON.parse(filter);
   }
   const { model, limit, skip } = params;
