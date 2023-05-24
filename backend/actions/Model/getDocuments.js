@@ -60,7 +60,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
 
   const numDocuments = filter == null ?
     await Model.estimatedDocumentCount() :
-    await model.countDocuments(filter);
+    await Model.countDocuments(filter);
   
   return { docs, schemaPaths, numDocs: numDocuments };
 };
