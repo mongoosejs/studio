@@ -10,13 +10,13 @@
   },
   "peerDependencies": {
     "express": "4.x",
-    "mongoose": "6.x || 7.x || 7.0.0-rc0"
+    "mongoose": "7.x"
   },
   "devDependencies": {
     "axios": "1.2.2",
     "express": "4.x",
     "mocha": "10.2.0",
-    "mongoose": "6.x",
+    "mongoose": "7.x",
     "vue": "3.x",
     "webpack": "5.75.0"
   }
