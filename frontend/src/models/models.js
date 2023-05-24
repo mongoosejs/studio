@@ -92,7 +92,7 @@ module.exports = app => app.component('models', {
       return 'list-default';
     },
     getReferenceModel(schemaPath) {
-      return schemaPath.value?.options?.ref;
+      return schemaPath.options?.ref;
     },
     async saveDocEdits() {
       const res = await api.Model.updateDocument({

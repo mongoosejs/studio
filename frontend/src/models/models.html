@@ -26,7 +26,7 @@
       <table>
         <thead>
           <th v-for="path in schemaPaths">
-            {{path.value.path}}
+            {{path.path}}
             <span class="path-type">
               ({{(path.instance || 'unknown')}})
             </span>
@@ -35,7 +35,11 @@
         <tbody>
           <tr v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
             <td v-for="schemaPath in schemaPaths">
-              <component :is="getComponentForPath(schemaPath)" :value="document[schemaPath.value.path]" :allude="getReferenceModel(schemaPath)"></component>
+              <component
+                :is="getComponentForPath(schemaPath)"
+                :value="document[schemaPath.path]"
+                :allude="getReferenceModel(schemaPath)">
+              </component>
             </td>
           </tr>
         </tbody>

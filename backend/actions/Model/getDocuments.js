@@ -27,7 +27,6 @@ const GetDocumentsParams = new Archetype({
 module.exports = ({ db }) => async function getDocuments(params) {
   params = new GetDocumentsParams(params);
   let { filter } = params;
-  console.log('what is filter', filter);
   if (filter != null && Object.keys(filter).length > 0) {
     filter = EJSON.parse(filter);
   }
@@ -49,13 +48,19 @@ module.exports = ({ db }) => async function getDocuments(params) {
     skip(skip).
     sort({ _id: -1 });
 
-
   let schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
-    schemaPaths[path] = { instance: Model.schema.paths[path].instance, value: Model.schema.paths[path]}
+    schemaPaths[path] = {
+      instance: Model.schema.paths[path].instance,
+      path,
+      options: Model.schema.paths[path].options
+    };
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
-  const numDocuments = await Model.countDocuments(filter == null ? {} : filter);
+
+  const numDocuments = filter == null ?
+    await Model.estimatedDocumentCount() :
+    await model.countDocuments(filter);
   
   return { docs, schemaPaths, numDocs: numDocuments };
 };

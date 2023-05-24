@@ -26,7 +26,14 @@ module.exports = ({ db }) => async function getDocument(params) {
     findById(documentId).
     setOptions({ sanitizeFilter: true }).
     orFail();
-  const schemaPaths = Model.schema.paths;
+  let schemaPaths = {};
+  for (const path of Object.keys(Model.schema.paths)) {
+    schemaPaths[path] = {
+      instance: Model.schema.paths[path].instance,
+      path,
+      options: Model.schema.paths[path].options
+    };
+  }
   removeSpecifiedPaths(schemaPaths, '.$*');
   
   return { doc, schemaPaths };
