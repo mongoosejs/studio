@@ -43,7 +43,6 @@ module.exports = ({ db }) => async function getDocuments(params) {
 
   const docs = await Model.
     find(filter == null ? {} : filter).
-    setOptions({ sanitizeFilter: true }).
     limit(limit).
     skip(skip).
     sort({ _id: -1 });
