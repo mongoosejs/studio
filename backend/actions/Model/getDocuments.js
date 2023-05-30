@@ -21,6 +21,9 @@ const GetDocumentsParams = new Archetype({
   },
   filter: {
     $type: Archetype.Any
+  },
+  sort: {
+    $type: Archetype.Any
   }
 }).compile('GetDocumentsParams');
 
@@ -30,7 +33,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
   if (filter != null && Object.keys(filter).length > 0) {
     filter = EJSON.parse(filter);
   }
-  const { model, limit, skip } = params;
+  const { model, limit, skip, sort } = params;
 
   const Model = db.models[model];
   if (Model == null) {
@@ -45,7 +48,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
     find(filter == null ? {} : filter).
     limit(limit).
     skip(skip).
-    sort({ _id: -1 });
+    sort(sort == null ? { _id: -1 } : sort );
 
   let schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {

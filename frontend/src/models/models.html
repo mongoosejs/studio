@@ -30,6 +30,8 @@
             <span class="path-type">
               ({{(path.instance || 'unknown')}})
             </span>
+            <span class="sort-arrow" @click="sortDocs(1, path.path)">{{sortBy[path.path] == 1 ? 'X' : '↑'}}</span>
+            <span class="sort-arrow" @click="sortDocs(-1, path.path)">{{sortBy[path.path] == -1 ? 'X' : '↓'}}</span>
           </th>
         </thead>
         <tbody>
