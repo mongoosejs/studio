@@ -107,3 +107,8 @@
   border-radius: 3px;
   width: calc(100% - 1em);
 }
+
+.sort-arrow {
+  padding-left: 10px;
+  padding-right: 10px;
+}

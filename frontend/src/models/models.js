@@ -23,7 +23,8 @@ module.exports = app => app.component('models', {
     filter: null,
     searchText: '',
     shouldShowExportModal: false,
-    shouldExport: {}
+    shouldExport: {},
+    sortBy: {}
   }),
   created() {
     this.currentModel = this.model;
@@ -46,6 +47,19 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    async sortDocs(num, path) {
+      let sorted = false;
+      if (this.sortBy[path] == num) {
+        sorted = true;
+      }
+      for (const key in this.sortBy) {
+        delete this.sortBy[key];
+      }
+      if (!sorted) {
+        this.sortBy[path] = num;
+      }
+      await this.getDocuments();
+    },
     async search() {
       if (this.searchText && Object.keys(this.searchText).length) {
         this.filter = eval(`(${this.searchText})`);
@@ -60,7 +74,8 @@ module.exports = app => app.component('models', {
     async getDocuments() {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
-        filter: this.filter
+        filter: this.filter,
+        sort: this.sortBy
       });
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
