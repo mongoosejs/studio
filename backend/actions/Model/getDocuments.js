@@ -44,11 +44,12 @@ module.exports = ({ db }) => async function getDocuments(params) {
     filter = { '$**': filter };
   }
 
+  const hasSort = typeof sort === 'object' && sort != null && Object.keys(sort).length > 0;
   const docs = await Model.
     find(filter == null ? {} : filter).
     limit(limit).
     skip(skip).
-    sort(sort == null ? { _id: -1 } : sort );
+    sort(hasSort ? sort : { _id: -1 });
 
   let schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
