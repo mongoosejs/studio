@@ -24,7 +24,8 @@ module.exports = app => app.component('models', {
     searchText: '',
     shouldShowExportModal: false,
     shouldExport: {},
-    sortBy: {}
+    sortBy: {},
+    query: {}
   }),
   created() {
     this.currentModel = this.model;
@@ -34,10 +35,17 @@ module.exports = app => app.component('models', {
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
     }
+    this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
     if (this.$route.query?.search) {
       this.searchText = this.$route.query.search;
       this.filter = eval(`(${this.$route.query.search})`);
       this.filter = EJSON.stringify(this.filter);
+    }
+    if (this.$route.query?.sort) {
+      const sort = eval(`(${this.$route.query.sort})`);
+      const path = Object.keys(sort)[0];
+      const num = Object.values(sort)[0];
+      this.sortDocs(num, path);
     }
 
     if (this.currentModel != null) {
@@ -51,12 +59,16 @@ module.exports = app => app.component('models', {
       let sorted = false;
       if (this.sortBy[path] == num) {
         sorted = true;
+        delete this.query.sort;
+        this.$router.push({ query: this.query });
       }
       for (const key in this.sortBy) {
         delete this.sortBy[key];
       }
       if (!sorted) {
         this.sortBy[path] = num;
+        this.query.sort = `{${path}:${num}}`
+        this.$router.push({ query: this.query });
       }
       await this.getDocuments();
     },
@@ -64,10 +76,12 @@ module.exports = app => app.component('models', {
       if (this.searchText && Object.keys(this.searchText).length) {
         this.filter = eval(`(${this.searchText})`);
         this.filter = EJSON.stringify(this.filter);
-        this.$router.push({ path: this.$route.path, query: { search: this.searchText }})
+        this.query.search = this.searchText;
+        this.$router.push({ path: this.$route.path, query: this.query })
       } else {
         this.filter = {};
-        this.$router.push({ path: this.$route.path });
+        delete this.query.search;
+        this.$router.push({ path: this.$route.path, query: this.query });
       }
       await this.getDocuments();
     },
