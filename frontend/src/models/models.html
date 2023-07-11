@@ -39,7 +39,7 @@
             <td v-for="schemaPath in schemaPaths">
               <component
                 :is="getComponentForPath(schemaPath)"
-                :value="document[schemaPath.path]"
+                :value="getValueForPath(document, schemaPath.path)"
                 :allude="getReferenceModel(schemaPath)">
               </component>
             </td>
