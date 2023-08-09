@@ -106,3 +106,9 @@ dist
 package-lock.json
 
 frontend/public/app.js
+
+mongoose.js
+stargate.js
+zevo.js
+tv.js
+stratos.js

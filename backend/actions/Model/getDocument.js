@@ -31,7 +31,7 @@ module.exports = ({ db }) => async function getDocument(params) {
     schemaPaths[path] = {
       instance: Model.schema.paths[path].instance,
       path,
-      options: Model.schema.paths[path].options
+      ref: Model.schema.paths[path].options?.ref
     };
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
