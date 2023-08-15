@@ -1,6 +1,6 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "dependencies": {
     "archetype": "0.13.0",
     "csv-stringify": "6.3.0",
