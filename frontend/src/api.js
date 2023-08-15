@@ -7,6 +7,16 @@ const client = axios.create({
 });
 
 window.apiClient = client;
+if (typeof config__setAuthorizationHeaderFrom === 'string' && config__setAuthorizationHeaderFrom) {
+  client.interceptors.request.use(req => {
+    const accessToken = window.localStorage.getItem(config__setAuthorizationHeaderFrom) || null;
+    if (accessToken) {
+      req.headers.authorization = accessToken;
+    }
+  
+    return req;
+  });
+}
 
 if (config__isLambda) {
   exports.Model = {

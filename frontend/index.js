@@ -12,6 +12,12 @@ module.exports = function(apiUrl, isLambda, options) {
       })
     ]
   }
+  if (options?.setAuthorizationHeaderFrom) {
+    config.plugins = config.plugins || [];
+    config.plugins.push(new webpack.DefinePlugin({
+      config__setAuthorizationHeaderFrom: `'${options.setAuthorizationHeaderFrom}'`
+    }));
+  }
   const compiler = webpack(config);
 
   if (options && options.watch) {
