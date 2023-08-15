@@ -9,6 +9,8 @@ const appendCSS = require('../appendCSS');
 
 appendCSS(require('./models.css'));
 
+const limit = 50;
+
 module.exports = app => app.component('models', {
   template: template,
   props: ['model'],
@@ -18,7 +20,8 @@ module.exports = app => app.component('models', {
     documents: [],
     schemaPaths: [],
     numDocuments: 0,
-    status: 'init',
+    status: 'loading',
+    loadedAllDocs: false,
     edittingDoc: null,
     docEdits: null,
     filter: null,
@@ -28,7 +31,6 @@ module.exports = app => app.component('models', {
     sortBy: {},
     query: {},
     scrollHeight: 0,
-    limit: 50,
     interval: null
   }),
   created() {
@@ -64,14 +66,24 @@ module.exports = app => app.component('models', {
   },
   methods: {
     async onScroll() {
-      if (this.status === 'loading') {
+      if (this.status === 'loading' || this.loadedAllDocs) {
         return;
       }
       const container = this.$refs.documentsList;
       if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
         this.status = 'loading';
-        this.limit += 50;
-        await this.getDocuments();
+        const { docs } = await api.Model.getDocuments({
+          model: this.currentModel,
+          filter: this.filter,
+          sort: this.sortBy,
+          skip: this.documents.length,
+          limit
+        });
+        console.log('FX', docs.length, limit)
+        if (docs.length < limit) {
+          this.loadedAllDocs = true;
+        }
+        this.documents.push(...docs);
         this.status = 'loaded';
       }
     },
@@ -110,9 +122,12 @@ module.exports = app => app.component('models', {
         model: this.currentModel,
         filter: this.filter,
         sort: this.sortBy,
-        limit: this.limit
+        limit
       });
       this.documents = docs;
+      if (docs.length < limit) {
+        this.loadedAllDocs = true;
+      }
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
         if (k1 === '_id' && k2 !== '_id') {
           return -1;
