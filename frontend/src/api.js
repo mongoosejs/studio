@@ -6,6 +6,8 @@ const client = axios.create({
   baseURL: config__baseURL
 });
 
+window.apiClient = client;
+
 if (config__isLambda) {
   exports.Model = {
     deleteDocument(params) {

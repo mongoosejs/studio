@@ -26,12 +26,19 @@ module.exports = app => app.component('models', {
     shouldShowExportModal: false,
     shouldExport: {},
     sortBy: {},
-    query: {}
+    query: {},
+    scrollHeight: 0,
+    limit: 50,
+    interval: null
   }),
   created() {
     this.currentModel = this.model;
   },
+  beforeDestroy() {
+    document.removeEventListener('scroll', () => this.onScroll(), true);
+  },
   async mounted() {
+    document.addEventListener('scroll', () => this.onScroll(), true);
     this.models = await api.Model.listModels().then(res => res.models);
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
@@ -56,6 +63,18 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    async onScroll() {
+      if (this.status === 'loading') {
+        return;
+      }
+      const container = this.$refs.documentsList;
+      if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
+        this.status = 'loading';
+        this.limit += 50;
+        await this.getDocuments();
+        this.status = 'loaded';
+      }
+    },
     async sortDocs(num, path) {
       let sorted = false;
       if (this.sortBy[path] == num) {
@@ -90,7 +109,8 @@ module.exports = app => app.component('models', {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
         filter: this.filter,
-        sort: this.sortBy
+        sort: this.sortBy,
+        limit: this.limit
       });
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
