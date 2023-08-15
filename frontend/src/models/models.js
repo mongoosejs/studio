@@ -31,17 +31,14 @@ module.exports = app => app.component('models', {
     limit: 50,
     interval: null
   }),
-  watch: {
-
-  },
   created() {
     this.currentModel = this.model;
   },
   beforeDestroy() {
-    document.removeEventListener('scroll', this.onScroll, true);
+    document.removeEventListener('scroll', () => this.onScroll(), true);
   },
   async mounted() {
-    document.addEventListener('scroll', this.onScroll, true);
+    document.addEventListener('scroll', () => this.onScroll(), true);
     this.models = await api.Model.listModels().then(res => res.models);
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
@@ -67,11 +64,15 @@ module.exports = app => app.component('models', {
   },
   methods: {
     async onScroll() {
+      if (this.status === 'loading') {
+        return;
+      }
       const container = this.$refs.documentsList;
       if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
+        this.status = 'loading';
         this.limit += 50;
-        console.log('what is limit', this.limit);
         await this.getDocuments();
+        this.status = 'loaded';
       }
     },
     async sortDocs(num, path) {

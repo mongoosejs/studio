@@ -108,7 +108,16 @@
   width: calc(100% - 1em);
 }
 
-.sort-arrow {
+.models .sort-arrow {
   padding-left: 10px;
   padding-right: 10px;
+}
+
+.models .loader {
+  width: 100%;
+  text-align: center;
+}
+
+.models .loader img {
+  height: 4em;
 }
