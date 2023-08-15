@@ -1,5 +1,7 @@
 'use strict';
 
+// env MONGODB\_CONNECTION\_STRING="mongodb://localhost:27017/stratos_local" node ./seedDocuments.js
+
 const db = require('../../BirbAI/backend/db'); // user dependent
 const mongoose = require('mongoose');
 

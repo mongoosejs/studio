@@ -28,7 +28,7 @@ module.exports = app => app.component('models', {
     sortBy: {},
     query: {},
     scrollHeight: 0,
-    skip: 0,
+    limit: 50,
     interval: null
   }),
   watch: {
@@ -69,8 +69,8 @@ module.exports = app => app.component('models', {
     async onScroll() {
       const container = this.$refs.documentsList;
       if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
-        this.skip += 50;
-        console.log('what is skip', this.skip);
+        this.limit += 50;
+        console.log('what is limit', this.limit);
         await this.getDocuments();
       }
     },
@@ -109,7 +109,7 @@ module.exports = app => app.component('models', {
         model: this.currentModel,
         filter: this.filter,
         sort: this.sortBy,
-        skip: this.skip
+        limit: this.limit
       });
       this.documents = docs;
       this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
