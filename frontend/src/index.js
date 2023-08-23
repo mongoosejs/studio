@@ -8,6 +8,7 @@ require('./async-button/async-button')(app);
 require('./detail-array/detail-array')(app);
 require('./detail-default/detail-default')(app);
 require('./document/document')(app);
+require('./edit-array/edit-array')(app);
 require('./edit-default/edit-default')(app);
 require('./edit-number/edit-number')(app);
 require('./edit-date/edit-date')(app);

@@ -47,6 +47,9 @@ module.exports = app => app.component('document', {
       if (path.instance == 'Number') {
         return 'edit-number';
       }
+      if (path.instance === 'Array') {
+        return 'edit-array';
+      }
       return 'edit-default';
     },
     getEditValueForPath({ path }) {
