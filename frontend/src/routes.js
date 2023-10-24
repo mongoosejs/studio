@@ -12,6 +12,11 @@ module.exports = [
     component: 'models'
   },
   {
+    path: '/charts',
+    name: 'charts',
+    component: 'charts'
+  },
+  {
     path: '/model/:model/document/:documentId',
     name: 'document',
     component: 'document'

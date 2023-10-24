@@ -20,6 +20,9 @@ if (typeof config__setAuthorizationHeaderFrom === 'string' && config__setAuthori
 
 if (config__isLambda) {
   exports.Model = {
+    createChart(params) {
+      return client.post('', { action: 'Model.createChart', ...params}).then(res => res.data);
+    },
     deleteDocument(params) {
       return client.post('', { action: 'Model.deleteDocument', ...params}).then(res => res.data);
     },
@@ -41,6 +44,9 @@ if (config__isLambda) {
   };
 } else {
   exports.Model = {
+    createChart: function (params) {
+      return client.post('/Model/createChart', params).then(res => res.data);
+    },
     deleteDocument: function (params) {
       return client.post('/Model/deleteDocument', params).then(res => res.data);
     },
@@ -64,5 +70,8 @@ if (config__isLambda) {
     updateDocument: function updateDocument(params) {
       return client.post('/Model/updateDocument', params).then(res => res.data);
     }
+  };
+  exports.Script = {
+
   };
 }

@@ -1,5 +1,6 @@
 'use strict';
 
+exports.createChart = require('./createChart');
 exports.deleteDocument = require('./deleteDocument');
 exports.exportQueryResults = require('./exportQueryResults');
 exports.getDocument = require('./getDocument');

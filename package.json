@@ -1,16 +1,17 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "dependencies": {
     "archetype": "0.13.0",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
     "extrovert": "0.0.20",
+    "openai": "3.2.1",
     "vanillatoasts": "^1.6.0"
   },
   "peerDependencies": {
     "express": "4.x",
-    "mongoose": "7.x"
+    "mongoose": "7.x || 8.0.0-rc0 || 8.x"
   },
   "devDependencies": {
     "axios": "1.2.2",
