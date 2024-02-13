@@ -39,6 +39,9 @@ module.exports = app => app.component('list-default', {
       if (this.value === undefined) {
         return 'undefined';
       }
+      if (this.value.length > 30) {
+        return this.value.substring(0,30) + '...';
+      }
       return this.value;
     },
     hasReference() {
