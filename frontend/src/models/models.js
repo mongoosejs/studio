@@ -154,6 +154,9 @@ module.exports = app => app.component('models', {
       if (schemaPath.instance == 'Embedded') {
         return 'list-subdocument';
       }
+      if (schemaPath.instance == 'Mixed') {
+        return 'list-mixed';
+      }
       return 'list-default';
     },
     getReferenceModel(schemaPath) {
