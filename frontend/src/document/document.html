@@ -38,7 +38,7 @@
         </component>
       </div>
       <div v-else>
-        <component :is="getComponentForPath(path)" :value="document[path.path]"></component>
+        <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
       </div>
     </div>
   </div>

@@ -1,6 +1,7 @@
 'use strict';
 
 const api = require('../api');
+const mpath = require('mpath');
 const template = require('./document.html');
 const vanillatoast = require('vanillatoasts');
 
@@ -52,8 +53,11 @@ module.exports = app => app.component('document', {
       }
       return 'edit-default';
     },
+    getValueForPath(path) {
+      return mpath.get(path, this.document);
+    },
     getEditValueForPath({ path }) {
-      return path in this.changes ? this.changes[path] : this.document[path];
+      return path in this.changes ? this.changes[path] : mpath.get(path, this.document);
     },
     cancelEdit() {
       this.changes = {};
