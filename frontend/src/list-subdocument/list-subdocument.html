@@ -1,3 +1,6 @@
-<div class="list-subdocument">
-<pre><code ref="SubDocCode" class="language-javascript">{{shortenValue}}</code></pre>
+<div class="list-subdocument tooltip">
+  <pre>
+    <code ref="SubDocCode" class="language-javascript">{{shortenValue}}</code>
+    <span class="tooltiptext" @click.stop="copyText(value)">copy &#x1F4CB;</span>
+  </pre>
 </div>
