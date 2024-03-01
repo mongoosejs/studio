@@ -19,6 +19,8 @@ module.exports = app => app.component('models', {
     currentModel: null,
     documents: [],
     schemaPaths: [],
+    filteredPaths: [],
+    selectedPaths: [],
     numDocuments: 0,
     status: 'loading',
     loadedAllDocs: false,
@@ -27,11 +29,12 @@ module.exports = app => app.component('models', {
     filter: null,
     searchText: '',
     shouldShowExportModal: false,
+    shouldShowFieldModal: false,
     shouldExport: {},
     sortBy: {},
     query: {},
     scrollHeight: 0,
-    interval: null
+    interval: null,
   }),
   created() {
     this.currentModel = this.model;
@@ -143,6 +146,51 @@ module.exports = app => app.component('models', {
       for (const { path } of this.schemaPaths) {
         this.shouldExport[path] = true;
       }
+      this.filteredPaths.length = 0;
+      this.filteredPaths = [...this.schemaPaths];
+      this.selectedPaths = [...this.schemaPaths];
+    },
+    addOrRemove(path) {
+      const exists = this.selectedPaths.findIndex(x => x.path == path.path);
+      if (exists > 0) { // remove
+        this.selectedPaths.splice(exists, 1);
+      } else { // add
+        this.selectedPaths.push(path);
+        this.selectedPaths = Object.keys(this.selectedPaths).sort((k1, k2) => {
+          if (k1 === '_id' && k2 !== '_id') {
+            return -1;
+          }
+          if (k1 !== '_id' && k2 === '_id') {
+            return 1;
+          }
+          return 0;
+        }).map(key => this.selectedPaths[key]);
+      }
+    },
+    filterDocuments() {
+      this.filteredPaths = Object.keys(this.selectedPaths).sort((k1, k2) => {
+        if (k1 === '_id' && k2 !== '_id') {
+          return -1;
+        }
+        if (k1 !== '_id' && k2 === '_id') {
+          return 1;
+        }
+        return 0;
+      }).map(key => this.selectedPaths[key]);
+      this.shouldShowFieldModal = false;
+      const selectedParams = this.filteredPaths.map(x => x.path).join(',');
+      console.log('what is selectedParams', selectedParams)
+
+      // Use the History API to update the URL without reloading the page
+      const newUrl = `${window.location.pathname}?fields=${selectedParams}`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
+    },
+    resetDocuments() {
+      this.filteredPaths = [...this.schemaPaths];
+      this.selectedPaths = [...this.schemaPaths];
+    },
+    isSelected(path) {
+      return this.filteredPaths.find(x => x.path == path);
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
