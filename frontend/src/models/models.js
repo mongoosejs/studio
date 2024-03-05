@@ -179,11 +179,7 @@ module.exports = app => app.component('models', {
       }).map(key => this.selectedPaths[key]);
       this.shouldShowFieldModal = false;
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-      console.log('what is selectedParams', selectedParams)
-
-      // Use the History API to update the URL without reloading the page
-      const newUrl = `${window.location.pathname}?fields=${selectedParams}`;
-      window.history.pushState({ path: newUrl }, '', newUrl);
+      this.$router.push({ path: this.$router.currentRoute, query: { fields: selectedParams } })
     },
     resetDocuments() {
       this.filteredPaths = [...this.schemaPaths];
