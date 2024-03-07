@@ -65,6 +65,16 @@ module.exports = app => app.component('models', {
       await this.getDocuments();
     }
 
+    const hashUrl = window.location.hash.replace(/^#/, '');
+    if (hashUrl.indexOf('?') !== -1) {
+      const searchParams = new URLSearchParams(
+        hashUrl.slice(hashUrl.indexOf('?') + 1)
+      );
+      if (searchParams.has('fields')) {
+        this.filteredPaths = searchParams.get('fields').split(',').map(path => ({ path }));
+      }
+    }
+
     this.status = 'loaded';
   },
   methods: {
@@ -179,7 +189,20 @@ module.exports = app => app.component('models', {
       }).map(key => this.selectedPaths[key]);
       this.shouldShowFieldModal = false;
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-      this.$router.push({ path: this.$router.currentRoute, query: { fields: selectedParams } })
+
+      const hashUrl = window.location.hash.replace(/^#/, '');
+      if (hashUrl.indexOf('?') === -1) {
+        window.history.pushState({}, '', window.location.pathname + '#' + hashUrl + '?fields=' + selectedParams);
+      } else {
+        const searchParams = new URLSearchParams(
+          hashUrl.indexOf('?') === -1 ? '' : hashUrl.slice(hashUrl.indexOf('?') + 1)
+        );
+        const hashUrlWithoutSearchParams = hashUrl.slice(0, hashUrl.indexOf('?'));
+        
+        searchParams.set('fields', selectedParams);
+        window.history.pushState({}, '', window.location.pathname + '#' + hashUrlWithoutSearchParams + '?' + searchParams);
+      }
+      
     },
     resetDocuments() {
       this.filteredPaths = [...this.schemaPaths];
