@@ -19,13 +19,14 @@
         </div>
         <div class="buttons">
           <button @click="shouldShowExportModal = true">Export</button>
+          <button @click="shouldShowFieldModal = true">Fields</button>
         </div>
       </div>
     </div>
     <div class="documents-container">
       <table>
         <thead>
-          <th v-for="path in schemaPaths">
+          <th v-for="path in filteredPaths">
             {{path.path}}
             <span class="path-type">
               ({{(path.instance || 'unknown')}})
@@ -36,7 +37,7 @@
         </thead>
         <tbody>
           <tr v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
-            <td v-for="schemaPath in schemaPaths">
+            <td v-for="schemaPath in filteredPaths">
               <component
                 :is="getComponentForPath(schemaPath)"
                 :value="getValueForPath(document, schemaPath.path)"
@@ -59,6 +60,19 @@
           :currentModel="currentModel"
           @done="shouldShowExportModal = false">
         </export-query-results>
+      </template>
+    </modal>
+    <modal v-if="shouldShowFieldModal">
+      <template v-slot:body>
+        <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
+        <div v-for="(path, index) in schemaPaths" :key="index" style="margin-bottom: 0.5em">
+          <input type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)"/>
+          <label :for="'path' + index">{{path.path}}</label>
+        </div>
+        <div style="margin-top: 1em">
+          <button type="submit" @click="filterDocuments()" style="margin-right: 0.5em">Filter Selection</button>
+          <button type="submit" @click="resetDocuments()">Reset Selection</button>
+        </div>
       </template>
     </modal>
   </div>

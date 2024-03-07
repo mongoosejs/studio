@@ -19,6 +19,8 @@ module.exports = app => app.component('models', {
     currentModel: null,
     documents: [],
     schemaPaths: [],
+    filteredPaths: [],
+    selectedPaths: [],
     numDocuments: 0,
     status: 'loading',
     loadedAllDocs: false,
@@ -27,11 +29,12 @@ module.exports = app => app.component('models', {
     filter: null,
     searchText: '',
     shouldShowExportModal: false,
+    shouldShowFieldModal: false,
     shouldExport: {},
     sortBy: {},
     query: {},
     scrollHeight: 0,
-    interval: null
+    interval: null,
   }),
   created() {
     this.currentModel = this.model;
@@ -60,6 +63,16 @@ module.exports = app => app.component('models', {
 
     if (this.currentModel != null) {
       await this.getDocuments();
+    }
+
+    const hashUrl = window.location.hash.replace(/^#/, '');
+    if (hashUrl.indexOf('?') !== -1) {
+      const searchParams = new URLSearchParams(
+        hashUrl.slice(hashUrl.indexOf('?') + 1)
+      );
+      if (searchParams.has('fields')) {
+        this.filteredPaths = searchParams.get('fields').split(',').map(path => ({ path }));
+      }
     }
 
     this.status = 'loaded';
@@ -143,6 +156,60 @@ module.exports = app => app.component('models', {
       for (const { path } of this.schemaPaths) {
         this.shouldExport[path] = true;
       }
+      this.filteredPaths.length = 0;
+      this.filteredPaths = [...this.schemaPaths];
+      this.selectedPaths = [...this.schemaPaths];
+    },
+    addOrRemove(path) {
+      const exists = this.selectedPaths.findIndex(x => x.path == path.path);
+      if (exists > 0) { // remove
+        this.selectedPaths.splice(exists, 1);
+      } else { // add
+        this.selectedPaths.push(path);
+        this.selectedPaths = Object.keys(this.selectedPaths).sort((k1, k2) => {
+          if (k1 === '_id' && k2 !== '_id') {
+            return -1;
+          }
+          if (k1 !== '_id' && k2 === '_id') {
+            return 1;
+          }
+          return 0;
+        }).map(key => this.selectedPaths[key]);
+      }
+    },
+    filterDocuments() {
+      this.filteredPaths = Object.keys(this.selectedPaths).sort((k1, k2) => {
+        if (k1 === '_id' && k2 !== '_id') {
+          return -1;
+        }
+        if (k1 !== '_id' && k2 === '_id') {
+          return 1;
+        }
+        return 0;
+      }).map(key => this.selectedPaths[key]);
+      this.shouldShowFieldModal = false;
+      const selectedParams = this.filteredPaths.map(x => x.path).join(',');
+
+      const hashUrl = window.location.hash.replace(/^#/, '');
+      if (hashUrl.indexOf('?') === -1) {
+        window.history.pushState({}, '', window.location.pathname + '#' + hashUrl + '?fields=' + selectedParams);
+      } else {
+        const searchParams = new URLSearchParams(
+          hashUrl.indexOf('?') === -1 ? '' : hashUrl.slice(hashUrl.indexOf('?') + 1)
+        );
+        const hashUrlWithoutSearchParams = hashUrl.slice(0, hashUrl.indexOf('?'));
+        
+        searchParams.set('fields', selectedParams);
+        window.history.pushState({}, '', window.location.pathname + '#' + hashUrlWithoutSearchParams + '?' + searchParams);
+      }
+      
+    },
+    resetDocuments() {
+      this.filteredPaths = [...this.schemaPaths];
+      this.selectedPaths = [...this.schemaPaths];
+    },
+    isSelected(path) {
+      return this.filteredPaths.find(x => x.path == path);
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
