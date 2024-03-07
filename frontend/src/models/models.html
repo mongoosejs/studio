@@ -65,12 +65,14 @@
     <modal v-if="shouldShowFieldModal">
       <template v-slot:body>
         <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
-        <div v-for="(path, index) in schemaPaths" :key="index">
+        <div v-for="(path, index) in schemaPaths" :key="index" style="margin-bottom: 0.5em">
           <input type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)"/>
           <label :for="'path' + index">{{path.path}}</label>
         </div>
-        <button type="submit" @click="filterDocuments()">Filter Selection</button>
-        <button type="submit" @click="resetDocuments()">Reset Selection</button>
+        <div style="margin-top: 1em">
+          <button type="submit" @click="filterDocuments()" style="margin-right: 0.5em">Filter Selection</button>
+          <button type="submit" @click="resetDocuments()">Reset Selection</button>
+        </div>
       </template>
     </modal>
   </div>
