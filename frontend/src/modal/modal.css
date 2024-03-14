@@ -46,6 +46,8 @@
 
 .modal-body {
   margin: 20px 0;
+  max-height: calc(100vh - 40px - 60px - 10px);
+  overflow: auto;
 }
 
 .modal__button--default {
