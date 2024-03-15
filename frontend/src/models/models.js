@@ -208,6 +208,10 @@ module.exports = app => app.component('models', {
       this.filteredPaths = [...this.schemaPaths];
       this.selectedPaths = [...this.schemaPaths];
     },
+    deselectAll() {
+      this.selectedPaths.length = 0;
+      this.filteredPaths.length = 0;
+    },
     isSelected(path) {
       return this.filteredPaths.find(x => x.path == path);
     },
