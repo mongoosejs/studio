@@ -35,6 +35,7 @@ module.exports = app => app.component('models', {
     query: {},
     scrollHeight: 0,
     interval: null,
+    rerenderCheckboxes: false
   }),
   created() {
     this.currentModel = this.model;
@@ -207,13 +208,18 @@ module.exports = app => app.component('models', {
     resetDocuments() {
       this.filteredPaths = [...this.schemaPaths];
       this.selectedPaths = [...this.schemaPaths];
+      this.rerenderCheckboxes = false;
     },
     deselectAll() {
+      this.rerenderCheckboxes = true;
       this.selectedPaths.length = 0;
-      this.filteredPaths.length = 0;
     },
     isSelected(path) {
-      return this.filteredPaths.find(x => x.path == path);
+      if (this.rerenderCheckboxes) {
+        return this.selectedPaths.find(x => x.path == path)
+      } else {
+        return this.filteredPaths.find(x => x.path == path);
+      }
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
