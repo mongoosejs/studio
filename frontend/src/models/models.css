@@ -5,6 +5,11 @@
   min-height: calc(100% - 56px);
 }
 
+.models button.gray {
+  color: black;
+  background-color: #eee;
+}
+
 .models .model-selector {
   background-color: #eee;
   flex-grow: 0; 
