@@ -34,7 +34,7 @@ module.exports = app => app.component('models', {
     sortBy: {},
     query: {},
     scrollHeight: 0,
-    interval: null,
+    interval: null
   }),
   created() {
     this.currentModel = this.model;
@@ -92,7 +92,6 @@ module.exports = app => app.component('models', {
           skip: this.documents.length,
           limit
         });
-        console.log('FX', docs.length, limit)
         if (docs.length < limit) {
           this.loadedAllDocs = true;
         }
@@ -156,7 +155,7 @@ module.exports = app => app.component('models', {
       for (const { path } of this.schemaPaths) {
         this.shouldExport[path] = true;
       }
-      this.filteredPaths.length = 0;
+
       this.filteredPaths = [...this.schemaPaths];
       this.selectedPaths = [...this.schemaPaths];
     },
@@ -178,15 +177,7 @@ module.exports = app => app.component('models', {
       }
     },
     filterDocuments() {
-      this.filteredPaths = Object.keys(this.selectedPaths).sort((k1, k2) => {
-        if (k1 === '_id' && k2 !== '_id') {
-          return -1;
-        }
-        if (k1 !== '_id' && k2 === '_id') {
-          return 1;
-        }
-        return 0;
-      }).map(key => this.selectedPaths[key]);
+      this.filteredPaths = [...this.selectedPaths];
       this.shouldShowFieldModal = false;
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
 
@@ -205,11 +196,14 @@ module.exports = app => app.component('models', {
       
     },
     resetDocuments() {
-      this.filteredPaths = [...this.schemaPaths];
-      this.selectedPaths = [...this.schemaPaths];
+      this.selectedPaths = [...this.filteredPaths];
+      this.shouldShowFieldModal = false;
+    },
+    deselectAll() {
+      this.selectedPaths = [];
     },
     isSelected(path) {
-      return this.filteredPaths.find(x => x.path == path);
+      return this.selectedPaths.find(x => x.path == path);
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
