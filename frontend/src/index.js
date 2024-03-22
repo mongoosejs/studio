@@ -1,5 +1,7 @@
 'use strict';
 
+const vanillatoasts = require('vanillatoasts');
+
 const app = Vue.createApp({
   template: '<app-component />'
 });
@@ -31,7 +33,15 @@ app.component('app-component', {
       <router-view :key="$route.fullPath" />
     </div>
   </div>
-  `
+  `,
+  errorCaptured(err) {
+    vanillatoasts.create({
+      title: `Error: ${err.message}`,
+      icon: 'images/failure.jpg',
+      timeout: 10000,
+      positionClass: 'bottomRight'
+    });
+  }
 });
 
 const routes = require('./routes');
