@@ -2,8 +2,9 @@
 
 const api = require('../api');
 const template = require('./models.html');
-const EJSON = require('ejson');
+// const EJSON = require('ejson');
 const mpath = require('mpath');
+const { ObjectId, BSON, EJSON } = require('bson');
 
 const appendCSS = require('../appendCSS');
 
@@ -119,7 +120,12 @@ module.exports = app => app.component('models', {
     async search() {
       if (this.searchText && Object.keys(this.searchText).length) {
         this.filter = eval(`(${this.searchText})`);
+        if (this.searchText.includes('ObjectId(')) {
+          const serial = BSON.serialize(this.filter);
+          this.filter = BSON.deserialize(serial);
+        }
         this.filter = EJSON.stringify(this.filter);
+        console.log('what is the filter', this.filter);
         this.query.search = this.searchText;
         this.$router.push({ path: this.$route.path, query: this.query })
       } else {
