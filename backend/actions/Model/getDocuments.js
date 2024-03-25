@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
-const EJSON = require('ejson');
+const { EJSON } = require('bson')
 
 const GetDocumentsParams = new Archetype({
   model: {

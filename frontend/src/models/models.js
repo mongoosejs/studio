@@ -2,8 +2,14 @@
 
 const api = require('../api');
 const template = require('./models.html');
-const EJSON = require('ejson');
 const mpath = require('mpath');
+const { BSON, EJSON } = require('bson');
+
+const ObjectId = new Proxy(BSON.ObjectId, {
+  apply (target, thisArg, argumentsList) {
+    return new target(...argumentsList);
+  }
+});
 
 const appendCSS = require('../appendCSS');
 
