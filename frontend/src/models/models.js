@@ -2,9 +2,14 @@
 
 const api = require('../api');
 const template = require('./models.html');
-// const EJSON = require('ejson');
 const mpath = require('mpath');
-const { ObjectId, BSON, EJSON } = require('bson');
+const { BSON, EJSON } = require('bson');
+
+const ObjectId = new Proxy(BSON.ObjectId, {
+  apply (target, thisArg, argumentsList) {
+    return new target(...argumentsList);
+  }
+});
 
 const appendCSS = require('../appendCSS');
 
@@ -120,10 +125,6 @@ module.exports = app => app.component('models', {
     async search() {
       if (this.searchText && Object.keys(this.searchText).length) {
         this.filter = eval(`(${this.searchText})`);
-        if (this.searchText.includes('ObjectId(')) {
-          const serial = BSON.serialize(this.filter);
-          this.filter = BSON.deserialize(serial);
-        }
         this.filter = EJSON.stringify(this.filter);
         console.log('what is the filter', this.filter);
         this.query.search = this.searchText;

@@ -3,7 +3,6 @@
   "version": "0.0.15",
   "dependencies": {
     "archetype": "0.13.0",
-    "bson": "^5.5.1",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
     "extrovert": "0.0.20",
@@ -11,6 +10,7 @@
     "vanillatoasts": "^1.6.0"
   },
   "peerDependencies": {
+    "bson": "^5.5.1",
     "express": "4.x",
     "mongoose": "7.x || 8.0.0-rc0 || 8.x"
   },
