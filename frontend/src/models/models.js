@@ -126,7 +126,6 @@ module.exports = app => app.component('models', {
       if (this.searchText && Object.keys(this.searchText).length) {
         this.filter = eval(`(${this.searchText})`);
         this.filter = EJSON.stringify(this.filter);
-        console.log('what is the filter', this.filter);
         this.query.search = this.searchText;
         this.$router.push({ path: this.$route.path, query: this.query })
       } else {
