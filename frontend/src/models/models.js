@@ -132,9 +132,6 @@ module.exports = app => app.component('models', {
       }
 
       const hashUrl = window.location.hash.replace(/^#/, '');
-      // delete this later
-      localStorage.setItem('console', this.query);
-      console.log('did the page refresh?')
       if (hashUrl.indexOf('?') === -1) {
         window.history.pushState({}, '', window.location.pathname + '#' + hashUrl + '?search=' + this.query.search);
       } else {
