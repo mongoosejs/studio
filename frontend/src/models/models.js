@@ -70,7 +70,6 @@ module.exports = app => app.component('models', {
     if (this.currentModel != null) {
       await this.getDocuments();
     }
-
     const hashUrl = window.location.hash.replace(/^#/, '');
     if (hashUrl.indexOf('?') !== -1) {
       const searchParams = new URLSearchParams(
@@ -127,13 +126,28 @@ module.exports = app => app.component('models', {
         this.filter = eval(`(${this.searchText})`);
         this.filter = EJSON.stringify(this.filter);
         this.query.search = this.searchText;
-        this.$router.push({ path: this.$route.path, query: this.query })
       } else {
         this.filter = {};
         delete this.query.search;
-        this.$router.push({ path: this.$route.path, query: this.query });
       }
-      await this.getDocuments();
+
+      const hashUrl = window.location.hash.replace(/^#/, '');
+      // delete this later
+      localStorage.setItem('console', this.query);
+      console.log('did the page refresh?')
+      if (hashUrl.indexOf('?') === -1) {
+        window.history.pushState({}, '', window.location.pathname + '#' + hashUrl + '?search=' + this.query.search);
+      } else {
+        const searchParams = new URLSearchParams(
+          hashUrl.indexOf('?') === -1 ? '' : hashUrl.slice(hashUrl.indexOf('?') + 1)
+        );
+        const hashUrlWithoutSearchParams = hashUrl.slice(0, hashUrl.indexOf('?'));
+        
+        searchParams.set('search', this.query.search);
+        window.history.pushState({}, '', window.location.pathname + '#' + hashUrlWithoutSearchParams + '?' + searchParams);
+      }
+      // await this.getDocuments();
+      window.location.reload();
     },
     async getDocuments() {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
