@@ -68,12 +68,11 @@ module.exports = app => app.component('models', {
       this.sortDocs(num, path);
     }
 
+
     if (this.currentModel != null) {
       await this.getDocuments();
     }
-
     this.applyQueryParams();
-    
 
     this.status = 'loaded';
   },
@@ -130,7 +129,7 @@ module.exports = app => app.component('models', {
         this.query.sort = `{${path}:${num}}`
         this.$router.push({ query: this.query });
       }
-      await this.getDocuments();
+      await this.loadMoreDocuments();
     },
     async search() {
       if (this.searchText && Object.keys(this.searchText).length) {
@@ -154,8 +153,7 @@ module.exports = app => app.component('models', {
         searchParams.set('search', this.query.search);
         window.history.pushState({}, '', window.location.pathname + '#' + hashUrlWithoutSearchParams + '?' + searchParams);
       }
-      await this.getDocuments();
-      this.applyQueryParams();
+      await this.loadMoreDocuments();
     },
     async getDocuments() {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
@@ -186,6 +184,18 @@ module.exports = app => app.component('models', {
 
       this.filteredPaths = [...this.schemaPaths];
       this.selectedPaths = [...this.schemaPaths];
+    },
+    async loadMoreDocuments() {
+      const { docs } = await api.Model.getDocuments({
+        model: this.currentModel,
+        filter: this.filter,
+        sort: this.sortBy,
+        limit
+      });
+      this.documents = docs;
+      if (docs.length < limit) {
+        this.loadedAllDocs = true;
+      }
     },
     addOrRemove(path) {
       const exists = this.selectedPaths.findIndex(x => x.path == path.path);
