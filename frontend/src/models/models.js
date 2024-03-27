@@ -54,6 +54,7 @@ module.exports = app => app.component('models', {
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
     }
+
     this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
     if (this.$route.query?.search) {
       this.searchText = this.$route.query.search;
@@ -70,19 +71,29 @@ module.exports = app => app.component('models', {
     if (this.currentModel != null) {
       await this.getDocuments();
     }
-    const hashUrl = window.location.hash.replace(/^#/, '');
-    if (hashUrl.indexOf('?') !== -1) {
-      const searchParams = new URLSearchParams(
-        hashUrl.slice(hashUrl.indexOf('?') + 1)
-      );
-      if (searchParams.has('fields')) {
-        this.filteredPaths = searchParams.get('fields').split(',').map(path => ({ path }));
-      }
-    }
+
+    this.applyQueryParams();
+    
 
     this.status = 'loaded';
   },
   methods: {
+    applyQueryParams() {
+      const hashUrl = window.location.hash.replace(/^#/, '');
+      if (hashUrl.indexOf('?') !== -1) {
+        const searchParams = new URLSearchParams(
+          hashUrl.slice(hashUrl.indexOf('?') + 1)
+        );
+        if (searchParams.has('fields')) {
+          this.filteredPaths = searchParams.get('fields').split(',').map(path => ({ path }));
+        }
+        if (searchParams.has('search')) {
+          this.searchText = searchParams.get('search');
+          this.filter = eval(`(${this.searchText})`);
+          this.filter = EJSON.stringify(this.filter);
+        }
+      }
+    },
     async onScroll() {
       if (this.status === 'loading' || this.loadedAllDocs) {
         return;
@@ -143,8 +154,8 @@ module.exports = app => app.component('models', {
         searchParams.set('search', this.query.search);
         window.history.pushState({}, '', window.location.pathname + '#' + hashUrlWithoutSearchParams + '?' + searchParams);
       }
-      // await this.getDocuments();
-      window.location.reload();
+      await this.getDocuments();
+      this.applyQueryParams();
     },
     async getDocuments() {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
@@ -197,7 +208,7 @@ module.exports = app => app.component('models', {
       this.filteredPaths = [...this.selectedPaths];
       this.shouldShowFieldModal = false;
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-
+      // sets the query params
       const hashUrl = window.location.hash.replace(/^#/, '');
       if (hashUrl.indexOf('?') === -1) {
         window.history.pushState({}, '', window.location.pathname + '#' + hashUrl + '?fields=' + selectedParams);
