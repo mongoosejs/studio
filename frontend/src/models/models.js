@@ -68,7 +68,6 @@ module.exports = app => app.component('models', {
       this.sortDocs(num, path);
     }
 
-
     if (this.currentModel != null) {
       await this.getDocuments();
     }
@@ -84,7 +83,8 @@ module.exports = app => app.component('models', {
           hashUrl.slice(hashUrl.indexOf('?') + 1)
         );
         if (searchParams.has('fields')) {
-          this.filteredPaths = searchParams.get('fields').split(',').map(path => ({ path }));
+          const filter = searchParams.get('fields').split(',');
+          this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path))
         }
         if (searchParams.has('search')) {
           this.searchText = searchParams.get('search');
