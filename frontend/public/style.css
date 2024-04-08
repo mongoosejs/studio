@@ -24,6 +24,10 @@ button {
   font-size: 1.1em;
 }
 
+input {
+  outline: #666 solid 1px;
+}
+
 button.green {
   background-color: #58D415;
 }

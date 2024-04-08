@@ -106,6 +106,7 @@ dist
 package-lock.json
 
 frontend/public/app.js
+frontend/public/tw.css
 
 mongoose.js
 stargate.js

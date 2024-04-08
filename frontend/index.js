@@ -1,5 +1,6 @@
 'use strict';
 
+const { execSync, exec } = require('child_process');
 const webpack = require('webpack');
 
 module.exports = function(apiUrl, isLambda, options) {
@@ -27,7 +28,13 @@ module.exports = function(apiUrl, isLambda, options) {
       }
       console.log('Webpack compiled successfully');
     });
+
+    const childProcess = exec('npm run tailwind:watch');
+    childProcess.stdout.on('data', data => console.log('[TAILWIND]', data));
+    childProcess.stderr.on('data', data => console.log('[TAILWIND]', data));
   } else {
+    execSync('npm run tailwind');
+
     return new Promise((resolve, reject) => {
       compiler.run((err) => {
         if (err) {
