@@ -1,11 +1,27 @@
 <div class="models">
-  <div class="model-selector">
-    <h1>Models</h1>
-    <div v-for="model in models">
-      <router-link :to="'/model/' + model" :class="model === currentModel ? 'bold' : ''">
-        {{model}}
-      </router-link>
+  <div>
+    <div class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-2">
+      <div class="flex font-bold font-xl mt-4 pl-2">
+        Models
+      </div>
+      <nav class="flex flex-1 flex-col">
+        <ul role="list" class="flex flex-1 flex-col gap-y-7">
+          <li>
+            <ul role="list">
+              <li v-for="model in models">
+                <router-link
+                  :to="'/model/' + model"
+                  class="block rounded-md py-2 pr-2 pl-2 text-sm font-semibold text-gray-700"
+                  :class="model === currentModel ? 'bg-puerto-rico-100 font-bold' : 'hover:bg-puerto-rico-100'">
+                  {{model}}
+                </router-link>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
     </div>
+    
   </div>
   <div class="documents" ref="documentsList">
     <div>
