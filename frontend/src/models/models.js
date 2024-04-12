@@ -218,20 +218,7 @@ module.exports = app => app.component('models', {
       this.filteredPaths = [...this.selectedPaths];
       this.shouldShowFieldModal = false;
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-      // sets the query params
-      const hashUrl = window.location.hash.replace(/^#/, '');
-      if (hashUrl.indexOf('?') === -1) {
-        window.history.pushState({}, '', window.location.pathname + '#' + hashUrl + '?fields=' + selectedParams);
-      } else {
-        const searchParams = new URLSearchParams(
-          hashUrl.indexOf('?') === -1 ? '' : hashUrl.slice(hashUrl.indexOf('?') + 1)
-        );
-        const hashUrlWithoutSearchParams = hashUrl.slice(0, hashUrl.indexOf('?'));
-        
-        searchParams.set('fields', selectedParams);
-        window.history.pushState({}, '', window.location.pathname + '#' + hashUrlWithoutSearchParams + '?' + searchParams);
-      }
-      
+      this.$router.push({ query: { fields: selectedParams }});
     },
     resetDocuments() {
       this.selectedPaths = [...this.filteredPaths];
