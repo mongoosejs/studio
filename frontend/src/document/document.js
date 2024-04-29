@@ -17,12 +17,13 @@ module.exports = app => app.component('document', {
     status: 'init',
     document: null,
     changes: {},
-    editting: false
+    editting: false,
+    virtuals: []
   }),
   async mounted() {
     const { doc, schemaPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
     this.document = doc;
-    this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+    this.schemaPaths = await Object.keys(schemaPaths).sort((k1, k2) => {
       if (k1 === '_id' && k2 !== '_id') {
         return -1;
       }
@@ -31,7 +32,7 @@ module.exports = app => app.component('document', {
       }
       return 0;
     }).map(key => schemaPaths[key]);
-
+    this.getVirtuals();
     this.status = 'loaded';
   },
   methods: {
@@ -58,6 +59,17 @@ module.exports = app => app.component('document', {
     },
     getEditValueForPath({ path }) {
       return path in this.changes ? this.changes[path] : mpath.get(path, this.document);
+    },
+    getVirtuals() {
+      const exists = this.schemaPaths.map(x => x.path);
+      const docKeys = Object.keys(this.document);
+      console.log(exists, docKeys)
+      for (let i = 0; i < docKeys.length; i++) {
+        if (!exists.includes(docKeys[i])) {
+          this.virtuals.push({ name: docKeys[i], value: this.document[docKeys[i]] });
+        }
+      }
+      console.log('what is virtuals', this.virtuals);
     },
     cancelEdit() {
       this.changes = {};

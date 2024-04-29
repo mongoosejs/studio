@@ -56,5 +56,16 @@
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
       </div>
     </div>
+    <div v-for="path in virtuals">
+      <div class="path-key">
+        {{path.name}}
+        <span class="path-type">
+          (Virtual)
+        </span>
+      </div>
+      <div>
+        {{path.value}}
+      </div>
+    </div>
   </div>
 </div>
