@@ -56,5 +56,19 @@
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
       </div>
     </div>
+    <div v-for="path in virtuals" class="mb-2">
+      <div class="p-1 mb-1 bg-slate-100">
+        {{path.name}}
+        <span class="path-type">
+          (virtual)
+        </span>
+      </div>
+      <div v-if="path.value == null" class="text-sky-800">
+        {{'' + path.value}}
+      </div>
+      <div v-else>
+        {{path.value}}
+      </div>
+    </div>
   </div>
 </div>
