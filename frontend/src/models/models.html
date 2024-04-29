@@ -29,11 +29,13 @@
         <div class="search-input">
           <form @submit.prevent="search">
             <input class="search-text" type="text" placeholder="Filter or text" v-model="searchText" />
-            <div>Number of Documents: {{numDocuments}}</div>
           </form>
-
         </div>
         <div class="buttons">
+          <div class="document-count">
+            <span v-if="status == 'loading'">Loading ...</span>
+            <span v-if="status == 'loaded'">{{numDocuments == 1 ? numDocuments+' document' : numDocuments+ ' documents'}}</span>
+          </div>
           <button
             @click="shouldShowExportModal = true"
             type="button"
