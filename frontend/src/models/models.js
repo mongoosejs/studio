@@ -68,31 +68,18 @@ module.exports = app => app.component('models', {
       this.sortDocs(num, path);
     }
 
+
     if (this.currentModel != null) {
       await this.getDocuments();
     }
-    this.applyQueryParams();
+    if (this.$route.query?.fields) {
+      const filter = this.$route.query.fields.split(',');
+      this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path))
+    }
 
     this.status = 'loaded';
   },
   methods: {
-    applyQueryParams() {
-      const hashUrl = window.location.hash.replace(/^#/, '');
-      if (hashUrl.indexOf('?') !== -1) {
-        const searchParams = new URLSearchParams(
-          hashUrl.slice(hashUrl.indexOf('?') + 1)
-        );
-        if (searchParams.has('fields')) {
-          const filter = searchParams.get('fields').split(',');
-          this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path))
-        }
-        if (searchParams.has('search')) {
-          this.searchText = searchParams.get('search');
-          this.filter = eval(`(${this.searchText})`);
-          this.filter = EJSON.stringify(this.filter);
-        }
-      }
-    },
     async onScroll() {
       if (this.status === 'loading' || this.loadedAllDocs) {
         return;
@@ -136,22 +123,11 @@ module.exports = app => app.component('models', {
         this.filter = eval(`(${this.searchText})`);
         this.filter = EJSON.stringify(this.filter);
         this.query.search = this.searchText;
+        this.$router.push({ query: this.query });
       } else {
         this.filter = {};
         delete this.query.search;
-      }
-
-      const hashUrl = window.location.hash.replace(/^#/, '');
-      if (hashUrl.indexOf('?') === -1) {
-        window.history.pushState({}, '', window.location.pathname + '#' + hashUrl + '?search=' + this.query.search);
-      } else {
-        const searchParams = new URLSearchParams(
-          hashUrl.indexOf('?') === -1 ? '' : hashUrl.slice(hashUrl.indexOf('?') + 1)
-        );
-        const hashUrlWithoutSearchParams = hashUrl.slice(0, hashUrl.indexOf('?'));
-        
-        searchParams.set('search', this.query.search);
-        window.history.pushState({}, '', window.location.pathname + '#' + hashUrlWithoutSearchParams + '?' + searchParams);
+        this.$router.push({ query: this.query });
       }
       await this.loadMoreDocuments();
     },
@@ -218,23 +194,13 @@ module.exports = app => app.component('models', {
       this.filteredPaths = [...this.selectedPaths];
       this.shouldShowFieldModal = false;
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-      // sets the query params
-      const hashUrl = window.location.hash.replace(/^#/, '');
-      if (hashUrl.indexOf('?') === -1) {
-        window.history.pushState({}, '', window.location.pathname + '#' + hashUrl + '?fields=' + selectedParams);
-      } else {
-        const searchParams = new URLSearchParams(
-          hashUrl.indexOf('?') === -1 ? '' : hashUrl.slice(hashUrl.indexOf('?') + 1)
-        );
-        const hashUrlWithoutSearchParams = hashUrl.slice(0, hashUrl.indexOf('?'));
-        
-        searchParams.set('fields', selectedParams);
-        window.history.pushState({}, '', window.location.pathname + '#' + hashUrlWithoutSearchParams + '?' + searchParams);
-      }
-      
+      this.query.fields = selectedParams;
+      this.$router.push({ query: this.query });
     },
     resetDocuments() {
       this.selectedPaths = [...this.filteredPaths];
+      this.query.fields = {};
+      this.$router.push({ query: this.query });
       this.shouldShowFieldModal = false;
     },
     deselectAll() {
