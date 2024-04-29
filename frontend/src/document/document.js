@@ -63,13 +63,11 @@ module.exports = app => app.component('document', {
     getVirtuals() {
       const exists = this.schemaPaths.map(x => x.path);
       const docKeys = Object.keys(this.document);
-      console.log(exists, docKeys)
       for (let i = 0; i < docKeys.length; i++) {
         if (!exists.includes(docKeys[i])) {
           this.virtuals.push({ name: docKeys[i], value: this.document[docKeys[i]] });
         }
       }
-      console.log('what is virtuals', this.virtuals);
     },
     cancelEdit() {
       this.changes = {};
