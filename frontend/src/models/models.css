@@ -132,11 +132,3 @@
   justify-content: space-around;
   align-items: baseline;
 }
-
-.models .documents .buttons button:not(:last-child) {
-  margin-right: 8px;
-}
-
-.models .documents .buttons .document-count {
-  margin-right: 8px;
-}

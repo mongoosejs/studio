@@ -32,14 +32,14 @@
           </form>
         </div>
         <div class="buttons">
-          <div class="document-count">
-            <span v-if="status == 'loading'">Loading ...</span>
-            <span v-if="status == 'loaded'">{{numDocuments == 1 ? numDocuments+' document' : numDocuments+ ' documents'}}</span>
+          <div class="mr-2">
+            <span v-if="status === 'loading'">Loading ...</span>
+            <span v-if="status === 'loaded'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
           </div>
           <button
             @click="shouldShowExportModal = true"
             type="button"
-            class="rounded bg-puerto-rico-600 px-2 py-1 text-sm font-semibold text-white shadow-sm hover:bg-puerto-rico-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-puerto-rico-600">
+            class="mr-2 rounded bg-puerto-rico-600 px-2 py-1 text-sm font-semibold text-white shadow-sm hover:bg-puerto-rico-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-puerto-rico-600">
             Export
           </button>
           <button
