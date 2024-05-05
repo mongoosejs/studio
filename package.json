@@ -10,7 +10,7 @@
     "vanillatoasts": "^1.6.0"
   },
   "peerDependencies": {
-    "bson": "^5.5.1",
+    "bson": "^5.5.1 || 6.x",
     "express": "4.x",
     "mongoose": "7.x || 8.0.0-rc0 || 8.x"
   },
