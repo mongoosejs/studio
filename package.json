@@ -5,7 +5,7 @@
     "archetype": "0.13.0",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
-    "extrovert": "0.0.20",
+    "extrovert": "0.0.24",
     "openai": "3.2.1",
     "vanillatoasts": "^1.6.0"
   },
