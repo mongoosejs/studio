@@ -103,6 +103,7 @@
 
 .models .documents-menu .search-input {
   flex-grow: 1;
+  align-items: center;
 }
 
 .models .search-input input {
@@ -130,5 +131,5 @@
 .models .documents .buttons {
   display: inline-flex;
   justify-content: space-around;
-  align-items: baseline;
+  align-items: center;
 }
