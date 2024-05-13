@@ -40,7 +40,8 @@ module.exports = app => app.component('models', {
     sortBy: {},
     query: {},
     scrollHeight: 0,
-    interval: null
+    interval: null,
+    outputType: 'table' // json, table
   }),
   created() {
     this.currentModel = this.model;
@@ -221,6 +222,9 @@ module.exports = app => app.component('models', {
       }
       if (schemaPath.instance == 'Mixed') {
         return 'list-mixed';
+      }
+      if (schemaPath.instance == 'JSON') {
+        return 'list-json';
       }
       return 'list-default';
     },
