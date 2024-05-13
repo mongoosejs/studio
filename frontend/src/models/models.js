@@ -81,6 +81,14 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    filterDocument(doc) {
+      const filteredDoc = {};
+      console.log(doc, this.filteredPaths)
+      for (let i = 0; i < this.filteredPaths.length; i++) {
+        filteredDoc[this.filteredPaths[i].path] = doc[this.filteredPaths[i].path];
+      }
+      return filteredDoc;
+    },
     async onScroll() {
       if (this.status === 'loading' || this.loadedAllDocs) {
         return;

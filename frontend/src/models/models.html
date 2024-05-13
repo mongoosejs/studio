@@ -88,7 +88,7 @@
         <div v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
           <component
             :is="getComponentForPath({ instance: 'JSON' })"
-            :value="document"
+            :value="filterDocument(document)"
             :allude="currentModel"
             >
             </component>
