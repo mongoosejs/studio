@@ -231,9 +231,6 @@ module.exports = app => app.component('models', {
       if (schemaPath.instance == 'Mixed') {
         return 'list-mixed';
       }
-      if (schemaPath.instance == 'JSON') {
-        return 'list-json';
-      }
       return 'list-default';
     },
     getReferenceModel(schemaPath) {

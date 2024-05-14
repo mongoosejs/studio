@@ -86,12 +86,8 @@
       </div>
       <div v-if="outputType =='json' && status != 'loading'">
         <div v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
-          <component
-            :is="getComponentForPath({ instance: 'JSON' })"
-            :value="filterDocument(document)"
-            :allude="currentModel"
-            >
-            </component>
+          <list-json :value="filterDocument(document)">
+          </list-json>
         </div>
       </div>
     </div>
