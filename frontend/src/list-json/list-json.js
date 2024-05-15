@@ -12,7 +12,7 @@ module.exports = app => app.component('list-json', {
   props: ['value'],
   computed: {
     shortenValue() {
-      return JSON.stringify(this.value, null, 8);
+      return JSON.stringify(this.value, null, 4);
     }
   },
   methods: {
