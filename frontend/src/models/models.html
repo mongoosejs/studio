@@ -47,10 +47,18 @@
             Fields
           </button>
           <span class="isolate inline-flex rounded-md shadow-sm">
-            <button type="button" class="relative inline-flex items-center rounded-none rounded-l-md bg-white px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10">
+            <button
+              @click="outputType = 'table'"
+              type="button"
+              class="relative inline-flex items-center rounded-none rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
+              :class="outputType === 'table' ? 'bg-gray-200' : 'bg-white'">
               <img class="h-5 w-5" src="images/table.svg">
             </button>
-            <button type="button" class="relative -ml-px inline-flex items-center rounded-none rounded-r-md bg-white px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10">
+            <button
+              @click="outputType = 'json'"
+              type="button"
+              class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
+              :class="outputType === 'json' ? 'bg-gray-200' : 'bg-white'">
               <img class="h-5 w-5" src="images/json.svg">
             </button>
           </span>
@@ -58,7 +66,7 @@
       </div>
     </div>
     <div class="documents-container">
-      <table>
+      <table v-if="outputType === 'table'">
         <thead>
           <th v-for="path in filteredPaths">
             {{path.path}}
@@ -81,6 +89,12 @@
           </tr>
         </tbody>
       </table>
+      <div v-if="outputType === 'json'">
+        <div v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
+          <list-json :value="filterDocument(document)">
+          </list-json>
+        </div>
+      </div>
       <div v-if="status === 'loading'" class="loader">
         <img src="images/loader.gif">
       </div>

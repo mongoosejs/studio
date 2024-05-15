@@ -27,10 +27,6 @@
   max-height: calc(100vh - 56px);
 }
 
-.models .documents .documents-container {
-  margin-top: 60px;
-}
-
 .models .documents table {
   /* max-width: -moz-fit-content;
   max-width: fit-content; */
@@ -97,7 +93,6 @@
 .models .documents-menu {
   display: flex;
   margin: 0.25em;
-  position: fixed;
   width: calc(100vw - 220px);
 }
 
