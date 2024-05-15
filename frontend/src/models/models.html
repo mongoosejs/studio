@@ -58,7 +58,7 @@
       </div>
     </div>
     <div class="documents-container">
-      <table v-if="outputType == 'table' && status != 'loading'">
+      <table v-if="outputType == 'table'">
         <thead>
           <th v-for="path in filteredPaths">
             {{path.path}}
@@ -84,7 +84,7 @@
       <div v-if="status === 'loading'" class="loader">
         <img src="images/loader.gif">
       </div>
-      <div v-if="outputType =='json' && status != 'loading'">
+      <div v-if="outputType =='json'">
         <div v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
           <list-json :value="filterDocument(document)">
           </list-json>
