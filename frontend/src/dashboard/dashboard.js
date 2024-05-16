@@ -10,7 +10,7 @@ module.exports = app => app.component('dashboard', {
     dashboards: []
   }),
   async mounted() {
-    const { dashboards } = await api.Model.getDashboards();
+    const { dashboards } = await api.Dashboard.getDashboards();
     this.dashboards = dashboards;
     this.status = 'loaded';
   },
