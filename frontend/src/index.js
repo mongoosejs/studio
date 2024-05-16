@@ -8,6 +8,7 @@ const app = Vue.createApp({
 
 require('./async-button/async-button')(app);
 require('./charts/charts')(app);
+require('./dashboard/dashboard')(app);
 require('./detail-array/detail-array')(app);
 require('./detail-default/detail-default')(app);
 require('./document/document')(app);

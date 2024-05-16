@@ -29,6 +29,9 @@ if (config__isLambda) {
     exportQueryResults(params) {
       return client.post('', { action: 'Model.exportQueryResults', ...params }).then(res => res.data);
     },
+    getDashboards(params) {
+      return client.post('', { action: 'Model.getDashboards', ...params }).then(res => res.data);
+    },
     getDocument: function getDocument(params) {
       return client.post('', { action: 'Model.getDocument', ...params }).then(res => res.data);
     },
@@ -57,6 +60,9 @@ if (config__isLambda) {
       anchor.download = 'export.csv';
       anchor.click();
       return;
+    },
+    getDashboards: function getDashboards(params) {
+      return client.get('/Model/getDashboards', params).then(res => res.data);
     },
     getDocument: function getDocument(params) {
       return client.post('/Model/getDocument', params).then(res => res.data);

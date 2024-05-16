@@ -5,8 +5,8 @@
     </router-link>
   </div>
   <div class="nav-right">
-    <!--- <router-link to="/">Models</router-link>
-    <router-link to="/charts">Charts</router-link> -->
+    <router-link :class="{ 'active': documents }" class="spacing" to="/">Documents</router-link>
+    <router-link :class="{ 'active': dashboards }" class="spacing" to="/dashboards">Dashboards</router-link>
   </div>
   <div style="clear: both"></div>
 </div>

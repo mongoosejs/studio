@@ -7,5 +7,13 @@ const appendCSS = require('../appendCSS');
 appendCSS(require('./navbar.css'));
 
 module.exports = app => app.component('navbar', {
-  template: template
+  template: template,
+  computed: {
+    documents() {
+      return this.$route.name == 'root';
+    },
+    dashboards() {
+      return this.$route.name == 'dashboards';
+    }
+  }
 });
