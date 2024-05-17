@@ -5,6 +5,12 @@ const template = require('./models.html');
 const mpath = require('mpath');
 const { BSON, EJSON } = require('bson');
 
+const { EditorState } = require('@codemirror/state');
+const { lineNumbers } = require('@codemirror/view')
+const { EditorView, basicSetup } = require('codemirror');
+const { javascript } = require('@codemirror/lang-javascript');
+
+
 const ObjectId = new Proxy(BSON.ObjectId, {
   apply (target, thisArg, argumentsList) {
     return new target(...argumentsList);
@@ -12,6 +18,7 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 });
 
 const appendCSS = require('../appendCSS');
+
 
 appendCSS(require('./models.css'));
 
@@ -34,7 +41,10 @@ module.exports = app => app.component('models', {
     docEdits: null,
     filter: null,
     searchText: '',
+    documentData: '',
+    editor: null,
     shouldShowExportModal: false,
+    shouldShowCreateModal: false,
     shouldShowFieldModal: false,
     shouldExport: {},
     sortBy: {},
@@ -48,6 +58,9 @@ module.exports = app => app.component('models', {
   },
   beforeDestroy() {
     document.removeEventListener('scroll', () => this.onScroll(), true);
+    if (this.editor) {
+      this.editor.toTextArea();
+    }
   },
   async mounted() {
     document.addEventListener('scroll', () => this.onScroll(), true);
@@ -78,9 +91,40 @@ module.exports = app => app.component('models', {
       this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path))
     }
 
+
     this.status = 'loaded';
   },
   methods: {
+    async createDocument() {
+      console.log(this.documentData)
+      const data = eval(`{${this.documentData}}`)
+      const fields = EJSON.stringify(data)
+      await api.Model.createDocument({ model: this.currentModel, fields });
+      this.shouldShowCreateModal = false;
+    },
+    initializeDocumentData() {
+      this.shouldShowCreateModal = true;
+      const requiredPaths = this.schemaPaths.filter(x => x.required);
+      for (let i = 0; i < requiredPaths.length; i++) {
+        this.documentData += `"${requiredPaths[i].path}": \n`
+      }
+      
+      this.editor = new EditorView({
+        state: EditorState.create({
+          doc: this.documentData,
+          extensions: [
+            basicSetup,
+            javascript(),
+            // history(),
+            EditorView.updateListener.of((v) => {
+              // Your update logic here
+            }),
+            // keymap.of(historyKeymap)
+          ]
+        }),
+        parent: this.$refs.codeEditor
+      });
+    },
     filterDocument(doc) {
       const filteredDoc = {};
       console.log(doc, this.filteredPaths)

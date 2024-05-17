@@ -41,6 +41,12 @@
             Export
           </button>
           <button
+            @click="initializeDocumentData"
+            type="button"
+            class="rounded bg-teal-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+            Create
+          </button>
+          <button
             @click="shouldShowFieldModal = true"
             type="button"
             class="rounded bg-teal-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
@@ -123,6 +129,15 @@
           <button type="submit" @click="resetDocuments()" class="gray">Cancel</button>
           
         </div>
+      </template>
+    </modal>
+    <modal v-show="shouldShowCreateModal">
+      <template v-slot:body>
+        <div class="modal-exit" @click="shouldShowCreateModal = false;">&times;</div>
+        <div>
+          <textarea ref="codeEditor" v-model="documentData"></textarea>
+        </div>
+        <button @click="createDocument()">Submit</button>
       </template>
     </modal>
   </div>
