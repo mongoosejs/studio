@@ -4,9 +4,17 @@
       <img src="images/logo.svg" alt="Mongoose Studio Logo" />
     </router-link>
   </div>
-  <div class="nav-right">
-    <!--- <router-link to="/">Models</router-link>
-    <router-link to="/charts">Charts</router-link> -->
+  <div class="nav-right h-full">
+    <div class="sm:ml-6 sm:flex sm:space-x-8 h-full">
+      <a
+        href="#/"
+        class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+        :class="routeName === 'root' ? 'text-gray-900 border-teal-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Documents</a>
+      <a
+        href="#/dashboards"
+        class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
+        :class="routeName === 'dashboards' ? 'text-gray-900 border-teal-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Dashboards</a>
+    </div>
   </div>
   <div style="clear: both"></div>
 </div>

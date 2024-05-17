@@ -20,5 +20,10 @@ module.exports = [
     path: '/model/:model/document/:documentId',
     name: 'document',
     component: 'document'
+  },
+  {
+    path: '/dashboards',
+    name: 'dashboards',
+    component: 'dashboard'
   }
 ];

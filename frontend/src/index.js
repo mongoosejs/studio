@@ -8,6 +8,8 @@ const app = Vue.createApp({
 
 require('./async-button/async-button')(app);
 require('./charts/charts')(app);
+require('./dashboard/dashboard')(app);
+require('./dashboard-details/dashboard-details')(app);
 require('./detail-array/detail-array')(app);
 require('./detail-default/detail-default')(app);
 require('./document/document')(app);
@@ -18,6 +20,7 @@ require('./edit-date/edit-date')(app);
 require('./export-query-results/export-query-results')(app);
 require('./list-array/list-array')(app);
 require('./list-default/list-default')(app);
+require('./list-json/list-json')(app)
 require('./list-mixed/list-mixed')(app);
 require('./list-string/list-string')(app);
 require('./list-subdocument/list-subdocument')(app);

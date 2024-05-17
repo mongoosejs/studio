@@ -19,6 +19,11 @@ if (typeof config__setAuthorizationHeaderFrom === 'string' && config__setAuthori
 }
 
 if (config__isLambda) {
+  exports.Dashboard = {
+    getDashboards(params) {
+      return client.post('', { action: 'Dashboard.getDashboards', ...params }).then(res => res.data);
+    }
+  }
   exports.Model = {
     createChart(params) {
       return client.post('', { action: 'Model.createChart', ...params}).then(res => res.data);
@@ -43,6 +48,11 @@ if (config__isLambda) {
     }
   };
 } else {
+  exports.Dashboard = {
+    getDashboards: function getDashboards(params) {
+      return client.get('/Dashboard/getDashboards', params).then(res => res.data);
+    },
+  }
   exports.Model = {
     createChart: function (params) {
       return client.post('/Model/createChart', params).then(res => res.data);
