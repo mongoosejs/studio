@@ -19,6 +19,7 @@ require('./edit-date/edit-date')(app);
 require('./export-query-results/export-query-results')(app);
 require('./list-array/list-array')(app);
 require('./list-default/list-default')(app);
+require('./list-json/list-json')(app)
 require('./list-mixed/list-mixed')(app);
 require('./list-string/list-string')(app);
 require('./list-subdocument/list-subdocument')(app);

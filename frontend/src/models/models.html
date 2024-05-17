@@ -12,7 +12,7 @@
                 <router-link
                   :to="'/model/' + model"
                   class="block rounded-md py-2 pr-2 pl-2 text-sm font-semibold text-gray-700"
-                  :class="model === currentModel ? 'bg-puerto-rico-100 font-bold' : 'hover:bg-puerto-rico-100'">
+                  :class="model === currentModel ? 'bg-teal-100 font-bold' : 'hover:bg-teal-100'">
                   {{model}}
                 </router-link>
               </li>
@@ -26,33 +26,47 @@
   <div class="documents" ref="documentsList">
     <div>
       <div class="documents-menu">
-        <div class="search-input">
-          <form @submit.prevent="search">
-            <input class="search-text" type="text" placeholder="Filter or text" v-model="searchText" />
+        <div class="flex flex-row items-center w-full gap-2">
+          <form @submit.prevent="search" class="flex-grow m-0">
+            <input class="w-full rounded-md p-1 outline-gray-300 text-lg" type="text" placeholder="Filter or text" v-model="searchText" />
           </form>
-        </div>
-        <div class="buttons">
-          <div class="mr-2">
+          <div>
             <span v-if="status === 'loading'">Loading ...</span>
             <span v-if="status === 'loaded'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
           </div>
           <button
             @click="shouldShowExportModal = true"
             type="button"
-            class="mr-2 rounded bg-puerto-rico-600 px-2 py-1 text-sm font-semibold text-white shadow-sm hover:bg-puerto-rico-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-puerto-rico-600">
+            class="rounded bg-teal-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
             Export
           </button>
           <button
             @click="shouldShowFieldModal = true"
             type="button"
-            class="rounded bg-puerto-rico-600 px-2 py-1 text-sm font-semibold text-white shadow-sm hover:bg-puerto-rico-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-puerto-rico-600">
+            class="rounded bg-teal-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
             Fields
           </button>
+          <span class="isolate inline-flex rounded-md shadow-sm">
+            <button
+              @click="outputType = 'table'"
+              type="button"
+              class="relative inline-flex items-center rounded-none rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
+              :class="outputType === 'table' ? 'bg-gray-200' : 'bg-white'">
+              <img class="h-5 w-5" src="images/table.svg">
+            </button>
+            <button
+              @click="outputType = 'json'"
+              type="button"
+              class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
+              :class="outputType === 'json' ? 'bg-gray-200' : 'bg-white'">
+              <img class="h-5 w-5" src="images/json.svg">
+            </button>
+          </span>
         </div>
       </div>
     </div>
     <div class="documents-container">
-      <table>
+      <table v-if="outputType === 'table'">
         <thead>
           <th v-for="path in filteredPaths">
             {{path.path}}
@@ -75,6 +89,12 @@
           </tr>
         </tbody>
       </table>
+      <div v-if="outputType === 'json'">
+        <div v-for="document in documents" @click="$router.push('/model/' + currentModel + '/document/' + document._id)" :key="document._id">
+          <list-json :value="filterDocument(document)">
+          </list-json>
+        </div>
+      </div>
       <div v-if="status === 'loading'" class="loader">
         <img src="images/loader.gif">
       </div>
