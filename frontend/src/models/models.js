@@ -41,7 +41,7 @@ module.exports = app => app.component('models', {
     query: {},
     scrollHeight: 0,
     interval: null,
-    outputType: 'table' // json, table
+    outputMode: 'table' // json, table
   }),
   created() {
     this.currentModel = this.model;
@@ -68,6 +68,9 @@ module.exports = app => app.component('models', {
       const num = Object.values(sort)[0];
       this.sortDocs(num, path);
     }
+    if (this.$route.query?.outputMode) {
+      this.outputMode = this.$route.query.outputMode;
+    }
 
 
     if (this.currentModel != null) {
@@ -81,6 +84,11 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    changeMode(mode) {
+      this.outputMode = mode;
+      this.query.outputMode = mode;
+      this.$router.push({ query: this.query });
+    },
     filterDocument(doc) {
       const filteredDoc = {};
       console.log(doc, this.filteredPaths)
