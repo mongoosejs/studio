@@ -1,3 +1,8 @@
 <div>
-  <input type="datetime-local" :value="valueAsLocalString" @input="$emit('input', $event.target.value)">
+  <div class="flex space-x-2">
+    <div class="bg-blue-300 text-white font-bold py-2 px-4 rounded cursor-pointer hover:bg-blue-600" @click="inputType='picker'">Picker</div>
+    <div class="bg-green-300 text-white font-bold py-2 px-4 rounded cursor-pointer hover:bg-green-600" @click="inputType='iso'">ISO</div>
+  </div>
+  <input v-if="inputType == 'picker'" class="w-64 h-8" type="datetime-local" :value="valueAsLocalString" @input="$emit('input', $event.target.value)">
+  <input v-if="inputType == 'iso'" type="text" class="w-64 h-8" :value="valueAsISOString" @input="$emit('input', $event.target.value)">
 </div>
