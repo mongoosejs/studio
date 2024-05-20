@@ -41,7 +41,7 @@
             Export
           </button>
           <button
-            @click="initializeDocumentData"
+            @click="shouldShowCreateModal = true;"
             type="button"
             class="rounded bg-teal-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
             Create
@@ -131,13 +131,10 @@
         </div>
       </template>
     </modal>
-    <modal v-show="shouldShowCreateModal">
+    <modal v-if="shouldShowCreateModal">
       <template v-slot:body>
         <div class="modal-exit" @click="shouldShowCreateModal = false;">&times;</div>
-        <div class="mb-2">
-          <textarea class="border border-gray-200 p-2" ref="codeEditor" v-model="documentData"></textarea>
-        </div>
-        <button @click="createDocument()" class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Submit</button>
+        <create-document :currentModel="currentModel" :paths="schemaPaths" @close="shouldShowCreateModal = false;"></create-document>
       </template>
     </modal>
   </div>

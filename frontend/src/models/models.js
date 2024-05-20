@@ -41,8 +41,6 @@ module.exports = app => app.component('models', {
     docEdits: null,
     filter: null,
     searchText: '',
-    documentData: '',
-    editor: null,
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
@@ -58,9 +56,6 @@ module.exports = app => app.component('models', {
   },
   beforeDestroy() {
     document.removeEventListener('scroll', () => this.onScroll(), true);
-    if (this.editor) {
-      this.editor.toTextArea();
-    }
   },
   async mounted() {
     document.addEventListener('scroll', () => this.onScroll(), true);
@@ -95,36 +90,12 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
-    async createDocument() {
-      const data = EJSON.serialize(eval(`(${this.documentData})`));
-      await api.Model.createDocument({ model: this.currentModel, data });
+    async closeCreationModal() {
       this.shouldShowCreateModal = false;
+      await this.getDocuments();
     },
     initializeDocumentData() {
       this.shouldShowCreateModal = true;
-      const requiredPaths = this.schemaPaths.filter(x => x.required);
-      this.documentData = `{\n`;
-      for (let i = 0; i < requiredPaths.length; i++) {
-        const isLast = i + 1 >= requiredPaths.length;
-        this.documentData += `  ${requiredPaths[i].path}: ${isLast ? '': ','}\n`
-      }
-      this.documentData += '}';
-      
-      this.editor = new EditorView({
-        state: EditorState.create({
-          doc: this.documentData,
-          extensions: [
-            basicSetup,
-            javascript(),
-            // history(),
-            EditorView.updateListener.of((v) => {
-              // Your update logic here
-            }),
-            // keymap.of(historyKeymap)
-          ]
-        }),
-        parent: this.$refs.codeEditor
-      });
     },
     filterDocument(doc) {
       const filteredDoc = {};
