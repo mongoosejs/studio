@@ -134,7 +134,7 @@
     <modal v-if="shouldShowCreateModal">
       <template v-slot:body>
         <div class="modal-exit" @click="shouldShowCreateModal = false;">&times;</div>
-        <create-document :currentModel="currentModel" :paths="schemaPaths" @close="shouldShowCreateModal = false;"></create-document>
+        <create-document :currentModel="currentModel" :paths="schemaPaths" @close="closeCreationModal"></create-document>
       </template>
     </modal>
   </div>
