@@ -96,18 +96,19 @@ module.exports = app => app.component('models', {
   },
   methods: {
     async createDocument() {
-      console.log(this.documentData)
-      const data = eval(`{${this.documentData}}`)
-      const fields = EJSON.stringify(data)
-      await api.Model.createDocument({ model: this.currentModel, fields });
+      const data = EJSON.serialize(eval(`(${this.documentData})`));
+      await api.Model.createDocument({ model: this.currentModel, data });
       this.shouldShowCreateModal = false;
     },
     initializeDocumentData() {
       this.shouldShowCreateModal = true;
       const requiredPaths = this.schemaPaths.filter(x => x.required);
+      this.documentData = `{\n`;
       for (let i = 0; i < requiredPaths.length; i++) {
-        this.documentData += `"${requiredPaths[i].path}": \n`
+        const isLast = i + 1 >= requiredPaths.length;
+        this.documentData += `  ${requiredPaths[i].path}: ${isLast ? '': ','}\n`
       }
+      this.documentData += '}';
       
       this.editor = new EditorView({
         state: EditorState.create({

@@ -134,10 +134,10 @@
     <modal v-show="shouldShowCreateModal">
       <template v-slot:body>
         <div class="modal-exit" @click="shouldShowCreateModal = false;">&times;</div>
-        <div>
-          <textarea ref="codeEditor" v-model="documentData"></textarea>
+        <div class="mb-2">
+          <textarea class="border border-gray-200 p-2" ref="codeEditor" v-model="documentData"></textarea>
         </div>
-        <button @click="createDocument()">Submit</button>
+        <button @click="createDocument()" class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Submit</button>
       </template>
     </modal>
   </div>
