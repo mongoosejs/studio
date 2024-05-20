@@ -23,7 +23,7 @@
     "axios": "1.2.2",
     "express": "4.x",
     "mocha": "10.2.0",
-    "mongoose": "7.x",
+    "mongoose": "8.x",
     "tailwindcss": "3.4.0",
     "vue": "3.x",
     "webpack": "5.75.0"
