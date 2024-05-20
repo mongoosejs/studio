@@ -18,7 +18,7 @@ module.exports = app => app.component('document', {
     document: null,
     changes: {},
     editting: false,
-    virtuals: []
+    virtuals: [],
   }),
   async mounted() {
     window.pageState = this;

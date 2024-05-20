@@ -6,6 +6,11 @@ module.exports = app => app.component('edit-date', {
   template: template,
   props: ['value'],
   emits: ['input'],
+  data: function() {
+    return {
+      inputType: 'picker' // picker, iso
+    }
+  },
   computed: {
     valueAsLocalString() {
       if (this.value == null) {
@@ -23,6 +28,13 @@ module.exports = app => app.component('edit-date', {
         ':',
         date.getMinutes().toString().padStart(2, '0')
       ].join('');
+    },
+    valueAsISOString() {
+      if (this.value == null) {
+        return this.value;
+      }
+      const date = new Date(this.value);
+      return date.toISOString();
     }
   }
 });
