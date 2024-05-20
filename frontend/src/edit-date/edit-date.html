@@ -1,8 +1,20 @@
 <div>
-  <div class="flex space-x-2">
-    <div class="bg-blue-300 text-white font-bold py-2 px-4 rounded cursor-pointer hover:bg-blue-600" @click="inputType='picker'">Picker</div>
-    <div class="bg-green-300 text-white font-bold py-2 px-4 rounded cursor-pointer hover:bg-green-600" @click="inputType='iso'">ISO</div>
+  <div class="flex mb-[-1px] w-64 justify-end">
+    <button
+      @click="inputType = 'picker'"
+      type="button"
+      class="relative inline-flex items-center rounded-none p-1 rounded-tl-md text-sm text-gray-800 ring-1 ring-inset ring-gray-300 hover:bg-gray-200 focus:z-10"
+      :class="inputType === 'picker' ? 'bg-gray-200' : 'bg-white'">
+      Date Picker
+    </button>
+    <button
+      @click="inputType = 'iso'"
+      type="button"
+      class="relative -ml-px inline-flex items-center p-1 rounded-none rounded-tr-md text-sm text-gray-800 ring-1 ring-inset ring-gray-300 hover:bg-gray-200 focus:z-10"
+      :class="inputType === 'iso' ? 'bg-gray-200' : 'bg-white'">
+      ISO String Input
+    </button>
   </div>
-  <input v-if="inputType == 'picker'" class="w-64 h-8" type="datetime-local" :value="valueAsLocalString" @input="$emit('input', $event.target.value)">
-  <input v-if="inputType == 'iso'" type="text" class="w-64 h-8" :value="valueAsISOString" @input="$emit('input', $event.target.value)">
+  <input v-if="inputType == 'picker'" class="w-64 h-8 border border-gray-300 outline-0" type="datetime-local" :value="valueAsLocalString" @input="$emit('input', $event.target.value)">
+  <input v-if="inputType == 'iso'" type="text" class="w-64 h-8 border border-gray-300 outline-0" :value="valueAsISOString" @input="$emit('input', $event.target.value)">
 </div>
