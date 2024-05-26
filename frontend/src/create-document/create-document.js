@@ -32,10 +32,13 @@ module.exports = app => app.component('create-document', {
   methods: {
     async createDocument() {
       const data = EJSON.serialize(eval(`(${this.documentData})`));
-      console.log('what is data', data);
-      const { doc } = await api.Model.createDocument({ model: this.currentModel, data });
-      console.log('what is doc', doc);
-      this.$emit('close');
+      const { doc } = await api.Model.createDocument({ model: this.currentModel, data }).catch(err => {
+        if (err.response?.data?.message) {
+          throw new Error(err.response?.data?.message);
+        }
+        throw err;
+      });
+      this.$emit('close', doc);
     },
   },
   mounted: function() {
