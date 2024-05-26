@@ -26,7 +26,7 @@ module.exports = ({ db }) => async function updateDocument(params) {
   }
 
   const doc = await Model.
-    findByIdAndUpdate(_id, update, { sanitizeFilter: true, returnDocument: 'after' });
+    findByIdAndUpdate(_id, update, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true });
   
   return { doc };
 };

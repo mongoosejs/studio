@@ -28,6 +28,9 @@ if (config__isLambda) {
     createChart(params) {
       return client.post('', { action: 'Model.createChart', ...params}).then(res => res.data);
     },
+    createDocument(params) {
+      return client.post('', { action: 'Model.createDocument', ...params}).then(res => res.data);
+    },
     deleteDocument(params) {
       return client.post('', { action: 'Model.deleteDocument', ...params}).then(res => res.data);
     },
@@ -56,6 +59,9 @@ if (config__isLambda) {
   exports.Model = {
     createChart: function (params) {
       return client.post('/Model/createChart', params).then(res => res.data);
+    },
+    createDocument: function(params) {
+      return client.post('/Model/createDocument', params).then(res => res.data);
     },
     deleteDocument: function (params) {
       return client.post('/Model/deleteDocument', params).then(res => res.data);

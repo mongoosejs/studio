@@ -5,6 +5,12 @@ const template = require('./models.html');
 const mpath = require('mpath');
 const { BSON, EJSON } = require('bson');
 
+const { EditorState } = require('@codemirror/state');
+const { lineNumbers } = require('@codemirror/view')
+const { EditorView, basicSetup } = require('codemirror');
+const { javascript } = require('@codemirror/lang-javascript');
+
+
 const ObjectId = new Proxy(BSON.ObjectId, {
   apply (target, thisArg, argumentsList) {
     return new target(...argumentsList);
@@ -12,6 +18,7 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 });
 
 const appendCSS = require('../appendCSS');
+
 
 appendCSS(require('./models.css'));
 
@@ -35,6 +42,7 @@ module.exports = app => app.component('models', {
     filter: null,
     searchText: '',
     shouldShowExportModal: false,
+    shouldShowCreateModal: false,
     shouldShowFieldModal: false,
     shouldExport: {},
     sortBy: {},
@@ -78,9 +86,17 @@ module.exports = app => app.component('models', {
       this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path))
     }
 
+
     this.status = 'loaded';
   },
   methods: {
+    async closeCreationModal() {
+      this.shouldShowCreateModal = false;
+      await this.getDocuments();
+    },
+    initializeDocumentData() {
+      this.shouldShowCreateModal = true;
+    },
     filterDocument(doc) {
       const filteredDoc = {};
       console.log(doc, this.filteredPaths)
