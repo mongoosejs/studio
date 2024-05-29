@@ -44,6 +44,7 @@ module.exports = app => app.component('create-document', {
         }
         throw err;
       });
+      this.errors.length = 0;
       this.$emit('close', doc);
     },
   },
