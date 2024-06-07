@@ -26,7 +26,8 @@ module.exports = app => app.component('create-document', {
   data: function() {
     return {
       documentData: '',
-      editor: null
+      editor: null,
+      errors: []
     }
   },
   methods: {
@@ -34,10 +35,16 @@ module.exports = app => app.component('create-document', {
       const data = EJSON.serialize(eval(`(${this.documentData})`));
       const { doc } = await api.Model.createDocument({ model: this.currentModel, data }).catch(err => {
         if (err.response?.data?.message) {
+          console.log(err.response.data);
+          const message = err.response.data.message.split(": ").slice(1).join(": ");
+          this.errors = message.split(',').map(error => {
+            return error.split(': ').slice(1).join(': ').trim();
+          })
           throw new Error(err.response?.data?.message);
         }
         throw err;
       });
+      this.errors.length = 0;
       this.$emit('close', doc);
     },
   },
