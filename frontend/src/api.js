@@ -22,6 +22,9 @@ if (config__isLambda) {
   exports.Dashboard = {
     getDashboards(params) {
       return client.post('', { action: 'Dashboard.getDashboards', ...params }).then(res => res.data);
+    },
+    updateDashboard(params) {
+      return client.post('', { action: 'Dashboard.updateDashboard', ...params}).then(res => res.data);
     }
   }
   exports.Model = {
@@ -55,6 +58,9 @@ if (config__isLambda) {
     getDashboards: function getDashboards(params) {
       return client.get('/Dashboard/getDashboards', params).then(res => res.data);
     },
+    updateDashboard: function updateDashboard(params) {
+      return client.post('/Dashboard/updateDashboard', params).then(res => res.data);
+    }
   }
   exports.Model = {
     createChart: function (params) {

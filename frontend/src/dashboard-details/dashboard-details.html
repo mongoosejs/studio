@@ -1,6 +1,15 @@
 <div class="dashboard-details">
   <div v-if="dashboard">
-    {{dashboard.name}}
+    <div>{{dashboard.name}}</div>
+    <div>
+      <pre>{{code}}</pre>
+      <button @click="toggleEditor">Edit</button>
+    </div>
+    <div v-show="showEditor">
+      <textarea class="border border-gray-200 p-2 h-[300px] w-full" ref="codeEditor" v-model="payload">{{code}}</textarea>
+      <button @click="updateCode">Submit</button>
+      <button @click="showEditor = false;">Cancel</button>
+    </div>
   </div>
   <div v-if="!dashboard">
     No dashboard with the given id could be found.
