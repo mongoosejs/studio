@@ -1,10 +1,8 @@
 'use strict';
 
 const api = require('../api');
-const { EditorState } = require('@codemirror/state');
-const { lineNumbers } = require('@codemirror/view')
-const { EditorView, basicSetup } = require('codemirror');
-const { javascript } = require('@codemirror/lang-javascript');
+const CodeMirror = require('codemirror');
+require('codemirror/mode/javascript/javascript');
 
 const { BSON, EJSON } = require('bson');
 
@@ -32,7 +30,7 @@ module.exports = app => app.component('create-document', {
   },
   methods: {
     async createDocument() {
-      const data = EJSON.serialize(eval(`(${this.documentData})`));
+      const data = EJSON.serialize(eval(`(${this.editor.getValue()})`));
       const { doc } = await api.Model.createDocument({ model: this.currentModel, data }).catch(err => {
         if (err.response?.data?.message) {
           console.log(err.response.data);
@@ -49,7 +47,6 @@ module.exports = app => app.component('create-document', {
     },
   },
   mounted: function() {
-    console.log(this.currentModel, this.paths);
     const requiredPaths = this.paths.filter(x => x.required);
     this.documentData = `{\n`;
     for (let i = 0; i < requiredPaths.length; i++) {
@@ -58,25 +55,10 @@ module.exports = app => app.component('create-document', {
     }
     this.documentData += '}';
     
-    this.editor = new EditorView({
-      state: EditorState.create({
-        doc: this.documentData,
-        extensions: [
-          basicSetup,
-          javascript(),
-          // history(),
-          EditorView.updateListener.of((v) => {
-            // Your update logic here
-          }),
-          // keymap.of(historyKeymap)
-        ]
-      }),
-      parent: this.$refs.codeEditor
+    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
+      value: this.documentData,
+      mode: 'javascript',
+      lineNumbers: true
     });
   },
-  beforeDestroy() {
-    if (this.editor) {
-      this.editor.toTextArea();
-    }
-  }
 })

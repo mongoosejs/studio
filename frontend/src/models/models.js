@@ -5,10 +5,6 @@ const template = require('./models.html');
 const mpath = require('mpath');
 const { BSON, EJSON } = require('bson');
 
-const { EditorState } = require('@codemirror/state');
-const { lineNumbers } = require('@codemirror/view')
-const { EditorView, basicSetup } = require('codemirror');
-const { javascript } = require('@codemirror/lang-javascript');
 
 
 const ObjectId = new Proxy(BSON.ObjectId, {
