@@ -63,12 +63,7 @@ module.exports = app => app.component('create-document', {
         doc: this.documentData,
         extensions: [
           basicSetup,
-          javascript(),
-          // history(),
-          EditorView.updateListener.of((v) => {
-            // Your update logic here
-          }),
-          // keymap.of(historyKeymap)
+          javascript()
         ]
       }),
       parent: this.$refs.codeEditor

@@ -21,34 +21,33 @@ appendCSS(require('./edit-array.css'));
 module.exports = app => app.component('edit-array', {
   template: template,
   props: ['value'],
-  data: () => ({ currentValue: null, editor: null }),
+  data: () => ({ currentValue: null }),
   mounted() {
-    this.currentValue = this.value;
+    this.currentValue = JSON.stringify(this.value, null, '  ').trim();
     this.editor = new EditorView({
       state: EditorState.create({
-        doc: this.currentValue.join('\n'),
+        doc: this.currentValue,
         extensions: [
           basicSetup,
-          javascript(),
-          // history(),
-          EditorView.updateListener.of((v) => {
-            // Your update logic here
-          }),
-          // keymap.of(historyKeymap)
+          javascript()
         ]
       }),
       parent: this.$refs.arrayEditor
     });
   },
-  methods: {
-    onUpdate() {
-      this.$emit('input', this.currentValue.split('\n'));
-    },
+  watch: {
+    currentValue() {
+      try {
+        this.$emit('input', eval(this.currentValue));
+      } catch (err) {
+        this.$emit('error', err);
+      }
+    }
   },
   beforeDestroy() {
     if (this.editor) {
       this.editor.toTextArea();
     }
   },
-  emits: ['input']
+  emits: ['input', 'error']
 });

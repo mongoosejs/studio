@@ -42,14 +42,14 @@
         {{path.path}}
         <span class="path-type">
           ({{(path.instance || 'unknown').toLowerCase()}})
-        </span>
-        
+        </span>        
       </div>
       <div v-if="editting && path.path !== '_id'">
         <component
           :is="getEditComponentForPath(path)"
           :value="getEditValueForPath(path)"
-          @input="changes[path.path] = $event;"
+          @input="changes[path.path] = $event; delete invalid[path.path];"
+          @error="invalid[path.path] = $event;"
           >
         </component>
       </div>
