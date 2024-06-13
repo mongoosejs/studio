@@ -26,16 +26,26 @@ module.exports = app => app.component('create-document', {
   data: function() {
     return {
       documentData: '',
-      editor: null
+      editor: null,
+      errors: []
     }
   },
   methods: {
     async createDocument() {
       const data = EJSON.serialize(eval(`(${this.documentData})`));
-      console.log('what is data', data);
-      const { doc } = await api.Model.createDocument({ model: this.currentModel, data });
-      console.log('what is doc', doc);
-      this.$emit('close');
+      const { doc } = await api.Model.createDocument({ model: this.currentModel, data }).catch(err => {
+        if (err.response?.data?.message) {
+          console.log(err.response.data);
+          const message = err.response.data.message.split(": ").slice(1).join(": ");
+          this.errors = message.split(',').map(error => {
+            return error.split(': ').slice(1).join(': ').trim();
+          })
+          throw new Error(err.response?.data?.message);
+        }
+        throw err;
+      });
+      this.errors.length = 0;
+      this.$emit('close', doc);
     },
   },
   mounted: function() {

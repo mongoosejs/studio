@@ -1,6 +1,6 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "dependencies": {
     "@codemirror/commands": "^6.5.0",
     "@codemirror/lang-javascript": "^6.2.2",
