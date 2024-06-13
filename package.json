@@ -3,7 +3,6 @@
   "version": "0.0.22",
   "dependencies": {
     "archetype": "0.13.0",
-    "codemirror": "^5.65.16",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
     "extrovert": "0.0.24",
