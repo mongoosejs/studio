@@ -1,8 +1,6 @@
 'use strict';
 
 const api = require('../api');
-const CodeMirror = require('codemirror');
-require('codemirror/mode/javascript/javascript');
 
 const { BSON, EJSON } = require('bson');
 
