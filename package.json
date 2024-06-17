@@ -2,12 +2,7 @@
   "name": "@mongoosejs/studio",
   "version": "0.0.22",
   "dependencies": {
-    "@codemirror/commands": "^6.5.0",
-    "@codemirror/lang-javascript": "^6.2.2",
-    "@codemirror/state": "^6.4.1",
-    "@codemirror/view": "^6.26.3",
     "archetype": "0.13.0",
-    "codemirror": "^6.0.1",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
     "extrovert": "0.0.24",

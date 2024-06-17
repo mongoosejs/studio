@@ -17,6 +17,7 @@ module.exports = app => app.component('document', {
     status: 'init',
     document: null,
     changes: {},
+    invalid: {},
     editting: false,
     virtuals: [],
   }),
@@ -76,6 +77,9 @@ module.exports = app => app.component('document', {
       this.editting = false;
     },
     async save() {
+      if (Object.keys(this.invalid).length > 0) {
+        throw new Error('Invalid paths: ' + Object.keys(this.invalid).join(', '));
+      }
       const { doc } = await api.Model.updateDocument({
         model: this.model,
         _id: this.document._id,
