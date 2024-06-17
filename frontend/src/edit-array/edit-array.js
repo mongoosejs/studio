@@ -2,11 +2,6 @@
 
 const template = require('./edit-array.html');
 
-const { EditorState } = require('@codemirror/state');
-const { lineNumbers } = require('@codemirror/view')
-const { EditorView, basicSetup } = require('codemirror');
-const { javascript } = require('@codemirror/lang-javascript');
-
 const { BSON, EJSON } = require('bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
@@ -24,15 +19,10 @@ module.exports = app => app.component('edit-array', {
   data: () => ({ currentValue: null }),
   mounted() {
     this.currentValue = JSON.stringify(this.value, null, '  ').trim();
-    this.editor = new EditorView({
-      state: EditorState.create({
-        doc: this.currentValue,
-        extensions: [
-          basicSetup,
-          javascript()
-        ]
-      }),
-      parent: this.$refs.arrayEditor
+    this.$refs.arrayEditor.value = this.currentValue;
+    this.editor = CodeMirror.fromTextArea(this.$refs.arrayEditor, {
+      mode: 'javascript',
+      lineNumbers: true
     });
   },
   watch: {
