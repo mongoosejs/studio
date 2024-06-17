@@ -3,11 +3,6 @@
 const api = require('../api');
 const template = require('./dashboard-details.html');
 
-const { EditorState } = require('@codemirror/state');
-const { lineNumbers } = require('@codemirror/view')
-const { EditorView, basicSetup } = require('codemirror');
-const { javascript } = require('@codemirror/lang-javascript');
-
 module.exports = app => app.component('dashboard-details', {
   template: template,
   props: ['dashboard'],
@@ -16,7 +11,6 @@ module.exports = app => app.component('dashboard-details', {
       code: '',
       editor: null,
       showEditor: false,
-      payload: ''
     }
   },
   methods: {
@@ -24,32 +18,21 @@ module.exports = app => app.component('dashboard-details', {
       this.showEditor = !this.showEditor;
     },
     async updateCode() {
-      const { doc } = await api.Dashboard.updateDashboard({ dashboardId: this.dashboard._id, code: this.payload });
+      const { doc } = await api.Dashboard.updateDashboard({ dashboardId: this.dashboard._id, code: this.editor.getValue() });
       this.code = doc.code;
       this.showEditor = false;
     }
   },
   mounted: function() {
-    this.editor = new EditorView({
-      state: EditorState.create({
-        doc: this.dashboard.code.toString(),
-        extensions: [
-          basicSetup,
-          javascript(),
-          // history(),
-          EditorView.updateListener.of((v) => {
-          }),
-          // keymap.of(historyKeymap)
-        ]
-      }),
-      parent: this.$refs.codeEditor
+    this.$refs.codeEditor.value = this.dashboard.code;
+    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
+      mode: 'javascript',
+      lineNumbers: true,
+      indentUnit: 4,
+      smartIndent: true,
+      tabsize: 4,
+      indentWithTabs: true
     });
-    this.code = this.dashboard.code;
-    this.payload = this.code;
-  },
-  beforeDestroy() {
-    if (this.editor) {
-      this.editor.toTextArea();
-    }
+    this.editor.refresh(); // if anything weird happens on load, this usually fixes it.
   }
 });

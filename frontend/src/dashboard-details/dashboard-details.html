@@ -1,14 +1,16 @@
 <div class="dashboard-details">
   <div v-if="dashboard">
-    <div>{{dashboard.name}}</div>
+    <div>
+      <h2>{{dashboard.name}}</h2>
+    </div>
     <div>
       <pre>{{code}}</pre>
-      <button @click="toggleEditor">Edit</button>
+      <button @click="toggleEditor" style="color: black;margin-right: 0.5em">Edit</button>
     </div>
     <div v-show="showEditor">
-      <textarea class="border border-gray-200 p-2 h-[300px] w-full" ref="codeEditor" v-model="payload">{{code}}</textarea>
-      <button @click="updateCode">Submit</button>
-      <button @click="showEditor = false;">Cancel</button>
+      <textarea class="border border-gray-200 p-2 h-[300px] w-full" ref="codeEditor"></textarea>
+      <button @click="updateCode" style="color: black;margin-right: 0.5em">Submit</button>
+      <button @click="showEditor = false;" class="gray" style="margin-right: 0.5em">Cancel</button>
     </div>
   </div>
   <div v-if="!dashboard">
