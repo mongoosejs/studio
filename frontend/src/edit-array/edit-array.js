@@ -19,8 +19,8 @@ module.exports = app => app.component('edit-array', {
   data: () => ({ currentValue: null }),
   mounted() {
     this.currentValue = JSON.stringify(this.value, null, '  ').trim();
+    this.$refs.arrayEditor.value = this.currentValue;
     this.editor = CodeMirror.fromTextArea(this.$refs.arrayEditor, {
-      value: this.currentValue,
       mode: 'javascript',
       lineNumbers: true
     });
