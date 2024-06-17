@@ -1,6 +1,6 @@
 <div class="dashboard">
   <div v-if="!dashboard">
-    <div v-for="dashboard in dashboards" :key="dashboard._id">
+    <div v-for="dashboard in dashboards" :key="dashboard._id" @click="$router.push('dashboards?dashboardId=' + dashboard._id)">
       {{dashboard.name}}, ID: {{ dashboard._id }}
     </div>
   </div>
