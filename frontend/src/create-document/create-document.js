@@ -52,9 +52,8 @@ module.exports = app => app.component('create-document', {
       this.documentData += `  ${requiredPaths[i].path}: ${isLast ? '': ','}\n`
     }
     this.documentData += '}';
-    
+    this.$refs.codeEditor.value = this.documentData;
     this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
-      value: this.documentData,
       mode: 'javascript',
       lineNumbers: true
     });
