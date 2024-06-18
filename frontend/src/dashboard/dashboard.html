@@ -13,7 +13,7 @@
       <button @click="showEditor = false;" class="gray" style="margin-right: 0.5em">Cancel</button>
     </div>
   </div>
-  <div v-if="!dashboard">
+  <div v-if="!dashboard && status === 'loaded'">
     No dashboard with the given id could be found.
   </div>
 </div>

@@ -7,6 +7,7 @@ module.exports = app => app.component('dashboard', {
   template: template,
   data: function() {
     return {
+      status: 'loading',
       code: '',
       name: '',
       editor: null,
@@ -26,13 +27,13 @@ module.exports = app => app.component('dashboard', {
   },
   mounted: async function() {
     const dashboardId = this.$route.query.dashboardId;
-    console.log('what is dashboardId', dashboardId)
     const { dashboard } = await api.Dashboard.getDashboard({ params: { dashboardId: dashboardId } });
     if (!dashboard) {
       return;
     }
     this.dashboard = dashboard;
     this.name = this.dashboard.name;
+    this.code = this.dashboard.code;
     this.$refs.codeEditor.value = this.dashboard.code;
     this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
       mode: 'javascript',
@@ -43,5 +44,6 @@ module.exports = app => app.component('dashboard', {
       indentWithTabs: true
     });
     this.editor.refresh(); // if anything weird happens on load, this usually fixes it.
+    this.status = 'loaded';
   }
 });
