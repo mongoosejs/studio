@@ -1,0 +1,5 @@
+<div class="dashboards">
+  <div v-for="dashboard in dashboards" :key="dashboard._id" @click="$router.push('dashboard?dashboardId=' + dashboard._id)">
+    {{dashboard.name}}, ID: {{ dashboard._id }}
+  </div>
+</div>

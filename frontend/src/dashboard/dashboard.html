@@ -1,8 +1,19 @@
 <div class="dashboard">
-  <div v-if="!dashboard">
-    <div v-for="dashboard in dashboards" :key="dashboard._id" @click="$router.push('dashboards?dashboardId=' + dashboard._id)">
-      {{dashboard.name}}, ID: {{ dashboard._id }}
+  <div v-show="dashboard">
+    <div>
+      <h2>{{name}}</h2>
+    </div>
+    <div>
+      <pre>{{code}}</pre>
+      <button @click="toggleEditor" style="color: black;margin-right: 0.5em">Edit</button>
+    </div>
+    <div v-show="showEditor">
+      <textarea class="border border-gray-200 p-2 h-[300px] w-full" ref="codeEditor"></textarea>
+      <button @click="updateCode" style="color: black;margin-right: 0.5em">Submit</button>
+      <button @click="showEditor = false;" class="gray" style="margin-right: 0.5em">Cancel</button>
     </div>
   </div>
-  <dashboard-details v-if="dashboard" :dashboard="dashboard"></dashboard-details>
+  <div v-if="!dashboard">
+    No dashboard with the given id could be found.
+  </div>
 </div>
