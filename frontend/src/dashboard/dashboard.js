@@ -10,7 +10,6 @@ module.exports = app => app.component('dashboard', {
       status: 'loading',
       code: '',
       name: '',
-      editor: null,
       showEditor: false,
       dashboard: null
     }
@@ -19,10 +18,8 @@ module.exports = app => app.component('dashboard', {
     toggleEditor() {
       this.showEditor = !this.showEditor;
     },
-    async updateCode() {
-      const { doc } = await api.Dashboard.updateDashboard({ dashboardId: this.dashboard._id, code: this.editor.getValue() });
-      this.code = doc.code;
-      this.showEditor = false;
+    async updateCode(update) {
+      this.code = update;
     }
   },
   mounted: async function() {
@@ -34,16 +31,6 @@ module.exports = app => app.component('dashboard', {
     this.dashboard = dashboard;
     this.name = this.dashboard.name;
     this.code = this.dashboard.code;
-    this.$refs.codeEditor.value = this.dashboard.code;
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
-      mode: 'javascript',
-      lineNumbers: true,
-      indentUnit: 4,
-      smartIndent: true,
-      tabsize: 4,
-      indentWithTabs: true
-    });
-    this.editor.refresh(); // if anything weird happens on load, this usually fixes it.
     this.status = 'loaded';
   }
 });

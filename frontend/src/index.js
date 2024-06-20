@@ -11,6 +11,7 @@ require('./charts/charts')(app);
 require('./create-document/create-document')(app);
 require('./dashboards/dashboards')(app);
 require('./dashboard/dashboard')(app);
+require('./dashboard/edit-dashboard/edit-dashboard')(app)
 require('./detail-array/detail-array')(app);
 require('./detail-default/detail-default')(app);
 require('./document/document')(app);
