@@ -24,6 +24,11 @@ module.exports = [
   {
     path: '/dashboards',
     name: 'dashboards',
+    component: 'dashboards'
+  },
+  {
+    path: '/dashboard',
+    name: 'dashboard',
     component: 'dashboard'
   }
 ];
