@@ -23,7 +23,7 @@
       </button>
       <button
         v-if="editting"
-        @click="shouldShowConfirmModal=true;"
+        @click="confirmSave"
         type="button"
         class="rounded-md bg-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
         <img src="images/save.svg" class="inline" /> Save
@@ -77,9 +77,7 @@
         <h2>
           Are you sure you want to save the following changes?
         </h2>
-        <div v-for="change in Object.keys(changes)">
-          {{change}} : {{ changes[change]}}
-        </div>
+        <pre><code ref="code" class="language-javascript" v-text="displayChanges"></code></pre>
         <div class="flex gap-2 mt-2">
           <async-button
             class="rounded-md bg-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
