@@ -39,11 +39,6 @@ module.exports = app => app.component('document', {
     this.getVirtuals();
     this.status = 'loaded';
   },
-  computed: {
-    displayChanges() {
-      return JSON.stringify(this.changes, null, '  ').trim();
-    }
-  },
   methods: {
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
@@ -82,11 +77,6 @@ module.exports = app => app.component('document', {
       this.changes = {};
       this.editting = false;
     },
-    async confirmSave() {
-      this.shouldShowConfirmModal = true;
-      await sleep(50); // errors without it
-      Prism.highlightElement(this.$refs.code);
-    },
     async save() {
       if (Object.keys(this.invalid).length > 0) {
         throw new Error('Invalid paths: ' + Object.keys(this.invalid).join(', '));
@@ -99,6 +89,7 @@ module.exports = app => app.component('document', {
       this.document = doc;
       this.changes = {};
       this.editting = false;
+      this.shouldShowConfirmModal = false;
     },
     async remove() {
       const { doc } = await api.Model.deleteDocument({
@@ -119,7 +110,3 @@ module.exports = app => app.component('document', {
     }
   }
 });
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
