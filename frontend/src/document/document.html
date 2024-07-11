@@ -23,7 +23,7 @@
       </button>
       <button
         v-if="editting"
-        @click="save"
+        @click="shouldShowConfirmModal=true;"
         type="button"
         class="rounded-md bg-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
         <img src="images/save.svg" class="inline" /> Save
@@ -71,5 +71,11 @@
         {{path.value}}
       </div>
     </div>
+    <modal v-if="shouldShowConfirmModal">
+      <template v-slot:body>
+        <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>
+        <confirm-changes @close="shouldShowConfirmModal = false;" @save="save" :value="changes"></confirm-changes>
+      </template>
+    </modal>
   </div>
 </div>

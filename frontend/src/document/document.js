@@ -20,6 +20,7 @@ module.exports = app => app.component('document', {
     invalid: {},
     editting: false,
     virtuals: [],
+    shouldShowConfirmModal: false
   }),
   async mounted() {
     window.pageState = this;
@@ -88,6 +89,7 @@ module.exports = app => app.component('document', {
       this.document = doc;
       this.changes = {};
       this.editting = false;
+      this.shouldShowConfirmModal = false;
     },
     async remove() {
       const { doc } = await api.Model.deleteDocument({
