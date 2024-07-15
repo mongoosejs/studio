@@ -1,13 +1,17 @@
 'use strict';
 
 const template = require('./detail-array.html');
+const util = require('util');
 
 module.exports = app => app.component('detail-array', {
   template: template,
   props: ['value'],
   computed: {
     displayValue() {
-      return JSON.stringify(this.value, null, '  ').trim();
+      if (this.value == null) {
+        return this.value;
+      }
+      return util.inspect(this.value);
     }
   },
   mounted() {
