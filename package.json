@@ -6,8 +6,8 @@
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
     "extrovert": "0.0.24",
+    "node-polyfill-webpack-plugin": "4.x",
     "openai": "3.2.1",
-    "util": "0.12.x",
     "vanillatoasts": "^1.6.0"
   },
   "peerDependencies": {
