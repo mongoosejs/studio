@@ -6,6 +6,7 @@ module.exports = function next() {
   const backend = Backend();
 
   return async function(req, res) {
+    const params = { ...req.body };
     const actionName = params?.action;
     if (typeof actionName !== 'string') {
       throw new Error('No action specified');

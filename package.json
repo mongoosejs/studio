@@ -6,7 +6,7 @@
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
     "extrovert": "0.0.24",
-    "node-polyfill-webpack-plugin": "4.x",
+    "node-inspect-extracted": "3.x",
     "openai": "3.2.1",
     "vanillatoasts": "^1.6.0"
   },

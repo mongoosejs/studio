@@ -1,6 +1,5 @@
 'use strict';
 
-const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
@@ -18,9 +17,6 @@ module.exports = {
     filename: '[name].js'
   },
   plugins: [
-    new NodePolyfillPlugin({
-			additionalAliases: ['process']
-		}),
     new webpack.DefinePlugin({
       config__baseURL: '\'/.netlify/functions/admin\''
     })

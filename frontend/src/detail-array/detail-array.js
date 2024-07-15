@@ -1,7 +1,7 @@
 'use strict';
 
 const template = require('./detail-array.html');
-const util = require('util');
+const { inspect } = require('node-inspect-extracted');
 
 module.exports = app => app.component('detail-array', {
   template: template,
@@ -11,7 +11,7 @@ module.exports = app => app.component('detail-array', {
       if (this.value == null) {
         return this.value;
       }
-      return util.inspect(this.value);
+      return inspect(this.value, { maxArrayLength: 50 });
     }
   },
   mounted() {

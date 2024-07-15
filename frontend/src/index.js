@@ -1,5 +1,9 @@
 'use strict';
 
+if (typeof process === 'undefined') {
+  global.process = { env: {} }; // To make `util` package work
+}
+
 const vanillatoasts = require('vanillatoasts');
 
 const app = Vue.createApp({
