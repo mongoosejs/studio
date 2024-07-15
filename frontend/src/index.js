@@ -12,6 +12,7 @@ const app = Vue.createApp({
 
 require('./async-button/async-button')(app);
 require('./charts/charts')(app);
+require('./create-dashboard/create-dashboard')(app);
 require('./create-document/create-document')(app);
 require('./dashboards/dashboards')(app);
 require('./dashboard/dashboard')(app);

@@ -20,6 +20,9 @@ if (typeof config__setAuthorizationHeaderFrom === 'string' && config__setAuthori
 
 if (config__isLambda) {
   exports.Dashboard = {
+    createDashboard(params) {
+      return client.post('', { action: 'Dashboard.createDashboard', ...params }).then(res => res.data);
+    },
     getDashboard(params) {
       return client.post('', { action: 'Dashboard.getDashboard', ...params }).then(res => res.data);
     },
@@ -58,6 +61,9 @@ if (config__isLambda) {
   };
 } else {
   exports.Dashboard = {
+    createDashboard: function createDashboard(params) {
+      return client.post('/Dashboard/createDashboard', params).then(res => res.data);
+    },
     getDashboard: function getDashboard(params) {
       return client.get('/Dashboard/getDashboard', params).then(res => res.data);
     },

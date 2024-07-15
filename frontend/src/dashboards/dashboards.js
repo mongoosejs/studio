@@ -7,14 +7,13 @@ const template = require('./dashboards.html');
 module.exports = app => app.component('dashboards', {
   template: template,
   data: () => ({
+    status: 'loading',
     dashboards: [],
+    showCreateDashboardModal: true
   }),
   async mounted() {
     const { dashboards } = await api.Dashboard.getDashboards();
     this.dashboards = dashboards;
-    if (!this.$route.query.dashboardId) {
-      return;
-    }
     this.status = 'loaded';
   },
 });

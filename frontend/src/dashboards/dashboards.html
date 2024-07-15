@@ -1,5 +1,27 @@
-<div class="dashboards">
+<div class="dashboards max-w-5xl mx-auto mt-8">
+  <div v-if="status === 'loaded' && dashboards.length === 0">
+    <div class="text-center">
+      <h3 class="mt-2 text-sm font-semibold text-gray-900">No dashboards yet</h3>
+      <p class="mt-1 text-sm text-gray-500">Get started by creating a new dashboard.</p>
+      <div class="mt-6">
+        <button type="button" class="inline-flex items-center rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+          <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+          </svg>
+          New Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
   <div v-for="dashboard in dashboards" :key="dashboard._id" @click="$router.push('dashboard?dashboardId=' + dashboard._id)">
     {{dashboard.name}}, ID: {{ dashboard._id }}
   </div>
+
+  <modal v-if="showCreateDashboardModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="showCreateDashboardModal = false;">&times;</div>
+      
+      <create-dashboard></create-dashboard>
+    </template>
+  </modal>
 </div>

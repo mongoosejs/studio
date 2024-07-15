@@ -1,0 +1,43 @@
+<div>
+  <div class="mt-4 text-gray-900 font-semibold">
+    Create New Dashboard
+  </div>
+  <div class="mt-4">
+    <label class="block text-sm font-medium leading-6 text-gray-900">Title</label>
+    <div class="mt-2">
+      <div class="w-full flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-teal-600">
+        <input type="text" v-model="title" class="outline-none block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6" placeholder="ACME-123">
+      </div>
+    </div>
+  </div>
+  <div class="my-4">
+    <label class="block text-sm font-medium leading-6 text-gray-900">Code</label>
+    <div class="border border-gray-200">
+      <textarea class="p-2 h-[300px] w-full" ref="codeEditor"></textarea>
+    </div>
+  </div>
+  <async-button
+    @click="createDashboard()"
+    class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+    Submit
+  </async-button>
+  <div v-if="errors.length > 0" class="rounded-md bg-red-50 p-4 mt-1">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+        </svg>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-sm font-medium text-red-800">There were {{errors.length}} errors with your submission</h3>
+        <div class="mt-2 text-sm text-red-700">
+          <ul role="list" class="list-disc space-y-1 pl-5">
+            <li v-for="error in errors">
+              {{error}}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -2,11 +2,11 @@
 const Archetype = require('archetype');
 
 const GetDashboardParams = new Archetype({
-    dashboardId: {
-      $type: 'string',
-      $required: true
-    }
-  }).compile('GetDashboardParams');
+  dashboardId: {
+    $type: 'string',
+    $required: true
+  }
+}).compile('GetDashboardParams');
 
 module.exports = ({ db }) => async function getDashboard(params) {
   const { dashboardId } = new GetDashboardParams(params);
