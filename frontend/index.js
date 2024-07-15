@@ -33,8 +33,6 @@ module.exports = function(apiUrl, isLambda, options) {
     childProcess.stdout.on('data', data => console.log('[TAILWIND]', data));
     childProcess.stderr.on('data', data => console.log('[TAILWIND]', data));
   } else {
-    execSync('npm run tailwind');
-
     return new Promise((resolve, reject) => {
       compiler.run((err) => {
         if (err) {

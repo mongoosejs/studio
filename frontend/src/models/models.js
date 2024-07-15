@@ -18,7 +18,7 @@ const appendCSS = require('../appendCSS');
 
 appendCSS(require('./models.css'));
 
-const limit = 50;
+const limit = 20;
 
 module.exports = app => app.component('models', {
   template: template,
