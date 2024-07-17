@@ -13,8 +13,60 @@
       </div>
     </div>
   </div>
-  <div v-for="dashboard in dashboards" :key="dashboard._id" @click="$router.push('dashboard?dashboardId=' + dashboard._id)">
-    {{dashboard.name}}, ID: {{ dashboard._id }}
+
+
+  <div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+      <div class="sm:flex-auto">
+        <h1 class="text-base font-semibold leading-6 text-gray-900">Dashboards</h1>
+      </div>
+      <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+        <button
+          type="button"
+          @click="showCreateDashboardModal = true"
+          class="block rounded-md bg-teal-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Create New Dashboard</button>
+      </div>
+    </div>
+    <div class="mt-8 flow-root">
+      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="inline-block min-w-full py-2 align-middle">
+          <table class="min-w-full divide-y divide-gray-300">
+            <thead>
+              <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 lg:pl-8">Title</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-[50%]">Description</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8">
+                </th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8">
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              <tr v-for="dashboard in dashboards">
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">{{dashboard.title}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 truncate w-[50%]">{{dashboard.description}}</td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
+                  <router-link
+                    :to="'dashboard?edit=true&dashboardId=' + dashboard._id"
+                    class="text-teal-600 hover:text-teal-900">
+                    Edit
+                  </router-link>
+                </td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
+                  <router-link
+                    :to="'dashboard?edit=true&dashboardId=' + dashboard._id"
+                    class="text-teal-600 hover:text-teal-900">
+                    View
+                  </router-link>
+                </td>
+              </tr>
+  
+              <!-- More people... -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <modal v-if="showCreateDashboardModal">

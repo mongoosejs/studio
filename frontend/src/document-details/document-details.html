@@ -1,0 +1,36 @@
+<div class="document-details">
+  <div v-for="path in schemaPaths" class="value">
+    <div class="path-key p-1">
+      {{path.path}}
+      <span class="path-type">
+        ({{(path.instance || 'unknown').toLowerCase()}})
+      </span>        
+    </div>
+    <div v-if="editting && path.path !== '_id'" class="pl-1">
+      <component
+        :is="getEditComponentForPath(path)"
+        :value="getEditValueForPath(path)"
+        @input="changes[path.path] = $event; delete invalid[path.path];"
+        @error="invalid[path.path] = $event;"
+        >
+      </component>
+    </div>
+    <div v-else class="pl-1">
+      <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
+    </div>
+  </div>
+  <div v-for="path in virtuals" class="mb-2">
+    <div class="p-1 mb-1 bg-slate-100">
+      {{path.name}}
+      <span class="path-type">
+        (virtual)
+      </span>
+    </div>
+    <div v-if="path.value == null" class="text-sky-800">
+      {{'' + path.value}}
+    </div>
+    <div v-else>
+      {{path.value}}
+    </div>
+  </div>
+</div>

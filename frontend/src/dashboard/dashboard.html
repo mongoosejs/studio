@@ -1,15 +1,24 @@
-<div class="dashboard">
-  <div v-if="dashboard">
-    <div>
-      <h2>{{name}}</h2>
+<div class="dashboard px-1">
+  <div v-if="dashboard" class="max-w-5xl mx-auto">
+    <div class="flex items-center w-full">
+      <h2 class="mt-4 mb-4 text-gray-900 font-semibold text-xl grow shrink">{{dashboard.title}}</h2>
+      <div>
+        <button
+          v-if="!showEditor"
+          @click="showEditor = true"
+          type="button"
+          class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+          <img src="images/edit.svg" class="inline h-[1em]" /> Edit
+        </button>
+      </div>
     </div>
-    <div>
-      <pre>{{code}}</pre>
-      <button v-if="!showEditor" @click="toggleEditor" style="color: black;margin-right: 0.5em">Edit</button>
+    <div v-if="!showEditor" class="mt-4 mb-4">
+      <dashboard-result :result="result"></dashboard-result>
     </div>
     <div v-if="showEditor">
       <edit-dashboard :dashboardId="dashboard._id" :code="code" @close="showEditor=false;" @update="updateCode"></edit-dashboard>
     </div>
+    
   </div>
   <div v-if="!dashboard && status === 'loaded'">
     No dashboard with the given id could be found.

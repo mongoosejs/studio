@@ -9,9 +9,9 @@ module.exports = app => app.component('dashboard', {
     return {
       status: 'loading',
       code: '',
-      name: '',
       showEditor: false,
-      dashboard: null
+      dashboard: null,
+      result: null
     }
   },
   methods: {
@@ -24,13 +24,13 @@ module.exports = app => app.component('dashboard', {
   },
   mounted: async function() {
     const dashboardId = this.$route.query.dashboardId;
-    const { dashboard } = await api.Dashboard.getDashboard({ params: { dashboardId: dashboardId } });
+    const { dashboard, result } = await api.Dashboard.getDashboard({ params: { dashboardId: dashboardId, evaluate: true } });
     if (!dashboard) {
       return;
     }
     this.dashboard = dashboard;
-    this.name = this.dashboard.name;
     this.code = this.dashboard.code;
+    this.result = result;
     this.status = 'loaded';
   }
 });

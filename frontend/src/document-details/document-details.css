@@ -1,0 +1,18 @@
+.document-details {
+  width: 100%;
+}
+
+.document-details .value {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.document-details .path-key {
+  background-color: #f0f0f0;
+  margin-bottom: 0.5em;
+}
+
+.document-details .path-type {
+  color: rgba(0,0,0,.36);
+  font-size: 0.8em;
+}

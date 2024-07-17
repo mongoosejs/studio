@@ -1,0 +1,18 @@
+<div>
+  <div v-if="Array.isArray(result)">
+    <div v-for="el in result">
+      <component
+        class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl"
+        :is="getComponentForValue(res)"
+        :value="res">
+      </component>
+    </div>
+  </div>
+  <div v-else>
+    <component
+      class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl"
+      :is="getComponentForValue(result)"
+      :value="result">
+    </component>
+  </div>
+</div>

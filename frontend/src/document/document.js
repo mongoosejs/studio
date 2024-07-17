@@ -36,43 +36,9 @@ module.exports = app => app.component('document', {
       }
       return 0;
     }).map(key => schemaPaths[key]);
-    this.getVirtuals();
     this.status = 'loaded';
   },
   methods: {
-    getComponentForPath(schemaPath) {
-      if (schemaPath.instance === 'Array') {
-        return 'detail-array';
-      }
-      return 'detail-default';
-    },
-    getEditComponentForPath(path) {
-      if (path.instance == 'Date') {
-        return 'edit-date';
-      }
-      if (path.instance == 'Number') {
-        return 'edit-number';
-      }
-      if (path.instance === 'Array') {
-        return 'edit-array';
-      }
-      return 'edit-default';
-    },
-    getValueForPath(path) {
-      return mpath.get(path, this.document);
-    },
-    getEditValueForPath({ path }) {
-      return path in this.changes ? this.changes[path] : mpath.get(path, this.document);
-    },
-    getVirtuals() {
-      const exists = this.schemaPaths.map(x => x.path);
-      const docKeys = Object.keys(this.document);
-      for (let i = 0; i < docKeys.length; i++) {
-        if (!exists.includes(docKeys[i])) {
-          this.virtuals.push({ name: docKeys[i], value: this.document[docKeys[i]] });
-        }
-      }
-    },
     cancelEdit() {
       this.changes = {};
       this.editting = false;

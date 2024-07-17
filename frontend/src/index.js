@@ -16,11 +16,16 @@ require('./create-dashboard/create-dashboard')(app);
 require('./create-document/create-document')(app);
 require('./dashboards/dashboards')(app);
 require('./dashboard/dashboard')(app);
+require('./dashboard-result/dashboard-result')(app);
+require('./dashboard-result/dashboard-chart/dashboard-chart')(app);
+require('./dashboard-result/dashboard-document/dashboard-document')(app);
+require('./dashboard-result/dashboard-primitive/dashboard-primitive')(app);
 require('./dashboard/edit-dashboard/edit-dashboard')(app)
 require('./detail-array/detail-array')(app);
 require('./detail-default/detail-default')(app);
 require('./document/document')(app);
 require('./document/confirm-changes/confirm-changes')(app);
+require('./document-details/document-details')(app);
 require('./edit-array/edit-array')(app);
 require('./edit-default/edit-default')(app);
 require('./edit-number/edit-number')(app);

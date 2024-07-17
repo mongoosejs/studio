@@ -5,22 +5,6 @@
   padding-top: 25px;
 }
 
-.document .value {
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
-.document .path-key {
-  background-color: #f0f0f0;
-  padding: 0.25em;
-  margin-bottom: 0.5em;
-}
-
-.document .path-type {
-  color: rgba(0,0,0,.36);
-  font-size: 0.8em;
-}
-
 .document .document-menu {
   display: flex;
 }
