@@ -2,7 +2,7 @@
 
 module.exports = {
   mode: 'jit',
-  content: ['./frontend/src/**/*.html', './frontend/src/**/*.js'],
+  content: ['./frontend/src/**/*.html', './frontend/src/**/*.js', './frontend/src/**/**/*.html', './frontend/src/**/**/*.js'],
   corePlugins: {
     container: true
   },
