@@ -27,7 +27,7 @@ module.exports = [
     component: 'dashboards'
   },
   {
-    path: '/dashboard',
+    path: '/dashboard/:dashboardId',
     name: 'dashboard',
     component: 'dashboard'
   }

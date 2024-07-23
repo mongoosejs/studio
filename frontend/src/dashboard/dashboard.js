@@ -5,6 +5,7 @@ const template = require('./dashboard.html');
 
 module.exports = app => app.component('dashboard', {
   template: template,
+  props: ['dashboardId'],
   data: function() {
     return {
       status: 'loading',
@@ -23,8 +24,7 @@ module.exports = app => app.component('dashboard', {
     }
   },
   mounted: async function() {
-    const dashboardId = this.$route.query.dashboardId;
-    const { dashboard, result } = await api.Dashboard.getDashboard({ dashboardId: dashboardId, evaluate: true });
+    const { dashboard, result } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
     if (!dashboard) {
       return;
     }
