@@ -65,10 +65,10 @@ if (config__isLambda) {
       return client.post('/Dashboard/createDashboard', params).then(res => res.data);
     },
     getDashboard: function getDashboard(params) {
-      return client.get('/Dashboard/getDashboard', params).then(res => res.data);
+      return client.put('/Dashboard/getDashboard', params).then(res => res.data);
     },
     getDashboards: function getDashboards(params) {
-      return client.get('/Dashboard/getDashboards', params).then(res => res.data);
+      return client.put('/Dashboard/getDashboards', params).then(res => res.data);
     },
     updateDashboard: function updateDashboard(params) {
       return client.post('/Dashboard/updateDashboard', params).then(res => res.data);

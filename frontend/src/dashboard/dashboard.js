@@ -24,7 +24,7 @@ module.exports = app => app.component('dashboard', {
   },
   mounted: async function() {
     const dashboardId = this.$route.query.dashboardId;
-    const { dashboard, result } = await api.Dashboard.getDashboard({ params: { dashboardId: dashboardId, evaluate: true } });
+    const { dashboard, result } = await api.Dashboard.getDashboard({ dashboardId: dashboardId, evaluate: true });
     if (!dashboard) {
       return;
     }
