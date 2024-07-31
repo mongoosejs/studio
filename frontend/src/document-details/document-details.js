@@ -9,7 +9,7 @@ appendCSS(require('./document-details.css'));
 
 module.exports = app => app.component('document-details', {
   template,
-  props: ['document', 'schemaPaths', 'editting', 'changes'],
+  props: ['document', 'schemaPaths', 'editting', 'changes', 'invalid'],
   methods: {
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
@@ -26,6 +26,9 @@ module.exports = app => app.component('document-details', {
       }
       if (path.instance === 'Array') {
         return 'edit-array';
+      }
+      if (path.instance === 'Embedded') {
+        return 'edit-subdocument';
       }
       return 'edit-default';
     },

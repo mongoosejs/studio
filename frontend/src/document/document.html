@@ -41,7 +41,8 @@
       :document="document"
       :schemaPaths="schemaPaths"
       :editting="editting"
-      :changes="changes"></document-details>
+      :changes="changes"
+      :invalid="invalid"></document-details>
     <modal v-if="shouldShowConfirmModal">
       <template v-slot:body>
         <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>

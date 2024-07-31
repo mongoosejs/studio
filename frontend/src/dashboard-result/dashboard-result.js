@@ -12,7 +12,6 @@ module.exports = app => app.component('dashboard-result', {
   },
   methods: {
     getComponentForValue(value) {
-      console.log('X', value);
       if (typeof value !== 'object' || value == null) {
         return 'dashboard-primitive';
       }

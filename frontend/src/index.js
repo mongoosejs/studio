@@ -30,6 +30,7 @@ require('./edit-array/edit-array')(app);
 require('./edit-default/edit-default')(app);
 require('./edit-number/edit-number')(app);
 require('./edit-date/edit-date')(app);
+require('./edit-subdocument/edit-subdocument')(app);
 require('./export-query-results/export-query-results')(app);
 require('./list-array/list-array')(app);
 require('./list-default/list-default')(app);

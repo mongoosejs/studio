@@ -1,6 +1,6 @@
 'use strict';
 
-const template = require('./edit-array.html');
+const template = require('./edit-subdocument.html');
 
 const { BSON, EJSON } = require('bson');
 
@@ -10,10 +10,7 @@ const ObjectId = new Proxy(BSON.ObjectId, {
   }
 });
 
-const appendCSS = require('../appendCSS');
-appendCSS(require('./edit-array.css'));
-
-module.exports = app => app.component('edit-array', {
+module.exports = app => app.component('edit-subdocument', {
   template: template,
   props: ['value'],
   data: () => ({ currentValue: null, status: 'init' }),
@@ -21,8 +18,8 @@ module.exports = app => app.component('edit-array', {
     this.currentValue = this.value == null
       ? '' + this.value
       : JSON.stringify(this.value, null, '  ').trim();
-    this.$refs.arrayEditor.value = this.currentValue;
-    this.editor = CodeMirror.fromTextArea(this.$refs.arrayEditor, {
+    this.$refs.editor.value = this.currentValue;
+    this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
       mode: 'javascript',
       lineNumbers: true
     });
@@ -39,6 +36,7 @@ module.exports = app => app.component('edit-array', {
       try {
         this.$emit('input', eval(`(${this.currentValue})`));
       } catch (err) {
+        console.log('Error', err);
         this.$emit('error', err);
       }
     }
