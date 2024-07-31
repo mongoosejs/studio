@@ -18,6 +18,16 @@ if (typeof config__setAuthorizationHeaderFrom === 'string' && config__setAuthori
   });
 }
 
+client.interceptors.response.use(
+  res => res,
+  err => {
+    if (typeof err.response.data === 'string') {
+      throw new Error(`Error in ${err.config?.method} ${err.config?.url}: ${err.response.data}`);
+    }
+    throw err;
+  }
+);
+
 if (config__isLambda) {
   exports.Dashboard = {
     createDashboard(params) {
