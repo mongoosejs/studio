@@ -16,7 +16,11 @@
       <dashboard-result :result="result"></dashboard-result>
     </div>
     <div v-if="showEditor">
-      <edit-dashboard :dashboardId="dashboard._id" :code="code" @close="showEditor=false;" @update="updateCode"></edit-dashboard>
+      <edit-dashboard
+        :dashboardId="dashboard._id"
+        :code="code"
+        @close="showEditor=false;"
+        @update="updateCode"></edit-dashboard>
     </div>
     
   </div>

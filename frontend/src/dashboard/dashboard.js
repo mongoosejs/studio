@@ -19,7 +19,8 @@ module.exports = app => app.component('dashboard', {
       this.showEditor = !this.showEditor;
     },
     async updateCode(update) {
-      this.code = update;
+      this.code = update.doc.code;
+      this.result = update.result;
     }
   },
   mounted: async function() {
