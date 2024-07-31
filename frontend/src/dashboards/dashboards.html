@@ -47,14 +47,14 @@
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 truncate w-[50%]">{{dashboard.description}}</td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
                   <router-link
-                    :to="'dashboard?edit=true&dashboardId=' + dashboard._id"
+                    :to="'/dashboard/' + dashboard._id + '?edit=true'"
                     class="text-teal-600 hover:text-teal-900">
                     Edit
                   </router-link>
                 </td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
                   <router-link
-                    :to="'dashboard?edit=true&dashboardId=' + dashboard._id"
+                    :to="'/dashboard/' + dashboard._id"
                     class="text-teal-600 hover:text-teal-900">
                     View
                   </router-link>
