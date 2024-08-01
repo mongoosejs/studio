@@ -4,13 +4,11 @@ const template = require('./edit-date.html');
 
 module.exports = app => app.component('edit-date', {
   template: template,
-  props: ['value'],
+  props: ['value', 'format'],
   emits: ['input'],
-  data: function() {
-    return {
-      inputType: 'picker' // picker, iso
-    }
-  },
+  data: () => ({
+    inputType: ''
+  }),
   computed: {
     valueAsLocalString() {
       if (this.value == null) {
@@ -35,6 +33,9 @@ module.exports = app => app.component('edit-date', {
       }
       const date = new Date(this.value);
       return date.toISOString();
+    },
+    dateSelection() {
+      return this.format;
     }
   }
 });
