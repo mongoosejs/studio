@@ -16,3 +16,8 @@
   color: rgba(0,0,0,.36);
   font-size: 0.8em;
 }
+
+.document-details .date-position {
+  float: right;
+  margin-top: -7px;
+}

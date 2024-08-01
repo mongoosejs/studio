@@ -9,6 +9,11 @@ appendCSS(require('./document-details.css'));
 
 module.exports = app => app.component('document-details', {
   template,
+  data: function() {
+    return {
+      dateType: 'picker' // picker, iso
+    }
+  },
   props: ['document', 'schemaPaths', 'editting', 'changes', 'invalid'],
   methods: {
     getComponentForPath(schemaPath) {
@@ -57,6 +62,6 @@ module.exports = app => app.component('document-details', {
       }
 
       return result;
-    }
+    },
   }
 })
