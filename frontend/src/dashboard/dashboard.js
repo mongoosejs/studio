@@ -10,6 +10,8 @@ module.exports = app => app.component('dashboard', {
     return {
       status: 'loading',
       code: '',
+      title: '',
+      description: '',
       showEditor: false,
       dashboard: null,
       result: null
@@ -21,6 +23,8 @@ module.exports = app => app.component('dashboard', {
     },
     async updateCode(update) {
       this.code = update.doc.code;
+      this.title = update.doc.title;
+      this.description = update.doc.description;
       this.result = update.result;
     }
   },
@@ -31,6 +35,8 @@ module.exports = app => app.component('dashboard', {
     }
     this.dashboard = dashboard;
     this.code = this.dashboard.code;
+    this.title = this.dashboard.title;
+    this.description = this.dashboard.description ?? '';
     this.result = result;
     this.status = 'loaded';
   }

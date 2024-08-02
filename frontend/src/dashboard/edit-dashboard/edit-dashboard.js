@@ -5,11 +5,13 @@ const template = require('./edit-dashboard.html');
 
 module.exports = app => app.component('edit-dashboard', {
   template: template,
-  props: ['dashboardId', 'code'],
+  props: ['dashboardId', 'code', 'currentDescription', 'currentTitle'],
   data: function() {
     return {
       status: 'loading',
       editor: null,
+      title: '',
+      description: ''
     }
   },
   methods: {
@@ -17,9 +19,12 @@ module.exports = app => app.component('edit-dashboard', {
         this.$emit('close')
     },
     async updateCode() {
+      console.log('this.title', this.title, 'this.description', this.description)
       const { doc, result } = await api.Dashboard.updateDashboard({
         dashboardId: this.dashboardId,
-        code: this.editor.getValue()
+        code: this.editor.getValue(),
+        title: this.title,
+        description: this.description
       });
       this.$emit('update', { doc, result });
       this.editor.setValue(doc.code);
@@ -45,7 +50,7 @@ module.exports = app => app.component('edit-dashboard', {
    
     this.editor.focus();
     // this.editor.refresh(); // if anything weird happens on load, this usually fixes it. However, this breaks it in this case.
-
-    
+    this.description = this.currentDescription;
+    this.title = this.currentTitle;
   }
 });
