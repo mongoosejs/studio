@@ -10,16 +10,32 @@ const UpdateDashboardParams = new Archetype({
   code: {
     $type: 'string',
     $required: true
+  },
+  title: {
+    $type: 'string'
+  },
+  description: {
+    $type: 'string'
   }
 }).compile('UpdateDashboardParams');
 
 module.exports = ({ db }) => async function updateDashboard(params) {
-  const { dashboardId, code } = new UpdateDashboardParams(params);
+  const { dashboardId, code, title, description } = new UpdateDashboardParams(params);
 
   const Dashboard = db.models[`__Studio_Dashboard`];
 
+  const updateObj = { code };
+  
+  if (title) {
+    updateObj.title = title;
+  }
+
+  if (description) {
+    updateObj.description = description;
+  }
+
   const doc = await Dashboard.
-    findByIdAndUpdate(dashboardId, { code }, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true });
+    findByIdAndUpdate(dashboardId, updateObj, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true });
   
   let result = null;
   try {

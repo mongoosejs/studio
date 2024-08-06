@@ -1,7 +1,7 @@
 <div class="dashboard px-1">
   <div v-if="dashboard" class="max-w-5xl mx-auto">
     <div class="flex items-center w-full">
-      <h2 class="mt-4 mb-4 text-gray-900 font-semibold text-xl grow shrink">{{dashboard.title}}</h2>
+      <h2 class="mt-4 mb-4 text-gray-900 font-semibold text-xl grow shrink">{{title}}</h2>
       <div>
         <button
           v-if="!showEditor"
@@ -19,6 +19,8 @@
       <edit-dashboard
         :dashboardId="dashboard._id"
         :code="code"
+        :currentDescription="description"
+        :currentTitle="title"
         @close="showEditor=false;"
         @update="updateCode"></edit-dashboard>
     </div>
