@@ -17,14 +17,10 @@ module.exports = app => app.component('dashboards', {
       if (!dashboard) {
         return;
       }
-      const { result } = await api.Dashboard.deleteDashboard({ dashboardId: dashboard._id });
-      if (result.deletedCount > 0) {
-        const removedDashboard = this.dashboards.findIndex(x => x._id.toString() === dashboard._id.toString());
-        this.dashboards.splice(removedDashboard, 1);
-        this.showDeleteDashboardModal = null;
-      } else {
-        throw new Error('Dashboard unable to be deleted');
-      }
+      await api.Dashboard.deleteDashboard({ dashboardId: dashboard._id });
+      const removedDashboard = this.dashboards.findIndex(x => x._id.toString() === dashboard._id.toString());
+      this.dashboards.splice(removedDashboard, 1);
+      this.showDeleteDashboardModal = null;
     },
     insertNewDashboard(dashboard) {
       this.dashboards.push(dashboard);

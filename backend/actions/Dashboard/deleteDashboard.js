@@ -14,6 +14,6 @@ module.exports = ({ db }) => async function deleteDashboard(params) {
   const { dashboardId } = new DeleteDashboardParams(params);
   const Dashboard = db.model('__Studio_Dashboard');
 
-  const result = await Dashboard.deleteOne({ _id: dashboardId });
+  const result = await Dashboard.deleteOne({ _id: dashboardId }).orFail();
   return { result };
 };
