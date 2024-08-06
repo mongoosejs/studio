@@ -74,6 +74,9 @@ if (config__isLambda) {
     createDashboard: function createDashboard(params) {
       return client.post('/Dashboard/createDashboard', params).then(res => res.data);
     },
+    deleteDashboard: function deleteDashboard(params) {
+      return client.post('/Dashboard/deleteDashboard', params).then(res => res.data)
+    },
     getDashboard: function getDashboard(params) {
       return client.put('/Dashboard/getDashboard', params).then(res => res.data);
     },
