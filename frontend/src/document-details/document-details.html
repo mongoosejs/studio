@@ -1,15 +1,40 @@
 <div class="document-details">
   <div v-for="path in schemaPaths" class="value">
-    <div class="path-key p-1">
-      {{path.path}}
-      <span class="path-type">
-        ({{(path.instance || 'unknown').toLowerCase()}})
-      </span>        
+    <div class="relative path-key p-1 flex">
+      <div class="grow">
+        {{path.path}}
+        <span class="path-type">
+          ({{(path.instance || 'unknown').toLowerCase()}})
+        </span>
+      </div>
+      <div v-if="editting && path.instance === 'Date'" class="flex gap-1.5">
+        <div
+          @click="dateType = 'picker'"
+          :class="dateType === 'picker' ? 'bg-white' : ''"
+          class="self-stretch px-2 py-1 rounded-sm justify-center items-center gap-1.5 flex cursor-pointer">
+          <div
+            :class="dateType === 'picker' ? 'text-sky-600' : 'text-black'"
+            class="text-xs font-medium font-['Lato'] capitalize leading-tight">
+            Date Picker
+          </div>
+        </div>
+        <div
+          @click="dateType = 'iso'"
+          :class="dateType === 'iso' ? 'bg-white' : ''"
+          class="self-stretch px-2 py-1 rounded-sm justify-center items-center gap-1.5 flex cursor-pointer">
+          <div
+            :class="dateType === 'iso' ? 'text-sky-600' : 'text-black'"
+            class="text-xs font-medium font-['Lato'] capitalize leading-tight">
+            ISO String
+          </div>
+        </div>
+      </div>
     </div>
     <div v-if="editting && path.path !== '_id'" class="pl-1">
       <component
         :is="getEditComponentForPath(path)"
         :value="getEditValueForPath(path)"
+        :format="dateType"
         @input="changes[path.path] = $event; delete invalid[path.path];"
         @error="invalid[path.path] = $event;"
         >
