@@ -20,7 +20,8 @@ module.exports = app => app.component('document', {
     invalid: {},
     editting: false,
     virtuals: [],
-    shouldShowConfirmModal: false
+    shouldShowConfirmSaveModal: false,
+    shouldShowConfirmDeleteModal: false
   }),
   async mounted() {
     window.pageState = this;
@@ -55,7 +56,7 @@ module.exports = app => app.component('document', {
       this.document = doc;
       this.changes = {};
       this.editting = false;
-      this.shouldShowConfirmModal = false;
+      this.shouldShowConfirmSaveModal = false;
     },
     async remove() {
       const { doc } = await api.Model.deleteDocument({
@@ -71,6 +72,7 @@ module.exports = app => app.component('document', {
           timeout: 3000,
           positionClass: 'bottomRight'
         });
+        this.shouldShowConfirmDeleteModal = false;
         this.$router.push({ path: `/model/${this.model}`});
       }
     }

@@ -25,6 +25,7 @@ require('./detail-array/detail-array')(app);
 require('./detail-default/detail-default')(app);
 require('./document/document')(app);
 require('./document/confirm-changes/confirm-changes')(app);
+require('./document/confirm-delete/confirm-delete')(app);
 require('./document-details/document-details')(app);
 require('./edit-array/edit-array')(app);
 require('./edit-default/edit-default')(app);
