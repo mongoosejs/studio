@@ -26,6 +26,7 @@ require('./detail-default/detail-default')(app);
 require('./document/document')(app);
 require('./document/confirm-changes/confirm-changes')(app);
 require('./document-details/document-details')(app);
+require('./document-details/document-property/document-property')(app);
 require('./edit-array/edit-array')(app);
 require('./edit-default/edit-default')(app);
 require('./edit-number/edit-number')(app);
