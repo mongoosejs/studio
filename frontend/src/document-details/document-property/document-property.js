@@ -38,13 +38,19 @@ module.exports = app => app.component('document-property', {
       return 'edit-default';
     },
     getValueForPath(path) {
+      if (this.document == null) {
+        return undefined;
+      }
       return mpath.get(path, this.document);
     },
     getEditValueForPath({ path }) {
       if (!this.changes) {
         return;
       }
+      if (!this.document) {
+        return;
+      }
       return path in this.changes ? this.changes[path] : mpath.get(path, this.document);
     }
-  },
+  }
 })

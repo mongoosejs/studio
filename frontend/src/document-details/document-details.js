@@ -15,6 +15,9 @@ module.exports = app => app.component('document-details', {
       if (this.schemaPaths == null) {
         return [];
       }
+      if (this.document == null) {
+        return [];
+      }
       const exists = this.schemaPaths.map(x => x.path);
       const docKeys = Object.keys(this.document);
       const result = [];
