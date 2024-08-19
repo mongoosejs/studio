@@ -38,11 +38,17 @@ module.exports = app => app.component('document-details', {
       return 'edit-default';
     },
     getValueForPath(path) {
+      if (this.document == null) {
+        return undefined;
+      }
       return mpath.get(path, this.document);
     },
     getEditValueForPath({ path }) {
       if (!this.changes) {
         return;
+      }
+      if (this.document == null) {
+        return undefined;
       }
       return path in this.changes ? this.changes[path] : mpath.get(path, this.document);
     }
@@ -50,6 +56,9 @@ module.exports = app => app.component('document-details', {
   computed: {
     virtuals() {
       if (this.schemaPaths == null) {
+        return [];
+      }
+      if (this.document == null) {
         return [];
       }
       const exists = this.schemaPaths.map(x => x.path);

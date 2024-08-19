@@ -21,9 +21,9 @@ dashboardSchema.methods.evaluate = async function evaluate() {
   const context = vm.createContext({ db: this.constructor.db });
   let result = null;
   result = await vm.runInContext(formatFunction(this.code), context);
-  if (result.$document?.model) {
+  if (result.$document?.constructor?.modelName) {
     let schemaPaths = {};
-    const Model = this.constructor.db.model(result.$document?.model);
+    const Model = this.constructor.db.model(result.$document?.constructor?.modelName);
     for (const path of Object.keys(Model.schema.paths)) {
       schemaPaths[path] = {
         instance: Model.schema.paths[path].instance,
