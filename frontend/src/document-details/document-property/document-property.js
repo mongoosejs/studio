@@ -14,7 +14,7 @@ module.exports = app => app.component('document-property', {
       dateType: 'picker' // picker, iso
     }
   },
-  props: ['document', 'schemaPaths', 'editting', 'changes', 'invalid'],
+  props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid'],
   methods: {
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {

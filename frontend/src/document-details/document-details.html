@@ -1,10 +1,13 @@
 <div class="document-details">
-  <document-property
-    :document="document"
-    :schemaPaths="schemaPaths"
-    :editting="editting"
-    :changes="changes"
-    :invalid="invalid"></document-property>
+  <div v-for="path in schemaPaths" class="value">
+    <document-property
+      :path="path"
+      :document="document"
+      :schemaPaths="schemaPaths"
+      :editting="editting"
+      :changes="changes"
+      :invalid="invalid"></document-property>
+  </div>
   <div v-for="path in virtuals" class="mb-2">
     <div class="p-1 mb-1 bg-slate-100">
       {{path.name}}
