@@ -7,7 +7,6 @@
     "ejson": "^2.2.3",
     "extrovert": "0.0.24",
     "node-inspect-extracted": "3.x",
-    "openai": "3.x",
     "vanillatoasts": "^1.6.0"
   },
   "peerDependencies": {
