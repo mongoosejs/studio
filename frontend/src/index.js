@@ -53,7 +53,7 @@ app.component('app-component', {
   `,
   errorCaptured(err) {
     vanillatoasts.create({
-      title: `Error: ${err.message}`,
+      title: `Error: ${err.response.data.message || err.message}`,
       icon: 'images/failure.jpg',
       timeout: 10000,
       positionClass: 'bottomRight'
