@@ -7,7 +7,10 @@
     "ejson": "^2.2.3",
     "extrovert": "0.0.24",
     "node-inspect-extracted": "3.x",
-    "vanillatoasts": "^1.6.0"
+    "tailwindcss": "3.4.0",
+    "vanillatoasts": "^1.6.0",
+    "vue": "3.x",
+    "webpack": "5.x"
   },
   "peerDependencies": {
     "bson": "^5.5.1 || 6.x",
@@ -18,10 +21,7 @@
     "axios": "1.2.2",
     "express": "4.x",
     "mocha": "10.2.0",
-    "mongoose": "8.x",
-    "tailwindcss": "3.4.0",
-    "vue": "3.x",
-    "webpack": "5.75.0"
+    "mongoose": "8.x"
   },
   "scripts": {
     "tailwind": "tailwindcss -o ./frontend/public/tw.css",
