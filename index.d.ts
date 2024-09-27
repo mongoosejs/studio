@@ -3,5 +3,9 @@ declare module '@mongoosejs/studio' {
 
   const express: (path: string) => RequestHandler;
 
-  export express;
+  const studio: {
+    express: typeof express;
+  };
+
+  export = studio;
 }
