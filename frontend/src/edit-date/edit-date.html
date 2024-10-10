@@ -1,4 +1,14 @@
 <div>
-  <input v-if="dateSelection == 'picker'" class="w-64 h-8 border border-gray-300 outline-0" type="datetime-local" :value="valueAsLocalString" @input="$emit('input', $event.target.value)">
-  <input v-if="dateSelection == 'iso'" type="text" class="w-64 h-8 border border-gray-300 outline-0" :value="valueAsISOString" @input="$emit('input', $event.target.value)">
+  <input
+    v-if="dateSelection == 'picker'"
+    class="w-64 h-8 border border-gray-300 outline-0"
+    type="datetime-local"
+    :value="valueAsLocalString"
+    @input="$emit('input', $event.target.value)">
+  <input
+    v-if="dateSelection == 'iso'"
+    type="text"
+    class="w-64 h-8 border border-gray-300 outline-0"
+    :value="valueAsISOString"
+    @input="updateFromISO">
 </div>

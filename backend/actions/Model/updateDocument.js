@@ -25,8 +25,15 @@ module.exports = ({ db }) => async function updateDocument(params) {
     throw new Error(`Model ${model} not found`);
   }
 
+  let processedUpdate = update;
+  if (Object.keys(update).length > 0) {
+    processedUpdate = Object.fromEntries(
+      Object.entries(update).map(([key, value]) => [key, value === 'null' ? null : value === 'undefined' ? undefined : value])
+    );
+  }
+
   const doc = await Model.
-    findByIdAndUpdate(_id, update, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true });
+    findByIdAndUpdate(_id, processedUpdate, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true, runValidators: false });
   
   return { doc };
 };
