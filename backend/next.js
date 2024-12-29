@@ -1,12 +1,12 @@
 'use strict';
 
 const Backend = require('./');
+const { toNetlifyFunction } = require('extrovert');
 
 module.exports = function next() {
   const backend = Backend();
 
-  return async function(req, res) {
-    const params = { ...req.body };
+  return function wrappedNextJSFunction(req, res) {
     const actionName = params?.action;
     if (typeof actionName !== 'string') {
       throw new Error('No action specified');
@@ -23,6 +23,9 @@ module.exports = function next() {
       throw new Error(`Action ${actionName} not found`);
     }
 
-    return actionFn({ ...req.body });
-  }
+    const params = { ...req.query, ...req.body, ...req.params };
+    return actionFn(params)
+      .then(result => res.status(200).json(result))
+      .catch(error => res.status(500).json({ message: error.message }));
+  };
 }
