@@ -7,6 +7,7 @@ module.exports = function next() {
   const backend = Backend();
 
   return function wrappedNextJSFunction(req, res) {
+    const params = { ...req.query, ...req.body, ...req.params };
     const actionName = params?.action;
     if (typeof actionName !== 'string') {
       throw new Error('No action specified');
@@ -23,7 +24,6 @@ module.exports = function next() {
       throw new Error(`Action ${actionName} not found`);
     }
 
-    const params = { ...req.query, ...req.body, ...req.params };
     return actionFn(params)
       .then(result => res.status(200).json(result))
       .catch(error => res.status(500).json({ message: error.message }));
