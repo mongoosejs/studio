@@ -16,11 +16,15 @@ appendCSS(require('./edit-array.css'));
 module.exports = app => app.component('edit-array', {
   template: template,
   props: ['value'],
-  data: () => ({ currentValue: null, status: 'init' }),
+  data: () => ({ currentValue: null, status: 'init', wasEmpty: true, }),
   mounted() {
     this.currentValue = this.value == null
       ? '' + this.value
       : JSON.stringify(this.value, null, '  ').trim();
+    const array = eval(`(${this.currentValue})`);
+    if (array.length > 0) {
+      this.wasEmpty = false;
+    }
     this.$refs.arrayEditor.value = this.currentValue;
     this.editor = CodeMirror.fromTextArea(this.$refs.arrayEditor, {
       mode: 'javascript',
@@ -32,12 +36,15 @@ module.exports = app => app.component('edit-array', {
     this.status = 'loaded';
   },
   watch: {
-    currentValue() {
+    currentValue(newVal, oldVal) {
       if (this.status === 'init') {
         return;
       }
       try {
-        this.$emit('input', eval(`(${this.currentValue})`));
+        const array = eval(`(${this.currentValue})`);
+        if ((this.wasEmpty && array.length > 0) || (!this.wasEmpty && array.length >= 0)) {
+          this.$emit('input', eval(`(${this.currentValue})`));
+        }
       } catch (err) {
         this.$emit('error', err);
       }
