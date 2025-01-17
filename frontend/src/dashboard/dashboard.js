@@ -14,7 +14,8 @@ module.exports = app => app.component('dashboard', {
       description: '',
       showEditor: false,
       dashboard: null,
-      result: null
+      result: null,
+      errorMessage: null
     }
   },
   methods: {
@@ -29,11 +30,12 @@ module.exports = app => app.component('dashboard', {
     }
   },
   mounted: async function() {
-    const { dashboard, result } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
+    const { dashboard, result, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
     if (!dashboard) {
       return;
     }
     this.dashboard = dashboard;
+    this.errorMessage = error.message;
     this.code = this.dashboard.code;
     this.title = this.dashboard.title;
     this.description = this.dashboard.description ?? '';
