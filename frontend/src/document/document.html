@@ -29,7 +29,7 @@
         <img src="images/save.svg" class="inline" /> Save
       </button>
       <button
-        @click="remove"
+        @click="shouldShowDeleteModal=true;"
         type="button"
         class="rounded-md bg-red-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
         <img src="images/delete.svg" class="inline" /> Delete
@@ -47,6 +47,12 @@
       <template v-slot:body>
         <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>
         <confirm-changes @close="shouldShowConfirmModal = false;" @save="save" :value="changes"></confirm-changes>
+      </template>
+    </modal>
+    <modal v-if="shouldShowDeleteModal">
+      <template v-slot:body>
+        <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>
+        <confirm-delete @close="shouldShowConfirmModal = false;" @remove="remove" :value="document"></confirm-delete>
       </template>
     </modal>
   </div>

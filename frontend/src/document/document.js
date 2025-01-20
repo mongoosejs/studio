@@ -20,7 +20,8 @@ module.exports = app => app.component('document', {
     invalid: {},
     editting: false,
     virtuals: [],
-    shouldShowConfirmModal: false
+    shouldShowConfirmModal: false,
+    shouldShowDeleteModal: false
   }),
   async mounted() {
     window.pageState = this;
