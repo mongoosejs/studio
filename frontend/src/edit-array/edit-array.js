@@ -2,7 +2,7 @@
 
 const template = require('./edit-array.html');
 
-const { BSON, EJSON } = require('bson');
+const { BSON } = require('bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
   apply (target, thisArg, argumentsList) {
@@ -29,15 +29,17 @@ module.exports = app => app.component('edit-array', {
     this.editor.on('change', ev => {
       this.currentValue = this.editor.getValue();
     });
-    this.status = 'loaded';
   },
   watch: {
-    currentValue() {
+    currentValue(newValue, oldValue) {
+      // Hacky way of skipping initial trigger because `immediate: false` doesn't work in Vue 3
       if (this.status === 'init') {
         return;
       }
+      this.status = 'loaded';
       try {
-        this.$emit('input', eval(`(${this.currentValue})`));
+        const array = eval(`(${this.currentValue})`);
+        this.$emit('input', array);
       } catch (err) {
         this.$emit('error', err);
       }

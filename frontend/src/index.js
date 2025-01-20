@@ -19,6 +19,7 @@ require('./dashboard-result/dashboard-result')(app);
 require('./dashboard-result/dashboard-chart/dashboard-chart')(app);
 require('./dashboard-result/dashboard-document/dashboard-document')(app);
 require('./dashboard-result/dashboard-primitive/dashboard-primitive')(app);
+require('./dashboard-result/dashboard-text/dashboard-text')(app);
 require('./dashboard/edit-dashboard/edit-dashboard')(app)
 require('./detail-array/detail-array')(app);
 require('./detail-default/detail-default')(app);
