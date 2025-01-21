@@ -20,13 +20,13 @@ module.exports = app => app.component('edit-dashboard', {
     },
     async updateCode() {
       console.log('this.title', this.title, 'this.description', this.description)
-      const { doc, result } = await api.Dashboard.updateDashboard({
+      const { doc, result, error } = await api.Dashboard.updateDashboard({
         dashboardId: this.dashboardId,
         code: this.editor.getValue(),
         title: this.title,
         description: this.description
       });
-      this.$emit('update', { doc, result });
+      this.$emit('update', { doc, result, error });
       this.editor.setValue(doc.code);
       this.closeEditor();
     }

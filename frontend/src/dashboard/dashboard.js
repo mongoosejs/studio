@@ -26,7 +26,11 @@ module.exports = app => app.component('dashboard', {
       this.code = update.doc.code;
       this.title = update.doc.title;
       this.description = update.doc.description;
-      this.result = update.result;
+      if (update.result) {
+        this.result = update.result;
+      } else {
+        this.errorMessage = update.error.message;
+      }
     }
   },
   mounted: async function() {
