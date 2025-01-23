@@ -28,7 +28,7 @@ module.exports = app => app.component('document', {
     const { doc, schemaPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
     window.doc = doc;
     this.document = doc;
-    this.schemaPaths = await Object.keys(schemaPaths).sort((k1, k2) => {
+    this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
       if (k1 === '_id' && k2 !== '_id') {
         return -1;
       }

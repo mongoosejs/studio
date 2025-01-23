@@ -16,7 +16,7 @@ appendCSS(require('./edit-array.css'));
 module.exports = app => app.component('edit-array', {
   template: template,
   props: ['value'],
-  data: () => ({ currentValue: null, status: 'init' }),
+  data: () => ({ currentValue: -1 }),
   mounted() {
     this.currentValue = this.value == null
       ? '' + this.value
@@ -33,10 +33,9 @@ module.exports = app => app.component('edit-array', {
   watch: {
     currentValue(newValue, oldValue) {
       // Hacky way of skipping initial trigger because `immediate: false` doesn't work in Vue 3
-      if (this.status === 'init') {
+      if (oldValue === -1) {
         return;
       }
-      this.status = 'loaded';
       try {
         const array = eval(`(${this.currentValue})`);
         this.$emit('input', array);
