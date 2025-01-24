@@ -20,7 +20,6 @@ module.exports = app => app.component('navbar', {
   },
   async mounted() {
     const { nodeEnv } = await api.status();
-    console.log('AG', nodeEnv);
     this.nodeEnv = nodeEnv;
   }
 });
