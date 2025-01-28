@@ -19,6 +19,17 @@ module.exports = function(apiUrl, isLambda, options) {
       config__setAuthorizationHeaderFrom: `'${options.setAuthorizationHeaderFrom}'`
     }));
   }
+  if (options?.apiKey) {
+    config.plugins = config.plugins || [];
+    config.plugins.push(new webpack.DefinePlugin({
+      config__mothershipUrl: '\'https://mongoose-js.netlify.app/.netlify/functions\''
+    }));
+  } else {
+    config.plugins = config.plugins || [];
+    config.plugins.push(new webpack.DefinePlugin({
+      config__mothershipUrl: '\'\''
+    }));
+  }
   const compiler = webpack(config);
 
   if (options && options.watch) {

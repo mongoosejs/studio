@@ -60,6 +60,9 @@ app.component('app-component', {
       timeout: 10000,
       positionClass: 'bottomRight'
     });
+  },
+  mounted() {
+    window.$router = this.$router;
   }
 });
 

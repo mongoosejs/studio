@@ -2,43 +2,20 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Open Sans', Helvetica, Arial, FreeSans, sans-serif;
+  font-family: "Open Sans", Helvetica, Arial, FreeSans, sans-serif;
 }
 
 a {
   text-decoration: none;
-  color: #0E5887;
+  color: #0e5887;
 }
 
 .bold {
   font-weight: bold !important;
 }
 
-button {
-  background-color: #15D4B7;
-  color: white;
-  padding: 0.25em 0.5em;
-  cursor: pointer;
-  border: 0;
-  border-radius: 4px;
-  font-size: 1.1em;
-}
-
 input {
   outline: #666 solid 1px;
-}
-
-button.green {
-  background-color: #58D415;
-}
-
-button.grey {
-  color: black;
-  background-color: #ddd;
-}
-
-button.red {
-  background-color: red;
 }
 
 .tooltip {
@@ -58,7 +35,7 @@ button.red {
   top: 100%;
   left: 50%;
   margin-left: -60px; /* Use half of the width (120/2 = 60), to center the tooltip */
- 
+
   /* Position the tooltip text - see examples below! */
   position: absolute;
   z-index: 1;
