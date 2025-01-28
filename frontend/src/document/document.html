@@ -1,7 +1,9 @@
 <div class="document">
   <div class="document-menu">
     <div class="left">
-      <button @click="$router.push('/model/' + this.model)">
+      <button
+        @click="$router.push('/model/' + this.model)"
+        class="rounded-md bg-gray-400 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600">
         &lsaquo; Back
       </button>
     </div>
@@ -11,7 +13,7 @@
         v-if="!editting"
         @click="editting = true"
         type="button"
-        class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+        class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
         <img src="images/edit.svg" class="inline" /> Edit
       </button>
       <button
@@ -25,13 +27,13 @@
         v-if="editting"
         @click="shouldShowConfirmModal=true;"
         type="button"
-        class="rounded-md bg-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
+        class="rounded-md bg-forest-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
         <img src="images/save.svg" class="inline" /> Save
       </button>
       <button
         @click="shouldShowDeleteModal=true;"
         type="button"
-        class="rounded-md bg-red-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+        class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
         <img src="images/delete.svg" class="inline" /> Delete
       </button>
     </div>
