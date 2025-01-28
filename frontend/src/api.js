@@ -30,7 +30,7 @@ client.interceptors.response.use(
 
 if (config__isLambda) {
   exports.status = function status() {
-    return client.get('', { action: 'status' }).then(res => res.data);
+    return client.post('', { action: 'status' }).then(res => res.data);
   };
   exports.Dashboard = {
     createDashboard(params) {
