@@ -13,7 +13,7 @@ if (typeof config__setAuthorizationHeaderFrom === 'string' && config__setAuthori
     if (accessToken) {
       req.headers.authorization = accessToken;
     }
-  
+
     return req;
   });
 }
@@ -29,6 +29,9 @@ client.interceptors.response.use(
 );
 
 if (config__isLambda) {
+  exports.status = function status() {
+    return client.get('', { action: 'status' }).then(res => res.data);
+  };
   exports.Dashboard = {
     createDashboard(params) {
       return client.post('', { action: 'Dashboard.createDashboard', ...params }).then(res => res.data);
@@ -70,6 +73,9 @@ if (config__isLambda) {
     }
   };
 } else {
+  exports.status = function status() {
+    return client.get('/status').then(res => res.data);
+  };
   exports.Dashboard = {
     createDashboard: function createDashboard(params) {
       return client.post('/Dashboard/createDashboard', params).then(res => res.data);

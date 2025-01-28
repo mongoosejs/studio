@@ -1,8 +1,11 @@
 <div class="navbar">
-  <div class="nav-left">
+  <div class="nav-left flex items-center gap-4 h-full">
     <router-link to="/">
       <img src="images/logo.svg" alt="Mongoose Studio Logo" />
     </router-link>
+    <div v-if="!!nodeEnv" class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium text-gray-900" :class="warnEnv ? 'bg-red-300' : 'bg-yellow-300'">
+      {{nodeEnv}}
+    </div>
   </div>
   <div class="nav-right h-full">
     <div class="sm:ml-6 sm:flex sm:space-x-8 h-full">
