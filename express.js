@@ -33,7 +33,44 @@ module.exports = async function(apiUrl, conn, options) {
   apiUrl = apiUrl || '/admin/api';
   const backend = Backend(conn);
 
-  router.use('/api', express.json(), objectRouter(backend, toRoute));
+  router.use(
+    '/api',
+    function authorize(req, res, next) {
+      if (!workspace) {
+        next();
+        return;
+      }
+      const authorization = req.headers.authorization;
+      const params = {
+        method: 'POST',
+        body: JSON.stringify({ workspaceId: workspace._id }),
+        headers: {
+          'Authorization': authorization,
+          'Content-Type': 'application/json'
+        }
+      };
+      fetch(`${mothershipUrl}/me`, params)
+        .then(response => {
+          if (response.status < 200 || response.status >= 400) {
+            return response.json().then(data => {
+              throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
+            });
+          }
+          return response;
+        })
+        .then(res => res.json())
+        .then(({ user, roles }) => {
+          if (!user || !roles) {
+            throw new Error('Not authorized');
+          }
+
+          next();
+        })
+        .catch(err => next(err));
+    },
+    express.json(),
+    objectRouter(backend, toRoute)
+  );
 
   console.log('Workspace', workspace);
   frontend(apiUrl, false, options, workspace);
