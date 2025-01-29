@@ -21,11 +21,11 @@ exports.githubLogin = function githubLogin() {
 };
 
 exports.github = function github(code) {
-  return client.post('/github', { code }).then(res => res.data);
+  return client.post('/github', { code, workspaceId: config__workspace._id }).then(res => res.data);
 };
 
 exports.me = function me() {
-  return client.post('/me', {}).then(res => res.data);
+  return client.post('/me', { workspaceId: config__workspace._id }).then(res => res.data);
 };
 
 exports.hasAPIKey = client.hasAPIKey;

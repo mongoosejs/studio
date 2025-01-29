@@ -27,8 +27,10 @@ module.exports = function(apiUrl, isLambda, options, workspace) {
       config__mothershipUrl: '\'\''
     }));
   }
+
+  const { apiKey, ...workspaceData } = workspace || {};
   config.plugins.push(new webpack.DefinePlugin({
-    config__workspaceName: `'${workspace?.name ?? ''}'`
+    config__workspace: JSON.stringify(workspaceData)
   }));
   const compiler = webpack(config);
 
