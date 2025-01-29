@@ -3,7 +3,27 @@
 const { execSync, exec } = require('child_process');
 const webpack = require('webpack');
 
-module.exports = function(apiUrl, isLambda, options, workspace) {
+module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
+  if (workspace == null && options?.apiKey) {
+    ({ workspace } = await fetch(`${mothershipUrl}/getWorkspace`, {
+      method: 'POST',
+      body: JSON.stringify({ apiKey: options.apiKey }),
+      headers: {
+        'Authorization': `Bearer ${options.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => {
+        if (response.status < 200 || response.status >= 400) {
+          return response.json().then(data => {
+            throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
+          });
+        }
+        return response;
+      })
+      .then(res => res.json()));
+  }
+
   const config = { ...require('./webpack.config'), plugins: [] };
   if (apiUrl != null) {
     config.plugins = [
