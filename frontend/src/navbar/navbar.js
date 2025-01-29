@@ -10,7 +10,8 @@ appendCSS(require('./navbar.css'));
 
 module.exports = app => app.component('navbar', {
   template: template,
-  data: () => ({ nodeEnv: null, user: null, showFlyout: false }),
+  props: ['user'],
+  data: () => ({ nodeEnv: null, showFlyout: false }),
   computed: {
     routeName() {
       return this.$route.name;
@@ -19,24 +20,12 @@ module.exports = app => app.component('navbar', {
       return this.nodeEnv === 'prod' || this.nodeEnv === 'production';
     },
     hasAPIKey() {
-      console.log('FOO', mothership.hasAPIKey);
       return mothership.hasAPIKey;
     }
   },
   async mounted() {
     const { nodeEnv } = await api.status();
     this.nodeEnv = nodeEnv;
-
-    if (mothership.hasAPIKey) {
-      const token = window.localStorage.getItem('_mongooseStudioAccessToken');
-      if (token) {
-        this.user = await mothership.me().then(res => res.user);
-      } else if (this.$router.currentRoute?.value?.query?.code) {
-        const { accessToken, user } = await mothership.github(this.$router.currentRoute?.value?.query?.code);
-        this.user = user;
-        window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
-      }
-    }
   },
   methods: {
     async loginWithGithub() {
@@ -48,7 +37,7 @@ module.exports = app => app.component('navbar', {
     },
     logout() {
       window.localStorage.setItem('_mongooseStudioAccessToken', '');
-      this.user = null;
+      window.location.reload();
     },
   },
   directives: {

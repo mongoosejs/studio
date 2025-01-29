@@ -4,6 +4,7 @@ if (typeof process === 'undefined') {
   global.process = { env: {} }; // To make `util` package work
 }
 
+const mothership = require('./mothership');
 const vanillatoasts = require('vanillatoasts');
 
 const app = Vue.createApp({
@@ -43,13 +44,19 @@ require('./list-subdocument/list-subdocument')(app);
 require('./modal/modal')(app);
 require('./models/models')(app);
 require('./navbar/navbar')(app);
+require('./splash/splash')(app);
 
 app.component('app-component', {
   template: `
   <div>
-    <navbar />
-    <div class="view">
-      <router-view :key="$route.fullPath" />
+    <div v-if="hasAPIKey && user == null">
+      <splash />
+    </div>
+    <div v-else-if="!hasAPIKey || user">
+      <navbar :user="user" />
+      <div class="view">
+        <router-view :key="$route.fullPath" />
+      </div>
     </div>
   </div>
   `,
@@ -61,8 +68,28 @@ app.component('app-component', {
       positionClass: 'bottomRight'
     });
   },
-  mounted() {
+  computed: {
+    hasAPIKey() {
+      return mothership.hasAPIKey;
+    }
+  },
+  async mounted() {
     window.$router = this.$router;
+
+    if (mothership.hasAPIKey) {
+      const token = window.localStorage.getItem('_mongooseStudioAccessToken');
+      if (token) {
+        this.user = await mothership.me().then(res => res.user);
+      }
+    }
+  },
+  setup() {
+    const user = Vue.ref(null);
+
+    const state = Vue.reactive({ user });
+    Vue.provide('state', state);
+
+    return state;
   }
 });
 

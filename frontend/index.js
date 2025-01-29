@@ -3,8 +3,8 @@
 const { execSync, exec } = require('child_process');
 const webpack = require('webpack');
 
-module.exports = function(apiUrl, isLambda, options) {
-  const config = { ...require('./webpack.config') };
+module.exports = function(apiUrl, isLambda, options, workspace) {
+  const config = { ...require('./webpack.config'), plugins: [] };
   if (apiUrl != null) {
     config.plugins = [
       new webpack.DefinePlugin({
@@ -14,22 +14,22 @@ module.exports = function(apiUrl, isLambda, options) {
     ]
   }
   if (options?.setAuthorizationHeaderFrom) {
-    config.plugins = config.plugins || [];
     config.plugins.push(new webpack.DefinePlugin({
       config__setAuthorizationHeaderFrom: `'${options.setAuthorizationHeaderFrom}'`
     }));
   }
   if (options?.apiKey) {
-    config.plugins = config.plugins || [];
     config.plugins.push(new webpack.DefinePlugin({
-      config__mothershipUrl: '\'https://mongoose-js.netlify.app/.netlify/functions\''
+      config__mothershipUrl: `'${options?._mothershipUrl}'` || '\'https://mongoose-js.netlify.app/.netlify/functions\''
     }));
   } else {
-    config.plugins = config.plugins || [];
     config.plugins.push(new webpack.DefinePlugin({
       config__mothershipUrl: '\'\''
     }));
   }
+  config.plugins.push(new webpack.DefinePlugin({
+    config__workspaceName: `'${workspace?.name ?? ''}'`
+  }));
   const compiler = webpack(config);
 
   if (options && options.watch) {
