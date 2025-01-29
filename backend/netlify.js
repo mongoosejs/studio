@@ -5,6 +5,7 @@ const { toNetlifyFunction } = require('extrovert');
 
 module.exports = function netlify(options) {
   const backend = Backend();
+  const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
 
   return toNetlifyFunction(async function wrappedNetlifyFunction(params) {
     const actionName = params?.action;

@@ -4,6 +4,8 @@ const { execSync, exec } = require('child_process');
 const webpack = require('webpack');
 
 module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
+  const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
+
   if (workspace == null && options?.apiKey) {
     ({ workspace } = await fetch(`${mothershipUrl}/getWorkspace`, {
       method: 'POST',
