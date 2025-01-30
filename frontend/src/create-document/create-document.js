@@ -55,7 +55,8 @@ module.exports = app => app.component('create-document', {
     this.$refs.codeEditor.value = this.documentData;
     this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
       mode: 'javascript',
-      lineNumbers: true
+      lineNumbers: true,
+      smartIndent: false
     });
   },
 })
