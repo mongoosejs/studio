@@ -42,7 +42,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
   }
   if (options?.apiKey) {
     config.plugins.push(new webpack.DefinePlugin({
-      config__mothershipUrl: `'${options?._mothershipUrl}'` || '\'https://mongoose-js.netlify.app/.netlify/functions\''
+      config__mothershipUrl: options?._mothershipUrl ? `'${options?._mothershipUrl}'` : '\'https://mongoose-js.netlify.app/.netlify/functions\''
     }));
   } else {
     config.plugins.push(new webpack.DefinePlugin({
