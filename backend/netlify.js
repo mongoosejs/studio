@@ -7,6 +7,8 @@ module.exports = function netlify(options) {
   const backend = Backend();
   const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
 
+  let workspace = null;
+
   return toNetlifyFunction(async function wrappedNetlifyFunction(params) {
     const actionName = params?.action;
     const authorization = params?.authorization;
@@ -15,7 +17,27 @@ module.exports = function netlify(options) {
         throw new Error('Not authorized');
       }
 
-      const { user, roles } = await fetch(`${mothershipUrl}/me`, params)
+      if (workspace == null) {
+        ({ workspace } = await fetch(`${mothershipUrl}/getWorkspace`, {
+          method: 'POST',
+          body: JSON.stringify({ apiKey: options.apiKey }),
+          headers: {
+            'Authorization': `Bearer ${options.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => {
+            if (response.status < 200 || response.status >= 400) {
+              return response.json().then(data => {
+                throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
+              });
+            }
+            return response;
+          })
+          .then(res => res.json()));
+      }
+
+      const { user, roles } = await fetch(`${mothershipUrl}/me`, { ...params, workspaceId: workspace._id })
         .then(response => {
           if (response.status < 200 || response.status >= 400) {
             return response.json().then(data => {
