@@ -29,7 +29,7 @@ module.exports = function netlify(options) {
           .then(response => {
             if (response.status < 200 || response.status >= 400) {
               return response.json().then(data => {
-                throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
+                throw new Error(`Error getting workspace ${response.status}: ${require('util').inspect(data)}`);
               });
             }
             return response;
