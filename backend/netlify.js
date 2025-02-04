@@ -37,7 +37,7 @@ module.exports = function netlify(options) {
           .then(res => res.json()));
       }
 
-      const { user, roles } = await fetch(`${mothershipUrl}/me`, { ...params, workspaceId: workspace._id })
+      const { user, roles } = await fetch(`${mothershipUrl}/me?` + new URLSearchParams({ ...params, workspaceId: workspace._id }))
         .then(response => {
           if (response.status < 200 || response.status >= 400) {
             return response.json().then(data => {
