@@ -24,7 +24,7 @@
 
   </div>
   <div class="documents" ref="documentsList">
-    <div>
+    <div class="relative h-[42px]">
       <div class="documents-menu">
         <div class="flex flex-row items-center w-full gap-2">
           <form @submit.prevent="search" class="flex-grow m-0">
@@ -71,7 +71,7 @@
         </div>
       </div>
     </div>
-    <div class="documents-container">
+    <div class="documents-container relative">
       <table v-if="outputType === 'table'">
         <thead>
           <th v-for="path in filteredPaths">

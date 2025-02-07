@@ -43,7 +43,7 @@
 
 .models .documents table th {
   position: sticky;
-  top: 0px;
+  top: 42px;
   background-color: white;
   z-index: 1;
 }
@@ -90,8 +90,11 @@ td {
 }
 
 .models .documents-menu {
+  position: fixed;
+  background-color: white;
+  z-index: 1;
+  padding: 4px;
   display: flex;
-  margin: 0.25em;
   width: calc(100vw - 220px);
 }
 
