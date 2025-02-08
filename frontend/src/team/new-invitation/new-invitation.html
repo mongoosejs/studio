@@ -1,0 +1,28 @@
+<div class="p-1">
+  <form class="space-y-4">
+    <div class="text-lg font-bold">
+      New Invitation
+    </div>
+
+    <div>
+      <label for="githubUsername" class="block text-sm/6 font-medium text-gray-900">GitHub Username</label>
+      <div class="mt-2">
+        <input type="githubUsername" name="githubUsername" id="githubUsername" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-ultramarine-600 sm:text-sm/6" placeholder="johnsmith12">
+      </div>
+    </div>
+
+    <div>
+      <label for="email" class="block text-sm/6 font-medium text-gray-900">Email (Optional)</label>
+      <div class="mt-2">
+        <input type="email" name="email" id="email" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-ultramarine-600 sm:text-sm/6" placeholder="you@example.com">
+      </div>
+    </div>
+
+    <async-button
+      type="submit"
+      @click="inviteToWorkspace"
+      class="inline-flex justify-center rounded-md border border-transparent bg-forest-green-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-forest-green-500 focus:outline-none focus:ring-2 focus:ring-forest-green-500 focus:ring-offset-2">
+      Submit
+    </async-button>
+  </form>
+</div>

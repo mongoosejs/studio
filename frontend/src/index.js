@@ -45,6 +45,8 @@ require('./modal/modal')(app);
 require('./models/models')(app);
 require('./navbar/navbar')(app);
 require('./splash/splash')(app);
+require('./team/team')(app);
+require('./team/new-invitation/new-invitation')(app);
 
 app.component('app-component', {
   template: `
@@ -53,7 +55,7 @@ app.component('app-component', {
       <splash />
     </div>
     <div v-else-if="!hasAPIKey || user">
-      <navbar :user="user" />
+      <navbar :user="user" :roles="roles" />
       <div class="view">
         <router-view :key="$route.fullPath" />
       </div>
@@ -79,14 +81,17 @@ app.component('app-component', {
     if (mothership.hasAPIKey) {
       const token = window.localStorage.getItem('_mongooseStudioAccessToken');
       if (token) {
-        this.user = await mothership.me().then(res => res.user);
+        const { user, roles } = await mothership.me();
+        this.user = user;
+        this.roles = roles;
       }
     }
   },
   setup() {
     const user = Vue.ref(null);
+    const roles = Vue.ref(null);
 
-    const state = Vue.reactive({ user });
+    const state = Vue.reactive({ user, roles });
     Vue.provide('state', state);
 
     return state;

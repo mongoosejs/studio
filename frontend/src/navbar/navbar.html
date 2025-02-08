@@ -35,8 +35,8 @@
           </button>
         </div>
 
-        <div v-if="showFlyout" class="absolute right-0 z-10 top-[82%] w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
-          <!-- Active: "bg-gray-100 outline-none", Not Active: "" -->
+        <div v-if="showFlyout" class="absolute right-0 z-10 top-[90%] w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
+          <router-link to="team" v-if="canViewTeam" @click="showFlyout = false" class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-ultramarine-200" role="menuitem" tabindex="-1" id="user-menu-item-2">Team</router-link>
           <span @click="logout" class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-ultramarine-200" role="menuitem" tabindex="-1" id="user-menu-item-2">Sign out</span>
         </div>
       </div>

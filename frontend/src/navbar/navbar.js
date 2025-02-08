@@ -10,7 +10,7 @@ appendCSS(require('./navbar.css'));
 
 module.exports = app => app.component('navbar', {
   template: template,
-  props: ['user'],
+  props: ['user', 'roles'],
   data: () => ({ nodeEnv: null, showFlyout: false }),
   computed: {
     routeName() {
@@ -21,6 +21,9 @@ module.exports = app => app.component('navbar', {
     },
     hasAPIKey() {
       return mothership.hasAPIKey;
+    },
+    canViewTeam() {
+      return this.roles?.includes('owner') || this.roles?.includes('admin');
     }
   },
   async mounted() {
