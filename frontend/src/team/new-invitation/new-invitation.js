@@ -5,14 +5,16 @@ const template = require('./new-invitation.html');
 
 module.exports = app => app.component('new-invitation', {
   template,
-  emits: ['close'],
+  emits: ['close', 'invitationCreated'],
   data: () => ({
     githubUsername: '',
-    email: ''
+    email: '',
+    role: null
   }),
   methods: {
     async inviteToWorkspace() {
-      await mothership.inviteToWorkspace({ githubUsername: this.githubUsername, email: this.email });
+      const { invitation } = await mothership.inviteToWorkspace({ githubUsername: this.githubUsername, email: this.email, roles: [this.role] });
+      this.$emit('invitationCreated', { invitation });
       this.$emit('close');
     }
   }

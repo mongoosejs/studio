@@ -24,8 +24,8 @@ exports.getWorkspaceTeam = function getWorkspaceTeam() {
   return client.post('/getWorkspaceTeam', { workspaceId: config__workspace._id }).then(res => res.data);
 };
 
-exports.inviteToWorkspace = function inviteToWorkspace({ githubUsername, email }) {
-  return client.post('/inviteToWorkspace', { workspaceId: config__workspace._id, githubUsername, email }).then(res => res.data);
+exports.inviteToWorkspace = function inviteToWorkspace(params) {
+  return client.post('/inviteToWorkspace', { workspaceId: config__workspace._id, ...params }).then(res => res.data);
 };
 
 exports.github = function github(code) {

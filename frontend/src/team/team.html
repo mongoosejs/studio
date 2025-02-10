@@ -52,7 +52,9 @@
                   {{invitation.email}}
                 </td>
                 <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                  <span class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Active</span>
+                  <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-600/20">
+                    Pending
+                  </span>
                 </td>
                 <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
                   {{invitation.roles.join(', ')}}
@@ -78,7 +80,7 @@
   <modal v-if="showNewInvitationModal">
     <template v-slot:body>
       <div class="modal-exit" @click="showNewInvitationModal = false">&times;</div>
-      <new-invitation @close="showNewInvitationModal = false"></new-invitation>
+      <new-invitation @close="showNewInvitationModal = false" @invitationCreated="invitations.push($event.invitation)"></new-invitation>
     </template>
   </modal>
 </div>

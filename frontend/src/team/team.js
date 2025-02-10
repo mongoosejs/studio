@@ -9,7 +9,7 @@ module.exports = app => app.component('team', {
     workspace: null,
     users: null,
     invitations: null,
-    showNewInvitationModal: true
+    showNewInvitationModal: false
   }),
   async mounted() {
     const { workspace, users, invitations } = await mothership.getWorkspaceTeam();
