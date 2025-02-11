@@ -20,6 +20,14 @@ exports.githubLogin = function githubLogin() {
   return client.post('/githubLogin', { state: window.location.href }).then(res => res.data);
 };
 
+exports.getWorkspaceTeam = function getWorkspaceTeam() {
+  return client.post('/getWorkspaceTeam', { workspaceId: config__workspace._id }).then(res => res.data);
+};
+
+exports.inviteToWorkspace = function inviteToWorkspace(params) {
+  return client.post('/inviteToWorkspace', { workspaceId: config__workspace._id, ...params }).then(res => res.data);
+};
+
 exports.github = function github(code) {
   return client.post('/github', { code, workspaceId: config__workspace._id }).then(res => res.data);
 };
