@@ -8,12 +8,14 @@
         <img class="size-12 flex-none rounded-full bg-gray-50" :src="user.picture ?? 'images/logo.svg'" alt="">
         <div class="min-w-0 flex-auto">
           <p class="text-sm/6 font-semibold text-gray-900">{{user.name}}</p>
-          <p class="mt-1 truncate text-xs/5 text-gray-500">{{user.email}}</p>
+          <p class="mt-1 truncate text-xs/5 text-gray-500">{{user.email ?? 'No Email'}}</p>
         </div>
       </div>
       <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
         <p class="text-sm/6 text-gray-900 capitalize">{{getRolesForUser(user).join(', ')}}</p>
-        <p class="mt-1 text-xs/5 text-gray-500">Last seen <time datetime="2023-01-23T13:23Z">3h ago</time></p>
+        <p class="mt-1 text-xs/5 text-gray-500 cursor-pointer">
+          Edit
+        </p>
       </div>
     </li>
   </ul>
