@@ -105,37 +105,38 @@
         <img src="images/loader.gif">
       </div>
     </div>
-    <modal v-if="shouldShowExportModal">
-      <template v-slot:body>
-        <div class="modal-exit" @click="shouldShowExportModal = false">&times;</div>
-        <export-query-results
-          :schemaPaths="schemaPaths"
-          :filter="filter"
-          :currentModel="currentModel"
-          @done="shouldShowExportModal = false">
-        </export-query-results>
-      </template>
-    </modal>
-    <modal v-if="shouldShowFieldModal">
-      <template v-slot:body>
-        <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
-        <div v-for="(path, index) in schemaPaths" :key="index" style="margin-bottom: 0.5em">
-          <input type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)" />
-          <label :for="'path' + index">{{path.path}}</label>
-        </div>
-        <div style="margin-top: 1em">
-          <button type="submit" @click="filterDocuments()" style="color: black;margin-right: 0.5em">Filter Selection</button>
-          <button type="submit" @click="deselectAll()" class="gray" style="margin-right: 0.5em">Deselect All</button>
-          <button type="submit" @click="resetDocuments()" class="gray">Cancel</button>
-
-        </div>
-      </template>
-    </modal>
-    <modal v-if="shouldShowCreateModal">
-      <template v-slot:body>
-        <div class="modal-exit" @click="shouldShowCreateModal = false;">&times;</div>
-        <create-document :currentModel="currentModel" :paths="schemaPaths" @close="closeCreationModal"></create-document>
-      </template>
-    </modal>
   </div>
+
+  <modal v-if="shouldShowExportModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="shouldShowExportModal = false">&times;</div>
+      <export-query-results
+        :schemaPaths="schemaPaths"
+        :filter="filter"
+        :currentModel="currentModel"
+        @done="shouldShowExportModal = false">
+      </export-query-results>
+    </template>
+  </modal>
+  <modal v-if="shouldShowFieldModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
+      <div v-for="(path, index) in schemaPaths" :key="index" style="margin-bottom: 0.5em">
+        <input type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)" />
+        <label :for="'path' + index">{{path.path}}</label>
+      </div>
+      <div style="margin-top: 1em">
+        <button type="submit" @click="filterDocuments()" style="color: black;margin-right: 0.5em">Filter Selection</button>
+        <button type="submit" @click="deselectAll()" class="gray" style="margin-right: 0.5em">Deselect All</button>
+        <button type="submit" @click="resetDocuments()" class="gray">Cancel</button>
+
+      </div>
+    </template>
+  </modal>
+  <modal v-if="shouldShowCreateModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="shouldShowCreateModal = false;">&times;</div>
+      <create-document :currentModel="currentModel" :paths="schemaPaths" @close="closeCreationModal"></create-document>
+    </template>
+  </modal>
 </div>
