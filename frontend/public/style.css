@@ -14,9 +14,9 @@ a {
   font-weight: bold !important;
 }
 
-input {
+/* input {
   outline: #666 solid 1px;
-}
+} */
 
 .tooltip {
   position: relative;
