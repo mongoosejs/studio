@@ -14,10 +14,6 @@ a {
   font-weight: bold !important;
 }
 
-/* input {
-  outline: #666 solid 1px;
-} */
-
 .tooltip {
   position: relative;
   display: inline-block;

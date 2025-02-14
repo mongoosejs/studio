@@ -211,8 +211,25 @@ module.exports = app => app.component('models', {
         }).map(key => this.selectedPaths[key]);
       }
     },
+    openFieldSelection() {
+      if (this.$route.query?.fields) {
+        this.selectedPaths.length = 0;
+        console.log('there are fields in play', this.$route.query.fields)
+        const fields = this.$route.query.fields.split(',');
+        for (let i = 0; i < fields.length; i++) {
+          this.selectedPaths.push({ path: fields[i] });
+        }
+      } else {
+        this.selectedPaths = [{ path: '_id' }];
+      }
+      this.shouldShowFieldModal = true;
+    },
     filterDocuments() {
-      this.filteredPaths = [...this.selectedPaths];
+      if (this.selectedPaths.length > 0) {
+        this.filteredPaths = [...this.selectedPaths];
+      } else {
+        this.filteredPaths.length = 0;
+      }
       this.shouldShowFieldModal = false;
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
       this.query.fields = selectedParams;
