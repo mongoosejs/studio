@@ -28,7 +28,7 @@
       <div class="documents-menu">
         <div class="flex flex-row items-center w-full gap-2">
           <form @submit.prevent="search" class="flex-grow m-0">
-            <input class="w-full rounded-md p-1 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter or text" v-model="searchText" />
+            <input class="w-full rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter or text" v-model="searchText" />
           </form>
           <div>
             <span v-if="status === 'loading'">Loading ...</span>
@@ -47,7 +47,7 @@
             Create
           </button>
           <button
-            @click="shouldShowFieldModal = true"
+            @click="openFieldSelection"
             type="button"
             class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
             Fields
@@ -121,15 +121,16 @@
   <modal v-if="shouldShowFieldModal">
     <template v-slot:body>
       <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
-      <div v-for="(path, index) in schemaPaths" :key="index" style="margin-bottom: 0.5em">
-        <input type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)" />
-        <label :for="'path' + index">{{path.path}}</label>
+      <div v-for="(path, index) in schemaPaths" :key="index" class="w-5 flex items-center">
+        <input  class="mt-0 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-600 accent-sky-600" type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)" />
+        <div class="ml-2 text-gray-700 grow shrink text-left">
+          <label :for="'path' + index">{{path.path}}</label>
+        </div>
       </div>
-      <div style="margin-top: 1em">
-        <button type="submit" @click="filterDocuments()" style="color: black;margin-right: 0.5em">Filter Selection</button>
-        <button type="submit" @click="deselectAll()" class="gray" style="margin-right: 0.5em">Deselect All</button>
-        <button type="submit" @click="resetDocuments()" class="gray">Cancel</button>
-
+      <div class="mt-4 flex gap-2">
+        <button type="submit" @click="filterDocuments()" class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Filter Selection</button>
+        <button type="submit" @click="deselectAll()" class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">Deselect All</button>
+        <button type="submit" @click="resetDocuments()" class="rounded-md bg-gray-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600" >Cancel</button>
       </div>
     </template>
   </modal>
