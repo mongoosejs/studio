@@ -35,15 +35,7 @@ module.exports = app => app.component('team', {
     },
     async getWorkspaceCustomerPortalLink() {
       const { url } = await mothership.getWorkspaceCustomerPortalLink();
-      window.open(url, '_blank');
-
-      const interval = setInterval(async () => {
-        const { workspace } = await mothership.getWorkspaceTeam();
-        if (workspace.subscriptionTier) {
-          this.workspace = workspace;
-          clearInterval(interval);
-        }
-      }, 15000);
+      window.open(url, '_self');
     }
   }
 });
