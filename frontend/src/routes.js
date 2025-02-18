@@ -30,5 +30,10 @@ module.exports = [
     path: '/team',
     name: 'team',
     component: 'team'
+  },
+  {
+    path: '/shell',
+    name: 'shell',
+    component: 'shell'
   }
 ];

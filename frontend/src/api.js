@@ -70,6 +70,11 @@ if (config__isLambda) {
       return client.post('', { action: 'Model.updateDocument', ...params }).then(res => res.data);
     }
   };
+  exports.Script = {
+    execute: function execute(params) {
+      return client.post('', { action: 'Script.execute', ...params }).then(res => res.data);
+    }
+  }
 } else {
   exports.status = function status() {
     return client.get('/status').then(res => res.data);
@@ -123,6 +128,8 @@ if (config__isLambda) {
     }
   };
   exports.Script = {
-
+    execute: function execute(params) {
+      return client.post('/Script/execute', params).then(res => res.data);
+    }
   };
 }

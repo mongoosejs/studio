@@ -44,6 +44,7 @@ require('./list-subdocument/list-subdocument')(app);
 require('./modal/modal')(app);
 require('./models/models')(app);
 require('./navbar/navbar')(app);
+require('./shell/shell')(app);
 require('./splash/splash')(app);
 require('./team/team')(app);
 require('./team/new-invitation/new-invitation')(app);

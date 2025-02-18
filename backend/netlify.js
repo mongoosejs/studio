@@ -37,7 +37,7 @@ module.exports = function netlify(options) {
           .then(res => res.json()));
       }
 
-      const { user, roles } = await fetch(`${mothershipUrl}/me?`, {
+      const { user, roles } = await fetch(`${mothershipUrl}/me`, {
         method: 'POST',
         body: JSON.stringify({ workspaceId: workspace._id }),
         headers: {
@@ -46,6 +46,7 @@ module.exports = function netlify(options) {
         }
       })
         .then(response => {
+          console.log('AB', response);
           if (response.status < 200 || response.status >= 400) {
             return response.json().then(data => {
               throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);

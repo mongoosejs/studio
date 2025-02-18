@@ -20,6 +20,7 @@ module.exports = async function(apiUrl, conn, options) {
       }
     })
       .then(response => {
+        console.log('AA', response);
         if (response.status < 200 || response.status >= 400) {
           return response.json().then(data => {
             throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
