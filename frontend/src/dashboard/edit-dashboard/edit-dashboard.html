@@ -13,7 +13,7 @@
             <textarea ref="codeEditor" class="w-full p-2 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="6">{{code}}</textarea>
         </div>
         <div class="flex space-x-2">
-            <button @click="updateCode" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit</button>
+            <async-button @click="updateCode" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit</async-button>
             <button @click="closeEditor" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
         </div>
     </div>
