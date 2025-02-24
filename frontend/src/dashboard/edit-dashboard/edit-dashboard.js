@@ -44,7 +44,7 @@ module.exports = app => app.component('edit-dashboard', {
       lineWrapping: true,
       showCursorWhenSelecting: true,
     });
-    this.editor.focus();
+    // this.editor.focus();
     // this.editor.refresh(); // if anything weird happens on load, this usually fixes it. However, this breaks it in this case.
     this.description = this.currentDescription;
     this.title = this.currentTitle;
