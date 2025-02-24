@@ -15,7 +15,7 @@ module.exports = app => app.component('dashboard-document', {
       return null;
     },
     schemaPaths() {
-      return Object.keys(this.value.$document?.schemaPaths || {}).sort((k1, k2) => {
+      return Object.keys(this.value?.$document?.schemaPaths || {}).sort((k1, k2) => {
         if (k1 === '_id' && k2 !== '_id') {
           return -1;
         }
@@ -23,7 +23,7 @@ module.exports = app => app.component('dashboard-document', {
           return 1;
         }
         return 0;
-      }).map(key => this.value.$document.schemaPaths[key]);
+      }).map(key => this.value?.$document.schemaPaths[key]);
     }
   }
 });

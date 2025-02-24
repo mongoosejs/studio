@@ -8,7 +8,7 @@ module.exports = app => app.component('edit-dashboard', {
   props: ['dashboardId', 'code', 'currentDescription', 'currentTitle'],
   data: function() {
     return {
-      status: 'loading',
+      status: 'loaded',
       editor: null,
       title: '',
       description: ''
@@ -19,7 +19,7 @@ module.exports = app => app.component('edit-dashboard', {
         this.$emit('close')
     },
     async updateCode() {
-      console.log('this.title', this.title, 'this.description', this.description)
+      this.status = 'loading';
       const { doc, result, error } = await api.Dashboard.updateDashboard({
         dashboardId: this.dashboardId,
         code: this.editor.getValue(),
@@ -28,6 +28,7 @@ module.exports = app => app.component('edit-dashboard', {
       });
       this.$emit('update', { doc, result, error });
       this.editor.setValue(doc.code);
+      this.status = 'loaded';
       this.closeEditor();
     }
   },
@@ -43,11 +44,6 @@ module.exports = app => app.component('edit-dashboard', {
       lineWrapping: true,
       showCursorWhenSelecting: true,
     });
-    // this.editor.setValue(this.code);
-    // this.editor.setSize(300, 300); // Ensure the editor has a fixed height
-    
-    // this.editor.setCursor(this.editor.lineCount() - 1, this.editor.getLine(this.editor.lineCount() - 1).length);
-   
     this.editor.focus();
     // this.editor.refresh(); // if anything weird happens on load, this usually fixes it. However, this breaks it in this case.
     this.description = this.currentDescription;
