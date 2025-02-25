@@ -4,6 +4,7 @@ if (typeof process === 'undefined') {
   global.process = { env: {} }; // To make `util` package work
 }
 
+const api = require('./api');
 const mothership = require('./mothership');
 const vanillatoasts = require('vanillatoasts');
 
@@ -51,8 +52,8 @@ require('./team/new-invitation/new-invitation')(app);
 app.component('app-component', {
   template: `
   <div>
-    <div v-if="hasAPIKey && user == null">
-      <splash />
+    <div v-if="hasAPIKey && (user == null || status === 'init')">
+      <splash :loading="status === 'init'" />
     </div>
     <div v-else-if="!hasAPIKey || user">
       <navbar :user="user" :roles="roles" />
@@ -84,14 +85,23 @@ app.component('app-component', {
         const { user, roles } = await mothership.me();
         this.user = user;
         this.roles = roles;
+
+        const { nodeEnv } = await api.status();
+        this.nodeEnv = nodeEnv;
       }
+    } else {
+      const { nodeEnv } = await api.status();
+      this.nodeEnv = nodeEnv;
     }
+    this.status = 'loaded';
   },
   setup() {
     const user = Vue.ref(null);
     const roles = Vue.ref(null);
+    const status = Vue.ref('init');
+    const nodeEnv = Vue.ref(null);
 
-    const state = Vue.reactive({ user, roles });
+    const state = Vue.reactive({ user, roles, status, nodeEnv });
     Vue.provide('state', state);
 
     return state;

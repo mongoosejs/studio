@@ -11,13 +11,14 @@ appendCSS(require('./navbar.css'));
 module.exports = app => app.component('navbar', {
   template: template,
   props: ['user', 'roles'],
-  data: () => ({ nodeEnv: null, showFlyout: false }),
+  inject: ['state'],
+  data: () => ({ showFlyout: false }),
   computed: {
     routeName() {
       return this.$route.name;
     },
     warnEnv() {
-      return this.nodeEnv === 'prod' || this.nodeEnv === 'production';
+      return this.state.nodeEnv === 'prod' || this.state.nodeEnv === 'production';
     },
     hasAPIKey() {
       return mothership.hasAPIKey;
@@ -25,10 +26,6 @@ module.exports = app => app.component('navbar', {
     canViewTeam() {
       return this.roles?.includes('owner') || this.roles?.includes('admin');
     }
-  },
-  async mounted() {
-    const { nodeEnv } = await api.status();
-    this.nodeEnv = nodeEnv;
   },
   methods: {
     async loginWithGithub() {

@@ -6,10 +6,13 @@
     <div class="text-lg mt-2 font-bold">
       Mongoose Studio
     </div>
-    <div class="mt-2 text-gray-700">
+    <div v-if="loading" class="mt-2">
+      <img src="images/loader.gif" class="inline w-16 h-16">
+    </div>
+    <div class="mt-2 text-gray-700" v-if="!loading">
       {{workspaceName}}
     </div>
-    <div class="mt-4">
+    <div class="mt-4" v-if="!loading">
       <async-button
         type="button"
         @click="loginWithGithub"

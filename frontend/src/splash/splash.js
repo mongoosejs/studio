@@ -6,6 +6,7 @@ const template = require('./splash.html');
 module.exports = app => app.component('splash', {
   template,
   inject: ['state'],
+  props: ['loading'],
   data: () => ({ error: null }),
   computed: {
     workspaceName() {
