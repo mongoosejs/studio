@@ -15,7 +15,7 @@
         </button>
       </div>
     </div>
-    <div v-if="!showEditor" class="mt-4 mb-4">
+    <div  v-if="!showEditor" class="mt-4 mb-4">
       <dashboard-result :result="result"></dashboard-result>
     </div>
     <div v-if="showEditor">
@@ -39,7 +39,7 @@
         </div>
       </div>
     </div>
-    
+
   </div>
   <div v-if="!dashboard && status === 'loaded'">
     No dashboard with the given id could be found.

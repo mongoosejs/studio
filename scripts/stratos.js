@@ -15,7 +15,7 @@ run().catch(err => {
 async function run() {
   const app = express();
   const conn = await db();
-  app.use('/studio', studio('/studio/api', conn));
+  app.use('/studio', await studio('/studio/api', conn));
 
   await app.listen(3002);
   console.log('Listening on port 3002');
