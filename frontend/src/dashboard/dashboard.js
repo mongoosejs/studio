@@ -34,7 +34,8 @@ module.exports = app => app.component('dashboard', {
     }
   },
   mounted: async function() {
-    const { dashboard, result, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
+    this.showEditor = this.$route.query.edit;
+    const { dashboard, result, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: !this.showEditor });
     if (!dashboard) {
       return;
     }

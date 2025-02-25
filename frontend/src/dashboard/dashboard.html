@@ -16,10 +16,6 @@
       </div>
     </div>
     <div  v-if="!showEditor" class="mt-4 mb-4">
-      <div>
-        <div>{{description}}</div>
-        <textarea readonly class="w-full p-2 mb-4 border border-gray-300 cursor-disable rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="6" cols="6">{{code}}</textarea>
-      </div>
       <dashboard-result :result="result"></dashboard-result>
     </div>
     <div v-if="showEditor">
@@ -43,7 +39,7 @@
         </div>
       </div>
     </div>
-    
+
   </div>
   <div v-if="!dashboard && status === 'loaded'">
     No dashboard with the given id could be found.
