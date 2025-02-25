@@ -14,6 +14,9 @@ module.exports = app => app.component('navbar', {
   inject: ['state'],
   data: () => ({ showFlyout: false }),
   computed: {
+    dashboardView() {
+      return this.$route.fullPath.includes('dashboard');
+    },
     routeName() {
       return this.$route.name;
     },

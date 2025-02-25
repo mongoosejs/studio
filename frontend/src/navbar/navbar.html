@@ -12,11 +12,11 @@
       <a
         href="#/"
         class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-        :class="routeName === 'root' ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Documents</a>
+        :class="!dashboardView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Documents</a>
       <a
         href="#/dashboards"
         class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
-        :class="routeName === 'dashboards' ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Dashboards</a>
+        :class="dashboardView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Dashboards</a>
 
       <div class="h-full flex items-center" v-if="!user && hasAPIKey">
         <button
