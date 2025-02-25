@@ -80,14 +80,30 @@ app.component('app-component', {
     window.$router = this.$router;
 
     if (mothership.hasAPIKey) {
-      const token = window.localStorage.getItem('_mongooseStudioAccessToken');
-      if (token) {
-        const { user, roles } = await mothership.me();
+      const href = window.location.href;
+      if (href.match(/\?code=([a-zA-Z0-9]+)$/)) {
+        const code = href.match(/\?code=([a-zA-Z0-9]+)$/)[1];
+        const { accessToken, user, roles } = await mothership.github(code);
+        if (roles == null) {
+          this.authError = 'You are not authorized to access this workspace';
+          return;
+        }
         this.user = user;
         this.roles = roles;
+        window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
 
         const { nodeEnv } = await api.status();
         this.nodeEnv = nodeEnv;
+      } else {
+        const token = window.localStorage.getItem('_mongooseStudioAccessToken');
+        if (token) {
+          const { user, roles } = await mothership.me();
+          this.user = user;
+          this.roles = roles;
+
+          const { nodeEnv } = await api.status();
+          this.nodeEnv = nodeEnv;
+        }
       }
     } else {
       const { nodeEnv } = await api.status();
@@ -100,8 +116,9 @@ app.component('app-component', {
     const roles = Vue.ref(null);
     const status = Vue.ref('init');
     const nodeEnv = Vue.ref(null);
+    const authError = Vue.ref(null);
 
-    const state = Vue.reactive({ user, roles, status, nodeEnv });
+    const state = Vue.reactive({ user, roles, status, nodeEnv, authError });
     Vue.provide('state', state);
 
     return state;

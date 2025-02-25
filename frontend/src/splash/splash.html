@@ -20,7 +20,7 @@
         Login With GitHub
       </async-button>
     </div>
-    <div class="mt-4" v-if="error">
+    <div class="mt-4" v-if="state.authError">
       <div class="rounded-md bg-red-50 p-4">
         <div class="flex">
           <div class="shrink-0">
@@ -29,7 +29,7 @@
             </svg>
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">{{error}}</h3>
+            <h3 class="text-sm font-medium text-red-800">{{state.authError}}</h3>
           </div>
         </div>
       </div>
