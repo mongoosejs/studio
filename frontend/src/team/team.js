@@ -10,13 +10,15 @@ module.exports = app => app.component('team', {
     users: null,
     invitations: null,
     showNewInvitationModal: false,
-    showRemoveModal: null
+    showRemoveModal: null,
+    status: 'loading'
   }),
   async mounted() {
     const { workspace, users, invitations } = await mothership.getWorkspaceTeam();
     this.workspace = workspace;
     this.users = users;
     this.invitations = invitations;
+    this.status = 'loaded';
   },
   computed: {
     paymentLink() {

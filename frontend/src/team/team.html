@@ -3,7 +3,10 @@
     <div class="text-xl font-bold">
       Subscription Details
     </div>
-    <div v-if="workspace && workspace.subscriptionTier" class="mt-4 flex justify-between items-center">
+    <div v-if="status === 'loading'" class="mt-4">
+      <img src="images/loader.gif" class="inline w-8 h-8">
+    </div>
+    <div v-else-if="workspace && workspace.subscriptionTier" class="mt-4 flex justify-between items-center">
       <div>
         <span class="font-bold">Tier:</span> {{workspace.subscriptionTier ?? 'No subscription'}}
       </div>
@@ -19,7 +22,7 @@
         </async-button>
       </div>
     </div>
-    <div v-if="workspace && !workspace.subscriptionTier" class="mt-4 flex justify-between items-center">
+    <div v-else-if="workspace && !workspace.subscriptionTier" class="mt-4 flex justify-between items-center">
       <div>
         <span class="font-bold">No active subscription</span>
         <div class="text-sm text-gray-700">
@@ -43,7 +46,10 @@
     <div class="text-xl font-bold">
       Current Members
     </div>
-    <ul role="list" class="divide-y divide-gray-100">
+    <div v-if="status === 'loading'" class="mt-4">
+      <img src="images/loader.gif" class="inline w-8 h-8">
+    </div>
+    <ul v-else role="list" class="divide-y divide-gray-100">
       <li class="flex justify-between gap-x-6 py-5" v-for="user in users">
         <div class="flex min-w-0 gap-x-4">
           <img class="size-12 flex-none rounded-full bg-gray-50" :src="user.picture ?? 'images/logo.svg'" alt="">
@@ -78,7 +84,7 @@
         <button
           type="button"
           @click="showNewInvitationModal = true"
-          :disabled="workspace && !workspace.subscriptionTier"
+          :disabled="status === 'loading' || (workspace && !workspace.subscriptionTier)"
           class="block rounded-md bg-ultramarine-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 disabled:bg-gray-500 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
           New Invitation
           <svg class="inline w-4 h-4 ml-1" v-if="workspace && !workspace.subscriptionTier" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -87,7 +93,10 @@
         </button>
       </div>
     </div>
-    <div class="mt-8 flow-root" v-if="invitations?.length > 0">
+    <div v-if="status === 'loading'" class="mt-4">
+      <img src="images/loader.gif" class="inline w-8 h-8">
+    </div>
+    <div v-else-if="invitations?.length > 0" class="mt-8 flow-root" v-if="invitations?.length > 0">
       <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
           <table class="min-w-full divide-y divide-gray-300">
@@ -121,8 +130,7 @@
         </div>
       </div>
     </div>
-
-    <div v-if="invitations?.length === 0" class="mt-4">
+    <div v-else-if="invitations?.length === 0" class="mt-4">
       <div class="text-center">
         <svg class="mx-auto size-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
