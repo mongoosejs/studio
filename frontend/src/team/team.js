@@ -22,7 +22,8 @@ module.exports = app => app.component('team', {
   },
   computed: {
     paymentLink() {
-      return 'https://buy.stripe.com/test_eVaeYa2jC7565Lq7ss?client_reference_id=' + this.workspace?._id;
+      return 'https://buy.stripe.com/3csaFg8XTdd0d6U7sy?client_reference_id=' + this.workspace?._id;
+      // return 'https://buy.stripe.com/test_eVaeYa2jC7565Lq7ss?client_reference_id=' + this.workspace?._id;
     }
   },
   methods: {
