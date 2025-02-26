@@ -14,6 +14,8 @@ module.exports = app => app.component('team', {
     status: 'loading'
   }),
   async mounted() {
+    window.pageState = this;
+
     const { workspace, users, invitations } = await mothership.getWorkspaceTeam();
     this.workspace = workspace;
     this.users = users;
