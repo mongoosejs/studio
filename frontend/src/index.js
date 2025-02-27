@@ -83,14 +83,24 @@ app.component('app-component', {
       const href = window.location.href;
       if (href.match(/\?code=([a-zA-Z0-9]+)$/)) {
         const code = href.match(/\?code=([a-zA-Z0-9]+)$/)[1];
-        const { accessToken, user, roles } = await mothership.github(code);
-        if (roles == null) {
-          this.authError = 'You are not authorized to access this workspace';
+        try {
+          const { accessToken, user, roles } = await mothership.github(code);
+          if (roles == null) {
+            this.authError = 'You are not authorized to access this workspace';
+            return;
+          }
+          this.user = user;
+          this.roles = roles;
+          window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
+        } catch (err) {
+          this.authError = 'An error occurred while logging in. Please try again.';
+          this.status = 'loaded';
           return;
+        } finally {
+          setTimeout(() => {
+            this.$router.replace(this.$router.currentRoute.value.path);
+          }, 0);
         }
-        this.user = user;
-        this.roles = roles;
-        window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
 
         const { nodeEnv } = await api.status();
         this.nodeEnv = nodeEnv;
