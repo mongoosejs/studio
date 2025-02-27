@@ -3,6 +3,7 @@
 const api = require('../api');
 const mothership = require('../mothership');
 const template = require('./navbar.html');
+const routes = require('../routes');
 
 const appendCSS = require('../appendCSS');
 
@@ -14,6 +15,12 @@ module.exports = app => app.component('navbar', {
   inject: ['state'],
   data: () => ({ showFlyout: false }),
   computed: {
+    dashboardView() {
+      return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
+    },
+    documentView() {
+      return ['root', 'model', 'document'].includes(this.$route.name);
+    },
     routeName() {
       return this.$route.name;
     },
