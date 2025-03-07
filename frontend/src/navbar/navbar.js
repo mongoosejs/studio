@@ -14,6 +14,11 @@ module.exports = app => app.component('navbar', {
   props: ['user', 'roles'],
   inject: ['state'],
   data: () => ({ showFlyout: false }),
+  mounted: function() {
+    if (this.dashboardsOnly) {
+      this.$router.push({ name: 'dashboards' });
+    }
+  },
   computed: {
     dashboardView() {
       return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
@@ -34,16 +39,13 @@ module.exports = app => app.component('navbar', {
       return this.roles?.includes('owner') || this.roles?.includes('admin');
     },
     dashboardsOnly() {
-      return this.roles?.includes('dashboards');
+      return this.roles?.includes('dashboard') || this.roles?.includes('dashboards');
     }
   },
   methods: {
     async loginWithGithub() {
       const { url } = await mothership.githubLogin();
       window.location.href = url;
-      if(this.dashboardsOnly) {
-        this.$router.push({ path: '/dashboards' });
-      }
     },
     hideFlyout() {
       this.showFlyout = false;
