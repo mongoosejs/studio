@@ -4,31 +4,49 @@ module.exports = [
   {
     path: '/',
     name: 'root',
-    component: 'models'
+    component: 'models',
+    meta: {
+      authorized: true
+    }
   },
   {
     path: '/model/:model',
     name: 'model',
-    component: 'models'
+    component: 'models',
+    meta: {
+      authorized: true
+    }
   },
   {
     path: '/model/:model/document/:documentId',
     name: 'document',
-    component: 'document'
+    component: 'document',
+    meta: {
+      authorized: true
+    }
   },
   {
     path: '/dashboards',
     name: 'dashboards',
-    component: 'dashboards'
+    component: 'dashboards',
+    meta: {
+      authorized: true
+    }
   },
   {
     path: '/dashboard/:dashboardId',
     name: 'dashboard',
-    component: 'dashboard'
+    component: 'dashboard',
+    meta: {
+      authorized: true
+    }
   },
   {
     path: '/team',
     name: 'team',
-    component: 'team'
+    component: 'team',
+    meta: {
+      authorized: true
+    }
   }
 ];
