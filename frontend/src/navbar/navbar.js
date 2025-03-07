@@ -32,12 +32,18 @@ module.exports = app => app.component('navbar', {
     },
     canViewTeam() {
       return this.roles?.includes('owner') || this.roles?.includes('admin');
+    },
+    dashboardsOnly() {
+      return this.roles?.includes('dashboards');
     }
   },
   methods: {
     async loginWithGithub() {
       const { url } = await mothership.githubLogin();
       window.location.href = url;
+      if(this.dashboardsOnly) {
+        this.$router.push({ path: '/dashboards' });
+      }
     },
     hideFlyout() {
       this.showFlyout = false;
