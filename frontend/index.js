@@ -33,7 +33,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
   const config = {
     baseURL: apiUrl,
     isLambda,
-    mothershipUrl: mothershipUrl ?? '',
+    mothershipUrl: apiKey ? mothershipUrl : null,
     workspace: workspaceData
   };
 

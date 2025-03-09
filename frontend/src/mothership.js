@@ -5,7 +5,7 @@ const client = axios.create({
   baseURL: window.MONGOOSE_STUDIO_CONFIG.mothershipUrl
 });
 
-console.log('Mothership baseURL:', window.MONGOOSE_STUDIO_CONFIG.baseURL);
+console.log('Mothership baseURL:', window.MONGOOSE_STUDIO_CONFIG.mothershipUrl);
 
 client.hasAPIKey = !!window.MONGOOSE_STUDIO_CONFIG.mothershipUrl;
 
