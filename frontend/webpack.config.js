@@ -16,11 +16,6 @@ module.exports = {
     path: `${__dirname}/public`,
     filename: '[name].js'
   },
-  plugins: [
-    new webpack.DefinePlugin({
-      config__baseURL: '\'/.netlify/functions/admin\''
-    })
-  ],
   module: {
     rules: [
       {

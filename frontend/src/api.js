@@ -3,8 +3,10 @@
 const axios = require('axios');
 
 const client = axios.create({
-  baseURL: config__baseURL
+  baseURL: window.MONGOOSE_STUDIO_CONFIG.baseURL
 });
+
+console.log('API baseURL:', window.MONGOOSE_STUDIO_CONFIG.baseURL);
 
 window.apiClient = client;
 client.interceptors.request.use(req => {
@@ -26,7 +28,7 @@ client.interceptors.response.use(
   }
 );
 
-if (config__isLambda) {
+if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
   exports.status = function status() {
     return client.post('', { action: 'status' }).then(res => res.data);
   };
@@ -103,7 +105,7 @@ if (config__isLambda) {
     },
     exportQueryResults(params) {
       const anchor = document.createElement('a');
-      anchor.href = config__baseURL + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString();
+      anchor.href = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString();
       anchor.target = '_blank';
       anchor.download = 'export.csv';
       anchor.click();

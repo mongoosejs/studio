@@ -1,7 +1,10 @@
 'use strict';
 
 const { execSync, exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 const webpack = require('webpack');
+const webpackConfig = require('./webpack.config');
 
 module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
   const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
@@ -26,35 +29,20 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
       .then(res => res.json()));
   }
 
-  const config = { ...require('./webpack.config'), plugins: [] };
-  if (apiUrl != null) {
-    config.plugins = [
-      new webpack.DefinePlugin({
-        config__baseURL: `'${apiUrl}'`,
-        config__isLambda: `${!!isLambda}`
-      })
-    ]
-  }
-  if (options?.setAuthorizationHeaderFrom) {
-    config.plugins.push(new webpack.DefinePlugin({
-      config__setAuthorizationHeaderFrom: `'${options.setAuthorizationHeaderFrom}'`
-    }));
-  }
-  if (options?.apiKey) {
-    config.plugins.push(new webpack.DefinePlugin({
-      config__mothershipUrl: options?._mothershipUrl ? `'${options?._mothershipUrl}'` : '\'https://mongoose-js.netlify.app/.netlify/functions\''
-    }));
-  } else {
-    config.plugins.push(new webpack.DefinePlugin({
-      config__mothershipUrl: '\'\''
-    }));
+  const { apiKey, ...workspaceData } = workspace || {};
+  const config = {
+    baseURL: apiUrl,
+    isLambda,
+    mothershipUrl: mothershipUrl ?? '',
+    workspace: workspaceData
+  };
+
+  if (isLambda) {
+    const configPath = path.join(__dirname, './public/config.js');
+    fs.writeFileSync(configPath, `window.MONGOOSE_STUDIO_CONFIG = ${JSON.stringify(config, null, 2)};`);
   }
 
-  const { apiKey, ...workspaceData } = workspace || {};
-  config.plugins.push(new webpack.DefinePlugin({
-    config__workspace: JSON.stringify(workspaceData)
-  }));
-  const compiler = webpack(config);
+  const compiler = webpack(webpackConfig);
 
   if (options && options.watch) {
     compiler.watch({}, (err) => {
@@ -68,7 +56,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
     childProcess.stdout.on('data', data => console.log('[TAILWIND]', data));
     childProcess.stderr.on('data', data => console.log('[TAILWIND]', data));
   } else {
-    return new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       compiler.run((err) => {
         if (err) {
           reject(err);
@@ -79,4 +67,6 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
       });
     });
   }
+
+  return { config };
 };

@@ -30,7 +30,7 @@ module.exports = async function(apiUrl, conn, options) {
       .then(res => res.json()));
   }
 
-  apiUrl = apiUrl || '/admin/api';
+  apiUrl = apiUrl || 'api';
   const backend = Backend(conn);
 
   router.use(
@@ -73,7 +73,11 @@ module.exports = async function(apiUrl, conn, options) {
   );
 
   console.log('Workspace', workspace);
-  frontend(apiUrl, false, options, workspace);
+  const { config } = await frontend(apiUrl, false, options, workspace);
+  router.get('/config.js', function (req, res) {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.end(`window.MONGOOSE_STUDIO_CONFIG = ${JSON.stringify(config, null, 2)};`);
+  });
 
   router.use(express.static(`${__dirname}/frontend/public`));
 
