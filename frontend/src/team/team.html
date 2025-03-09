@@ -67,9 +67,12 @@
             <p class="mt-1 text-xs/5 text-gray-500 cursor-pointer">
               Edit
             </p>
-            <p class="mt-1 text-xs/5 text-valencia-500 cursor-pointer" @click="showRemoveModal = user">
+            <button
+              class="mt-1 text-xs/5 text-valencia-500 cursor-pointer disabled:cursor-not-allowed disabled:text-gray-300"
+              :disabled="getRolesForUser(user).includes('owner')"
+              @click="showRemoveModal = user">
               Remove
-            </p>
+            </button>
           </div>
         </div>
       </li>
