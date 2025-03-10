@@ -42,9 +42,8 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
     fs.writeFileSync(configPath, `window.MONGOOSE_STUDIO_CONFIG = ${JSON.stringify(config, null, 2)};`);
   }
 
-  const compiler = webpack(webpackConfig);
-
-  if (options && options.watch) {
+  if (options && options.__watch) {
+    const compiler = webpack(webpackConfig);
     compiler.watch({}, (err) => {
       if (err) {
         process.nextTick(() => { throw new Error('Error compiling bundle: ' + err.stack); });
@@ -55,7 +54,8 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
     const childProcess = exec('npm run tailwind:watch');
     childProcess.stdout.on('data', data => console.log('[TAILWIND]', data));
     childProcess.stderr.on('data', data => console.log('[TAILWIND]', data));
-  } else {
+  } else if (options && options.__build) {
+    const compiler = webpack(webpackConfig);
     await new Promise((resolve, reject) => {
       compiler.run((err) => {
         if (err) {
