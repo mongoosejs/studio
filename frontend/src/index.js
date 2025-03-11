@@ -78,6 +78,7 @@ app.component('app-component', {
   },
   async mounted() {
     window.$router = this.$router;
+    window.state = this;
 
     if (mothership.hasAPIKey) {
       const href = window.location.href;

@@ -10,7 +10,7 @@ module.exports = app => app.component('splash', {
   data: () => ({ error: null }),
   computed: {
     workspaceName() {
-      return config__workspace.name;
+      return window.MONGOOSE_STUDIO_CONFIG.workspace.name;
     }
   },
   methods: {

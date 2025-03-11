@@ -3,6 +3,7 @@
 const api = require('../api');
 const mothership = require('../mothership');
 const template = require('./navbar.html');
+const routes = require('../routes');
 
 const appendCSS = require('../appendCSS');
 
@@ -13,7 +14,18 @@ module.exports = app => app.component('navbar', {
   props: ['user', 'roles'],
   inject: ['state'],
   data: () => ({ showFlyout: false }),
+  mounted: function() {
+    if (this.dashboardsOnly) {
+      this.$router.push({ name: 'dashboards' });
+    }
+  },
   computed: {
+    dashboardView() {
+      return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
+    },
+    documentView() {
+      return ['root', 'model', 'document'].includes(this.$route.name);
+    },
     routeName() {
       return this.$route.name;
     },
@@ -25,6 +37,9 @@ module.exports = app => app.component('navbar', {
     },
     canViewTeam() {
       return this.roles?.includes('owner') || this.roles?.includes('admin');
+    },
+    dashboardsOnly() {
+      return this.roles?.includes('dashboard') || this.roles?.includes('dashboards');
     }
   },
   methods: {

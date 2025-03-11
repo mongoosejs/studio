@@ -2,10 +2,12 @@
 
 const axios = require('axios');
 const client = axios.create({
-  baseURL: config__mothershipUrl
+  baseURL: window.MONGOOSE_STUDIO_CONFIG.mothershipUrl
 });
 
-client.hasAPIKey = !!config__mothershipUrl;
+console.log('Mothership baseURL:', window.MONGOOSE_STUDIO_CONFIG.mothershipUrl);
+
+client.hasAPIKey = !!window.MONGOOSE_STUDIO_CONFIG.mothershipUrl;
 
 client.interceptors.request.use(req => {
   const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
@@ -21,27 +23,27 @@ exports.githubLogin = function githubLogin() {
 };
 
 exports.getWorkspaceTeam = function getWorkspaceTeam() {
-  return client.post('/getWorkspaceTeam', { workspaceId: config__workspace._id }).then(res => res.data);
+  return client.post('/getWorkspaceTeam', { workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id }).then(res => res.data);
 };
 
 exports.getWorkspaceCustomerPortalLink = function getWorkspaceCustomerPortalLink(params) {
-  return client.post('/getWorkspaceCustomerPortalLink', { workspaceId: config__workspace._id, ...params }).then(res => res.data);
+  return client.post('/getWorkspaceCustomerPortalLink', { workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id, ...params }).then(res => res.data);
 };
 
 exports.github = function github(code) {
-  return client.post('/github', { code, workspaceId: config__workspace._id }).then(res => res.data);
+  return client.post('/github', { code, workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id }).then(res => res.data);
 };
 
 exports.inviteToWorkspace = function inviteToWorkspace(params) {
-  return client.post('/inviteToWorkspace', { workspaceId: config__workspace._id, ...params }).then(res => res.data);
+  return client.post('/inviteToWorkspace', { workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id, ...params }).then(res => res.data);
 };
 
 exports.me = function me() {
-  return client.post('/me', { workspaceId: config__workspace._id }).then(res => res.data);
+  return client.post('/me', { workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id }).then(res => res.data);
 };
 
 exports.removeFromWorkspace = function removeFromWorkspace(params) {
-  return client.post('/removeFromWorkspace', { workspaceId: config__workspace._id, ...params }).then(res => res.data);
+  return client.post('/removeFromWorkspace', { workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id, ...params }).then(res => res.data);
 };
 
 exports.hasAPIKey = client.hasAPIKey;
