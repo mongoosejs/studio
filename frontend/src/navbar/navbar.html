@@ -9,7 +9,7 @@
   </div>
   <div class="nav-right h-full">
     <div class="sm:ml-6 sm:flex sm:space-x-8 h-full">
-      <a
+      <a v-if="!dashboardsOnly"
         href="#/"
         class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
         :class="documentView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Documents</a>
