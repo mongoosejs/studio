@@ -31,7 +31,8 @@ module.exports = app => app.component('models', {
     filteredPaths: [],
     selectedPaths: [],
     numDocuments: 0,
-    indexes: [],
+    mongoDBIndexes: [],
+    schemaIndexes: [],
     status: 'loading',
     loadedAllDocs: false,
     edittingDoc: null,
@@ -154,8 +155,14 @@ module.exports = app => app.component('models', {
       }
       await this.loadMoreDocuments();
     },
+    async openIndexModal() {
+      this.shouldShowIndexModal = true;
+      const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel })
+      this.mongoDBIndexes = mongoDBIndexes;
+      this.schemaIndexes = schemaIndexes;
+    },
     async getDocuments() {
-      const { docs, schemaPaths, numDocs, indexes } = await api.Model.getDocuments({
+      const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
         filter: this.filter,
         sort: this.sortBy,
@@ -180,7 +187,6 @@ module.exports = app => app.component('models', {
       for (const { path } of this.schemaPaths) {
         this.shouldExport[path] = true;
       }
-      this.indexes = indexes;
       this.filteredPaths = [...this.schemaPaths];
       this.selectedPaths = [...this.schemaPaths];
     },
