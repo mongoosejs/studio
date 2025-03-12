@@ -127,9 +127,9 @@
   <modal v-if="shouldShowIndexModal">
     <template v-slot:body>
       <div class="modal-exit" @click="shouldShowIndexModal = false">&times;</div>
-      <div v-for="index in indexes" class="w-5 flex items-center">
+      <div v-for="index in modelIndexes" class="w-5 flex items-center">
         <div class="ml-2 text-gray-700 grow shrink text-left">
-          {{ index.name }}
+          <span :class="checkIndexLocation(index.name)">{{ index }}</span>
         </div>
       </div>
     </template>

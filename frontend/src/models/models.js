@@ -88,6 +88,11 @@ module.exports = app => app.component('models', {
 
     this.status = 'loaded';
   },
+  computed: {
+    modelIndexes() {
+      return this.schemaIndexes.concat(this.mongoDBIndexes);
+    }
+  },
   methods: {
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
@@ -160,6 +165,15 @@ module.exports = app => app.component('models', {
       const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel })
       this.mongoDBIndexes = mongoDBIndexes;
       this.schemaIndexes = schemaIndexes;
+    },
+    checkIndexLocation(indexName) {
+      if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
+        return ''
+      } else if (this.schemaIndexes.find(x => x.name == indexName)) {
+        return 'text-green'
+      } else {
+        return 'text-red'
+      }
     },
     async getDocuments() {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
