@@ -143,13 +143,13 @@
       <h2>Database Indexes</h2>
       <div v-for="index in mongoDBIndexes" class="w-5 flex items-center">
         <div class="ml-2 grow shrink text-left">
-          <span v-if="index.name != '_id'" :class="checkIndexLocation(index.name)">{{ index.name }}</span>
+          <span v-if="index.name != '_id_'" :class="checkIndexLocation(index.name)">{{ index.name }}</span>
         </div>
       </div>
       <h2>Schema Indexes</h2>
       <div v-for="index in schemaIndexes" class="w-5 flex items-center">
         <div class="ml-2 grow shrink text-left">
-          <span v-if="index.name != '_id'" :class="checkIndexLocation(index.name)">{{ index.name }}</span>
+          <span v-if="index.name != '_id_'" :class="checkIndexLocation(index.name)">{{ index.name }}</span>
         </div>
       </div>
     </template>
