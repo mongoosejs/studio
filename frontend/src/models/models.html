@@ -112,7 +112,6 @@
       </div>
     </div>
   </div>
-
   <modal v-if="shouldShowExportModal">
     <template v-slot:body>
       <div class="modal-exit" @click="shouldShowExportModal = false">&times;</div>
@@ -127,9 +126,30 @@
   <modal v-if="shouldShowIndexModal">
     <template v-slot:body>
       <div class="modal-exit" @click="shouldShowIndexModal = false">&times;</div>
-      <div v-for="index in modelIndexes" class="w-5 flex items-center">
-        <div class="ml-2 text-gray-700 grow shrink text-left">
-          <span :class="checkIndexLocation(index.name)">{{ index }}</span>
+      <div class="flex space-x-6">
+        <div class="flex items-center">
+            <span class="w-4 h-4 bg-forest-green-500 rounded-full inline-block mr-2"></span>
+            <span class="text-forest-green-500">Exist in Schema</span>
+        </div>
+        <div class="flex items-center">
+            <span class="w-4 h-4 bg-valencia-500 rounded-full inline-block mr-2"></span>
+            <span class="text-valencia-500">Exist in MongoDB</span>
+        </div>
+        <div class="flex items-center">
+            <span class="w-4 h-4 bg-gray-500 border border-gray-400 rounded-full inline-block mr-2"></span>
+            <span class="text-gray-500">Exist in Both</span>
+        </div>
+      </div>
+      <h2>Database Indexes</h2>
+      <div v-for="index in mongoDBIndexes" class="w-5 flex items-center">
+        <div class="ml-2 grow shrink text-left">
+          <span v-if="index.name != '_id'" :class="checkIndexLocation(index.name)">{{ index.name }}</span>
+        </div>
+      </div>
+      <h2>Schema Indexes</h2>
+      <div v-for="index in schemaIndexes" class="w-5 flex items-center">
+        <div class="ml-2 grow shrink text-left">
+          <span v-if="index.name != '_id'" :class="checkIndexLocation(index.name)">{{ index.name }}</span>
         </div>
       </div>
     </template>

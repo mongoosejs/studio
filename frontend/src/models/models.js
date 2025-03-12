@@ -88,11 +88,6 @@ module.exports = app => app.component('models', {
 
     this.status = 'loaded';
   },
-  computed: {
-    modelIndexes() {
-      return this.schemaIndexes.concat(this.mongoDBIndexes);
-    }
-  },
   methods: {
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
@@ -168,11 +163,11 @@ module.exports = app => app.component('models', {
     },
     checkIndexLocation(indexName) {
       if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
-        return ''
+        return 'text-gray-500'
       } else if (this.schemaIndexes.find(x => x.name == indexName)) {
-        return 'text-green'
+        return 'text-forest-green-500'
       } else {
-        return 'text-red'
+        return 'text-valencia-500'
       }
     },
     async getDocuments() {

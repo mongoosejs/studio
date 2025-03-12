@@ -20,7 +20,10 @@ module.exports = ({ db }) => async function getIndexes(params) {
   }
 
   const mongoDBIndexes = await Model.listIndexes();
-  const schemaIndexes = Model.schema.indexes();
+  const schemaIndexes = Model.schema.indexes().map(([fields, options]) => ({
+    key: fields,
+    name: Object.keys(fields).map(key => `${key}_${fields[key]}`).join("_")
+  }));
   return {
     mongoDBIndexes,
     schemaIndexes
