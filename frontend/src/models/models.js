@@ -31,6 +31,8 @@ module.exports = app => app.component('models', {
     filteredPaths: [],
     selectedPaths: [],
     numDocuments: 0,
+    mongoDBIndexes: [],
+    schemaIndexes: [],
     status: 'loading',
     loadedAllDocs: false,
     edittingDoc: null,
@@ -40,6 +42,7 @@ module.exports = app => app.component('models', {
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
+    shouldShowIndexModal: false,
     shouldExport: {},
     sortBy: {},
     query: {},
@@ -152,6 +155,21 @@ module.exports = app => app.component('models', {
       }
       await this.loadMoreDocuments();
     },
+    async openIndexModal() {
+      this.shouldShowIndexModal = true;
+      const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel })
+      this.mongoDBIndexes = mongoDBIndexes;
+      this.schemaIndexes = schemaIndexes;
+    },
+    checkIndexLocation(indexName) {
+      if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
+        return 'text-gray-500'
+      } else if (this.schemaIndexes.find(x => x.name == indexName)) {
+        return 'text-forest-green-500'
+      } else {
+        return 'text-valencia-500'
+      }
+    },
     async getDocuments() {
       const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
@@ -178,7 +196,6 @@ module.exports = app => app.component('models', {
       for (const { path } of this.schemaPaths) {
         this.shouldExport[path] = true;
       }
-
       this.filteredPaths = [...this.schemaPaths];
       this.selectedPaths = [...this.schemaPaths];
     },

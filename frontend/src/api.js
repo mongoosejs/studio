@@ -117,6 +117,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getDocuments: function getDocuments(params) {
       return client.post('/Model/getDocuments', params).then(res => res.data);
     },
+    getIndexes: function getIndexes(params) {
+      return client.post('/Model/getIndexes', params).then(res => res.data);
+    },
     listModels: function listModels() {
       return client.post('/Model/listModels', {}).then(res => res.data);
     },

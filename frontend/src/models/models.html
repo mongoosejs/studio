@@ -41,6 +41,12 @@
             Export
           </button>
           <button
+            @click="openIndexModal"
+            type="button"
+            class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
+            Indexes
+          </button>
+          <button
             @click="shouldShowCreateModal = true;"
             type="button"
             class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
@@ -106,7 +112,6 @@
       </div>
     </div>
   </div>
-
   <modal v-if="shouldShowExportModal">
     <template v-slot:body>
       <div class="modal-exit" @click="shouldShowExportModal = false">&times;</div>
@@ -116,6 +121,23 @@
         :currentModel="currentModel"
         @done="shouldShowExportModal = false">
       </export-query-results>
+    </template>
+  </modal>
+  <modal v-if="shouldShowIndexModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="shouldShowIndexModal = false">&times;</div>
+      <div class="text-xl font-bold mb-2">Indexes</div>
+      <div v-for="index in mongoDBIndexes" class="w-full flex items-center">
+        <div class="grow shrink text-left flex justify-between items-center" v-if="index.name != '_id_'">
+          <div>
+            <div class="font-bold">{{ index.name }}</div>
+            <div class="text-sm font-mono">{{ JSON.stringify(index.key) }}</div>
+          </div>
+          <div>
+            <button type="submit" @click="dropIndex()" disabled="true" class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed">Drop</button>
+          </div>
+        </div>
+      </div>
     </template>
   </modal>
   <modal v-if="shouldShowFieldModal">
