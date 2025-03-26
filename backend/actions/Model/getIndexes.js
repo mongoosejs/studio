@@ -24,8 +24,10 @@ module.exports = ({ db }) => async function getIndexes(params) {
     key: fields,
     name: Object.keys(fields).map(key => `${key}_${fields[key]}`).join("_")
   }));
+  const diffIndexes = await Model.diffIndexes();
   return {
     mongoDBIndexes,
-    schemaIndexes
+    schemaIndexes,
+    diffIndexes
   };
 };
