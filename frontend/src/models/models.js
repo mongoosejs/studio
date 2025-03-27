@@ -22,7 +22,7 @@ const limit = 20;
 
 module.exports = app => app.component('models', {
   template: template,
-  props: ['model'],
+  props: ['model', 'user', 'roles'],
   data: () => ({
     models: [],
     currentModel: null,
@@ -54,6 +54,7 @@ module.exports = app => app.component('models', {
     document.removeEventListener('scroll', () => this.onScroll(), true);
   },
   async mounted() {
+    console.log('user', this.user, 'roles', this.roles, 'model');
     document.addEventListener('scroll', () => this.onScroll(), true);
     this.models = await api.Model.listModels().then(res => res.models);
     if (this.currentModel == null && this.models.length > 0) {

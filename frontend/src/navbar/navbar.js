@@ -15,13 +15,18 @@ module.exports = app => app.component('navbar', {
   inject: ['state'],
   data: () => ({ showFlyout: false }),
   mounted: function() {
-    if (this.dashboardsOnly) {
-      this.$router.push({ name: 'dashboards' });
+    console.log('user', this.user, 'roles', this.roles, 'state', this.state);
+    // Redirect to first allowed route if current route is not allowed
+    if (!this.hasAccess(this.roles, this.$route.name)) {
+      const firstAllowedRoute = this.allowedRoutes[0];
+      if (firstAllowedRoute) {
+        this.$router.push({ name: firstAllowedRoute.name });
+      }
     }
   },
   computed: {
     dashboardView() {
-      return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
+      return routes.routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
     },
     documentView() {
       return ['root', 'model', 'document'].includes(this.$route.name);
@@ -36,13 +41,19 @@ module.exports = app => app.component('navbar', {
       return mothership.hasAPIKey;
     },
     canViewTeam() {
-      return this.roles?.includes('owner') || this.roles?.includes('admin');
+      return this.hasAccess(this.roles, 'team');
     },
-    dashboardsOnly() {
-      return this.roles?.includes('dashboard') || this.roles?.includes('dashboards');
+    allowedRoutes() {
+      return routes.routes.filter(route => this.hasAccess(this.roles, route.name));
+    },
+    defaultRoute() {
+      return this.allowedRoutes[0]?.name || 'dashboards';
     }
   },
   methods: {
+    hasAccess(roles, routeName) {
+      return routes.hasAccess(roles, routeName);
+    },
     async loginWithGithub() {
       const { url } = await mothership.githubLogin();
       window.location.href = url;
