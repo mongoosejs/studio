@@ -10,13 +10,20 @@ const DeleteDocumentParams = new Archetype({
   documentId: {
     $type: 'string',
     $required: true
+  },
+  roles: {
+    $type: ['string'],
   }
 }).compile('DeleteDocumentParams');
 
 module.exports = ({ db }) => async function DeleteDocument(params) {
-  const { model, documentId } = new DeleteDocumentParams(params);
+  const { model, documentId, roles } = new DeleteDocumentParams(params);
 
   const Model = db.models[model];
+
+  if (roles && roles.includes('readonly')) {
+    throw new Error('Not authorized');
+  }
   if (Model == null) {
     throw new Error(`Model ${model} not found`);
   }
