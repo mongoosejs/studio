@@ -58,7 +58,7 @@ app.component('app-component', {
     <div v-else-if="!hasAPIKey || user">
       <navbar :user="user" :roles="roles" />
       <div class="view">
-        <router-view :key="$route.fullPath" />
+        <router-view :key="$route.fullPath" :user="user" :roles="roles" />
       </div>
     </div>
   </div>
@@ -136,7 +136,7 @@ app.component('app-component', {
   }
 });
 
-const routes = require('./routes');
+const { routes } = require('./routes');
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
   routes: routes.map(route => ({
@@ -145,6 +145,12 @@ const router = VueRouter.createRouter({
     props: (route) => route.params
   }))
 });
+
+router.beforeEach((to, from) => {
+  const state = Vue.inject('state');
+  console.log('what is state', state);
+  console.log(to, from);
+})
 
 app.use(router);
 

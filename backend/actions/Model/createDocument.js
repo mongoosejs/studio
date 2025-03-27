@@ -11,11 +11,18 @@ const CreateDocumentParams = new Archetype({
   data: {
     $type: Archetype.Any,
     $required: true
+  },
+  roles: {
+    $type: ['string'],
   }
 }).compile('CreateDocumentParams');
 
 module.exports = ({ db }) => async function CreateDocument(params) {
-  const { model, data } = new CreateDocumentParams(params);
+  const { model, data, roles } = new CreateDocumentParams(params);
+
+  if (roles && roles.includes('readonly')) {
+    throw new Error('Not authorized');
+  }
 
   const Model = db.models[model];
   if (Model == null) {

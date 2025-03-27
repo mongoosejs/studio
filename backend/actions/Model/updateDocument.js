@@ -14,12 +14,18 @@ const UpdateDocumentsParams = new Archetype({
   update: {
     $type: Object,
     $required: true
+  },
+  roles: {
+    $type: ['string'],
   }
 }).compile('UpdateDocumentsParams');
 
 module.exports = ({ db }) => async function updateDocument(params) {
-  const { model, _id, update } = new UpdateDocumentsParams(params);
+  const { model, _id, update, roles } = new UpdateDocumentsParams(params);
 
+  if (roles && roles.includes('readonly')) {
+    throw new Error('Not authorized');
+  }
   const Model = db.models[model];
   if (Model == null) {
     throw new Error(`Model ${model} not found`);

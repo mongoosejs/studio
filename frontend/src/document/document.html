@@ -12,6 +12,8 @@
       <button
         v-if="!editting"
         @click="editting = true"
+        :disabled="!canManipulate"
+        :class="{'cursor-not-allowed opacity-50': !canManipulate}"
         type="button"
         class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
         <img src="images/edit.svg" class="inline" /> Edit
@@ -25,6 +27,8 @@
       </button>
       <button
         v-if="editting"
+        :disabled="!canManipulate"
+        :class="{'cursor-not-allowed opacity-50': !canManipulate}"
         @click="shouldShowConfirmModal=true;"
         type="button"
         class="rounded-md bg-forest-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
@@ -32,6 +36,8 @@
       </button>
       <button
         @click="shouldShowDeleteModal=true;"
+        :disabled="!canManipulate"
+        :class="{'cursor-not-allowed opacity-50': !canManipulate}"
         type="button"
         class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
         <img src="images/delete.svg" class="inline" /> Delete
