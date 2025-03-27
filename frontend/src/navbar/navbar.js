@@ -3,7 +3,7 @@
 const api = require('../api');
 const mothership = require('../mothership');
 const template = require('./navbar.html');
-const routes = require('../routes');
+const  { routes, hasAccess } = require('../routes');
 
 const appendCSS = require('../appendCSS');
 
@@ -26,7 +26,7 @@ module.exports = app => app.component('navbar', {
   },
   computed: {
     dashboardView() {
-      return routes.routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
+      return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
     },
     documentView() {
       return ['root', 'model', 'document'].includes(this.$route.name);
@@ -44,7 +44,7 @@ module.exports = app => app.component('navbar', {
       return this.hasAccess(this.roles, 'team');
     },
     allowedRoutes() {
-      return routes.routes.filter(route => this.hasAccess(this.roles, route.name));
+      return routes.filter(route => this.hasAccess(this.roles, route.name));
     },
     defaultRoute() {
       return this.allowedRoutes[0]?.name || 'dashboards';
@@ -52,7 +52,7 @@ module.exports = app => app.component('navbar', {
   },
   methods: {
     hasAccess(roles, routeName) {
-      return routes.hasAccess(roles, routeName);
+      return hasAccess(roles, routeName);
     },
     async loginWithGithub() {
       const { url } = await mothership.githubLogin();
