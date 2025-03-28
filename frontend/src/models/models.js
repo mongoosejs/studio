@@ -39,6 +39,7 @@ module.exports = app => app.component('models', {
     docEdits: null,
     filter: null,
     searchText: '',
+    searchFieldsMap: {},
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
@@ -89,6 +90,41 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    clickFilter(path) {
+       // Initialize searchFieldsMap if empty
+      if (!this.searchText) {
+        this.searchFieldsMap = {};
+      }
+
+      // Extract existing key-value pairs from searchText
+      const regex = /(\w+):\s*([^,}]*)/g;
+      let match;
+      while ((match = regex.exec(this.searchText)) !== null) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+        this.searchFieldsMap[key] = value || ''; // Preserve values or default to empty
+      }
+
+      // Toggle the clicked property
+      if (this.searchFieldsMap.hasOwnProperty(path)) {
+        delete this.searchFieldsMap[path]; // Remove if already exists
+      } else {
+        this.searchFieldsMap[path] = ''; // Add new property with empty value
+      }
+
+      // Reconstruct searchText with preserved values
+      this.searchText = `{ ${Object.entries(this.searchFieldsMap)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ")} }`;
+
+      this.$nextTick(() => {
+        const input = this.$refs.searchInput;
+        const cursorIndex = this.searchText.lastIndexOf(":") + 2; // Move cursor after ": "
+
+        input.focus();
+        input.setSelectionRange(cursorIndex, cursorIndex);
+      });
+    },
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
       await this.getDocuments();
