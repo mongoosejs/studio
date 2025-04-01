@@ -2,10 +2,10 @@
 
 // Role-based access control configuration
 const roleAccess = {
+  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team'],
   admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team'],
   member: ['root', 'model', 'document', 'dashboards', 'dashboard'],
   readonly: ['root', 'model', 'document'],
-  dashboard: ['dashboards', 'dashboard'],
   dashboards: ['dashboards', 'dashboard']
 };
 

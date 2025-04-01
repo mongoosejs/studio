@@ -146,12 +146,6 @@ const router = VueRouter.createRouter({
   }))
 });
 
-router.beforeEach((to, from) => {
-  const state = Vue.inject('state');
-  console.log('what is state', state);
-  console.log(to, from);
-})
-
 app.use(router);
 
 app.mount('#content');
