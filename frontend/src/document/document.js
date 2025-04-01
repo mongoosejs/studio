@@ -11,7 +11,7 @@ appendCSS(require('./document.css'));
 
 module.exports = app => app.component('document', {
   template: template,
-  props: ['model', 'documentId'],
+  props: ['model', 'documentId', 'user', 'roles'],
   data: () => ({
     schemaPaths: [],
     status: 'init',
@@ -38,6 +38,14 @@ module.exports = app => app.component('document', {
       return 0;
     }).map(key => schemaPaths[key]);
     this.status = 'loaded';
+  },
+  computed: {
+    canManipulate() {
+      if (!this.roles) {
+        return false;
+      }
+      return !this.roles.includes('readonly');
+    }
   },
   methods: {
     cancelEdit() {
