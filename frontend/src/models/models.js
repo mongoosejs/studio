@@ -22,7 +22,7 @@ const limit = 20;
 
 module.exports = app => app.component('models', {
   template: template,
-  props: ['model'],
+  props: ['model', 'user', 'roles'],
   data: () => ({
     models: [],
     currentModel: null,
