@@ -57,7 +57,31 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('', { action: 'Model.deleteDocument', ...params}).then(res => res.data);
     },
     exportQueryResults(params) {
-      return client.post('', { action: 'Model.exportQueryResults', ...params }).then(res => res.data);
+      const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
+
+      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `${accessToken}`, // Set your authorization token here
+          'Accept': 'text/csv'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const blobURL = window.URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = blobURL;
+          anchor.download = 'export.csv';
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+          window.URL.revokeObjectURL(blobURL);
+        });
     },
     getDocument: function getDocument(params) {
       return client.post('', { action: 'Model.getDocument', ...params }).then(res => res.data);
@@ -104,12 +128,31 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('/Model/deleteDocument', params).then(res => res.data);
     },
     exportQueryResults(params) {
-      const anchor = document.createElement('a');
-      anchor.href = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + (new URLSearchParams(params)).toString();
-      anchor.target = '_blank';
-      anchor.download = 'export.csv';
-      anchor.click();
-      return;
+      const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
+
+      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + new URLSearchParams(params).toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `${accessToken}`, // Set your authorization token here
+          'Accept': 'text/csv'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const blobURL = window.URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = blobURL;
+          anchor.download = 'export.csv';
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+          window.URL.revokeObjectURL(blobURL);
+        });
     },
     getDocument: function getDocument(params) {
       return client.post('/Model/getDocument', params).then(res => res.data);
