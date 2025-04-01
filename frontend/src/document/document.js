@@ -42,9 +42,9 @@ module.exports = app => app.component('document', {
   computed: {
     canManipulate() {
       if (!this.roles) {
-        return false
+        return false;
       }
-      return !this.roles.includes('readonly')
+      return !this.roles.includes('readonly');
     }
   },
   methods: {

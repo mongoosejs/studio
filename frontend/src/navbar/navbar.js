@@ -15,7 +15,6 @@ module.exports = app => app.component('navbar', {
   inject: ['state'],
   data: () => ({ showFlyout: false }),
   mounted: function() {
-    console.log('user', this.user, 'roles', this.roles, 'state', this.state);
     // Redirect to first allowed route if current route is not allowed
     if (!this.hasAccess(this.roles, this.$route.name)) {
       const firstAllowedRoute = this.allowedRoutes[0];
