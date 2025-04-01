@@ -3,7 +3,7 @@
 const api = require('../api');
 const mothership = require('../mothership');
 const template = require('./navbar.html');
-const routes = require('../routes');
+const  { routes, hasAccess } = require('../routes');
 
 const appendCSS = require('../appendCSS');
 
@@ -15,8 +15,12 @@ module.exports = app => app.component('navbar', {
   inject: ['state'],
   data: () => ({ showFlyout: false }),
   mounted: function() {
-    if (this.dashboardsOnly) {
-      this.$router.push({ name: 'dashboards' });
+    // Redirect to first allowed route if current route is not allowed
+    if (!this.hasAccess(this.roles, this.$route.name)) {
+      const firstAllowedRoute = this.allowedRoutes[0];
+      if (firstAllowedRoute) {
+        this.$router.push({ name: firstAllowedRoute.name });
+      }
     }
   },
   computed: {
@@ -36,13 +40,19 @@ module.exports = app => app.component('navbar', {
       return mothership.hasAPIKey;
     },
     canViewTeam() {
-      return this.roles?.includes('owner') || this.roles?.includes('admin');
+      return this.hasAccess(this.roles, 'team');
     },
-    dashboardsOnly() {
-      return this.roles?.includes('dashboard') || this.roles?.includes('dashboards');
+    allowedRoutes() {
+      return routes.filter(route => this.hasAccess(this.roles, route.name));
+    },
+    defaultRoute() {
+      return this.allowedRoutes[0]?.name || 'dashboards';
     }
   },
   methods: {
+    hasAccess(roles, routeName) {
+      return hasAccess(roles, routeName);
+    },
     async loginWithGithub() {
       const { url } = await mothership.githubLogin();
       window.location.href = url;
