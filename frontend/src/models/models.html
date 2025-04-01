@@ -146,7 +146,7 @@
       <div v-for="(path, index) in schemaPaths" :key="index" class="w-5 flex items-center">
         <input  class="mt-0 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-600 accent-sky-600" type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)" />
         <div class="ml-2 text-gray-700 grow shrink text-left">
-          <label :for="'path' + index">{{path.path}}</label>
+          <label :for="'path.path' + index">{{path.path}}</label>
         </div>
       </div>
       <div class="mt-4 flex gap-2">

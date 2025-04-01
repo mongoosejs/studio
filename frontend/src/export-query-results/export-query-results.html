@@ -3,9 +3,11 @@
   <div>
     Choose fields to export
   </div>
-  <div v-for="schemaPath in schemaPaths">
-    <input type="checkbox" v-model="shouldExport[schemaPath.path]">
-    <span>{{schemaPath.path}}</span>
+  <div v-for="(schemaPath,index) in schemaPaths" class="w-5 flex items-center">
+    <input type="checkbox" class="mt-0 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-600 accent-sky-600" v-model="shouldExport[schemaPath.path]" :id="'schemaPath.path'+index">
+    <div class="ml-2 text-gray-700 grow shrink text-left">
+      <label :for="'schemaPath.path'+index">{{schemaPath.path}}</label>
+    </div>
   </div>
-  <async-button @click="exportQueryResults">Export</async-button>
+  <async-button class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600" @click="exportQueryResults">Export</async-button>
 </div>
