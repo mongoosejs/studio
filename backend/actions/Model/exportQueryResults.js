@@ -24,7 +24,7 @@ const GetDocumentsParams = new Archetype({
   }
 }).compile('GetDocumentsParams');
 
-module.exports = ({ db }) => async function getDocuments(params, req, res) {
+module.exports = ({ db }) => async function exportQueryResults(params, req, res) {
   params = new GetDocumentsParams(params);
   let { filter } = params;
   const { model, propertiesToInclude } = params;
@@ -57,7 +57,7 @@ module.exports = ({ db }) => async function getDocuments(params, req, res) {
     }));
   }
   const csv = stringify(rows);
-  
+
   res.set({
     'Content-Type': 'text/csv',
     'Content-Disposition': `attachment; filename="${model.toLowerCase()}-export.csv"`,
