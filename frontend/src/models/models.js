@@ -89,6 +89,37 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    clickFilter(path) {
+      if (this.searchText) {
+        let searchObj;
+      
+        try {
+          // Try to parse this.searchText if it's a valid JSON string
+          searchObj = JSON.parse(this.searchText);
+        } catch (e) {
+          // If it fails, default to an empty object
+          console.log('could not add to filter', e);
+        }
+      
+        // Now assign the new property or update it
+        searchObj[path] = "";
+      
+        // Save it back to this.searchText as a valid JSON string
+        this.searchText = JSON.stringify(searchObj);
+      } else {
+        // If this.searchText is empty or undefined, initialize it with a new object
+        this.searchText = JSON.stringify({ [path]: "" });
+      }
+      
+
+      this.$nextTick(() => {
+        const input = this.$refs.searchInput;
+        const cursorIndex = this.searchText.lastIndexOf(":") + 2; // Move cursor after ": "
+
+        input.focus();
+        input.setSelectionRange(cursorIndex, cursorIndex);
+      });
+    },
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
       await this.getDocuments();
