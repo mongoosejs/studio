@@ -39,7 +39,6 @@ module.exports = app => app.component('models', {
     docEdits: null,
     filter: null,
     searchText: '',
-    searchFieldsMap: {},
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
@@ -91,31 +90,27 @@ module.exports = app => app.component('models', {
   },
   methods: {
     clickFilter(path) {
-       // Initialize searchFieldsMap if empty
-      if (!this.searchText) {
-        this.searchFieldsMap = {};
-      }
-
-      // Extract existing key-value pairs from searchText
-      const regex = /(\w+):\s*([^,}]*)/g;
-      let match;
-      while ((match = regex.exec(this.searchText)) !== null) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        this.searchFieldsMap[key] = value || ''; // Preserve values or default to empty
-      }
-
-      // Toggle the clicked property
-      if (this.searchFieldsMap.hasOwnProperty(path)) {
-        delete this.searchFieldsMap[path]; // Remove if already exists
+      if (this.searchText) {
+        let searchObj;
+      
+        try {
+          // Try to parse this.searchText if it's a valid JSON string
+          searchObj = JSON.parse(this.searchText);
+        } catch (e) {
+          // If it fails, default to an empty object
+          console.log('could not add to filter', e);
+        }
+      
+        // Now assign the new property or update it
+        searchObj[path] = "";
+      
+        // Save it back to this.searchText as a valid JSON string
+        this.searchText = JSON.stringify(searchObj);
       } else {
-        this.searchFieldsMap[path] = ''; // Add new property with empty value
+        // If this.searchText is empty or undefined, initialize it with a new object
+        this.searchText = JSON.stringify({ [path]: "" });
       }
-
-      // Reconstruct searchText with preserved values
-      this.searchText = `{ ${Object.entries(this.searchFieldsMap)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(", ")} }`;
+      
 
       this.$nextTick(() => {
         const input = this.$refs.searchInput;
