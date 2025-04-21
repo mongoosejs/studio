@@ -89,6 +89,28 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    clickFilter(path) {
+      if (this.searchText) {
+        if (this.searchText.endsWith('}')) {
+          this.searchText = this.searchText.slice(0, -1) + `, ${path}:  }`;
+        } else {
+          this.searchText += `, ${path}:  }`;
+        }
+
+      } else {
+        // If this.searchText is empty or undefined, initialize it with a new object
+        this.searchText = `{ ${path}:  }`;
+      }
+
+
+      this.$nextTick(() => {
+        const input = this.$refs.searchInput;
+        const cursorIndex = this.searchText.lastIndexOf(":") + 2; // Move cursor after ": "
+
+        input.focus();
+        input.setSelectionRange(cursorIndex, cursorIndex);
+      });
+    },
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
       await this.getDocuments();
