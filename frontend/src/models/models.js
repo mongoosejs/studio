@@ -91,26 +91,17 @@ module.exports = app => app.component('models', {
   methods: {
     clickFilter(path) {
       if (this.searchText) {
-        let searchObj;
-      
-        try {
-          // Try to parse this.searchText if it's a valid JSON string
-          searchObj = JSON.parse(this.searchText);
-        } catch (e) {
-          // If it fails, default to an empty object
-          console.log('could not add to filter', e);
+        if (this.searchText.endsWith('}')) {
+          this.searchText = this.searchText.slice(0, -1) + `, ${path}:  }`;
+        } else {
+          this.searchText += `, ${path}:  }`;
         }
-      
-        // Now assign the new property or update it
-        searchObj[path] = "";
-      
-        // Save it back to this.searchText as a valid JSON string
-        this.searchText = JSON.stringify(searchObj);
+
       } else {
         // If this.searchText is empty or undefined, initialize it with a new object
-        this.searchText = JSON.stringify({ [path]: "" });
+        this.searchText = `{ ${path}:  }`;
       }
-      
+
 
       this.$nextTick(() => {
         const input = this.$refs.searchInput;

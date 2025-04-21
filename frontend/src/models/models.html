@@ -28,7 +28,7 @@
       <div class="documents-menu">
         <div class="flex flex-row items-center w-full gap-2">
           <form @submit.prevent="search" class="flex-grow m-0">
-            <input ref="searchInput" class="w-full rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter or text" v-model="searchText" />
+            <input ref="searchInput" class="w-full font-mono rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter or text" v-model="searchText" />
           </form>
           <div>
             <span v-if="status === 'loading'">Loading ...</span>
