@@ -45,6 +45,7 @@ module.exports = app => app.component('create-document', {
     },
   },
   mounted: function() {
+    console.log('what is paths', this.paths);
     const requiredPaths = this.paths.filter(x => x.required);
     this.documentData = `{\n`;
     for (let i = 0; i < requiredPaths.length; i++) {

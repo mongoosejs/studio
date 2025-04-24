@@ -21,7 +21,8 @@ module.exports = app => app.component('document', {
     editting: false,
     virtuals: [],
     shouldShowConfirmModal: false,
-    shouldShowDeleteModal: false
+    shouldShowDeleteModal: false,
+    shouldShowCloneModal: false
   }),
   async mounted() {
     window.pageState = this;
