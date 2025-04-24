@@ -12,12 +12,12 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 
 const appendCSS = require('../appendCSS');
 
-appendCSS(require('./create-document.css'));
+appendCSS(require('./clone-document.css'));
 
-const template = require('./create-document.html')
+const template = require('./clone-document.html')
 
-module.exports = app => app.component('create-document', {
-  props: ['currentModel', 'paths'],
+module.exports = app => app.component('clone-document', {
+  props: ['currentModel', 'doc', 'schemaPaths'],
   template,
   data: function() {
     return {
@@ -27,7 +27,7 @@ module.exports = app => app.component('create-document', {
     }
   },
   methods: {
-    async createDocument() {
+    async cloneDocument() {
       const data = EJSON.serialize(eval(`(${this.editor.getValue()})`));
       const { doc } = await api.Model.createDocument({ model: this.currentModel, data }).catch(err => {
         if (err.response?.data?.message) {
@@ -45,13 +45,23 @@ module.exports = app => app.component('create-document', {
     },
   },
   mounted: function() {
-    const requiredPaths = this.paths.filter(x => x.required);
-    this.documentData = `{\n`;
-    for (let i = 0; i < requiredPaths.length; i++) {
-      const isLast = i + 1 >= requiredPaths.length;
-      this.documentData += `  ${requiredPaths[i].path}: ${isLast ? '': ','}\n`
+    const pathsToClone = this.schemaPaths.map(x => x.path);
+    
+    // Create a filtered version of the document data
+    const filteredDoc = {};
+    pathsToClone.forEach(path => {
+      const value = this.doc[path];
+      if (value !== undefined) {
+        filteredDoc[path] = value;
+      }
+    });
+
+    // Replace _id with a new ObjectId
+    if (pathsToClone.includes('_id')) {
+      filteredDoc._id = new ObjectId();
     }
-    this.documentData += '}';
+
+    this.documentData = JSON.stringify(filteredDoc, null, 2);
     this.$refs.codeEditor.value = this.documentData;
     this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
       mode: 'javascript',

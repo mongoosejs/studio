@@ -73,7 +73,7 @@
     <modal v-if="shouldShowCloneModal">
       <template v-slot:body>
         <div class="modal-exit" @click="shouldShowCloneModal = false;">&times;</div>
-          <create-document :currentModel="model" :paths="schemaPaths"></create-document>
+          <clone-document :currentModel="model" :doc="document" :schemaPaths="schemaPaths" @close="showClonedDocument"></clone-document>
       </template>
     </modal>
   </div>
