@@ -44,6 +44,7 @@
       </button>
       <button
         @click="shouldShowCloneModal=true;"
+        :disabled="!canManipulate"
         :class="{'cursor-not-allowed opacity-50': !canManipulate}"
         type="button"
         class="rounded-md bg-pink-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
