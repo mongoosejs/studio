@@ -21,7 +21,8 @@ module.exports = app => app.component('document', {
     editting: false,
     virtuals: [],
     shouldShowConfirmModal: false,
-    shouldShowDeleteModal: false
+    shouldShowDeleteModal: false,
+    shouldShowCloneModal: false
   }),
   async mounted() {
     window.pageState = this;
@@ -82,6 +83,9 @@ module.exports = app => app.component('document', {
         });
         this.$router.push({ path: `/model/${this.model}`});
       }
+    },
+    showClonedDocument(doc) {
+      this.$router.push({ path: `/model/${this.model}/document/${doc._id}`});
     }
   }
 });

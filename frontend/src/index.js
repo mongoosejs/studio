@@ -13,6 +13,7 @@ const app = Vue.createApp({
 });
 
 require('./async-button/async-button')(app);
+require('./clone-document/clone-document')(app);
 require('./create-dashboard/create-dashboard')(app);
 require('./create-document/create-document')(app);
 require('./dashboards/dashboards')(app);
