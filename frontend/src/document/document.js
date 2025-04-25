@@ -11,7 +11,7 @@ appendCSS(require('./document.css'));
 
 module.exports = app => app.component('document', {
   template: template,
-  props: ['model', 'documentId', 'user', 'roles'],
+  props: ['model', 'documentId', 'user', 'roles', 'hasAPIKey'],
   data: () => ({
     schemaPaths: [],
     status: 'init',
@@ -42,6 +42,9 @@ module.exports = app => app.component('document', {
   },
   computed: {
     canManipulate() {
+      if (!this.hasAPIKey) {
+        return true;
+      }
       if (!this.roles) {
         return false;
       }
