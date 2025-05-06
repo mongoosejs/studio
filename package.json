@@ -2,6 +2,7 @@
   "name": "@mongoosejs/studio",
   "version": "0.0.74",
   "dependencies": {
+    "@mongoosejs/task": "^0.3.0",
     "archetype": "0.13.1",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
