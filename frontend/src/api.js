@@ -56,6 +56,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     deleteDocument(params) {
       return client.post('', { action: 'Model.deleteDocument', ...params}).then(res => res.data);
     },
+    deleteDocuments(params) {
+      return client.post('', { action: 'Model.deleteDocuments', ...params}).then(res => res.data);
+    },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
@@ -126,6 +129,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     deleteDocument: function (params) {
       return client.post('/Model/deleteDocument', params).then(res => res.data);
+    },
+    deleteDocuments: function(params) {
+      return client.post('/Model/deleteDocuments', params).then(res => res.data);
     },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
