@@ -351,8 +351,5 @@ module.exports = app => app.component('models', {
       this.shouldShowDeleteMultipleModal = false;
       this.selectMultiple = false;
     },
-    async updateDocuments() {
-      
-    }
   }
 });

@@ -97,6 +97,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocument: function updateDocument(params) {
       return client.post('', { action: 'Model.updateDocument', ...params }).then(res => res.data);
+    },
+    updateDocuments: function updateDocuments(params) {
+      return client.post('', { action: 'Model.updateDocuments', ...params }).then(res => res.data);
     }
   };
 } else {
@@ -174,6 +177,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocument: function updateDocument(params) {
       return client.post('/Model/updateDocument', params).then(res => res.data);
+    },
+    updateDocuments: function updateDocument(params) {
+      return client.post('/Model/updateDocuments', params).then(res => res.data);
     }
   };
   exports.Script = {

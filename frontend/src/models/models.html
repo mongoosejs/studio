@@ -188,8 +188,8 @@
   </modal>
   <modal v-if="shouldShowUpdateMultipleModal">
     <template v-slot:body>
-      <div class="modal-exit" @click="shouldShowCreateModal = false;">&times;</div>
-      <create-document :currentModel="currentModel" :paths="schemaPaths" @close="closeCreationModal"></create-document>
+      <div class="modal-exit" @click="shouldShowUpdateMultipleModal = false;">&times;</div>
+      <update-document :currentModel="currentModel" :document="selectedDocuments" :multiple="true" @update="getDocuments" @close="shouldShowUpdateMultipleModal=false;"></update-document>
     </template>
   </modal>
   <modal v-if="shouldShowDeleteMultipleModal">

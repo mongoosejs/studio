@@ -9,3 +9,4 @@ exports.getDocuments = require('./getDocuments');
 exports.getIndexes = require('./getIndexes');
 exports.listModels = require('./listModels');
 exports.updateDocument = require('./updateDocument');
+exports.updateDocuments = require('./updateDocuments');

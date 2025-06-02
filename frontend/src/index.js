@@ -49,6 +49,7 @@ require('./navbar/navbar')(app);
 require('./splash/splash')(app);
 require('./team/team')(app);
 require('./team/new-invitation/new-invitation')(app);
+require('./update-document/update-document')(app);
 
 app.component('app-component', {
   template: `
