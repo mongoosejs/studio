@@ -21,7 +21,7 @@ const UpdateDocumentsParams = new Archetype({
   }
 }).compile('UpdateDocumentsParams');
 
-module.exports = ({ db }) => async function updateDocument(params) {
+module.exports = ({ db }) => async function updateDocuments(params) {
   const { model, _id, update, roles } = new UpdateDocumentsParams(params);
 
   if (roles && roles.includes('readonly')) {
