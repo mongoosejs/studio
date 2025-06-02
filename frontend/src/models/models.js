@@ -351,5 +351,18 @@ module.exports = app => app.component('models', {
       this.shouldShowDeleteMultipleModal = false;
       this.selectMultiple = false;
     },
+    async updateDocuments() {
+      await this.getDocuments();
+      this.seelctedDocuments.length = 0;
+      this.selectMultiple = false;
+    },
+    stagingSelect() {
+      if (this.selectMultiple) {
+        this.selectMultiple = false;
+        this.selectedDocuments.length = 0;
+      } else {
+        this.selectMultiple = true;
+      }
+    }
   }
 });
