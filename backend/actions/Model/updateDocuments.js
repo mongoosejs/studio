@@ -9,7 +9,7 @@ const UpdateDocumentsParams = new Archetype({
     $required: true
   },
   _id: {
-    $type: Archetype.Any,
+    $type: ['string'],
     $required: true
   },
   update: {
@@ -39,9 +39,8 @@ module.exports = ({ db }) => async function updateDocuments(params) {
     );
   }
 
-  console.log({ _id: { $in: _id }})
   const result = await Model.
-    updateMany({ _id: { $in: _id }}, processedUpdate, { sanitizeFilter: true, overwriteImmutable: true, runValidators: false });
+    updateMany({ _id: { $in: _id } }, processedUpdate, { overwriteImmutable: true, runValidators: false });
   
   return { result };
 };
