@@ -1,0 +1,69 @@
+<div class="flex" style="height: calc(100vh - 55px)">
+    <!-- Sidebar: Chat Threads -->
+  <aside class="w-64 bg-gray-100 border-r overflow-y-auto h-full">
+    <div class="p-4 font-bold text-lg border-b">Chat Threads</div>
+    <div class="p-4">
+      <button
+        @click="createNewThread"
+        class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Create New Thread
+      </button>
+    </div>
+    <div v-if="status === 'loaded' && chatThreads.length === 0" class="p-4 text-sm text-gray-700">
+      No threads yet
+    </div>
+    <ul vif="status === 'loaded'">
+      <li
+        v-for="thread in chatThreads"
+        :key="thread._id"
+        @click="selectThread(thread._id)"
+        class="p-4 hover:bg-gray-200 cursor-pointer"
+        :class="{ 'bg-gray-300': thread._id === chatThreadId }"
+      >
+        {{ thread.title || 'Untitled Thread' }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Chat Area -->
+  <main class="flex-1 flex flex-col">
+    <div class="flex-1 overflow-y-auto p-6 space-y-4" ref="messagesContainer">
+      <ul role="list" class="space-y-4">
+        <div v-if="true">
+          <div class="flex items-center justify-center py-3 mb-4">
+            <div class="bg-gray-300 h-px flex-grow max-w-xs"></div>
+            <p class="mx-4 text-sm font-medium text-gray-500">This is the beginning of the message thread</p>
+            <div class="bg-gray-300 h-px flex-grow max-w-xs"></div>
+          </div>
+        </div>
+        <li v-for="message in chatMessages" :key="message._id">
+          <chat-message :message="message"></chat-message>
+        </li>
+      </ul>
+    </div>
+
+
+    <!-- Input Area -->
+    <div class="border-t p-4">
+      <form @submit.prevent="sendMessage" :disabled="sendingMessage" class="flex gap-2">
+        <input
+          v-model="newMessage"
+          placeholder="Ask something..."
+          class="flex-1 border rounded px-4 py-2"
+        />
+        <button class="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-600" :disabled="sendingMessage">
+          <svg v-if="sendingMessage" style="height: 1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <g>
+              <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3" />
+              <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+              </path>
+            </g>
+          </svg>
+          <span v-else>Send</span>
+        </button>
+      </form>
+    </div>
+  </main>
+</div>

@@ -1,7 +1,7 @@
 <transition name="modal">
   <div class="modal-mask">
     <div class="modal-wrapper">
-      <div class="modal-container">
+      <div class="modal-container" :class="containerClass">
         <div class="modal-body">
           <slot name="body">
           </slot>

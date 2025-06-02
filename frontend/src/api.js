@@ -46,6 +46,25 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('', { action: 'Dashboard.updateDashboard', ...params}).then(res => res.data);
     }
   }
+  exports.ChatThread = {
+    createChatMessage(params) {
+      return client.post('', { action: 'ChatThread.createChatMessage', ...params }).then(res => res.data);
+    },
+    createChatThread(params) {
+      return client.post('', { action: 'ChatThread.createChatThread', ...params }).then(res => res.data);
+    },
+    getChatThread(params) {
+      return client.post('', { action: 'ChatThread.getChatThread', ...params }).then(res => res.data);
+    },
+    listChatThreads(params) {
+      return client.post('', { action: 'ChatThread.listChatThreads', ...params }).then(res => res.data);
+    }
+  }
+  exports.ChatMessage = {
+    executeScript(params) {
+      return client.post('', { action: 'ChatMessage.executeScript', ...params }).then(res => res.data);
+    }
+  }
   exports.Model = {
     createChart(params) {
       return client.post('', { action: 'Model.createChart', ...params}).then(res => res.data);
@@ -117,6 +136,25 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('/Dashboard/updateDashboard', params).then(res => res.data);
     }
   }
+  exports.ChatThread = {
+    createChatMessage: function createChatMessage(params) {
+      return client.post('/ChatThread/createChatMessage', params).then(res => res.data);
+    },
+    createChatThread: function createChatThread(params) {
+      return client.post('/ChatThread/createChatThread', params).then(res => res.data);
+    },
+    getChatThread: function getChatThread(params) {
+      return client.post('/ChatThread/getChatThread', params).then(res => res.data);
+    },
+    listChatThreads: function listChatThreads(params) {
+      return client.post('/ChatThread/listChatThreads', params).then(res => res.data);
+    }
+  };
+  exports.ChatMessage = {
+    executeScript: function executeScript(params) {
+      return client.post('/ChatMessage/executeScript', params).then(res => res.data);
+    }
+  };
   exports.Model = {
     createChart: function (params) {
       return client.post('/Model/createChart', params).then(res => res.data);
@@ -169,8 +207,5 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     updateDocument: function updateDocument(params) {
       return client.post('/Model/updateDocument', params).then(res => res.data);
     }
-  };
-  exports.Script = {
-
   };
 }

@@ -6,6 +6,7 @@
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
     "extrovert": "0.0.26",
+    "marked": "15.0.12",
     "node-inspect-extracted": "3.x",
     "tailwindcss": "3.4.0",
     "vanillatoasts": "^1.6.0",
