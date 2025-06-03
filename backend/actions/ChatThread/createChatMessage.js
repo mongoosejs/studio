@@ -27,6 +27,8 @@ Keep scripts concise. Avoid unnecessary comments, error handling, and temporary 
 
 Do not write any imports or require() statements, that will cause the script to break.
 
+If the user approves the script, the script will run in the Node.js server and then send the response via JSON to the client. Be aware that the result of the query will be serialized to JSON before being displayed to the user.
+
 Assume the user has pre-defined schemas and models. Do not define any new schemas or models for the user.
 
 Use async/await where possible. Assume top-level await is allowed.
