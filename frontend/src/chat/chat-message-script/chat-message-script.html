@@ -33,9 +33,7 @@
 
   <pre class="p-3 whitespace-pre-wrap max-h-[30vh] overflow-y-auto bg-white border-t" v-show="activeTab === 'output'">
     <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" />
-    <div v-else>
-      {{ message.executionResult?.output ? JSON.stringify(message.executionResult.output, null, 2) : 'No output' }}
-    </div>
+    <div v-else>{{ message.executionResult?.output ? JSON.stringify(message.executionResult.output, null, 2) : 'No output' }}</div>
   </pre>
 
   <modal ref="outputModal" v-if="showDetailModal" containerClass="!h-[90vh] !w-[90vw]">

@@ -3,12 +3,12 @@
   <aside class="w-64 bg-gray-100 border-r overflow-y-auto h-full">
     <div class="p-4 font-bold text-lg border-b">Chat Threads</div>
     <div class="p-4">
-      <button
+      <async-button
         @click="createNewThread"
         class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
       >
         Create New Thread
-      </button>
+      </async-button>
     </div>
     <div v-if="status === 'loaded' && chatThreads.length === 0" class="p-4 text-sm text-gray-700">
       No threads yet

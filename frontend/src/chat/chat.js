@@ -60,7 +60,8 @@ module.exports = app => app.component('chat', {
       return message.role === 'user' ? 'bg-gray-100' : '';
     },
     async createNewThread() {
-
+      const { chatThread } = await api.ChatThread.createChatThread();
+      this.$router.push('/chat/' + chatThread._id);
     }
   },
   async mounted() {
