@@ -13,6 +13,10 @@ const CreateChatMessageParams = new Archetype({
   },
   content: {
     $type: String
+  },
+  authorization: {
+    $type: 'string',
+    $required: true
   }
 }).compile('CreateChatMessageParams');
 
@@ -50,7 +54,7 @@ Here is a description of the user's models. Assume these are the only models ava
 `.trim();
 
 module.exports = ({ db }) => async function createChatMessage(params) {
-  const { chatThreadId, userId, content, script } = new CreateChatMessageParams(params);
+  const { chatThreadId, userId, content, script, authorization } = new CreateChatMessageParams(params);
   const ChatThread = db.model('__Studio_ChatThread');
   const ChatMessage = db.model('__Studio_ChatMessage');
 
@@ -74,8 +78,8 @@ module.exports = ({ db }) => async function createChatMessage(params) {
     getChatCompletion([
       { role: 'system', content: 'Summarize the following chat thread in 6 words or less, as a helpful thread title' },
       ...llmMessages
-    ]).then(res => {
-      const title = res.choices?.[0]?.message?.content;
+    ], authorization).then(res => {
+      const title = res.response;
       chatThread.title = title;
       return chatThread.save();
     }).catch(() => {});
@@ -95,9 +99,8 @@ module.exports = ({ db }) => async function createChatMessage(params) {
       script,
       executionResult: null
     }),
-    getChatCompletion(llmMessages).then(res => {
-      const content = res.choices?.[0]?.message?.content || '';
-      console.log('Content', content, res);
+    getChatCompletion(llmMessages, authorization).then(res => {
+      const content = res.response;
       return ChatMessage.create({
         chatThreadId,
         role: 'assistant',
@@ -109,20 +112,27 @@ module.exports = ({ db }) => async function createChatMessage(params) {
   return { chatMessages };
 };
 
-async function getChatCompletion(messages, options = {}) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+async function getChatCompletion(messages, authorization) {
+  const response = await fetch('https://mongoose-js.netlify.app/.netlify/functions/createChatMessage', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      Authorization: authorization,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
-      max_tokens: 2500,
-      ...options,
       messages
     })
+  }).then(response => {
+    if (response.status < 200 || response.status >= 400) {
+      return response.json().then(data => {
+        throw new Error(`Mongoose Studio chat completion error: ${data.message}`);
+      });
+    }
+    return response;
   });
 
-  return await response.json();
-};
+  return await response.json().then(res => {
+    console.log('Response', res);
+    return res;
+  });
+}
