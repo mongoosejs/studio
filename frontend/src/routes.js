@@ -5,7 +5,7 @@ const roleAccess = {
   owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat'],
   admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat'],
   member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat'],
-  readonly: ['root', 'model', 'document'],
+  readonly: ['root', 'model', 'document', 'chat'],
   dashboards: ['dashboards', 'dashboard']
 };
 
