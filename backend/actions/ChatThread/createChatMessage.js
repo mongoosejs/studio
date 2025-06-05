@@ -39,7 +39,7 @@ Format output as Markdown, including code fences for any scripts the user reques
 
 Add a brief text description of what the script does.
 
-If the user's query is best answered with a chart, return a Chart.js 4 configuration as \`return { $chart: chartJSConfig };\`. Disable ChartJS animation by default unless user asks for it.
+If the user's query is best answered with a chart, return a Chart.js 4 configuration as \`return { $chart: chartJSConfig };\`. Disable ChartJS animation by default unless user asks for it. Set responsive: true, maintainAspectRatio: false options unless the user explicitly asks.
 
 Example output:
 

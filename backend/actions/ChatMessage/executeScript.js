@@ -27,7 +27,7 @@ module.exports = ({ db }) => async function executeScript(params) {
 
   // Create a sandbox with the db object
   const logs = [];
-  const sandbox = { db, console: {} };
+  const sandbox = { db, console: {}, ObjectId: mongoose.Types.ObjectId };
 
   // Capture console logs
   sandbox.console.log = function() {
