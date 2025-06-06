@@ -2,10 +2,10 @@
 
 // Role-based access control configuration
 const roleAccess = {
-  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team'],
-  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team'],
-  member: ['root', 'model', 'document', 'dashboards', 'dashboard'],
-  readonly: ['root', 'model', 'document'],
+  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat'],
+  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat'],
+  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat'],
+  readonly: ['root', 'model', 'document', 'chat'],
   dashboards: ['dashboards', 'dashboard']
 };
 
@@ -77,6 +77,22 @@ module.exports = {
       path: '/tasks',
       name: 'tasks',
       component: 'tasks',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/chat',
+      name: 'chat index',
+      component: 'chat',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/chat/:threadId',
+      name: 'chat',
+      component: 'chat',
       meta: {
         authorized: true
       }

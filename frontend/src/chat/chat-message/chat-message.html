@@ -1,0 +1,16 @@
+<div class="relative flex items-start space-x-3" :class="{'justify-end': message.role === 'user'}">
+  <div
+    class="min-w-0 max-w-[calc(100%-6.5rem)]"
+    :class="{'text-right': message.role === 'user'}">
+
+    <div class="text-sm text-gray-900 p-3 rounded-md inline-block" :class="styleForMessage">
+      <div v-for="part in contentSplitByScripts">
+        <div v-if="part.type === 'text'" v-html="marked(part.content)">
+        </div>
+        <div v-else-if="part.type === 'code'">
+          <chat-message-script :message="message" :script="part.content" :language="part.language"></chat-message-script>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,50 @@
+<div class="relative border rounded bg-gray-100 text-black text-sm overflow-hidden">
+  <div class="flex border-b pt-[1px] text-xs font-medium bg-gray-200">
+    <button
+      class="px-3 py-1 border-r border-gray-300 hover:bg-green-300"
+      :class="{'bg-gray-300': activeTab === 'code', 'bg-green-300': activeTab === 'code'}"
+      @click="activeTab = 'code'">
+      Code
+    </button>
+    <button
+      class="px-3 py-1 hover:bg-green-300"
+      :class="{'bg-green-300': activeTab === 'output'}"
+      @click="activeTab = 'output'">
+      Output
+    </button>
+    <div class="ml-auto mr-1 flex">
+      <button
+        v-if="activeTab === 'output'"
+        class="px-2 py-1 mr-1 text-xs bg-blue-500 text-white border-none rounded cursor-pointer hover:bg-blue-600 transition-colors flex items-center"
+        @click="openDetailModal">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
+        </svg>
+      </button>
+      <async-button
+        class="px-2 py-1 text-xs bg-green-500 text-white border-none rounded cursor-pointer hover:bg-green-600 transition-colors disabled:bg-gray-400"
+        @click="executeScript(message, script)">
+        Execute
+      </async-button>
+    </div>
+  </div>
+
+  <pre class="p-3 whitespace-pre-wrap max-h-[30vh] overflow-y-auto" v-show="activeTab === 'code'"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
+
+  <pre class="p-3 whitespace-pre-wrap max-h-[30vh] overflow-y-auto bg-white border-t" v-show="activeTab === 'output'">
+    <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" />
+    <div v-else>{{ message.executionResult?.output ? JSON.stringify(message.executionResult.output, null, 2) : 'No output' }}</div>
+  </pre>
+
+  <modal ref="outputModal" v-if="showDetailModal" containerClass="!h-[90vh] !w-[90vw]">
+    <template #body>
+      <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showDetailModal = false;">&times;</div>
+      <div class="h-full overflow-auto">
+        <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" />
+        <pre v-else class="whitespace-pre-wrap">
+          {{ message.executionResult?.output ? JSON.stringify(message.executionResult.output, null, 2) : 'No output' }}
+        </pre>
+      </div>
+    </template>
+  </modal>
+</div>
