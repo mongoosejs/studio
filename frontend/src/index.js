@@ -122,7 +122,7 @@ app.component('app-component', {
   }
 });
 
-const { routes } = require('./routes');
+const { routes, hasAccess } = require('./routes');
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
   routes: routes.map(route => ({
@@ -130,6 +130,37 @@ const router = VueRouter.createRouter({
     component: app.component(route.component),
     props: (route) => route.params
   }))
+});
+
+// Add global navigation guard
+router.beforeEach((to, from, next) => {
+  // Skip auth check for authorized (public) routes
+  if (to.meta.authorized) {
+    next();
+    return;
+  }
+
+  // Get roles from the app state
+  const roles = window.state?.roles;
+  
+  // Check if user has access to the route
+  if (!hasAccess(roles, to.name)) {
+    // Find all routes the user has access to
+    const allowedRoutes = routes.filter(route => hasAccess(roles, route.name));
+    
+    // If user has no allowed routes, redirect to splash/login
+    if (allowedRoutes.length === 0) {
+      next({ name: 'root' });
+      return;
+    }
+
+    // Redirect to first allowed route
+    const firstAllowedRoute = allowedRoutes[0].name;
+    next({ name: firstAllowedRoute });
+    return;
+  }
+
+  next();
 });
 
 app.use(router);
