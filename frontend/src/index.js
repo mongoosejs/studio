@@ -12,44 +12,28 @@ const app = Vue.createApp({
   template: '<app-component />'
 });
 
-require('./async-button/async-button')(app);
-require('./clone-document/clone-document')(app);
-require('./create-dashboard/create-dashboard')(app);
-require('./create-document/create-document')(app);
-require('./dashboards/dashboards')(app);
-require('./dashboard/dashboard')(app);
-require('./dashboard-result/dashboard-result')(app);
-require('./dashboard-result/dashboard-chart/dashboard-chart')(app);
-require('./dashboard-result/dashboard-document/dashboard-document')(app);
-require('./dashboard-result/dashboard-primitive/dashboard-primitive')(app);
-require('./dashboard-result/dashboard-text/dashboard-text')(app);
-require('./dashboard/edit-dashboard/edit-dashboard')(app)
-require('./detail-array/detail-array')(app);
-require('./detail-default/detail-default')(app);
-require('./document/document')(app);
-require('./document/confirm-changes/confirm-changes')(app);
-require('./document/confirm-delete/confirm-delete')(app);
-require('./document-details/document-details')(app);
-require('./document-details/document-property/document-property')(app);
-require('./edit-array/edit-array')(app);
-require('./edit-default/edit-default')(app);
-require('./edit-number/edit-number')(app);
-require('./edit-date/edit-date')(app);
-require('./edit-subdocument/edit-subdocument')(app);
-require('./export-query-results/export-query-results')(app);
-require('./list-array/list-array')(app);
-require('./list-default/list-default')(app);
-require('./list-json/list-json')(app)
-require('./list-mixed/list-mixed')(app);
-require('./list-string/list-string')(app);
-require('./list-subdocument/list-subdocument')(app);
-require('./modal/modal')(app);
-require('./models/models')(app);
-require('./navbar/navbar')(app);
-require('./splash/splash')(app);
-require('./team/team')(app);
-require('./team/new-invitation/new-invitation')(app);
-require('./update-document/update-document')(app);
+// Import all components
+const requireComponents = require.context(
+  '.', // Relative path (current directory)
+  true // Include subdirectories
+);
+// Object to store the imported modules
+const components = {};
+// Iterate over the matched keys (file paths)
+requireComponents.keys().forEach((filePath) => {
+  // Extract directory name and file name from the path
+  const pieces = filePath.split('/');
+  const directoryName = pieces[pieces.length - 2];
+  const fileName = pieces[pieces.length - 1].replace('.js', '');
+
+  // Check if the file name matches the directory name
+  if (directoryName === fileName) {
+    components[directoryName] = requireComponents(filePath);
+    components[directoryName](app);
+  }
+});
+
+console.log('Loaded components', Object.keys(components).sort());
 
 app.component('app-component', {
   template: `

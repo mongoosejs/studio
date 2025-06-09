@@ -57,6 +57,9 @@ module.exports = function netlify(options) {
       if (!user || !roles) {
         throw new Error('Not authorized');
       }
+
+      params.roles = roles;
+      params.userId = user._id;
     }
 
     if (typeof actionName !== 'string') {

@@ -30,6 +30,9 @@ module.exports = app => app.component('navbar', {
     documentView() {
       return ['root', 'model', 'document'].includes(this.$route.name);
     },
+    chatView() {
+      return ['chat index', 'chat'].includes(this.$route.name);
+    },
     routeName() {
       return this.$route.name;
     },
