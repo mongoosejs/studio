@@ -38,11 +38,15 @@ module.exports = app => app.component('models', {
     edittingDoc: null,
     docEdits: null,
     filter: null,
+    selectMultiple: false,
+    selectedDocuments: [],
     searchText: '',
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
     shouldShowIndexModal: false,
+    shouldShowUpdateMultipleModal: false,
+    shouldShowDeleteMultipleModal: false,
     shouldExport: {},
     sortBy: {},
     query: {},
@@ -319,6 +323,46 @@ module.exports = app => app.component('models', {
         this.documents[index] = res.doc;
       }
       this.edittingDoc = null;
+    },
+    handleDocumentClick(document) {
+      console.log(this.selectedDocuments);
+      if (this.selectMultiple) {
+        const exists = this.selectedDocuments.find(x => x._id.toString() == document._id.toString())
+        if (exists) {
+          const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
+          if (index !== -1) {
+            this.selectedDocuments.splice(index, 1);
+          }
+        } else {
+          this.selectedDocuments.push(document);
+        }
+      } else {
+       this.$router.push('/model/' + this.currentModel + '/document/' + document._id)
+      }
+    },
+    async deleteDocuments() {
+      const documentIds = this.selectedDocuments.map(x => x._id);
+      await api.Model.deleteDocuments({
+        documentIds,
+        model: this.currentModel
+      });
+      await this.getDocuments();
+      this.selectedDocuments.length = 0;
+      this.shouldShowDeleteMultipleModal = false;
+      this.selectMultiple = false;
+    },
+    async updateDocuments() {
+      await this.getDocuments();
+      this.selectedDocuments.length = 0;
+      this.selectMultiple = false;
+    },
+    stagingSelect() {
+      if (this.selectMultiple) {
+        this.selectMultiple = false;
+        this.selectedDocuments.length = 0;
+      } else {
+        this.selectMultiple = true;
+      }
     }
   }
 });

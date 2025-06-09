@@ -75,6 +75,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     deleteDocument(params) {
       return client.post('', { action: 'Model.deleteDocument', ...params}).then(res => res.data);
     },
+    deleteDocuments(params) {
+      return client.post('', { action: 'Model.deleteDocuments', ...params}).then(res => res.data);
+    },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
@@ -113,6 +116,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocument: function updateDocument(params) {
       return client.post('', { action: 'Model.updateDocument', ...params }).then(res => res.data);
+    },
+    updateDocuments: function updateDocuments(params) {
+      return client.post('', { action: 'Model.updateDocuments', ...params }).then(res => res.data);
     }
   };
 } else {
@@ -165,6 +171,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     deleteDocument: function (params) {
       return client.post('/Model/deleteDocument', params).then(res => res.data);
     },
+    deleteDocuments: function(params) {
+      return client.post('/Model/deleteDocuments', params).then(res => res.data);
+    },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
@@ -206,6 +215,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocument: function updateDocument(params) {
       return client.post('/Model/updateDocument', params).then(res => res.data);
+    },
+    updateDocuments: function updateDocument(params) {
+      return client.post('/Model/updateDocuments', params).then(res => res.data);
     }
   };
 }
