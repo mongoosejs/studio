@@ -22,7 +22,7 @@ module.exports = ({ db }) => async function getChatThread(params) {
   if (!chatThread) {
     throw new Error('Chat thread not found');
   }
-  if (userId && chatThread.userId.toString() !== userId.toString()) {
+  if (userId && chatThread.userId?.toString() !== userId.toString()) {
     throw new Error('Not authorized');
   }
 

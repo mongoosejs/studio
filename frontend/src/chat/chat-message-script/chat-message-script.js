@@ -3,6 +3,7 @@
 const api = require('../../api');
 const marked = require('marked').marked;
 const template = require('./chat-message-script.html');
+const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('chat-message-script', {
   template: template,
@@ -24,6 +25,16 @@ module.exports = app => app.component('chat-message-script', {
     },
     openDetailModal() {
       this.showDetailModal = true;
+    },
+    async copyOutput() {
+      await navigator.clipboard.writeText(this.message.executionResult.output);
+      vanillatoasts.create({
+        title: 'Text copied!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     }
   },
   mounted() {
