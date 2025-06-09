@@ -353,7 +353,7 @@ module.exports = app => app.component('models', {
     },
     async updateDocuments() {
       await this.getDocuments();
-      this.seelctedDocuments.length = 0;
+      this.selectedDocuments.length = 0;
       this.selectMultiple = false;
     },
     stagingSelect() {

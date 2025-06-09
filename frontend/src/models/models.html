@@ -37,48 +37,52 @@
           <button
             @click="shouldShowExportModal = true"
             type="button"
+            v-show="!selectMultiple"
             class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
             Export
           </button>
-          <button 
+          <button
             @click="stagingSelect"
             type="button"
-            :class="{ 'ring-2 ring-yellow-800': selectMultiple }"
+            :class="{ 'bg-ultramarine-500 ring-inset ring-2 ring-gray-300 hover:bg-ultramarine-600': selectMultiple }"
             class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
           >
             Select
           </button>
-          <div v-if="selectMultiple">
-            <button
+          <button
+            v-show="selectMultiple"
             @click="shouldShowUpdateMultipleModal=true;"
             type="button"
             class="rounded bg-green-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
             >
-              Update
-            </button>
-            <button
+            Update
+          </button>
+          <button
             @click="shouldShowDeleteMultipleModal=true;"
             type="button"
+            v-show="selectMultiple"
             class="rounded bg-red-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
             >
-              Delete
-            </button>
-          </div>
+            Delete
+          </button>
           <button
             @click="openIndexModal"
             type="button"
+            v-show="!selectMultiple"
             class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
             Indexes
           </button>
           <button
             @click="shouldShowCreateModal = true;"
             type="button"
+            v-show="!selectMultiple"
             class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
             Create
           </button>
           <button
             @click="openFieldSelection"
             type="button"
+            v-show="!selectMultiple"
             class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
             Fields
           </button>
@@ -199,13 +203,13 @@
       <div>
         <list-json :value="selectedDocuments"></list-json>
       </div>
-      <div class="flex justify-between">
-        <div @click="deleteDocuments" class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+      <div class="flex gap-4">
+        <async-button @click="deleteDocuments" class="rounded bg-red-500 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
           Confirm
-        </div>
-        <div @click="shouldShowDeleteMultipleModal = false;" class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
+        </async-button>
+        <button @click="shouldShowDeleteMultipleModal = false;" class="rounded bg-gray-400 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500">
           Cancel
-        </div>
+        </button>
       </div>
     </template>
   </modal>
