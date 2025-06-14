@@ -121,6 +121,11 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('', { action: 'Model.updateDocuments', ...params }).then(res => res.data);
     }
   };
+  exports.Task = {
+    getTasks: function getTasks(params) {
+      return client.post('', { action: 'Task.getTasks', ...params}).then(res => res.data)
+    }
+  }
 } else {
   exports.status = function status() {
     return client.get('/status').then(res => res.data);
@@ -220,4 +225,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('/Model/updateDocuments', params).then(res => res.data);
     }
   };
+  exports.Task = {
+    getTasks: function getTasks(params) {
+      return client.post('/Task/getTasks', params).then(res => res.data);
+    }
+  }
 }
