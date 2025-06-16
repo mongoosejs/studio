@@ -93,6 +93,14 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    initFilter(ev) {
+      if (!this.searchText) {
+        this.searchText = '{}';
+        this.$nextTick(() => {
+          ev.target.setSelectionRange(1, 1);
+        });
+      }
+    },
     clickFilter(path) {
       if (this.searchText) {
         if (this.searchText.endsWith('}')) {

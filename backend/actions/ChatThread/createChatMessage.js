@@ -55,10 +55,10 @@ return { numUsers: users.length };
 Here is a description of the user's models. Assume these are the only models available in the system unless explicitly instructed otherwise by the user.
 `.trim();
 
-module.exports = ({ db }) => async function createChatMessage(params) {
+module.exports = ({ db, studioConnection }) => async function createChatMessage(params) {
   const { chatThreadId, userId, content, script, authorization } = new CreateChatMessageParams(params);
-  const ChatThread = db.model('__Studio_ChatThread');
-  const ChatMessage = db.model('__Studio_ChatMessage');
+  const ChatThread = studioConnection.model('__Studio_ChatThread');
+  const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
   // Check that the user owns the thread
   const chatThread = await ChatThread.findOne({ _id: chatThreadId });

@@ -12,10 +12,10 @@ const GetChatThreadParams = new Archetype({
   }
 }).compile('GetChatThreadParams');
 
-module.exports = ({ db }) => async function getChatThread(params) {
+module.exports = ({ db, studioConnection }) => async function getChatThread(params) {
   const { chatThreadId, userId } = new GetChatThreadParams(params);
-  const ChatThread = db.model('__Studio_ChatThread');
-  const ChatMessage = db.model('__Studio_ChatMessage');
+  const ChatThread = studioConnection.model('__Studio_ChatThread');
+  const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
   const chatThread = await ChatThread.findById(chatThreadId);
 

@@ -65,7 +65,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
   const numDocuments = filter == null ?
     await Model.estimatedDocumentCount() :
     await Model.countDocuments(filter);
-  
+
   return {
     docs: docs.map(doc => doc.toJSON({ virtuals: false, getters: false, transform: false })),
     schemaPaths,

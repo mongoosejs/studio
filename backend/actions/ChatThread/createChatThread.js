@@ -9,9 +9,9 @@ const CreateChatThreadParams = new Archetype({
   }
 }).compile('CreateChatThreadParams');
 
-module.exports = ({ db }) => async function createChatThread(params) {
+module.exports = ({ studioConnection }) => async function createChatThread(params) {
   const { userId } = new CreateChatThreadParams(params);
-  const ChatThread = db.model('__Studio_ChatThread');
+  const ChatThread = studioConnection.model('__Studio_ChatThread');
 
   const chatThread = await ChatThread.create({ userId });
 

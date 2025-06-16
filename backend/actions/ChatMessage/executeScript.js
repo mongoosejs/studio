@@ -16,9 +16,9 @@ const ExecuteScriptParams = new Archetype({
   }
 }).compile('ExecuteScriptParams');
 
-module.exports = ({ db }) => async function executeScript(params) {
+module.exports = ({ db, studioConnection }) => async function executeScript(params) {
   const { userId, chatMessageId, script } = new ExecuteScriptParams(params);
-  const ChatMessage = db.model('__Studio_ChatMessage');
+  const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
   const chatMessage = await ChatMessage.findById(chatMessageId);
   if (!chatMessage) {

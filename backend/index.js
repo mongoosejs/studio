@@ -8,15 +8,14 @@ const chatMessageSchema = require('./db/chatMessageSchema');
 const chatThreadSchema = require('./db/chatThreadSchema');
 const dashboardSchema = require('./db/dashboardSchema');
 
-const getModelDescriptions = require('./helpers/getModelDescriptions');
-
-module.exports = function backend(db) {
+module.exports = function backend(db, studioConnection) {
   db = db || mongoose.connection;
 
-  const Dashboard = db.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
-  const ChatMessage = db.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
-  const ChatThread = db.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
+  studioConnection = studioConnection ?? db;
+  const Dashboard = studioConnection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
+  const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
+  const ChatThread = studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
 
-  const actions = applySpec(Actions, { db });
+  const actions = applySpec(Actions, { db, studioConnection });
   return actions;
 };

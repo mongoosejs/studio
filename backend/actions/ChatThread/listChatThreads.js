@@ -9,10 +9,10 @@ const ListChatThreadsParams = new Archetype({
   }
 }).compile('ListChatThreadsParams');
 
-module.exports = ({ db }) => async function listChatThreads(params) {
+module.exports = ({ db, studioConnection }) => async function listChatThreads(params) {
   // Just validate the params object, but no actual parameters needed
   const { userId } = new ListChatThreadsParams(params);
-  const ChatThread = db.model('__Studio_ChatThread');
+  const ChatThread = studioConnection.model('__Studio_ChatThread');
 
   // Get all chat threads
   const chatThreads = await ChatThread.find(userId ? { userId } : {})
