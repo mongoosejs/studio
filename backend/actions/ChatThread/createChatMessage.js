@@ -55,7 +55,7 @@ return { numUsers: users.length };
 Here is a description of the user's models. Assume these are the only models available in the system unless explicitly instructed otherwise by the user.
 `.trim();
 
-module.exports = ({ db, studioConnection }) => async function createChatMessage(params) {
+module.exports = ({ db, studioConnection, options }) => async function createChatMessage(params) {
   const { chatThreadId, userId, content, script, authorization } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
@@ -91,6 +91,12 @@ module.exports = ({ db, studioConnection }) => async function createChatMessage(
     role: 'system',
     content: systemPrompt + getModelDescriptions(db)
   });
+  if (options.context) {
+    llmMessages.unshift({
+      role: 'system',
+      content: context
+    });
+  }
 
   // Create the chat message and get OpenAI response in parallel
   const chatMessages = await Promise.all([
@@ -111,7 +117,7 @@ module.exports = ({ db, studioConnection }) => async function createChatMessage(
     })
   ]);
 
-  return { chatMessages };
+  return { chatMessages, chatThread };
 };
 
 async function getChatCompletion(messages, authorization) {

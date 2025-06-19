@@ -4,7 +4,7 @@ const Backend = require('./');
 const { toNetlifyFunction } = require('extrovert');
 
 module.exports = function netlify(conn, options) {
-  const backend = Backend(conn, options?.studioConnection);
+  const backend = Backend(conn, options?.studioConnection, options);
   const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
 
   let workspace = null;

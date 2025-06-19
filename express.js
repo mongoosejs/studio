@@ -31,7 +31,7 @@ module.exports = async function(apiUrl, conn, options) {
   }
 
   apiUrl = apiUrl || 'api';
-  const backend = Backend(conn, options?.studioConnection);
+  const backend = Backend(conn, options?.studioConnection, options);
 
   router.use(
     '/api',
