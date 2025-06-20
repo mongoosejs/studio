@@ -11,9 +11,16 @@ const roleAccess = {
 
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {
-  // change to true for local development
-  if (!roles) return false;
-  return roles.some(role => roleAccess[role]?.includes(routeName));
+  // If no roles are provided, deny access
+  if (!roles || !Array.isArray(roles)) return false;
+  
+  // Check if any of the user's roles grant access to this route
+  return roles.some(role => {
+    // If the role doesn't exist in roleAccess, deny access
+    if (!roleAccess[role]) return false;
+    // Check if the role has access to this route
+    return roleAccess[role].includes(routeName);
+  });
 }
 
 module.exports = {
@@ -31,7 +38,7 @@ module.exports = {
       name: 'model',
       component: 'models',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -39,7 +46,7 @@ module.exports = {
       name: 'document',
       component: 'document',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -47,7 +54,7 @@ module.exports = {
       name: 'dashboards',
       component: 'dashboards',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -55,13 +62,21 @@ module.exports = {
       name: 'dashboard',
       component: 'dashboard',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
       path: '/team',
       name: 'team',
       component: 'team',
+      meta: {
+        authorized: false
+      }
+    },
+    {
+      path: '/tasks',
+      name: 'tasks',
+      component: 'tasks',
       meta: {
         authorized: true
       }
