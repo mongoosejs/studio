@@ -295,6 +295,9 @@ module.exports = app => app.component('models', {
     deselectAll() {
       this.selectedPaths = [];
     },
+    selectAll() {
+      this.selectedPaths = [...this.schemaPaths];
+    },
     isSelected(path) {
       return this.selectedPaths.find(x => x.path == path);
     },
