@@ -94,7 +94,7 @@ module.exports = app => app.component('models', {
   },
   methods: {
     async dropIndex(name) {
-      const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, index: name });
+      const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
       this.mongoDBIndexes = mongoDBIndexes;
     },
     initFilter(ev) {

@@ -27,7 +27,7 @@ module.exports = ({ db }) => async function getIndexes(params) {
     throw new Error(`Model ${model} not found`);
   }
 
-  await Model.dropIndex(name);
+  await Model.collection.dropIndex(name);
 
   const mongoDBIndexes = await Model.listIndexes();
   return {
