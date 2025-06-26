@@ -93,6 +93,10 @@ module.exports = app => app.component('models', {
     this.status = 'loaded';
   },
   methods: {
+    async dropIndex(name) {
+      const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, index: name });
+      this.mongoDBIndexes = mongoDBIndexes;
+    },
     initFilter(ev) {
       if (!this.searchText) {
         this.searchText = '{}';
@@ -191,7 +195,7 @@ module.exports = app => app.component('models', {
     },
     async openIndexModal() {
       this.shouldShowIndexModal = true;
-      const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel })
+      const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel });
       this.mongoDBIndexes = mongoDBIndexes;
       this.schemaIndexes = schemaIndexes;
     },

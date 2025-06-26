@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const authorize = require('../../authorize');
 const mongoose = require('mongoose');
 const vm = require('vm');
 
@@ -12,13 +13,18 @@ const ExecuteScriptParams = new Archetype({
     $type: mongoose.Types.ObjectId
   },
   script: {
-    $type: String
+    $type: 'string'
+  },
+  roles: {
+    $type: ['string']
   }
 }).compile('ExecuteScriptParams');
 
 module.exports = ({ db, studioConnection }) => async function executeScript(params) {
   const { userId, chatMessageId, script } = new ExecuteScriptParams(params);
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
+
+  await authorize('ChatMessage.executeScript', roles);
 
   const chatMessage = await ChatMessage.findById(chatMessageId);
   if (!chatMessage) {

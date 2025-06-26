@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const { EJSON } = require('bson')
+const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
   model: {
@@ -24,11 +25,17 @@ const GetDocumentsParams = new Archetype({
   },
   sort: {
     $type: Archetype.Any
+  },
+  roles: {
+    $type: ['string']
   }
 }).compile('GetDocumentsParams');
 
 module.exports = ({ db }) => async function getDocuments(params) {
   params = new GetDocumentsParams(params);
+  const { roles } = params;
+  await authorize('Model.getDocuments', roles);
+
   let { filter } = params;
   if (filter != null && Object.keys(filter).length > 0) {
     filter = EJSON.parse(filter);

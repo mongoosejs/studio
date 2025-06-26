@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const authorize = require('../../authorize');
 const mongoose = require('mongoose');
 
 const CreateChatThreadParams = new Archetype({
@@ -16,9 +17,7 @@ module.exports = ({ studioConnection }) => async function createChatThread(param
   const { userId } = new CreateChatThreadParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
 
-  if (roles && roles.includes('readonly')) {
-    throw new Error('Not authorized');
-  }
+  await authorize('ChatThread.createChatThread', roles);
 
   const chatThread = await ChatThread.create({ userId });
 

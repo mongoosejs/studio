@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
+const authorize = require('../../authorize');
 
 const GetDocumentParams = new Archetype({
   model: {
@@ -11,11 +12,16 @@ const GetDocumentParams = new Archetype({
   documentId: {
     $type: 'string',
     $required: true
+  },
+  roles: {
+    $type: ['string']
   }
 }).compile('GetDocumentParams');
 
 module.exports = ({ db }) => async function getDocument(params) {
-  const { model, documentId } = new GetDocumentParams(params);
+  const { model, documentId, roles } = new GetDocumentParams(params);
+
+  await authorize('Model.getDocument', roles);
 
   const Model = db.models[model];
   if (Model == null) {
@@ -35,6 +41,6 @@ module.exports = ({ db }) => async function getDocument(params) {
     };
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
-  
+
   return { doc: doc.toJSON({ virtuals: true, getters: false, transform: false }), schemaPaths };
 };

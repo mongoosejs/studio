@@ -22,6 +22,10 @@ exports.githubLogin = function githubLogin() {
   return client.post('/githubLogin', { state: window.location.href }).then(res => res.data);
 };
 
+exports.googleLogin = function googleLogin() {
+  return client.post('/googleLogin', { state: window.location.href }).then(res => res.data);
+};
+
 exports.getWorkspaceTeam = function getWorkspaceTeam() {
   return client.post('/getWorkspaceTeam', { workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id }).then(res => res.data);
 };
@@ -32,6 +36,10 @@ exports.getWorkspaceCustomerPortalLink = function getWorkspaceCustomerPortalLink
 
 exports.github = function github(code) {
   return client.post('/github', { code, workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id }).then(res => res.data);
+};
+
+exports.google = function google(code) {
+  return client.post('/google', { code, workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id }).then(res => res.data);
 };
 
 exports.inviteToWorkspace = function inviteToWorkspace(params) {

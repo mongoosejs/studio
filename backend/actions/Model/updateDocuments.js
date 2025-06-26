@@ -1,7 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
-const mongoose = require('mongoose');
+const authorize = require('../../authorize');
 
 const UpdateDocumentsParams = new Archetype({
   model: {
@@ -24,9 +24,8 @@ const UpdateDocumentsParams = new Archetype({
 module.exports = ({ db }) => async function updateDocuments(params) {
   const { model, _id, update, roles } = new UpdateDocumentsParams(params);
 
-  if (roles && roles.includes('readonly')) {
-    throw new Error('Not authorized');
-  }
+  await authorize('Document.updateDocuments', roles);
+
   const Model = db.models[model];
   if (Model == null) {
     throw new Error(`Model ${model} not found`);
@@ -41,6 +40,6 @@ module.exports = ({ db }) => async function updateDocuments(params) {
 
   const result = await Model.
     updateMany({ _id: { $in: _id } }, processedUpdate, { overwriteImmutable: true, runValidators: false });
-  
+
   return { result };
 };

@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const { EJSON } = require('bson');
+const authorize = require('../../authorize');
 
 const CreateDocumentParams = new Archetype({
   model: {
@@ -20,16 +21,14 @@ const CreateDocumentParams = new Archetype({
 module.exports = ({ db }) => async function CreateDocument(params) {
   const { model, data, roles } = new CreateDocumentParams(params);
 
-  if (roles && roles.includes('readonly')) {
-    throw new Error('Not authorized');
-  }
+  await authorize('Model.createDocument', roles);
 
   const Model = db.models[model];
   if (Model == null) {
     throw new Error(`Model ${model} not found`);
   }
-  
+
   const doc = await Model.create(EJSON.deserialize(data));
-  
+
   return { doc };
 };

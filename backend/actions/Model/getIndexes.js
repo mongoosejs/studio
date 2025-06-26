@@ -1,18 +1,22 @@
 'use strict';
 
 const Archetype = require('archetype');
+const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
   model: {
     $type: 'string',
     $required: true
   },
+  roles: {
+    $type: ['string']
+  }
 }).compile('GetDocumentsParams');
 
 module.exports = ({ db }) => async function getIndexes(params) {
-  params = new GetDocumentsParams(params);
+  const { model, roles } = new GetDocumentsParams(params);
 
-  const { model } = params;
+  await authorize('Model.getIndexes', roles);
 
   const Model = db.models[model];
   if (Model == null) {

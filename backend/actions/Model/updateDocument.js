@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const authorize = require('../../authorize');
 
 const UpdateDocumentsParams = new Archetype({
   model: {
@@ -23,9 +24,8 @@ const UpdateDocumentsParams = new Archetype({
 module.exports = ({ db }) => async function updateDocument(params) {
   const { model, _id, update, roles } = new UpdateDocumentsParams(params);
 
-  if (roles && roles.includes('readonly')) {
-    throw new Error('Not authorized');
-  }
+  await authorize('Document.updateDocument', roles);
+
   const Model = db.models[model];
   if (Model == null) {
     throw new Error(`Model ${model} not found`);
@@ -40,6 +40,6 @@ module.exports = ({ db }) => async function updateDocument(params) {
 
   const doc = await Model.
     findByIdAndUpdate(_id, processedUpdate, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true, runValidators: false });
-  
+
   return { doc };
 };

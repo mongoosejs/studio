@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const authorize = require('../../authorize');
 
 const DeleteDocumentParams = new Archetype({
   model: {
@@ -21,9 +22,8 @@ module.exports = ({ db }) => async function DeleteDocument(params) {
 
   const Model = db.models[model];
 
-  if (roles && roles.includes('readonly')) {
-    throw new Error('Not authorized');
-  }
+  await authorize('Model.deleteDocument', roles);
+
   if (Model == null) {
     throw new Error(`Model ${model} not found`);
   }
@@ -33,6 +33,6 @@ module.exports = ({ db }) => async function DeleteDocument(params) {
     setOptions({ sanitizeFilter: true }).
     orFail();
     console.log('what is doc', doc);
-  
+
   return { doc };
 };
