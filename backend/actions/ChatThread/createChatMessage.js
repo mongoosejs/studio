@@ -17,6 +17,9 @@ const CreateChatMessageParams = new Archetype({
   authorization: {
     $type: 'string',
     $required: true
+  },
+  roles: {
+    $type: ['string'],
   }
 }).compile('CreateChatMessageParams');
 
@@ -56,9 +59,13 @@ Here is a description of the user's models. Assume these are the only models ava
 `.trim();
 
 module.exports = ({ db, studioConnection, options }) => async function createChatMessage(params) {
-  const { chatThreadId, userId, content, script, authorization } = new CreateChatMessageParams(params);
+  const { chatThreadId, userId, content, script, authorization, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
+
+  if (roles && roles.includes('readonly')) {
+    throw new Error('Not authorized');
+  }
 
   // Check that the user owns the thread
   const chatThread = await ChatThread.findOne({ _id: chatThreadId });
