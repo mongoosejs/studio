@@ -63,9 +63,10 @@ module.exports = async function(apiUrl, conn, options) {
           if (!user || !roles) {
             throw new Error('Not authorized');
           }
-          req.params.authorization = authorization;
-          req.params.initiatedById = user._id;
-          req.params.roles = roles;
+          req._internals = req._internals || {};
+          req._internals.authorization = authorization;
+          req._internals.initiatedById = user._id;
+          req._internals.roles = roles;
 
           next();
         })
