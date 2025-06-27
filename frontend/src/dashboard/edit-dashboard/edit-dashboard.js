@@ -20,16 +20,21 @@ module.exports = app => app.component('edit-dashboard', {
     },
     async updateCode() {
       this.status = 'loading';
-      const { doc, result, error } = await api.Dashboard.updateDashboard({
-        dashboardId: this.dashboardId,
-        code: this.editor.getValue(),
-        title: this.title,
-        description: this.description
-      });
-      this.$emit('update', { doc, result, error });
-      this.editor.setValue(doc.code);
-      this.status = 'loaded';
-      this.closeEditor();
+      try {
+        const { doc, result, error } = await api.Dashboard.updateDashboard({
+          dashboardId: this.dashboardId,
+          code: this.editor.getValue(),
+          title: this.title,
+          description: this.description
+        });
+        this.$emit('update', { doc, result, error });
+        this.editor.setValue(doc.code);
+        this.closeEditor();
+      } catch (err) {
+        this.$emit('update', { error: { message: err.message } });
+      } finally {
+        this.status = 'loaded';
+      }
     }
   },
   mounted: async function() {
