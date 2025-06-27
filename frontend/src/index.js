@@ -67,7 +67,9 @@ app.component('app-component', {
     window.state = this;
 
     if (mothership.hasAPIKey) {
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#?\/?\??/, '') || '');
+      const hash = window.location.hash.replace(/^#?\/?\??/, '') || '';
+      const hashQuery = hash.split('?')[1] || '';
+      const hashParams = new URLSearchParams(hashQuery);
       if (hashParams.has('code')) {
         const code = hashParams.get('code');
         const provider = hashParams.get('provider');
