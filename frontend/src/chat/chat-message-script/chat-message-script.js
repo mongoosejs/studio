@@ -1,12 +1,11 @@
 'use strict';
 
 const api = require('../../api');
-const marked = require('marked').marked;
 const template = require('./chat-message-script.html');
 const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('chat-message-script', {
-  template: template,
+  template,
   props: ['message', 'script', 'language'],
   data: () => ({ activeTab: 'code', showDetailModal: false }),
   computed: {
