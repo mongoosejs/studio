@@ -22,7 +22,7 @@ module.exports = function netlify(conn, options) {
           method: 'POST',
           body: JSON.stringify({ apiKey: options.apiKey }),
           headers: {
-            'Authorization': `Bearer ${options.apiKey}`,
+            Authorization: `Bearer ${options.apiKey}`,
             'Content-Type': 'application/json'
           }
         })
@@ -41,7 +41,7 @@ module.exports = function netlify(conn, options) {
         method: 'POST',
         body: JSON.stringify({ workspaceId: workspace._id }),
         headers: {
-          'Authorization': authorization,
+          Authorization: authorization,
           'Content-Type': 'application/json'
         }
       })
@@ -79,4 +79,4 @@ module.exports = function netlify(conn, options) {
 
     return actionFn(params);
   });
-}
+};

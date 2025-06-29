@@ -1,7 +1,7 @@
 'use strict';
 
 const mpath = require('mpath');
-const template = require('./document-property.html')
+const template = require('./document-property.html');
 
 const appendCSS = require('../../appendCSS');
 
@@ -12,7 +12,7 @@ module.exports = app => app.component('document-property', {
   data: function() {
     return {
       dateType: 'picker' // picker, iso
-    }
+    };
   },
   props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid'],
   methods: {
@@ -53,4 +53,4 @@ module.exports = app => app.component('document-property', {
       return path in this.changes ? this.changes[path] : mpath.get(path, this.document);
     }
   }
-})
+});

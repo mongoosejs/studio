@@ -12,11 +12,11 @@ module.exports = app => app.component('edit-dashboard', {
       editor: null,
       title: '',
       description: ''
-    }
+    };
   },
   methods: {
     closeEditor() {
-        this.$emit('close')
+      this.$emit('close');
     },
     async updateCode() {
       this.status = 'loading';
@@ -47,7 +47,7 @@ module.exports = app => app.component('edit-dashboard', {
       indentWithTabs: true,
       cursorBlinkRate: 300,
       lineWrapping: true,
-      showCursorWhenSelecting: true,
+      showCursorWhenSelecting: true
     });
     // this.editor.focus();
     // this.editor.refresh(); // if anything weird happens on load, this usually fixes it. However, this breaks it in this case.

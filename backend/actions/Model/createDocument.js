@@ -14,7 +14,7 @@ const CreateDocumentParams = new Archetype({
     $required: true
   },
   roles: {
-    $type: ['string'],
+    $type: ['string']
   }
 }).compile('CreateDocumentParams');
 

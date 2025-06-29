@@ -5,7 +5,7 @@ const template = require('./edit-subdocument.html');
 const { BSON, EJSON } = require('bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
-  apply (target, thisArg, argumentsList) {
+  apply(target, thisArg, argumentsList) {
     return new target(...argumentsList);
   }
 });

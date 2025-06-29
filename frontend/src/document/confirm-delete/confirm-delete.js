@@ -12,10 +12,10 @@ module.exports = app => app.component('confirm-delete', {
   },
   methods: {
     closeDelete() {
-        this.$emit('close')
+      this.$emit('close');
     },
     startDelete() {
-        this.$emit('remove');
+      this.$emit('remove');
     }
   },
   mounted() {

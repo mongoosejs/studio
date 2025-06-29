@@ -1,0 +1,18 @@
+name: Lint
+on:
+  pull_request:
+  push:
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setting up the node version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.19.0
+      - name: setup project
+        run: npm i
+      - name: run lint
+        run: |
+          npm run lint

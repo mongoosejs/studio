@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
-const { EJSON } = require('bson')
+const { EJSON } = require('bson');
 const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
@@ -58,7 +58,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
     skip(skip).
     sort(hasSort ? sort : { _id: -1 });
 
-  let schemaPaths = {};
+  const schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
     schemaPaths[path] = {
       instance: Model.schema.paths[path].instance,

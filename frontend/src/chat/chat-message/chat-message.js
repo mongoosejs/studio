@@ -61,6 +61,6 @@ module.exports = app => app.component('chat-message', {
       });
       message.executionResult = chatMessage.executionResult;
       console.log(message);
-    },
+    }
   }
 });

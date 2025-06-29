@@ -3,7 +3,7 @@
 const api = require('../api');
 const mothership = require('../mothership');
 const template = require('./navbar.html');
-const  { routes, hasAccess } = require('../routes');
+const { routes, hasAccess } = require('../routes');
 
 const appendCSS = require('../appendCSS');
 
@@ -25,7 +25,7 @@ module.exports = app => app.component('navbar', {
   },
   computed: {
     dashboardView() {
-      return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
+      return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name);
     },
     documentView() {
       return ['root', 'model', 'document'].includes(this.$route.name);
@@ -66,7 +66,7 @@ module.exports = app => app.component('navbar', {
     logout() {
       window.localStorage.setItem('_mongooseStudioAccessToken', '');
       window.location.reload();
-    },
+    }
   },
   directives: {
     clickOutside: {

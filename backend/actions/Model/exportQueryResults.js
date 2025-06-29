@@ -66,7 +66,7 @@ module.exports = ({ db }) => async function exportQueryResults(params, req, res)
 
   res.set({
     'Content-Type': 'text/csv',
-    'Content-Disposition': `attachment; filename="${model.toLowerCase()}-export.csv"`,
+    'Content-Disposition': `attachment; filename="${model.toLowerCase()}-export.csv"`
   });
   return csv;
 };

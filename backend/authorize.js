@@ -10,7 +10,6 @@ const actionsToRequiredRoles = {
   'Dashboard.deleteDashboard': ['owner', 'admin', 'member'],
   'Dashboard.getDashboard': ['owner', 'admin', 'member', 'readonly', 'dashboards'],
   'Dashboard.getDashboards': ['owner', 'admin', 'member', 'readonly', 'dashboards'],
-  'Dashboard.getDashboard': ['owner', 'admin', 'member', 'readonly', 'dashboards'],
   'Dashboard.updateDashboard': ['owner', 'admin', 'member'],
   'Model.createDocument': ['owner', 'admin', 'member'],
   'Model.updateDocument': ['owner', 'admin', 'member'],
@@ -21,7 +20,6 @@ const actionsToRequiredRoles = {
   'Model.getDocuments': ['owner', 'admin', 'member', 'readonly'],
   'Model.getIndexes': ['owner', 'admin', 'member', 'readonly'],
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
-  'Model.updateDocument': ['owner', 'admin', 'member'],
   'Model.updateDocuments': ['owner', 'admin', 'member']
 };
 
@@ -33,4 +31,4 @@ module.exports = function authorize(action, roles) {
   if (!authorized) {
     throw new Error(`Unauthorized to take action ${action}`);
   }
-}
+};

@@ -86,5 +86,5 @@ module.exports = app => app.component('chat', {
         });
       });
     }
-  },
+  }
 });

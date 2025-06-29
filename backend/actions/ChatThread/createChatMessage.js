@@ -20,7 +20,7 @@ const CreateChatMessageParams = new Archetype({
     $required: true
   },
   roles: {
-    $type: ['string'],
+    $type: ['string']
   }
 }).compile('CreateChatMessageParams');
 

@@ -17,5 +17,5 @@ module.exports = ({ db }) => async function getDashboards(params) {
 
   const dashboards = await Dashboard.find();
 
-  return { dashboards }
+  return { dashboards };
 };

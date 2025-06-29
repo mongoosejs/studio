@@ -6,4 +6,4 @@ module.exports = function removeSpecifiedPaths(obj, paths) {
       delete obj[key];
     }
   }
-}
+};

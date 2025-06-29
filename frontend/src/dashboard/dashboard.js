@@ -16,7 +16,7 @@ module.exports = app => app.component('dashboard', {
       dashboard: null,
       result: null,
       errorMessage: null
-    }
+    };
   },
   methods: {
     toggleEditor() {

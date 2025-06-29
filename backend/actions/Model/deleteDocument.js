@@ -13,7 +13,7 @@ const DeleteDocumentParams = new Archetype({
     $required: true
   },
   roles: {
-    $type: ['string'],
+    $type: ['string']
   }
 }).compile('DeleteDocumentParams');
 
@@ -29,10 +29,10 @@ module.exports = ({ db }) => async function DeleteDocument(params) {
   }
 
   const doc = await Model.
-    deleteOne({_id: documentId}).
+    deleteOne({ _id: documentId }).
     setOptions({ sanitizeFilter: true }).
     orFail();
-    console.log('what is doc', doc);
+  console.log('what is doc', doc);
 
   return { doc };
 };

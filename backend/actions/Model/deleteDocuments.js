@@ -13,7 +13,7 @@ const DeleteDocumentsParams = new Archetype({
     $required: true
   },
   roles: {
-    $type: ['string'],
+    $type: ['string']
   }
 }).compile('DeleteDocumentsParams');
 
@@ -29,7 +29,7 @@ module.exports = ({ db }) => async function DeleteDocuments(params) {
   }
 
   await Model.
-    deleteMany({_id: { $in: documentIds }}).
+    deleteMany({ _id: { $in: documentIds } }).
     setOptions({ sanitizeFilter: true }).
     orFail();
 

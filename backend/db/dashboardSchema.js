@@ -22,7 +22,7 @@ dashboardSchema.methods.evaluate = async function evaluate() {
   let result = null;
   result = await vm.runInContext(formatFunction(this.code), context);
   if (result.$document?.constructor?.modelName) {
-    let schemaPaths = {};
+    const schemaPaths = {};
     const Model = this.constructor.db.model(result.$document?.constructor?.modelName);
     for (const path of Object.keys(Model.schema.paths)) {
       schemaPaths[path] = {
@@ -42,4 +42,4 @@ module.exports = dashboardSchema;
 
 const formatFunction = code => `(async function() {
   ${code}
-})();`
+})();`;

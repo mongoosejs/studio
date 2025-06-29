@@ -8,7 +8,7 @@ const { BSON, EJSON } = require('bson');
 
 
 const ObjectId = new Proxy(BSON.ObjectId, {
-  apply (target, thisArg, argumentsList) {
+  apply(target, thisArg, argumentsList) {
     return new target(...argumentsList);
   }
 });
@@ -86,7 +86,7 @@ module.exports = app => app.component('models', {
     }
     if (this.$route.query?.fields) {
       const filter = this.$route.query.fields.split(',');
-      this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path))
+      this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path));
     }
 
 
@@ -121,7 +121,7 @@ module.exports = app => app.component('models', {
 
       this.$nextTick(() => {
         const input = this.$refs.searchInput;
-        const cursorIndex = this.searchText.lastIndexOf(":") + 2; // Move cursor after ": "
+        const cursorIndex = this.searchText.lastIndexOf(':') + 2; // Move cursor after ": "
 
         input.focus();
         input.setSelectionRange(cursorIndex, cursorIndex);
@@ -136,7 +136,7 @@ module.exports = app => app.component('models', {
     },
     filterDocument(doc) {
       const filteredDoc = {};
-      console.log(doc, this.filteredPaths)
+      console.log(doc, this.filteredPaths);
       for (let i = 0; i < this.filteredPaths.length; i++) {
         filteredDoc[this.filteredPaths[i].path] = doc[this.filteredPaths[i].path];
       }
@@ -175,7 +175,7 @@ module.exports = app => app.component('models', {
       }
       if (!sorted) {
         this.sortBy[path] = num;
-        this.query.sort = `{${path}:${num}}`
+        this.query.sort = `{${path}:${num}}`;
         this.$router.push({ query: this.query });
       }
       await this.loadMoreDocuments();
@@ -201,11 +201,11 @@ module.exports = app => app.component('models', {
     },
     checkIndexLocation(indexName) {
       if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
-        return 'text-gray-500'
+        return 'text-gray-500';
       } else if (this.schemaIndexes.find(x => x.name == indexName)) {
-        return 'text-forest-green-500'
+        return 'text-forest-green-500';
       } else {
-        return 'text-valencia-500'
+        return 'text-valencia-500';
       }
     },
     async getDocuments() {
@@ -269,7 +269,7 @@ module.exports = app => app.component('models', {
     openFieldSelection() {
       if (this.$route.query?.fields) {
         this.selectedPaths.length = 0;
-        console.log('there are fields in play', this.$route.query.fields)
+        console.log('there are fields in play', this.$route.query.fields);
         const fields = this.$route.query.fields.split(',');
         for (let i = 0; i < fields.length; i++) {
           this.selectedPaths.push({ path: fields[i] });
@@ -342,7 +342,7 @@ module.exports = app => app.component('models', {
     handleDocumentClick(document) {
       console.log(this.selectedDocuments);
       if (this.selectMultiple) {
-        const exists = this.selectedDocuments.find(x => x._id.toString() == document._id.toString())
+        const exists = this.selectedDocuments.find(x => x._id.toString() == document._id.toString());
         if (exists) {
           const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
           if (index !== -1) {
@@ -352,7 +352,7 @@ module.exports = app => app.component('models', {
           this.selectedDocuments.push(document);
         }
       } else {
-       this.$router.push('/model/' + this.currentModel + '/document/' + document._id)
+        this.$router.push('/model/' + this.currentModel + '/document/' + document._id);
       }
     },
     async deleteDocuments() {
