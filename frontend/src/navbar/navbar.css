@@ -1,14 +1,5 @@
-.navbar {
-  width: 100%;
-  background-color: #eee;
-}
-
 .active {
   text-decoration: underline;
-}
-
-.spacing {
-  margin-right: 10px;
 }
 
 .navbar .nav-left {
@@ -20,18 +11,6 @@
 
 .navbar .nav-left a {
   color: #232323;
-}
-
-.navbar {
-  border-bottom: 1px solid #ddd;
-  height: 55px;
-}
-
-.navbar .nav-left img {
-  height: 32px;
-  vertical-align: middle;
-  margin-right: 0.5em;
-  margin-top: 8px;
 }
 
 .navbar .nav-right {

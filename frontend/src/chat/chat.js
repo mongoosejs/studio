@@ -12,7 +12,8 @@ module.exports = app => app.component('chat', {
     newMessage: '',
     chatThreadId: null,
     chatThreads: [],
-    chatMessages: []
+    chatMessages: [],
+    hideSidebar: null
   }),
   methods: {
     async sendMessage() {

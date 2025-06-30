@@ -1,8 +1,20 @@
 <div class="flex" style="height: calc(100vh - 55px)">
-    <!-- Sidebar: Chat Threads -->
-  <aside class="w-64 bg-gray-100 border-r overflow-y-auto h-full">
-    <div class="p-4 font-bold text-lg border-b">Chat Threads</div>
-    <div class="p-4">
+  <div class="fixed top-[65px] cursor-pointer bg-gray-100 rounded-r-md z-10" @click="hideSidebar = false">
+    <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M360-120v-720h80v720h-80Zm160-160v-400l200 200-200 200Z"/></svg>
+  </div>
+  <!-- Sidebar: Chat Threads -->
+  <aside class="bg-gray-50 border-r overflow-y-auto overflow-x-hidden h-full transition-all duration-300 ease-in-out z-20 w-0 md:w-64 fixed md:relative" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-64' : ''">
+    <div class="flex items-center border-b border-gray-100 w-64 overflow-x-hidden">
+      <div class="p-4 font-bold text-lg">Chat Threads</div>
+      <button
+        @click="hideSidebar = true"
+        class="ml-auto mr-2 p-2 rounded hover:bg-gray-200 focus:outline-none"
+        aria-label="Close sidebar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M660-320v-320L500-480l160 160ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm120-80v-560H200v560h120Zm80 0h360v-560H400v560Zm-80 0H200h120Z"/></svg>
+      </button>
+    </div>
+    <div class="p-4 w-64">
       <async-button
         @click="createNewThread"
         class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -13,12 +25,12 @@
     <div v-if="status === 'loaded' && chatThreads.length === 0" class="p-4 text-sm text-gray-700">
       No threads yet
     </div>
-    <ul vif="status === 'loaded'">
+    <ul v-if="status === 'loaded'" class="w-64">
       <li
         v-for="thread in chatThreads"
         :key="thread._id"
         @click="selectThread(thread._id)"
-        class="p-4 hover:bg-gray-200 cursor-pointer"
+        class="p-4 hover:bg-gray-200 cursor-pointer w-64"
         :class="{ 'bg-gray-300': thread._id === chatThreadId }"
       >
         {{ thread.title || 'Untitled Thread' }}
