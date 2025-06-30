@@ -66,6 +66,15 @@ module.exports = app => app.component('navbar', {
     },
     defaultRoute() {
       return this.allowedRoutes[0]?.name || 'dashboards';
+    },
+    hasTasks() {
+      // fix this when done
+      try {
+        require.resolve('@mongoosejs/task');
+        return `#/tasks`
+      } catch (e) {
+        return `https://www.npmjs.com/package/@mongoosejs/task`
+      }
     }
   },
   methods: {
