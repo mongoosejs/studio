@@ -3,8 +3,8 @@
 const Backend = require('./');
 const { toNetlifyFunction } = require('extrovert');
 
-module.exports = function netlify(options) {
-  const backend = Backend();
+module.exports = function netlify(conn, options) {
+  const backend = Backend(conn, options?.studioConnection, options);
   const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
 
   let workspace = null;
@@ -22,7 +22,7 @@ module.exports = function netlify(options) {
           method: 'POST',
           body: JSON.stringify({ apiKey: options.apiKey }),
           headers: {
-            'Authorization': `Bearer ${options.apiKey}`,
+            Authorization: `Bearer ${options.apiKey}`,
             'Content-Type': 'application/json'
           }
         })
@@ -41,7 +41,7 @@ module.exports = function netlify(options) {
         method: 'POST',
         body: JSON.stringify({ workspaceId: workspace._id }),
         headers: {
-          'Authorization': authorization,
+          Authorization: authorization,
           'Content-Type': 'application/json'
         }
       })
@@ -79,4 +79,4 @@ module.exports = function netlify(options) {
 
     return actionFn(params);
   });
-}
+};

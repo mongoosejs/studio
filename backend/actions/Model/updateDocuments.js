@@ -9,7 +9,7 @@ const UpdateDocumentsParams = new Archetype({
     $required: true
   },
   _id: {
-    $type: Archetype.Any,
+    $type: ['string'],
     $required: true
   },
   update: {
@@ -21,10 +21,10 @@ const UpdateDocumentsParams = new Archetype({
   }
 }).compile('UpdateDocumentsParams');
 
-module.exports = ({ db }) => async function updateDocument(params) {
+module.exports = ({ db }) => async function updateDocuments(params) {
   const { model, _id, update, roles } = new UpdateDocumentsParams(params);
 
-  await authorize('Document.updateDocument', roles);
+  await authorize('Document.updateDocuments', roles);
 
   const Model = db.models[model];
   if (Model == null) {
@@ -38,8 +38,8 @@ module.exports = ({ db }) => async function updateDocument(params) {
     );
   }
 
-  const doc = await Model.
-    findByIdAndUpdate(_id, processedUpdate, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true, runValidators: false });
+  const result = await Model.
+    updateMany({ _id: { $in: _id } }, processedUpdate, { overwriteImmutable: true, runValidators: false });
 
-  return { doc };
+  return { result };
 };

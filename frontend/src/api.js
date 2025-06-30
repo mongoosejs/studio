@@ -43,9 +43,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('', { action: 'Dashboard.getDashboards', ...params }).then(res => res.data);
     },
     updateDashboard(params) {
-      return client.post('', { action: 'Dashboard.updateDashboard', ...params}).then(res => res.data);
+      return client.post('', { action: 'Dashboard.updateDashboard', ...params }).then(res => res.data);
     }
-  }
+  };
   exports.ChatThread = {
     createChatMessage(params) {
       return client.post('', { action: 'ChatThread.createChatMessage', ...params }).then(res => res.data);
@@ -59,21 +59,24 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     listChatThreads(params) {
       return client.post('', { action: 'ChatThread.listChatThreads', ...params }).then(res => res.data);
     }
-  }
+  };
   exports.ChatMessage = {
     executeScript(params) {
       return client.post('', { action: 'ChatMessage.executeScript', ...params }).then(res => res.data);
     }
-  }
+  };
   exports.Model = {
     createChart(params) {
-      return client.post('', { action: 'Model.createChart', ...params}).then(res => res.data);
+      return client.post('', { action: 'Model.createChart', ...params }).then(res => res.data);
     },
     createDocument(params) {
-      return client.post('', { action: 'Model.createDocument', ...params}).then(res => res.data);
+      return client.post('', { action: 'Model.createDocument', ...params }).then(res => res.data);
     },
     deleteDocument(params) {
-      return client.post('', { action: 'Model.deleteDocument', ...params}).then(res => res.data);
+      return client.post('', { action: 'Model.deleteDocument', ...params }).then(res => res.data);
+    },
+    deleteDocuments(params) {
+      return client.post('', { action: 'Model.deleteDocuments', ...params }).then(res => res.data);
     },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
@@ -81,8 +84,8 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
         method: 'GET',
         headers: {
-          'Authorization': `${accessToken}`, // Set your authorization token here
-          'Accept': 'text/csv'
+          Authorization: `${accessToken}`, // Set your authorization token here
+          Accept: 'text/csv'
         }
       })
         .then(response => {
@@ -108,11 +111,20 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getDocuments: function getDocuments(params) {
       return client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
     },
+    getIndexes: function getIndexes(params) {
+      return client.post('', { action: 'Model.getIndexes', ...params }).then(res => res.data);
+    },
+    dropIndex: function dropIndex(params) {
+      return client.post('', { action: 'Model.dropIndex', ...params }).then(res => res.data);
+    },
     listModels: function listModels() {
       return client.post('', { action: 'Model.listModels' }).then(res => res.data);
     },
     updateDocument: function updateDocument(params) {
       return client.post('', { action: 'Model.updateDocument', ...params }).then(res => res.data);
+    },
+    updateDocuments: function updateDocuments(params) {
+      return client.post('', { action: 'Model.updateDocuments', ...params }).then(res => res.data);
     }
   };
   exports.Task = {
@@ -129,7 +141,7 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('/Dashboard/createDashboard', params).then(res => res.data);
     },
     deleteDashboard: function deleteDashboard(params) {
-      return client.post('/Dashboard/deleteDashboard', params).then(res => res.data)
+      return client.post('/Dashboard/deleteDashboard', params).then(res => res.data);
     },
     getDashboard: function getDashboard(params) {
       return client.put('/Dashboard/getDashboard', params).then(res => res.data);
@@ -140,7 +152,7 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     updateDashboard: function updateDashboard(params) {
       return client.post('/Dashboard/updateDashboard', params).then(res => res.data);
     }
-  }
+  };
   exports.ChatThread = {
     createChatMessage: function createChatMessage(params) {
       return client.post('/ChatThread/createChatMessage', params).then(res => res.data);
@@ -161,14 +173,17 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
   exports.Model = {
-    createChart: function (params) {
+    createChart: function(params) {
       return client.post('/Model/createChart', params).then(res => res.data);
     },
     createDocument: function(params) {
       return client.post('/Model/createDocument', params).then(res => res.data);
     },
-    deleteDocument: function (params) {
+    deleteDocument: function(params) {
       return client.post('/Model/deleteDocument', params).then(res => res.data);
+    },
+    deleteDocuments: function(params) {
+      return client.post('/Model/deleteDocuments', params).then(res => res.data);
     },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
@@ -176,8 +191,8 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + new URLSearchParams(params).toString(), {
         method: 'GET',
         headers: {
-          'Authorization': `${accessToken}`, // Set your authorization token here
-          'Accept': 'text/csv'
+          Authorization: `${accessToken}`, // Set your authorization token here
+          Accept: 'text/csv'
         }
       })
         .then(response => {
@@ -206,11 +221,17 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getIndexes: function getIndexes(params) {
       return client.post('/Model/getIndexes', params).then(res => res.data);
     },
+    dropIndex: function dropIndex(params) {
+      return client.post('/Model/dropIndex', params).then(res => res.data);
+    },
     listModels: function listModels() {
       return client.post('/Model/listModels', {}).then(res => res.data);
     },
     updateDocument: function updateDocument(params) {
       return client.post('/Model/updateDocument', params).then(res => res.data);
+    },
+    updateDocuments: function updateDocument(params) {
+      return client.post('/Model/updateDocuments', params).then(res => res.data);
     }
   };
   exports.Task = {

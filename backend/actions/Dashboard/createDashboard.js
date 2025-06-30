@@ -1,5 +1,7 @@
 'use strict';
+
 const Archetype = require('archetype');
+const authorize = require('../../authorize');
 
 const CreateDashboardParams = new Archetype({
   title: {
@@ -9,12 +11,17 @@ const CreateDashboardParams = new Archetype({
   code: {
     $type: 'string',
     $required: true
+  },
+  roles: {
+    $type: ['string']
   }
 }).compile('CreateDashboardParams');
 
 module.exports = ({ db }) => async function createDashboard(params) {
-  const { title, code } = new CreateDashboardParams(params);
+  const { title, code, roles } = new CreateDashboardParams(params);
   const Dashboard = db.model('__Studio_Dashboard');
+
+  await authorize('Dashboard.createDashboard', roles);
 
   const dashboard = await Dashboard.create({ title, code });
 

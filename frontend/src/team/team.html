@@ -87,7 +87,8 @@
         <button
           type="button"
           @click="showNewInvitationModal = true"
-          :disabled="status === 'loading' || (workspace && !workspace.subscriptionTier)"
+          :disabled="status === 'loading'"
+          :tier="workspace?.subscriptionTier"
           class="block rounded-md bg-ultramarine-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 disabled:bg-gray-500 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
           New Invitation
           <svg class="inline w-4 h-4 ml-1" v-if="workspace && !workspace.subscriptionTier" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">

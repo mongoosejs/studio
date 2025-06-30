@@ -67,13 +67,17 @@ app.component('app-component', {
     window.state = this;
 
     if (mothership.hasAPIKey) {
-      const href = window.location.href;
-      if (href.match(/\?code=([a-zA-Z0-9]+)$/)) {
-        const code = href.match(/\?code=([a-zA-Z0-9]+)$/)[1];
+      const hash = window.location.hash.replace(/^#?\/?\??/, '') || '';
+      const hashQuery = hash.split('?')[1] || '';
+      const hashParams = new URLSearchParams(hashQuery);
+      if (hashParams.has('code')) {
+        const code = hashParams.get('code');
+        const provider = hashParams.get('provider');
         try {
-          const { accessToken, user, roles } = await mothership.github(code);
+          const { accessToken, user, roles } = provider === 'github' ? await mothership.github(code) : await mothership.google(code);
           if (roles == null) {
             this.authError = 'You are not authorized to access this workspace';
+            this.status = 'loaded';
             return;
           }
           this.user = user;

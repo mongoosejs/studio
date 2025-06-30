@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const authorize = require('../../authorize');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
 const mongoose = require('mongoose');
 
@@ -17,6 +18,9 @@ const CreateChatMessageParams = new Archetype({
   authorization: {
     $type: 'string',
     $required: true
+  },
+  roles: {
+    $type: ['string']
   }
 }).compile('CreateChatMessageParams');
 
@@ -55,10 +59,12 @@ return { numUsers: users.length };
 Here is a description of the user's models. Assume these are the only models available in the system unless explicitly instructed otherwise by the user.
 `.trim();
 
-module.exports = ({ db }) => async function createChatMessage(params) {
-  const { chatThreadId, userId, content, script, authorization } = new CreateChatMessageParams(params);
-  const ChatThread = db.model('__Studio_ChatThread');
-  const ChatMessage = db.model('__Studio_ChatMessage');
+module.exports = ({ db, studioConnection, options }) => async function createChatMessage(params) {
+  const { chatThreadId, userId, content, script, authorization, roles } = new CreateChatMessageParams(params);
+  const ChatThread = studioConnection.model('__Studio_ChatThread');
+  const ChatMessage = studioConnection.model('__Studio_ChatMessage');
+
+  await authorize('ChatThread.createChatMessage', roles);
 
   // Check that the user owns the thread
   const chatThread = await ChatThread.findOne({ _id: chatThreadId });
@@ -91,6 +97,12 @@ module.exports = ({ db }) => async function createChatMessage(params) {
     role: 'system',
     content: systemPrompt + getModelDescriptions(db)
   });
+  if (options.context) {
+    llmMessages.unshift({
+      role: 'system',
+      content: options.context
+    });
+  }
 
   // Create the chat message and get OpenAI response in parallel
   const chatMessages = await Promise.all([
@@ -111,7 +123,7 @@ module.exports = ({ db }) => async function createChatMessage(params) {
     })
   ]);
 
-  return { chatMessages };
+  return { chatMessages, chatThread };
 };
 
 async function getChatCompletion(messages, authorization) {

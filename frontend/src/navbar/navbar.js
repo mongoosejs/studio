@@ -3,7 +3,7 @@
 const api = require('../api');
 const mothership = require('../mothership');
 const template = require('./navbar.html');
-const  { routes, hasAccess } = require('../routes');
+const { routes, hasAccess } = require('../routes');
 
 const appendCSS = require('../appendCSS');
 
@@ -22,10 +22,26 @@ module.exports = app => app.component('navbar', {
         this.$router.push({ name: firstAllowedRoute.name });
       }
     }
+
+    const mobileMenuMask = document.querySelector('#mobile-menu-mask');
+    const mobileMenu = document.querySelector('#mobile-menu');
+
+    document.querySelector('#open-mobile-menu').addEventListener('click', (event) => {
+      event.stopPropagation();
+      mobileMenuMask.style.display = 'block';
+      mobileMenu.classList.remove('translate-x-full');
+      mobileMenu.classList.add('translate-x-0');
+    });
+
+    document.querySelector('body').addEventListener('click', () => {
+      mobileMenuMask.style.display = 'none';
+      mobileMenu.classList.remove('translate-x-0');
+      mobileMenu.classList.add('translate-x-full');
+    });
   },
   computed: {
     dashboardView() {
-      return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name)
+      return routes.filter(x => x.name.startsWith('dashboard')).map(x => x.name).includes(this.$route.name);
     },
     documentView() {
       return ['root', 'model', 'document'].includes(this.$route.name);
@@ -75,7 +91,7 @@ module.exports = app => app.component('navbar', {
     logout() {
       window.localStorage.setItem('_mongooseStudioAccessToken', '');
       window.location.reload();
-    },
+    }
   },
   directives: {
     clickOutside: {

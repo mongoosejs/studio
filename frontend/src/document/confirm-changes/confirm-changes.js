@@ -12,10 +12,10 @@ module.exports = app => app.component('confirm-changes', {
   },
   methods: {
     closeConfirm() {
-        this.$emit('close')
+      this.$emit('close');
     },
     startSave() {
-        this.$emit('save');
+      this.$emit('save');
     }
   },
   mounted() {

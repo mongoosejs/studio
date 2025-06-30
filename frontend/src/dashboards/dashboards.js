@@ -31,5 +31,5 @@ module.exports = app => app.component('dashboards', {
     const { dashboards } = await api.Dashboard.getDashboards();
     this.dashboards = dashboards;
     this.status = 'loaded';
-  },
+  }
 });

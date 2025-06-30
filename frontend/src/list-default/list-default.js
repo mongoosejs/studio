@@ -13,7 +13,7 @@ module.exports = app => app.component('list-default', {
     copyText(value) {
       const storage = document.createElement('textarea');
       storage.value = value;
-      const elem = this.$refs.itemData
+      const elem = this.$refs.itemData;
       elem.appendChild(storage);
       storage.select();
       storage.setSelectionRange(0, 99999);
@@ -28,7 +28,7 @@ module.exports = app => app.component('list-default', {
       });
     },
     goToDoc(id) {
-      this.$router.push({ path: `/model/${this.allude}/document/${id}`});
+      this.$router.push({ path: `/model/${this.allude}/document/${id}` });
     }
   },
   computed: {
@@ -40,7 +40,7 @@ module.exports = app => app.component('list-default', {
         return 'undefined';
       }
       if (this.value.length > 30) {
-        return this.value.substring(0,30) + '...';
+        return this.value.substring(0, 30) + '...';
       }
       return this.value;
     },

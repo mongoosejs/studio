@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const mongoose = require('mongoose');
 const { stringify } = require('csv-stringify/sync');
+const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
   model: {
@@ -21,13 +22,18 @@ const GetDocumentsParams = new Archetype({
       }
       return v;
     }
+  },
+  roles: {
+    $type: ['string']
   }
 }).compile('GetDocumentsParams');
 
 module.exports = ({ db }) => async function exportQueryResults(params, req, res) {
   params = new GetDocumentsParams(params);
   let { filter } = params;
-  const { model, propertiesToInclude } = params;
+  const { model, propertiesToInclude, roles } = params;
+
+  await authorize('Model.exportQueryResults', roles);
 
   const Model = db.models[model];
   if (Model == null) {
@@ -60,7 +66,7 @@ module.exports = ({ db }) => async function exportQueryResults(params, req, res)
 
   res.set({
     'Content-Type': 'text/csv',
-    'Content-Disposition': `attachment; filename="${model.toLowerCase()}-export.csv"`,
+    'Content-Disposition': `attachment; filename="${model.toLowerCase()}-export.csv"`
   });
   return csv;
 };

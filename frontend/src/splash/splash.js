@@ -17,6 +17,10 @@ module.exports = app => app.component('splash', {
     async loginWithGithub() {
       const { url } = await mothership.githubLogin();
       window.location.href = url;
+    },
+    async loginWithGoogle() {
+      const { url } = await mothership.googleLogin();
+      window.location.href = url;
     }
   }
 });

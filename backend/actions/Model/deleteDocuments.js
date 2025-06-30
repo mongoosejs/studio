@@ -3,36 +3,36 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 
-const DeleteDocumentParams = new Archetype({
+const DeleteDocumentsParams = new Archetype({
   model: {
     $type: 'string',
     $required: true
   },
-  documentId: {
+  documentIds: {
     $type: 'string',
     $required: true
   },
   roles: {
     $type: ['string']
   }
-}).compile('DeleteDocumentParams');
+}).compile('DeleteDocumentsParams');
 
-module.exports = ({ db }) => async function DeleteDocument(params) {
-  const { model, documentId, roles } = new DeleteDocumentParams(params);
+module.exports = ({ db }) => async function DeleteDocuments(params) {
+  const { model, documentIds, roles } = new DeleteDocumentsParams(params);
 
   const Model = db.models[model];
 
-  await authorize('Model.deleteDocument', roles);
+  await authorize('Model.deleteDocuments', roles);
 
   if (Model == null) {
     throw new Error(`Model ${model} not found`);
   }
 
-  const doc = await Model.
-    deleteOne({ _id: documentId }).
+  await Model.
+    deleteMany({ _id: { $in: documentIds } }).
     setOptions({ sanitizeFilter: true }).
     orFail();
-  console.log('what is doc', doc);
 
-  return { doc };
+
+  return { };
 };

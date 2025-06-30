@@ -1,13 +1,13 @@
-<div class="navbar">
-  <div class="nav-left flex items-center gap-4 h-full">
+<div class="navbar w-full bg-gray-50 flex justify-between border-b border-gray-200 !h-[55px]">
+  <div class="flex items-center gap-4 h-full pl-4">
     <router-link :to="{ name: defaultRoute }">
-      <img src="images/logo.svg" alt="Mongoose Studio Logo" />
+      <img src="images/logo.svg" class="h-[32px] mr-1" alt="Mongoose Studio Logo" />
     </router-link>
     <div v-if="!!state.nodeEnv" class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium text-gray-900" :class="warnEnv ? 'bg-red-300' : 'bg-yellow-300'">
       {{state.nodeEnv}}
     </div>
   </div>
-  <div class="nav-right h-full">
+  <div class="h-full pr-4 hidden md:block">
     <div class="sm:ml-6 sm:flex sm:space-x-8 h-full">
       <a v-if="hasAccess(roles, 'root')"
         href="#/"
@@ -51,5 +51,62 @@
 
     </div>
   </div>
-  <div style="clear: both"></div>
+  <div class="md:hidden flex items-center">
+    <!-- Mobile menu toggle, controls the 'mobileMenuOpen' state. -->
+    <button type="button" id="open-mobile-menu" class="-ml-2 rounded-md p-2 pr-4 text-gray-400">
+      <span class="sr-only">Open menu</span>
+      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mobile menu mask -->
+  <div id="mobile-menu-mask" class="fixed inset-0 bg-black bg-opacity-40 z-40 hidden"></div>
+  <!-- Mobile menu drawer -->
+  <div id="mobile-menu" class="fixed inset-0 bg-white shadow-lg z-50 transform translate-x-full transition-transform duration-200 ease-in-out flex flex-col">
+    <div class="flex items-center justify-between px-4 !h-[55px] border-b border-gray-200">
+      <router-link :to="{ name: defaultRoute }">
+        <img src="images/logo.svg" class="h-[32px]" alt="Mongoose Studio Logo" />
+      </router-link>
+      <button type="button" id="close-mobile-menu" class="text-gray-400 p-2 rounded-md">
+        <span class="sr-only">Close menu</span>
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <nav class="flex-1 px-4 py-4 space-y-2">
+      <a v-if="hasAccess(roles, 'root')"
+        href="#/"
+        class="block px-3 py-2 rounded-md text-base font-medium"
+        :class="documentView ? 'text-ultramarine-700 bg-ultramarine-100' : 'text-gray-700 hover:bg-gray-100'">Documents</a>
+      <a v-if="hasAccess(roles, 'dashboards')"
+        href="#/dashboards"
+        class="block px-3 py-2 rounded-md text-base font-medium"
+        :class="dashboardView ? 'text-ultramarine-700 bg-ultramarine-100' : 'text-gray-700 hover:bg-gray-100'">Dashboards</a>
+      <a v-if="hasAccess(roles, 'chat')"
+        href="#/chat"
+        class="block px-3 py-2 rounded-md text-base font-medium"
+        :class="chatView ? 'text-ultramarine-700 bg-ultramarine-100' : 'text-gray-700 hover:bg-gray-100'">Chat</a>
+      <div v-if="!user && hasAPIKey" class="mt-4">
+        <button
+          type="button"
+          @click="loginWithGithub"
+          class="w-full rounded bg-ultramarine-600 px-3 py-2 text-base font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
+            Login
+        </button>
+      </div>
+      <div v-if="user && hasAPIKey" class="mt-4">
+        <div class="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-md">
+          <img class="size-8 rounded-full" :src="user.picture" alt="">
+          <span class="text-gray-900 font-medium">{{ user.name }}</span>
+        </div>
+        <div class="mt-2 space-y-1">
+          <router-link to="/team" v-if="hasAccess(roles, 'team')" class="block px-3 py-2 rounded-md text-base text-gray-700 hover:bg-ultramarine-100">Team</router-link>
+          <span @click="logout" class="block px-3 py-2 rounded-md text-base text-gray-700 hover:bg-ultramarine-100 cursor-pointer">Sign out</span>
+        </div>
+      </div>
+    </nav>
+  </div>
 </div>

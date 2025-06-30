@@ -1,7 +1,7 @@
 'use strict';
 
 const mpath = require('mpath');
-const template = require('./document-details.html')
+const template = require('./document-details.html');
 
 const appendCSS = require('../appendCSS');
 
@@ -28,6 +28,6 @@ module.exports = app => app.component('document-details', {
       }
 
       return result;
-    },
+    }
   }
-})
+});

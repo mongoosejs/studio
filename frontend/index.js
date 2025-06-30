@@ -14,7 +14,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
       method: 'POST',
       body: JSON.stringify({ apiKey: options.apiKey }),
       headers: {
-        'Authorization': `Bearer ${options.apiKey}`,
+        Authorization: `Bearer ${options.apiKey}`,
         'Content-Type': 'application/json'
       }
     })

@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const vm = require('vm');
+const authorize = require('../../authorize');
 
 const GetDashboardParams = new Archetype({
   dashboardId: {
@@ -10,12 +11,17 @@ const GetDashboardParams = new Archetype({
   },
   evaluate: {
     $type: 'boolean'
+  },
+  roles: {
+    $type: ['string']
   }
 }).compile('GetDashboardParams');
 
 module.exports = ({ db }) => async function getDashboard(params) {
-  const { dashboardId, evaluate } = new GetDashboardParams(params);
+  const { dashboardId, evaluate, roles } = new GetDashboardParams(params);
   const Dashboard = db.model('__Studio_Dashboard');
+
+  await authorize('Dashboard.getDashboard', roles);
 
   const dashboard = await Dashboard.findOne({ _id: dashboardId });
   if (evaluate) {
@@ -25,7 +31,7 @@ module.exports = ({ db }) => async function getDashboard(params) {
     } catch (error) {
       return { dashboard, error: { message: error.message } };
     }
-    
+
     return { dashboard, result };
   }
 

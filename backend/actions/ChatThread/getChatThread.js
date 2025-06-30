@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const authorize = require('../../authorize');
 const mongoose = require('mongoose');
 
 const GetChatThreadParams = new Archetype({
@@ -9,20 +10,25 @@ const GetChatThreadParams = new Archetype({
   },
   userId: {
     $type: mongoose.Types.ObjectId
+  },
+  roles: {
+    $type: ['string']
   }
 }).compile('GetChatThreadParams');
 
-module.exports = ({ db }) => async function getChatThread(params) {
-  const { chatThreadId, userId } = new GetChatThreadParams(params);
-  const ChatThread = db.model('__Studio_ChatThread');
-  const ChatMessage = db.model('__Studio_ChatMessage');
+module.exports = ({ db, studioConnection }) => async function getChatThread(params) {
+  const { chatThreadId, userId, roles } = new GetChatThreadParams(params);
+  const ChatThread = studioConnection.model('__Studio_ChatThread');
+  const ChatMessage = studioConnection.model('__Studio_ChatMessage');
+
+  await authorize('ChatThread.getChatThread', roles);
 
   const chatThread = await ChatThread.findById(chatThreadId);
 
   if (!chatThread) {
     throw new Error('Chat thread not found');
   }
-  if (userId && chatThread.userId.toString() !== userId.toString()) {
+  if (userId && chatThread.userId?.toString() !== userId.toString()) {
     throw new Error('Not authorized');
   }
 
