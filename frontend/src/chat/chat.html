@@ -58,7 +58,7 @@
 
     <!-- Input Area -->
     <div class="border-t p-4">
-      <form @submit.prevent="sendMessage" :disabled="sendingMessage" class="flex gap-2">
+      <form @submit.prevent="sendMessage" :disabled="sendingMessage" class="flex gap-2 items-end justify-end">
         <textarea
           v-model="newMessage"
           placeholder="Ask something..."
@@ -68,7 +68,7 @@
           @input="adjustTextareaHeight"
           @keydown.enter.exact.prevent="handleEnter"
         ></textarea>
-        <button class="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-600" :disabled="sendingMessage">
+        <button class="bg-blue-600 text-white px-4 h-[42px] rounded disabled:bg-gray-600" :disabled="sendingMessage">
           <svg v-if="sendingMessage" style="height: 1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <g>
               <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3" />
