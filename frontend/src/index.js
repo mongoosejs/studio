@@ -6,6 +6,7 @@ if (typeof process === 'undefined') {
 
 const api = require('./api');
 const mothership = require('./mothership');
+const { routes } = require('./routes');
 const vanillatoasts = require('vanillatoasts');
 
 const app = Vue.createApp({
@@ -67,7 +68,7 @@ app.component('app-component', {
     window.state = this;
 
     if (mothership.hasAPIKey) {
-      const hash = window.location.hash.replace(/^#?\/?\??/, '') || '';
+      const hash = window.location.hash.replace(/^#?\/?/, '') || '';
       const hashQuery = hash.split('?')[1] || '';
       const hashParams = new URLSearchParams(hashQuery);
       if (hashParams.has('code')) {
@@ -110,6 +111,7 @@ app.component('app-component', {
       const { nodeEnv } = await api.status();
       this.nodeEnv = nodeEnv;
     }
+
     this.status = 'loaded';
   },
   setup() {
@@ -126,7 +128,6 @@ app.component('app-component', {
   }
 });
 
-const { routes } = require('./routes');
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
   routes: routes.map(route => ({
@@ -134,6 +135,14 @@ const router = VueRouter.createRouter({
     component: app.component(route.component),
     props: (route) => route.params
   }))
+});
+
+router.beforeEach((to, from, next) => {
+  if (to.name === 'root' && window.state.roles && window.state.roles[0] === 'dashboards') {
+    return next({ name: 'dashboards' });
+  } else {
+    next();
+  }
 });
 
 app.use(router);
