@@ -3,7 +3,7 @@
     <router-link :to="{ name: defaultRoute }">
       <img src="images/logo.svg" class="h-[32px] mr-1" alt="Mongoose Studio Logo" />
     </router-link>
-    <div v-if="!!state.nodeEnv" class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium text-gray-900" :class="warnEnv ? 'bg-red-300' : 'bg-yellow-300'">
+    <div v-if="!!state.nodeEnv" title="NODE_ENV" class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium text-gray-900" :class="warnEnv ? 'bg-red-300' : 'bg-yellow-300'">
       {{state.nodeEnv}}
     </div>
   </div>

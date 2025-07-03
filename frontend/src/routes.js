@@ -9,7 +9,7 @@ const roleAccess = {
   dashboards: ['dashboards', 'dashboard']
 };
 
-const allowedRoutesForLocalDev = ['document', 'root'];
+const allowedRoutesForLocalDev = ['document', 'root', 'chat'];
 
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {

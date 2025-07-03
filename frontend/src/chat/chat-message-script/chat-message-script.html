@@ -37,9 +37,9 @@
     </div>
   </div>
 
-  <pre class="p-3 whitespace-pre-wrap max-h-[30vh] max-w-[calc(100vw-4rem)] overflow-y-auto" v-show="activeTab === 'code'"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
+  <pre class="p-3 whitespace-pre-wrap max-h-[50vh] max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] overflow-y-auto" v-show="activeTab === 'code'"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
 
-  <div class="p-3 whitespace-pre-wrap max-h-[30vh] overflow-y-auto bg-white border-t max-w-[calc(100vw-4rem)] relative" v-show="activeTab === 'output'">
+  <div class="p-3 whitespace-pre-wrap max-h-[50vh] overflow-y-auto bg-white border-t max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] relative" v-show="activeTab === 'output'">
     <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" />
     <pre v-else>{{ message.executionResult?.output || 'No output' }}</pre>
   </div>
