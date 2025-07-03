@@ -139,7 +139,7 @@ const router = VueRouter.createRouter({
 
 router.beforeEach((to, from, next) => {
   if (to.name === 'root' && window.state.roles && window.state.roles[0] === 'dashboards') {
-    return next('dashboards');
+    return next({ name: 'dashboards' });
   } else {
     next();
   }
