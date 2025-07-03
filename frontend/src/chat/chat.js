@@ -44,6 +44,11 @@ module.exports = app => app.component('chat', {
         this.chatMessages.push(chatMessages[1]);
 
         this.newMessage = '';
+        this.$nextTick(() => {
+          if (this.$refs.messageInput) {
+            this.$refs.messageInput.style.height = 'auto';
+          }
+        });
 
         this.$nextTick(() => {
           if (this.$refs.messagesContainer) {
@@ -53,6 +58,18 @@ module.exports = app => app.component('chat', {
       } finally {
         this.sendingMessage = false;
       }
+    },
+    handleEnter(ev) {
+      if (!ev.shiftKey) {
+        this.sendMessage();
+      }
+    },
+    adjustTextareaHeight(ev) {
+      const textarea = ev.target;
+      textarea.style.height = 'auto';
+      const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10);
+      const maxHeight = lineHeight * 5;
+      textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
     },
     selectThread(threadId) {
       this.$router.push('/chat/' + threadId);
