@@ -4,6 +4,9 @@ if (typeof process === 'undefined') {
   global.process = { env: {} }; // To make `util` package work
 }
 
+const { version } = require('../../package.json');
+console.log(`Mongoose Studio Version ${version}`);
+
 const api = require('./api');
 const mothership = require('./mothership');
 const { routes } = require('./routes');
