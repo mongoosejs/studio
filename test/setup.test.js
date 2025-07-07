@@ -15,6 +15,11 @@ before(async function () {
   await Test.deleteMany();
 });
 
+after(async function() {
+  await connection.close();
+  await studioConnection.close();
+})
+
 const actions = Backend(connection, studioConnection);
 
 exports.actions = actions;
