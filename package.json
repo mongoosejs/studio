@@ -35,6 +35,7 @@
   "scripts": {
     "lint": "eslint .",
     "tailwind": "tailwindcss -o ./frontend/public/tw.css",
-    "tailwind:watch": "tailwindcss -o ./frontend/public/tw.css --watch"
+    "tailwind:watch": "tailwindcss -o ./frontend/public/tw.css --watch",
+    "test": "mocha test/*.test.js"
   }
 }
