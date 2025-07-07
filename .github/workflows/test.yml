@@ -24,12 +24,10 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Load MongoDB binary cache
-        id: cache-mongodb-binaries
-        uses: actions/cache@v4
+      - name: Start MongoDB server
+        uses: supercharge/mongodb-github-action@v1.10.0
         with:
-          path: ~/.cache/mongodb-binaries
-          key: ${{ matrix.os }}-${{ matrix.mongodb }}
+          mongodb-version: ${{ matrix.mongodb }}
 
       - run: npm install
       - name: NPM Test
