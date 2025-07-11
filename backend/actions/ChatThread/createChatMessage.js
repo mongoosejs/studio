@@ -103,10 +103,7 @@ async function summarizeChatThread(messages, authorization) {
     return response;
   });
 
-  return await response.json().then(res => {
-    console.log('Response', res);
-    return res;
-  });
+  return await response.json();
 }
 
 async function createChatMessageCore(messages, modelDescriptions, authorization) {
@@ -130,8 +127,5 @@ async function createChatMessageCore(messages, modelDescriptions, authorization)
     return response;
   });
 
-  return await response.json().then(res => {
-    console.log('Response', res);
-    return res;
-  });
+  return await response.json();
 }
