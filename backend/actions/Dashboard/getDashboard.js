@@ -44,7 +44,7 @@ module.exports = ({ db }) => async function getDashboard(params) {
         return;
       }
       return completeDashboardEvaluate(dashboardResult._id, $workspaceId, authorization, result);
-    })
+    });
 
     return { dashboard, result };
   }
