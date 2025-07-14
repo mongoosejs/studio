@@ -4,7 +4,7 @@ const template = require('./dashboard-chart.html');
 
 module.exports = app => app.component('dashboard-chart', {
   template: template,
-  props: ['value'],
+  props: ['value', 'responsive'],
   mounted() {
     const ctx = this.$refs.chart.getContext('2d');
     const chart = new Chart(ctx, this.value.$chart);

@@ -14,7 +14,7 @@ module.exports = app => app.component('dashboard', {
       description: '',
       showEditor: false,
       dashboard: null,
-      result: null,
+      dashboardResults: [],
       errorMessage: null
     };
   },
@@ -31,11 +31,32 @@ module.exports = app => app.component('dashboard', {
       } else {
         this.errorMessage = update.error.message;
       }
+    },
+    async evaluateDashboard() {
+      this.status = 'evaluating';
+      try {
+        const { dashboard, dashboardResult, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
+        this.dashboard = dashboard;
+        if (error) {
+          this.errorMessage = error.message;
+        }
+        this.code = this.dashboard.code;
+        this.title = this.dashboard.title;
+        this.description = this.dashboard.description ?? '';
+        this.dashboardResults.unshift(dashboardResult);
+      } finally {
+        this.status = 'loaded';
+      }
+    }
+  },
+  computed: {
+    dashboardResult() {
+      return this.dashboardResults.length > 0 ? this.dashboardResults[0] : null;
     }
   },
   mounted: async function() {
     this.showEditor = this.$route.query.edit;
-    const { dashboard, result, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: !this.showEditor });
+    const { dashboard, dashboardResults, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: false });
     if (!dashboard) {
       return;
     }
@@ -46,7 +67,7 @@ module.exports = app => app.component('dashboard', {
     this.code = this.dashboard.code;
     this.title = this.dashboard.title;
     this.description = this.dashboard.description ?? '';
-    this.result = result;
+    this.dashboardResults = dashboardResults;
     this.status = 'loaded';
   }
 });

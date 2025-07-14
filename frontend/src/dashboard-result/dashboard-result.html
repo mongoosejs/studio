@@ -15,4 +15,7 @@
       :value="result">
     </component>
   </div>
+  <div class="text-right text-sm text-gray-700 mt-1" v-if="finishedEvaluatingAt">
+    Last Evaluated: {{ format.isoToLongDateTime(finishedEvaluatingAt) }}
+  </div>
 </div>

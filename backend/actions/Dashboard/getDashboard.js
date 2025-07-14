@@ -32,24 +32,27 @@ module.exports = ({ db }) => async function getDashboard(params) {
   const dashboard = await Dashboard.findOne({ _id: dashboardId });
   if (evaluate) {
     let result = null;
-    const startExec = startDashboardExec(dashboardId, $workspaceId, authorization);
+    const startExec = startDashboardEvaluate(dashboardId, $workspaceId, authorization);
+    // Avoid unhandled promise rejection since we handle the promise later.
+    startExec.catch(() => {});
     try {
       result = await dashboard.evaluate();
     } catch (error) {
       return { dashboard, error: { message: error.message } };
     }
 
-    await startExec.then(({ dashboardResult }) => {
+    const { dashboardResult } = await startExec.then(({ dashboardResult }) => {
       if (!dashboardResult) {
         return;
       }
       return completeDashboardEvaluate(dashboardResult._id, $workspaceId, authorization, result);
     });
 
-    return { dashboard, result };
+    return { dashboard, dashboardResult };
+  } else {
+    const { dashboardResults } = await getDashboardResults(dashboardId, $workspaceId, authorization);
+    return { dashboard, dashboardResults };
   }
-
-  return { dashboard };
 };
 
 async function completeDashboardEvaluate(dashboardResultId, workspaceId, authorization, result) {
@@ -60,7 +63,7 @@ async function completeDashboardEvaluate(dashboardResultId, workspaceId, authori
   if (authorization) {
     headers.Authorization = authorization;
   }
-  const response = await fetch('http://localhost:7777/.netlify/functions/completeDashboardEvaluate', {
+  const response = await fetch('https://mongoose-js.netlify.app/.netlify/functions/completeDashboardEvaluate', {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -81,7 +84,7 @@ async function completeDashboardEvaluate(dashboardResultId, workspaceId, authori
   return await response.json();
 }
 
-async function startDashboardExec(dashboardId, workspaceId, authorization) {
+async function startDashboardEvaluate(dashboardId, workspaceId, authorization) {
   if (!workspaceId) {
     return {};
   }
@@ -89,7 +92,7 @@ async function startDashboardExec(dashboardId, workspaceId, authorization) {
   if (authorization) {
     headers.Authorization = authorization;
   }
-  const response = await fetch('http://localhost:7777/.netlify/functions/startDashboardExec', {
+  const response = await fetch('https://mongoose-js.netlify.app/.netlify/functions/startDashboardEvaluate', {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -100,7 +103,34 @@ async function startDashboardExec(dashboardId, workspaceId, authorization) {
   }).then(response => {
     if (response.status < 200 || response.status >= 400) {
       return response.json().then(data => {
-        throw new Error(`startDashboardExec error: ${data.message}`);
+        throw new Error(`startDashboardEvaluate error: ${data.message}`);
+      });
+    }
+    return response;
+  });
+
+  return await response.json();
+}
+
+async function getDashboardResults(dashboardId, workspaceId, authorization) {
+  if (!workspaceId) {
+    return {};
+  }
+  const headers = { 'Content-Type': 'application/json' };
+  if (authorization) {
+    headers.Authorization = authorization;
+  }
+  const response = await fetch('https://mongoose-js.netlify.app/.netlify/functions/getDashboardResults', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      dashboardId,
+      workspaceId
+    })
+  }).then(response => {
+    if (response.status < 200 || response.status >= 400) {
+      return response.json().then(data => {
+        throw new Error(`getDashboardResults error: ${data.message}`);
       });
     }
     return response;

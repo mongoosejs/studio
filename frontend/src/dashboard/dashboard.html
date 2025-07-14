@@ -2,20 +2,46 @@
   <div v-if="status === 'loading'" class="max-w-5xl mx-auto text-center">
     <img src="images/loader.gif" class="inline mt-10">
   </div>
-  <div v-if="dashboard && status === 'loaded'" class="max-w-5xl mx-auto">
+  <div v-if="dashboard && status !== 'loading'" class="max-w-5xl mx-auto">
     <div class="flex items-center w-full" v-if="!showEditor">
       <h2 class="mt-4 mb-4 text-gray-900 font-semibold text-xl grow shrink">{{title}}</h2>
-      <div>
+      <div class="flex gap-2">
         <button
           @click="showEditor = true"
           type="button"
-          class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
-          <img src="images/edit.svg" class="inline h-[1em]" /> Edit
+          :disabled="status === 'evaluating'"
+          class="flex items-center rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600 disabled:cursor-not-allowed disabled:bg-gray-600">
+          <img src="images/edit.svg" class="inline h-[1.25em] mr-1" /> Edit
         </button>
+
+        <async-button
+          @click="evaluateDashboard"
+          type="button"
+          :disabled="status === 'evaluating'"
+          class="flex items-center rounded-md bg-ultramarine-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600 disabled:cursor-not-allowed disabled:bg-gray-600"
+        >
+          <svg class="inline h-[1.25em] mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="m670-140 160-100-160-100v200ZM240-600h480v-80H240v80ZM720-40q-83 0-141.5-58.5T520-240q0-83 58.5-141.5T720-440q83 0 141.5 58.5T920-240q0 83-58.5 141.5T720-40ZM120-80v-680q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v267q-19-9-39-15t-41-9v-243H200v562h243q5 31 15.5 59T486-86l-6 6-60-60-60 60-60-60-60 60-60-60-60 60Zm120-200h203q3-21 9-41t15-39H240v80Zm0-160h284q38-37 88.5-58.5T720-520H240v80Zm-40 242v-562 562Z"/></svg>
+          Evaluate
+        </async-button>
       </div>
     </div>
     <div v-if="!showEditor" class="mt-4 mb-4">
-      <dashboard-result :result="result"></dashboard-result>
+      <div v-if="dashboardResults.length === 0">
+        <div class="flex flex-col items-center justify-center py-8">
+          <p class="text-gray-700 text-base mb-4">This dashboard hasn't been evaluated yet.</p>
+          <async-button
+            @click="evaluateDashboard"
+            type="button"
+            :disabled="status === 'evaluating'"
+            class="rounded-md bg-ultramarine-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600 disabled:cursor-not-allowed disabled:bg-gray-600"
+          >
+            Evaluate Dashboard
+          </async-button>
+        </div>
+      </div>
+      <div v-else>
+        <dashboard-result :result="dashboardResult.result" :finishedEvaluatingAt="dashboardResult.finishedEvaluatingAt"></dashboard-result>
+      </div>
     </div>
     <div v-if="showEditor" class="mt-4">
       <edit-dashboard
@@ -40,7 +66,7 @@
     </div>
 
   </div>
-  <div v-if="!dashboard && status === 'loaded'">
+  <div v-if="!dashboard && status !== 'loading'">
     No dashboard with the given id could be found.
   </div>
 </div>
