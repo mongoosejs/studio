@@ -1,6 +1,6 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.0.102",
+  "version": "0.0.103",
   "description": "A sleek, powerful MongoDB UI with built-in dashboarding and auth, seamlessly integrated with your Express, Vercel, or Netlify app.",
   "homepage": "https://studio.mongoosejs.io/",
   "repository": {
