@@ -5,6 +5,11 @@
       <span class="path-type">
         ({{(path.instance || 'unknown').toLowerCase()}})
       </span>
+      <router-link
+        v-if="path.ref && getValueForPath(path.path)"
+        :to="`/model/${path.ref}/document/${getValueForPath(path.path)}`"
+        class="ml-2 text-sky-600 underline"
+        >View Document</router-link>
     </div>
     <div v-if="editting && path.instance === 'Date'" class="flex gap-1.5">
       <div
