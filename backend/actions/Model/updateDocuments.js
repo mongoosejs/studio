@@ -24,7 +24,7 @@ const UpdateDocumentsParams = new Archetype({
 module.exports = ({ db }) => async function updateDocuments(params) {
   const { model, _id, update, roles } = new UpdateDocumentsParams(params);
 
-  await authorize('Document.updateDocuments', roles);
+  await authorize('Model.updateDocuments', roles);
 
   const Model = db.models[model];
   if (Model == null) {
