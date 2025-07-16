@@ -14,7 +14,8 @@ module.exports = app => app.component('chat-message-script', {
       showCreateDashboardModal: false,
       newDashboardTitle: '',
       dashboardCode: '',
-      createErrors: []
+      createErrors: [],
+      dashboardEditor: null
     };
   },
   computed: {
@@ -39,8 +40,22 @@ module.exports = app => app.component('chat-message-script', {
       this.dashboardCode = this.script;
       this.createErrors = [];
       this.showCreateDashboardModal = true;
+      this.$nextTick(() => {
+        if (this.dashboardEditor) {
+          this.dashboardEditor.toTextArea();
+        }
+        this.$refs.dashboardCodeEditor.value = this.dashboardCode;
+        this.dashboardEditor = CodeMirror.fromTextArea(this.$refs.dashboardCodeEditor, {
+          mode: 'javascript',
+          lineNumbers: true
+        });
+        this.dashboardEditor.on('change', () => {
+          this.dashboardCode = this.dashboardEditor.getValue();
+        });
+      });
     },
     async createDashboardFromScript() {
+      this.dashboardCode = this.dashboardEditor.getValue();
       const { dashboard } = await api.Dashboard.createDashboard({
         code: this.dashboardCode,
         title: this.newDashboardTitle
@@ -68,6 +83,14 @@ module.exports = app => app.component('chat-message-script', {
         icon: 'images/success.png',
         positionClass: 'bottomRight'
       });
+    }
+  },
+  watch: {
+    showCreateDashboardModal(val) {
+      if (!val && this.dashboardEditor) {
+        this.dashboardEditor.toTextArea();
+        this.dashboardEditor = null;
+      }
     }
   },
   mounted() {
