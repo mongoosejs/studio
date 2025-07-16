@@ -70,7 +70,7 @@ module.exports = app => app.component('chat-message-script', {
         }
         throw err;
       });
-      this.createErrors.length = 0;
+      this.createErrors = [];
       this.showCreateDashboardModal = false;
       this.$router.push('/dashboard/' + dashboard._id);
     },
