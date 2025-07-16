@@ -93,7 +93,7 @@
               <h3 class="text-sm font-medium text-red-800">There were {{createErrors.length}} errors with your submission</h3>
               <div class="mt-2 text-sm text-red-700">
                 <ul role="list" class="list-disc space-y-1 pl-5">
-                  <li v-for="error in createErrors">{{error}}</li>
+                  <li v-for="(error, index) in createErrors" :key="index">{{error}}</li>
                 </ul>
               </div>
             </div>
