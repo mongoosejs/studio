@@ -14,7 +14,7 @@ module.exports = app => app.component('chat-message-script', {
       showCreateDashboardModal: false,
       newDashboardTitle: '',
       dashboardCode: '',
-      createErrors: [],
+      createError: null,
       dashboardEditor: null
     };
   },
@@ -61,16 +61,13 @@ module.exports = app => app.component('chat-message-script', {
         title: this.newDashboardTitle
       }).catch(err => {
         if (err.response?.data?.message) {
-          console.log(err.response.data);
           const message = err.response.data.message.split(': ').slice(1).join(': ');
-          this.createErrors = message.split(',').map(error => {
-            return error.split(': ').slice(1).join(': ').trim();
-          });
+          this.createError = message;
           throw new Error(err.response?.data?.message);
         }
         throw err;
       });
-      this.createErrors.length = 0;
+      this.createError = null;
       this.showCreateDashboardModal = false;
       this.$router.push('/dashboard/' + dashboard._id);
     },
