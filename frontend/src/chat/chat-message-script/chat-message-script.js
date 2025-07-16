@@ -7,7 +7,16 @@ const vanillatoasts = require('vanillatoasts');
 module.exports = app => app.component('chat-message-script', {
   template,
   props: ['message', 'script', 'language'],
-  data: () => ({ activeTab: 'code', showDetailModal: false }),
+  data() {
+    return {
+      activeTab: 'code',
+      showDetailModal: false,
+      showCreateDashboardModal: false,
+      newDashboardTitle: '',
+      dashboardCode: '',
+      createErrors: []
+    };
+  },
   computed: {
     styleForMessage() {
       return this.message.role === 'user' ? 'bg-gray-100' : '';
@@ -24,6 +33,31 @@ module.exports = app => app.component('chat-message-script', {
     },
     openDetailModal() {
       this.showDetailModal = true;
+    },
+    openCreateDashboardModal() {
+      this.newDashboardTitle = '';
+      this.dashboardCode = this.script;
+      this.createErrors = [];
+      this.showCreateDashboardModal = true;
+    },
+    async createDashboardFromScript() {
+      const { dashboard } = await api.Dashboard.createDashboard({
+        code: this.dashboardCode,
+        title: this.newDashboardTitle
+      }).catch(err => {
+        if (err.response?.data?.message) {
+          console.log(err.response.data);
+          const message = err.response.data.message.split(': ').slice(1).join(': ');
+          this.createErrors = message.split(',').map(error => {
+            return error.split(': ').slice(1).join(': ').trim();
+          });
+          throw new Error(err.response?.data?.message);
+        }
+        throw err;
+      });
+      this.createErrors.length = 0;
+      this.showCreateDashboardModal = false;
+      this.$router.push('/dashboard/' + dashboard._id);
     },
     async copyOutput() {
       await navigator.clipboard.writeText(this.message.executionResult.output);
