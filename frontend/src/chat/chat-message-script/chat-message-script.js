@@ -59,7 +59,8 @@ module.exports = app => app.component('chat-message-script', {
       this.showDropdown = !this.showDropdown;
     },
     handleBodyClick(event) {
-      if (this.$refs.dropdown && !this.$refs.dropdown.contains(event.target)) {
+      const dropdown = this.$refs.dropdown;
+      if (dropdown && typeof dropdown.contains === 'function' && !dropdown.contains(event.target)) {
         this.showDropdown = false;
       }
     },
