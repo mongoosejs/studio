@@ -102,7 +102,9 @@ module.exports = app => app.component('chat-message-script', {
   },
   mounted() {
     Prism.highlightElement(this.$refs.code);
-    document.body.addEventListener('click', this.handleBodyClick);
+    this.$nextTick(() => {
+      document.body.addEventListener('click', this.handleBodyClick);
+    });
     if (this.message.executionResult?.output) {
       this.activeTab = 'output';
     }
