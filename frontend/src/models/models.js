@@ -251,13 +251,14 @@ module.exports = app => app.component('models', {
       this.selectedPaths = [...this.schemaPaths];
     },
     async loadMoreDocuments() {
-      const { docs } = await api.Model.getDocuments({
+      const { docs, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
         filter: this.filter,
         sort: this.sortBy,
         limit
       });
       this.documents = docs;
+      this.numDocuments = numDocs;
       if (docs.length < limit) {
         this.loadedAllDocs = true;
       }
