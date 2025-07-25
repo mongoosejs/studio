@@ -40,7 +40,11 @@
         </div>
       </div>
       <div v-else>
-        <dashboard-result :result="dashboardResult.result" :finishedEvaluatingAt="dashboardResult.finishedEvaluatingAt"></dashboard-result>
+        <dashboard-result
+          :key="dashboardResult.finishedEvaluatingAt"
+          :result="dashboardResult.result"
+          :finishedEvaluatingAt="dashboardResult.finishedEvaluatingAt">
+        </dashboard-result>
       </div>
     </div>
     <div v-if="showEditor" class="mt-4">
