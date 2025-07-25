@@ -12,6 +12,7 @@ module.exports = app => app.component('chat-message-script', {
       activeTab: 'code',
       showDetailModal: false,
       showCreateDashboardModal: false,
+      showDropdown: false,
       newDashboardTitle: '',
       dashboardCode: '',
       createError: null,
@@ -54,6 +55,15 @@ module.exports = app => app.component('chat-message-script', {
         });
       });
     },
+    toggleDropdown() {
+      this.showDropdown = !this.showDropdown;
+    },
+    handleBodyClick(event) {
+      const dropdown = this.$refs.dropdown;
+      if (dropdown && typeof dropdown.contains === 'function' && !dropdown.contains(event.target)) {
+        this.showDropdown = false;
+      }
+    },
     async createDashboardFromScript() {
       this.dashboardCode = this.dashboardEditor.getValue();
       const { dashboard } = await api.Dashboard.createDashboard({
@@ -92,8 +102,14 @@ module.exports = app => app.component('chat-message-script', {
   },
   mounted() {
     Prism.highlightElement(this.$refs.code);
+    this.$nextTick(() => {
+      document.body.addEventListener('click', this.handleBodyClick);
+    });
     if (this.message.executionResult?.output) {
       this.activeTab = 'output';
     }
+  },
+  unmounted() {
+    document.body.removeEventListener('click', this.handleBodyClick);
   }
 });
