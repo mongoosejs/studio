@@ -52,7 +52,8 @@ module.exports = app => app.component('models', {
     query: {},
     scrollHeight: 0,
     interval: null,
-    outputType: 'table' // json, table
+    outputType: 'table', // json, table
+    hideSidebar: null
   }),
   created() {
     this.currentModel = this.model;
