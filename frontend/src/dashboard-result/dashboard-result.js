@@ -24,6 +24,9 @@ module.exports = app => app.component('dashboard-result', {
       if (value.$document) {
         return 'dashboard-document';
       }
+      if (value.$featureCollection) {
+        return 'dashboard-map';
+      }
       if (value.$text) {
         return 'dashboard-text';
       }
