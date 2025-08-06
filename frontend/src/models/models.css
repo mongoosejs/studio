@@ -95,7 +95,13 @@ td {
   z-index: 1;
   padding: 4px;
   display: flex;
-  width: calc(100vw - 12rem);
+  width: 100vw;
+}
+
+@media (min-width: 1024px) {
+  .models .documents-menu {
+    width: calc(100vw - 12rem);
+  }
 }
 
 .models .documents-menu .search-input {
