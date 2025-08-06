@@ -1,28 +1,35 @@
-<div class="models">
-  <div>
-    <div class="flex grow flex-col gap-y-5 overflow-auto border-r border-gray-200 bg-white px-2 h-[calc(100vh-55px)] w-48">
-      <div class="flex font-bold font-xl mt-4 pl-2">
-        Models
-      </div>
-      <nav class="flex flex-1 flex-col">
-        <ul role="list" class="flex flex-1 flex-col gap-y-7">
-          <li>
-            <ul role="list">
-              <li v-for="model in models">
-                <router-link
-                  :to="'/model/' + model"
-                  class="block truncate rounded-md py-2 pr-2 pl-2 text-sm font-semibold text-gray-700"
-                  :class="model === currentModel ? 'bg-ultramarine-100 font-bold' : 'hover:bg-ultramarine-100'">
-                  {{model}}
-                </router-link>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </nav>
-    </div>
-
+<div class="models flex" style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
+  <div class="fixed top-[65px] cursor-pointer bg-gray-100 rounded-r-md z-10" @click="hideSidebar = false">
+    <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" class="w-5" fill="#5f6368"><path d="M360-120v-720h80v720h-80Zm160-160v-400l200 200-200 200Z"/></svg>
   </div>
+  <aside class="bg-white border-r overflow-y-auto overflow-x-hidden h-full transition-all duration-300 ease-in-out z-20 w-0 lg:w-48 fixed lg:relative" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-48' : ''">
+    <div class="flex items-center border-b border-gray-100 w-48 overflow-x-hidden">
+      <div class="p-4 font-bold text-lg">Models</div>
+      <button
+        @click="hideSidebar = true"
+        class="ml-auto mr-2 p-2 rounded hover:bg-gray-200 focus:outline-none"
+        aria-label="Close sidebar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" class="w-5" fill="currentColor"><path d="M660-320v-320L500-480l160 160ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm120-80v-560H200v560h120Zm80 0h360v-560H400v560Zm-80 0H200h120Z"/></svg>
+      </button>
+    </div>
+    <nav class="flex flex-1 flex-col">
+      <ul role="list" class="flex flex-1 flex-col gap-y-7">
+        <li>
+          <ul role="list">
+            <li v-for="model in models">
+              <router-link
+                :to="'/model/' + model"
+                class="block truncate rounded-md py-2 pr-2 pl-2 text-sm font-semibold text-gray-700"
+                :class="model === currentModel ? 'bg-ultramarine-100 font-bold' : 'hover:bg-ultramarine-100'">
+                {{model}}
+              </router-link>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </aside>
   <div class="documents" ref="documentsList">
     <div class="relative h-[42px]">
       <div class="documents-menu">
