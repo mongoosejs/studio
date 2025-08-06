@@ -1,10 +1,10 @@
 <div>
   <div v-if="Array.isArray(result)">
-    <div v-for="el in result">
+    <div v-for="el in result" :key="el._id || el.finishedEvaluatingAt">
       <component
         class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl"
-        :is="getComponentForValue(res)"
-        :value="res">
+        :is="getComponentForValue(el)"
+        :value="el">
       </component>
     </div>
   </div>
