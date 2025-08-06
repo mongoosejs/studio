@@ -23,7 +23,7 @@ describe('Model.getDocuments() sort', function() {
     assert.strictEqual(res.docs.length, 3);
     // Expect docs sorted by age ascending and _id descending
     const ids = docs.map(d => d._id.toString()).sort().reverse();
-    const resIds = res.docs.map(d => d._id);
+    const resIds = res.docs.map(d => d._id.toString());
     assert.deepStrictEqual(resIds, ids);
   });
 });
