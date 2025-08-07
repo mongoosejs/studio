@@ -70,7 +70,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
       script,
       executionResult: null
     }),
-    createChatMessageCore(llmMessages, getModelDescriptions(db), authorization).then(res => {
+    createChatMessageCore(llmMessages, getModelDescriptions(db), options?.model, authorization).then(res => {
       const content = res.response;
       return ChatMessage.create({
         chatThreadId,
@@ -106,7 +106,7 @@ async function summarizeChatThread(messages, authorization) {
   return await response.json();
 }
 
-async function createChatMessageCore(messages, modelDescriptions, authorization) {
+async function createChatMessageCore(messages, modelDescriptions, model, authorization) {
   const headers = { 'Content-Type': 'application/json' };
   if (authorization) {
     headers.Authorization = authorization;
@@ -116,7 +116,8 @@ async function createChatMessageCore(messages, modelDescriptions, authorization)
     headers,
     body: JSON.stringify({
       messages,
-      modelDescriptions
+      modelDescriptions,
+      model
     })
   }).then(response => {
     if (response.status < 200 || response.status >= 400) {
