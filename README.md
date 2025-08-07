@@ -32,6 +32,8 @@ If you have a Mongoose Studio Pro API key, you can set it as follows:
 
 ```javascript
 const opts = process.env.MONGOOSE_STUDIO_API_KEY ? { apiKey: process.env.MONGOOSE_STUDIO_API_KEY } : {};
+// Optionally specify which ChatGPT model to use for chat messages
+opts.model = 'gpt-4o-mini';
 
 // Mount Mongoose Studio on '/studio'
 app.use('/studio', await studio('/studio/api', mongoose, opts));
@@ -48,7 +50,9 @@ const { execSync } = require('child_process');
 
 // Sign up for Mongoose Studio Pro to get an API key, or omit `apiKey` for local dev.
 const opts = {
-  apiKey: process.env.MONGOOSE_STUDIO_API_KEY
+  apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
+  // Optionally specify which ChatGPT model to use for chat messages
+  model: 'gpt-4o-mini'
 };
 console.log('Creating Mongoose studio', opts);
 require('@mongoosejs/studio/frontend')(`/.netlify/functions/studio`, true, opts).then(() => {
@@ -65,7 +69,8 @@ require('@mongoosejs/studio/frontend')(`/.netlify/functions/studio`, true, opts)
 const mongoose = require('mongoose');
 
 const handler = require('@mongoosejs/studio/backend/netlify')({
-  apiKey: process.env.MONGOOSE_STUDIO_API_KEY
+  apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
+  model: 'gpt-4o-mini'
 }).handler;
 
 let conn = null;
