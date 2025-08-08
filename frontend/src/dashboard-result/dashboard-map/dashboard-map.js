@@ -13,11 +13,11 @@ module.exports = app => app.component('dashboard-map', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
     const layer = L.geoJSON(fc).addTo(map);
-    try {
+
+    this.$nextTick(() => {
+      map.invalidateSize();
       map.fitBounds(layer.getBounds());
-    } catch (err) {
-      // Ignore errors fitting bounds
-    }
+    });
   },
   computed: {
     header() {

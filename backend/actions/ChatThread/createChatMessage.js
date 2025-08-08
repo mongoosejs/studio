@@ -61,6 +61,8 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
     });
   }
 
+  const modelDescriptions = getModelDescriptions(db);
+
   // Create the chat message and get OpenAI response in parallel
   const chatMessages = await Promise.all([
     ChatMessage.create({
@@ -70,7 +72,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
       script,
       executionResult: null
     }),
-    createChatMessageCore(llmMessages, getModelDescriptions(db), options?.model, authorization).then(res => {
+    createChatMessageCore(llmMessages, modelDescriptions, options?.model, authorization).then(res => {
       const content = res.response;
       return ChatMessage.create({
         chatThreadId,
