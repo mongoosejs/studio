@@ -130,7 +130,7 @@ describe('getModelDescriptions', function() {
     );
   });
 
-  it('should subdocuments and document arrays (1 level deep)', function() {
+  it('should describe subdocuments and document arrays (1 level deep)', function() {
     conn = mongoose.createConnection();
     const BookSchema = new Schema({
       title: String,
