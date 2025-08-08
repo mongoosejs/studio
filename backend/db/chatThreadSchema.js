@@ -9,6 +9,16 @@ const chatThreadSchema = new mongoose.Schema({
   userId: {
     type: mongoose.ObjectId,
     ref: 'User'
+  },
+  workspaceId: {
+    type: mongoose.ObjectId,
+    ref: 'Workspace'
+  },
+  sharingOptions: {
+    sharedWithWorkspace: {
+      type: Boolean,
+      default: false
+    }
   }
 }, { timestamps: true });
 

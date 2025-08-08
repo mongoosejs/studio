@@ -10,16 +10,24 @@ const CreateChatThreadParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  $workspaceId: {
+    $type: mongoose.Types.ObjectId,
+    $required: false
   }
 }).compile('CreateChatThreadParams');
 
 module.exports = ({ studioConnection }) => async function createChatThread(params) {
-  const { userId, roles } = new CreateChatThreadParams(params);
+  const { userId, roles, $workspaceId } = new CreateChatThreadParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
 
   await authorize('ChatThread.createChatThread', roles);
 
-  const chatThread = await ChatThread.create({ userId });
+  const doc = { userId };
+  if ($workspaceId) {
+    doc.workspaceId = $workspaceId;
+  }
+  const chatThread = await ChatThread.create(doc);
 
   return { chatThread };
 };
