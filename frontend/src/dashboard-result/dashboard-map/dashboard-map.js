@@ -16,7 +16,10 @@ module.exports = app => app.component('dashboard-map', {
 
     this.$nextTick(() => {
       map.invalidateSize();
-      map.fitBounds(layer.getBounds());
+      const bounds = layer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds);
+      }
     });
   },
   computed: {
