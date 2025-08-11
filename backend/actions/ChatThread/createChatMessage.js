@@ -47,7 +47,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   llmMessages.push({ role: 'user', content });
 
   if (chatThread.title == null) {
-    summarizeChatThread(llmMessages).then(res => {
+    summarizeChatThread(llmMessages, authorization).then(res => {
       const title = res.response;
       chatThread.title = title;
       return chatThread.save();
