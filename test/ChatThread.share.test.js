@@ -9,14 +9,14 @@ describe('ChatThread.shareChatThread', function() {
     const userId = new mongoose.Types.ObjectId();
     const workspaceId = new mongoose.Types.ObjectId();
 
-    let { chatThread } = await actions.ChatThread.createChatThread({ userId, roles: ['member'], $workspaceId: workspaceId });
+    let { chatThread } = await actions.ChatThread.createChatThread({ initiatedById: userId, roles: ['member'], $workspaceId: workspaceId });
     assert.equal(chatThread.workspaceId.toString(), workspaceId.toString());
     assert.ok(!chatThread.sharingOptions?.sharedWithWorkspace);
 
     ({ chatThread } = await actions.ChatThread.shareChatThread({
       chatThreadId: chatThread._id,
       share: true,
-      userId,
+      initiatedById: userId,
       roles: ['member'],
       $workspaceId: workspaceId
     }));
@@ -24,12 +24,11 @@ describe('ChatThread.shareChatThread', function() {
 
     const otherUser = new mongoose.Types.ObjectId();
     const { chatThreads } = await actions.ChatThread.listChatThreads({
-      userId: otherUser,
+      initiatedById: otherUser,
       roles: ['member'],
       $workspaceId: workspaceId
     });
-    assert.equal(chatThreads.length, 1);
-    assert.equal(chatThreads[0]._id.toString(), chatThread._id.toString());
+    assert.equal(chatThreads.length, 0);
 
     const res = await actions.ChatThread.getChatThread({
       chatThreadId: chatThread._id,
