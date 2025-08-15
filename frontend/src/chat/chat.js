@@ -38,11 +38,16 @@ module.exports = app => app.component('chat', {
           }
         });
 
-        const { chatMessages } = await api.ChatThread.createChatMessage({
+        const { chatMessages, chatThread } = await api.ChatThread.createChatMessage({
           chatThreadId: this.chatThreadId,
           content: this.newMessage
         });
         this.chatMessages.push(chatMessages[1]);
+        for (const thread of this.chatThreads) {
+          if (thread._id === chatThread._id) {
+            thread.title = chatThread.title;
+          }
+        }
 
         this.newMessage = '';
         this.$nextTick(() => {

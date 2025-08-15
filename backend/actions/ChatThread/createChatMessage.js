@@ -46,12 +46,13 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   }));
   llmMessages.push({ role: 'user', content });
 
+  let summarizePromise = Promise.resolve();
   if (chatThread.title == null) {
-    summarizeChatThread(llmMessages).then(res => {
+    summarizePromise = summarizeChatThread(llmMessages, authorization).then(res => {
       const title = res.response;
       chatThread.title = title;
       return chatThread.save();
-    }).catch(() => {});
+    });
   }
 
   if (options.context) {
@@ -60,6 +61,8 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
       content: options.context
     });
   }
+
+  const modelDescriptions = getModelDescriptions(db);
 
   // Create the chat message and get OpenAI response in parallel
   const chatMessages = await Promise.all([
@@ -70,7 +73,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
       script,
       executionResult: null
     }),
-    createChatMessageCore(llmMessages, getModelDescriptions(db), authorization).then(res => {
+    createChatMessageCore(llmMessages, modelDescriptions, options?.model, authorization).then(res => {
       const content = res.response;
       return ChatMessage.create({
         chatThreadId,
@@ -80,6 +83,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
     })
   ]);
 
+  await summarizePromise;
   return { chatMessages, chatThread };
 };
 
@@ -106,7 +110,7 @@ async function summarizeChatThread(messages, authorization) {
   return await response.json();
 }
 
-async function createChatMessageCore(messages, modelDescriptions, authorization) {
+async function createChatMessageCore(messages, modelDescriptions, model, authorization) {
   const headers = { 'Content-Type': 'application/json' };
   if (authorization) {
     headers.Authorization = authorization;
@@ -116,7 +120,8 @@ async function createChatMessageCore(messages, modelDescriptions, authorization)
     headers,
     body: JSON.stringify({
       messages,
-      modelDescriptions
+      modelDescriptions,
+      model
     })
   }).then(response => {
     if (response.status < 200 || response.status >= 400) {
