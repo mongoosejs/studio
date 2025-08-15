@@ -20,7 +20,7 @@ module.exports = ({ db, studioConnection }) => async function listChatThreads(pa
 
   await authorize('ChatThread.listChatThreads', roles);
 
-  const query = { $or: [{ userId: initiatedById }] };
+  const query = { userId: initiatedById };
 
   // Get all chat threads
   const chatThreads = await ChatThread.find(query)
