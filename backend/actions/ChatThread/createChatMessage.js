@@ -46,12 +46,13 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   }));
   llmMessages.push({ role: 'user', content });
 
+  let summarizePromise = Promise.resolve();
   if (chatThread.title == null) {
-    summarizeChatThread(llmMessages).then(res => {
+    summarizePromise = summarizeChatThread(llmMessages, authorization).then(res => {
       const title = res.response;
       chatThread.title = title;
       return chatThread.save();
-    }).catch(() => {});
+    });
   }
 
   if (options.context) {
@@ -82,6 +83,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
     })
   ]);
 
+  await summarizePromise;
   return { chatMessages, chatThread };
 };
 
