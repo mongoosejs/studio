@@ -15,7 +15,8 @@ module.exports = app => app.component('dashboard', {
       showEditor: false,
       dashboard: null,
       dashboardResults: [],
-      errorMessage: null
+      errorMessage: null,
+      showDetailModal: false
     };
   },
   methods: {
@@ -47,6 +48,9 @@ module.exports = app => app.component('dashboard', {
       } finally {
         this.status = 'loaded';
       }
+    },
+    openDetailModal() {
+      this.showDetailModal = true;
     }
   },
   computed: {
