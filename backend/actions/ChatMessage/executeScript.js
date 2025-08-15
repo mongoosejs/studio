@@ -22,6 +22,7 @@ const ExecuteScriptParams = new Archetype({
 
 module.exports = ({ db, studioConnection }) => async function executeScript(params) {
   const { initiatedById, chatMessageId, script, roles } = new ExecuteScriptParams(params);
+  const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
   await authorize('ChatMessage.executeScript', roles);
@@ -30,8 +31,9 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
   if (!chatMessage) {
     throw new Error('Chat message not found');
   }
+  const chatThread = await ChatThread.findById(chatMessage.chatThreadId).orFail();
 
-  if (initiatedById && chatMessage.userId?.toString() !== initiatedById.toString()) {
+  if (initiatedById && chatThread.userId?.toString() !== initiatedById.toString()) {
     throw new Error('Unauthorized');
   }
 
