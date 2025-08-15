@@ -86,7 +86,7 @@
 
 <modal v-if="showDetailModal" containerClass="!h-[90vh] !w-[90vw]">
   <template #body>
-    <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showDetailModal = false;">&times;</div>
+    <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showDetailModal = false;" role="button" aria-label="Close modal">&times;</div>
     <div class="h-full overflow-auto">
       <dashboard-result
         v-if="dashboardResult"
