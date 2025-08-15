@@ -32,7 +32,7 @@ module.exports = ({ db, studioConnection }) => async function getChatThread(para
     throw new Error('Chat thread not found');
   }
   if (initiatedById && chatThread.userId?.toString() !== initiatedById.toString()) {
-    console.log('FQ, chatThread');
+    
     if (!$workspaceId || chatThread.workspaceId?.toString() !== $workspaceId.toString() || !chatThread.sharingOptions?.sharedWithWorkspace) {
       throw new Error('Not authorized');
     }
