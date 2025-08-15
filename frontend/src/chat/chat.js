@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./chat.html');
+const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('chat', {
   template: template,
@@ -93,12 +94,23 @@ module.exports = app => app.component('chat', {
       }
       this.sharingThread = true;
       try {
-        const share = !this.sharedWithWorkspace;
+        const share = true;
         const { chatThread } = await api.ChatThread.shareChatThread({ chatThreadId: this.chatThreadId, share });
         const idx = this.chatThreads.findIndex(t => t._id === chatThread._id);
         if (idx !== -1) {
           this.chatThreads.splice(idx, 1, chatThread);
         }
+
+        // Copy current URL to clipboard and show a toast
+        const url = window.location.href;
+        await navigator.clipboard.writeText(url);
+        vanillatoasts.create({
+          title: 'Share link copied!',
+          type: 'success',
+          timeout: 3000,
+          icon: 'images/success.png',
+          positionClass: 'bottomRight'
+        });
       } finally {
         this.sharingThread = false;
       }

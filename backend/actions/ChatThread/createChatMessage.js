@@ -9,7 +9,7 @@ const CreateChatMessageParams = new Archetype({
   chatThreadId: {
     $type: mongoose.Types.ObjectId
   },
-  userId: {
+  initiatedById: {
     $type: mongoose.Types.ObjectId
   },
   content: {
@@ -24,7 +24,7 @@ const CreateChatMessageParams = new Archetype({
 }).compile('CreateChatMessageParams');
 
 module.exports = ({ db, studioConnection, options }) => async function createChatMessage(params) {
-  const { chatThreadId, userId, content, script, authorization, roles } = new CreateChatMessageParams(params);
+  const { chatThreadId, initiatedById, content, script, authorization, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -35,7 +35,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   if (!chatThread) {
     throw new Error('Chat thread not found');
   }
-  if (userId != null && chatThread.userId.toString() !== userId.toString()) {
+  if (initiatedById != null && chatThread.userId.toString() !== initiatedById.toString()) {
     throw new Error('Not authorized');
   }
 

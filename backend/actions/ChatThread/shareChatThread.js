@@ -11,7 +11,7 @@ const ShareChatThreadParams = new Archetype({
   share: {
     $type: 'boolean'
   },
-  userId: {
+  initiatedById: {
     $type: mongoose.Types.ObjectId
   },
   roles: {
@@ -23,16 +23,17 @@ const ShareChatThreadParams = new Archetype({
 }).compile('ShareChatThreadParams');
 
 module.exports = ({ studioConnection }) => async function shareChatThread(params) {
-  const { chatThreadId, share, userId, roles, $workspaceId } = new ShareChatThreadParams(params);
+  const { chatThreadId, share, initiatedById, roles, $workspaceId } = new ShareChatThreadParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
 
   await authorize('ChatThread.shareChatThread', roles);
 
-  const chatThread = await ChatThread.findById(chatThreadId);
+  const chatThread = await ChatThread.findById(chatThreadId).orFail();
   if (!chatThread) {
     throw new Error('Chat thread not found');
   }
-  if (chatThread.userId?.toString() !== userId.toString()) {
+  console.log('G', initiatedById, chatThread);
+  if (initiatedById != null && chatThread.userId?.toString() !== initiatedById.toString()) {
     throw new Error('Not authorized');
   }
 
