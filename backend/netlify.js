@@ -61,6 +61,7 @@ module.exports = function netlify(conn, options) {
       params.$workspaceId = workspace._id;
       params.roles = roles;
       params.userId = user._id;
+      params.initiatedById = user._id;
     }
 
     if (typeof actionName !== 'string') {
