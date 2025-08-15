@@ -5,7 +5,7 @@ const authorize = require('../../authorize');
 const mongoose = require('mongoose');
 
 const ListChatThreadsParams = new Archetype({
-  userId: {
+  initiatedById: {
     $type: mongoose.Types.ObjectId
   },
   roles: {
@@ -15,13 +15,15 @@ const ListChatThreadsParams = new Archetype({
 
 module.exports = ({ db, studioConnection }) => async function listChatThreads(params) {
   // Validate the params object
-  const { userId, roles } = new ListChatThreadsParams(params);
+  const { initiatedById, roles } = new ListChatThreadsParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
 
   await authorize('ChatThread.listChatThreads', roles);
 
+  const query = { userId: initiatedById };
+
   // Get all chat threads
-  const chatThreads = await ChatThread.find(userId ? { userId } : {})
+  const chatThreads = await ChatThread.find(query)
     .sort({ updatedAt: -1 }); // Sort by most recently updated
 
   return {

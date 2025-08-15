@@ -58,6 +58,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     listChatThreads(params) {
       return client.post('', { action: 'ChatThread.listChatThreads', ...params }).then(res => res.data);
+    },
+    shareChatThread(params) {
+      return client.post('', { action: 'ChatThread.shareChatThread', ...params }).then(res => res.data);
     }
   };
   exports.ChatMessage = {
@@ -160,6 +163,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     listChatThreads: function listChatThreads(params) {
       return client.post('/ChatThread/listChatThreads', params).then(res => res.data);
+    },
+    shareChatThread: function shareChatThread(params) {
+      return client.post('/ChatThread/shareChatThread', params).then(res => res.data);
     }
   };
   exports.ChatMessage = {

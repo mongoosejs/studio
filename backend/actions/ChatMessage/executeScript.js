@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const vm = require('vm');
 
 const ExecuteScriptParams = new Archetype({
-  userId: {
+  initiatedById: {
     $type: mongoose.Types.ObjectId
   },
   chatMessageId: {
@@ -21,7 +21,7 @@ const ExecuteScriptParams = new Archetype({
 }).compile('ExecuteScriptParams');
 
 module.exports = ({ db, studioConnection }) => async function executeScript(params) {
-  const { userId, chatMessageId, script, roles } = new ExecuteScriptParams(params);
+  const { initiatedById, chatMessageId, script, roles } = new ExecuteScriptParams(params);
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
   await authorize('ChatMessage.executeScript', roles);
@@ -29,6 +29,10 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
   const chatMessage = await ChatMessage.findById(chatMessageId);
   if (!chatMessage) {
     throw new Error('Chat message not found');
+  }
+
+  if (initiatedById && chatMessage.userId?.toString() !== initiatedById.toString()) {
+    throw new Error('Unauthorized');
   }
 
   // Create a sandbox with the db object

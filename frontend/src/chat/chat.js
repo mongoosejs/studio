@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./chat.html');
+const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('chat', {
   template: template,
@@ -13,7 +14,8 @@ module.exports = app => app.component('chat', {
     chatThreadId: null,
     chatThreads: [],
     chatMessages: [],
-    hideSidebar: null
+    hideSidebar: null,
+    sharingThread: false
   }),
   methods: {
     async sendMessage() {
@@ -85,6 +87,44 @@ module.exports = app => app.component('chat', {
     async createNewThread() {
       const { chatThread } = await api.ChatThread.createChatThread();
       this.$router.push('/chat/' + chatThread._id);
+    },
+    async toggleShareThread() {
+      if (!this.chatThreadId || !this.hasWorkspace) {
+        return;
+      }
+      this.sharingThread = true;
+      try {
+        const share = true;
+        const { chatThread } = await api.ChatThread.shareChatThread({ chatThreadId: this.chatThreadId, share });
+        const idx = this.chatThreads.findIndex(t => t._id === chatThread._id);
+        if (idx !== -1) {
+          this.chatThreads.splice(idx, 1, chatThread);
+        }
+
+        // Copy current URL to clipboard and show a toast
+        const url = window.location.href;
+        await navigator.clipboard.writeText(url);
+        vanillatoasts.create({
+          title: 'Share link copied!',
+          type: 'success',
+          timeout: 3000,
+          icon: 'images/success.png',
+          positionClass: 'bottomRight'
+        });
+      } finally {
+        this.sharingThread = false;
+      }
+    }
+  },
+  computed: {
+    currentThread() {
+      return this.chatThreads.find(t => t._id === this.chatThreadId);
+    },
+    hasWorkspace() {
+      return !!window.MONGOOSE_STUDIO_CONFIG.workspace?._id;
+    },
+    sharedWithWorkspace() {
+      return !!this.currentThread?.sharingOptions?.sharedWithWorkspace;
     }
   },
   async mounted() {
