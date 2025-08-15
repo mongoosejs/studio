@@ -29,8 +29,6 @@ module.exports = ({ studioConnection }) => async function shareChatThread(params
   await authorize('ChatThread.shareChatThread', roles);
 
   const chatThread = await ChatThread.findById(chatThreadId).orFail();
-  if (!chatThread) {
-    throw new Error('Chat thread not found');
   if (initiatedById != null && chatThread.userId?.toString() !== initiatedById.toString()) {
     throw new Error('Not authorized');
   }
