@@ -194,13 +194,13 @@ module.exports = app => app.component('models', {
         this.query.search = this.searchText;
         const query = this.query;
         const newUrl = this.$router.resolve({ query }).href;
-        window.history.pushState(null, '', newUrl);
+        this.$router.push({ query });
       } else {
         this.filter = {};
         delete this.query.search;
         const query = this.query;
         const newUrl = this.$router.resolve({ query }).href;
-        window.history.pushState(null, '', newUrl);
+        this.$router.push({ query });
       }
       this.documents = [];
       this.status = 'loading';
