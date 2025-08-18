@@ -82,7 +82,11 @@ module.exports = app => app.component('chat-message-script', {
       this.$router.push('/dashboard/' + dashboard._id);
     },
     async copyOutput() {
-      await navigator.clipboard.writeText(this.message.executionResult.output);
+      let output = this.message.executionResult.output;
+      if (output != null && typeof output === 'object') {
+        output = JSON.stringify(output, null, 2);
+      }
+      await navigator.clipboard.writeText(output);
       vanillatoasts.create({
         title: 'Text copied!',
         type: 'success',
