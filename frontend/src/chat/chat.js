@@ -21,6 +21,8 @@ module.exports = app => app.component('chat', {
     async sendMessage() {
       this.sendingMessage = true;
       try {
+        const content = this.newMessage;
+        this.newMessage = '';
         if (!this.chatThreadId) {
           const { chatThread } = await api.ChatThread.createChatThread();
           this.chatThreads.unshift(chatThread);
@@ -29,7 +31,7 @@ module.exports = app => app.component('chat', {
         }
 
         this.chatMessages.push({
-          content: this.newMessage,
+          content,
           role: 'user'
         });
 
@@ -41,7 +43,7 @@ module.exports = app => app.component('chat', {
 
         const { chatMessages, chatThread } = await api.ChatThread.createChatMessage({
           chatThreadId: this.chatThreadId,
-          content: this.newMessage
+          content
         });
         this.chatMessages.push(chatMessages[1]);
         for (const thread of this.chatThreads) {

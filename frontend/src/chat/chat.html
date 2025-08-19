@@ -72,8 +72,9 @@
       <form @submit.prevent="sendMessage" :disabled="sendingMessage" class="flex gap-2 items-end justify-end">
         <textarea
           v-model="newMessage"
-          placeholder="Ask something..."
+          :placeholder="sendingMessage ? 'Sending...' : 'Ask something...'"
           class="flex-1 border rounded px-4 py-2 resize-none overflow-y-auto"
+          :disabled="sendingMessage"
           rows="1"
           ref="messageInput"
           @input="adjustTextareaHeight"
