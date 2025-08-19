@@ -4,9 +4,11 @@ const template = require('./dashboard-chart.html');
 
 module.exports = app => app.component('dashboard-chart', {
   template: template,
-  props: ['value', 'responsive'],
+  props: ['value', 'fullscreen'],
+  emits: ['fullscreen'],
   data: () => ({
-    chart: null
+    chart: null,
+    showDetailModal: false
   }),
   mounted() {
     const ctx = this.$refs.chart.getContext('2d');

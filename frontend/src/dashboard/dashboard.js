@@ -48,9 +48,6 @@ module.exports = app => app.component('dashboard', {
       } finally {
         this.status = 'loaded';
       }
-    },
-    openDetailModal() {
-      this.showDetailModal = true;
     }
   },
   computed: {

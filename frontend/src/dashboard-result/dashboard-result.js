@@ -7,7 +7,8 @@ const template = require('./dashboard-result.html');
 
 module.exports = app => app.component('dashboard-result', {
   template: template,
-  props: ['result', 'finishedEvaluatingAt'],
+  props: ['result', 'finishedEvaluatingAt', 'fullscreen'],
+  emits: ['fullscreen'],
   mounted: async function() {
   },
   methods: {
