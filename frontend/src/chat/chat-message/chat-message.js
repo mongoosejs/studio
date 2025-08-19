@@ -10,7 +10,7 @@ module.exports = app => app.component('chat-message', {
   props: ['message'],
   computed: {
     styleForMessage() {
-      return this.message.role === 'user' ? 'bg-gray-100' : '';
+      return this.message.role === 'user' ? 'p-3 bg-gray-100' : 'py-3 pr-3';
     },
     contentSplitByScripts() {
       const content = this.message.content;
@@ -75,7 +75,7 @@ module.exports = app => app.component('chat-message', {
             result = JSON.stringify(result, null, 2);
           }
           if (result) {
-            output += result + '\n';
+            output += '```\n' + result + '\n```\n';
           }
         }
       }

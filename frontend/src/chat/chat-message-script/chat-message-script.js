@@ -7,6 +7,7 @@ const vanillatoasts = require('vanillatoasts');
 module.exports = app => app.component('chat-message-script', {
   template,
   props: ['message', 'script', 'language'],
+  emits: ['copyMessage'],
   data() {
     return {
       activeTab: 'code',
