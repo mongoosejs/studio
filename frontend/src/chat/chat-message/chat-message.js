@@ -2,6 +2,7 @@
 
 const api = require('../../api');
 const marked = require('marked').marked;
+const vanillatoasts = require('vanillatoasts');
 const template = require('./chat-message.html');
 
 module.exports = app => app.component('chat-message', {
@@ -61,6 +62,31 @@ module.exports = app => app.component('chat-message', {
       });
       message.executionResult = chatMessage.executionResult;
       console.log(message);
+    },
+    async copyMessage() {
+      const parts = this.contentSplitByScripts;
+      let output = '';
+      for (const part of parts) {
+        if (part.type === 'text') {
+          output += part.content + '\n';
+        } else if (part.type === 'code') {
+          let result = this.message.executionResult?.output;
+          if (result != null && typeof result === 'object') {
+            result = JSON.stringify(result, null, 2);
+          }
+          if (result) {
+            output += result + '\n';
+          }
+        }
+      }
+      await navigator.clipboard.writeText(output.trim());
+      vanillatoasts.create({
+        title: 'Message output copied!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     }
   }
 });
