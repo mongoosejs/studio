@@ -88,7 +88,7 @@ module.exports = app => app.component('chat-message-script', {
       }
       await navigator.clipboard.writeText(output);
       vanillatoasts.create({
-        title: 'Text copied!',
+        title: 'Code output copied!',
         type: 'success',
         timeout: 3000,
         icon: 'images/success.png',
