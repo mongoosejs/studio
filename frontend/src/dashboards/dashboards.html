@@ -21,8 +21,7 @@
       ></path>
     </svg>
   </div>
-  <div v-else>
-    <div v-if="dashboards.length === 0">
+    <div v-if="status === 'loaded' && dashboards.length === 0">
       <div class="text-center">
         <h3 class="mt-2 text-sm font-semibold text-gray-900">No dashboards yet</h3>
         <p class="mt-1 text-sm text-gray-500">Get started by creating a new dashboard.</p>
