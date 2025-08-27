@@ -41,14 +41,23 @@ module.exports = ({ db }) => async function getDashboard(params) {
       return { dashboard, error: { message: error.message } };
     }
 
-    const { dashboardResult } = await startExec.then(({ dashboardResult }) => {
-      if (!dashboardResult) {
-        return;
-      }
-      return completeDashboardEvaluate(dashboardResult._id, $workspaceId, authorization, result);
-    });
+    try {
+      const { dashboardResult } = await startExec.then(({ dashboardResult }) => {
+        if (!dashboardResult) {
+          return {};
+        }
+        return completeDashboardEvaluate(
+          dashboardResult._id,
+          $workspaceId,
+          authorization,
+          result
+        );
+      });
 
-    return { dashboard, dashboardResult };
+      return { dashboard, dashboardResult };
+    } catch (error) {
+      return { dashboard, error: { message: error.message } };
+    }
   } else {
     const { dashboardResults } = await getDashboardResults(dashboardId, $workspaceId, authorization);
     return { dashboard, dashboardResults };
