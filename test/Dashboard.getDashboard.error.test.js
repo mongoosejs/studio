@@ -13,21 +13,15 @@ describe('Dashboard.getDashboard() error handling', function () {
   });
 
   it('handles errors from startDashboardEvaluate', async function () {
-    const doc = await Dashboard.create({ title: 'Test', code: 'return 42;' });
+    const doc = await Dashboard.create({ title: 'Test', code: 'throw new Error("test error")' });
 
-    const originalFetch = global.fetch;
-    global.fetch = () => Promise.reject(new Error('start error'));
-    try {
-      const res = await actions.Dashboard.getDashboard({
-        dashboardId: doc._id.toString(),
-        evaluate: true,
-        roles: ['dashboards']
-      });
+    const res = await actions.Dashboard.getDashboard({
+      dashboardId: doc._id.toString(),
+      evaluate: true,
+      roles: ['dashboards']
+    });
 
-      assert.ok(res.dashboard);
-      assert.deepStrictEqual(res.error, { message: 'start error' });
-    } finally {
-      global.fetch = originalFetch;
-    }
+    assert.ok(res.dashboard);
+    assert.deepStrictEqual(res.error, { message: 'test error' });
   });
 });
