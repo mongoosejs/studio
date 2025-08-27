@@ -17,16 +17,17 @@ describe('Dashboard.getDashboard() error handling', function () {
 
     const originalFetch = global.fetch;
     global.fetch = () => Promise.reject(new Error('start error'));
+    try {
+      const res = await actions.Dashboard.getDashboard({
+        dashboardId: doc._id.toString(),
+        evaluate: true,
+        roles: ['dashboards']
+      });
 
-    const res = await actions.Dashboard.getDashboard({
-      dashboardId: doc._id.toString(),
-      evaluate: true,
-      roles: ['dashboards']
-    });
-
-    global.fetch = originalFetch;
-
-    assert.ok(res.dashboard);
-    assert.deepStrictEqual(res.error, { message: 'start error' });
+      assert.ok(res.dashboard);
+      assert.deepStrictEqual(res.error, { message: 'start error' });
+    } finally {
+      global.fetch = originalFetch;
+    }
   });
 });
