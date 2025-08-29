@@ -10,7 +10,7 @@ console.log(`Mongoose Studio Version ${version}`);
 const api = require('./api');
 const format = require('./format');
 const mothership = require('./mothership');
-const { routes } = require('./routes');
+const { routes, hasAccess } = require('./routes');
 const vanillatoasts = require('vanillatoasts');
 
 const app = Vue.createApp({
@@ -132,7 +132,6 @@ app.component('app-component', {
   }
 });
 
-const { routes, hasAccess } = require('./routes');
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
   routes: routes.map(route => ({
