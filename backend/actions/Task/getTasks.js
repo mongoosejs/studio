@@ -3,15 +3,15 @@
 const Archetype = require('archetype');
 
 const GetTasksParams = new Archetype({
-    start: {
-        $type: Date
-    },
-    end: {
-        $type: Date
-    },
-    status: {
-        $type: 'string'
-    }
+  start: {
+    $type: Date
+  },
+  end: {
+    $type: Date
+  },
+  status: {
+    $type: 'string'
+  }
 }).compile('GetTasksParams');
 
 module.exports = ({ db }) => async function getTasks(params) {
@@ -24,7 +24,7 @@ module.exports = ({ db }) => async function getTasks(params) {
   if (start && end) {
     filter.scheduledAt = { $gte: start, $lte: end };
   } else if (start) {
-    filter.scheduledAt = { $gte: start }
+    filter.scheduledAt = { $gte: start };
   }
   if (status) {
     filter.status = status;

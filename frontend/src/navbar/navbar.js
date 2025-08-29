@@ -58,9 +58,9 @@ module.exports = app => app.component('navbar', {
     },
     hasTaskVisualizer() {
       if (window.MONGOOSE_STUDIO_CONFIG.enableTaskVisualizer) {
-        return '#/tasks'
+        return '#/tasks';
       } else {
-        return `https://www.npmjs.com/package/@mongoosejs/task`
+        return 'https://www.npmjs.com/package/@mongoosejs/task';
       }
      
     }

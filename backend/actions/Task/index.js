@@ -1,3 +1,3 @@
 'use strict';
 
-exports.getTasks = require('./getTasks')
+exports.getTasks = require('./getTasks');

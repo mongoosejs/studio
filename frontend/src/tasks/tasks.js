@@ -18,7 +18,7 @@ module.exports = app => app.component('tasks', {
       { value: 'thisWeek', label: 'This Week' },
       { value: 'lastWeek', label: 'Last Week' },
       { value: 'thisMonth', label: 'This Month' },
-      { value: 'lastMonth', label: 'Last Month' },
+      { value: 'lastMonth', label: 'Last Month' }
     ],
     selectedStatus: 'all',
     statusFilters: [
@@ -42,7 +42,7 @@ module.exports = app => app.component('tasks', {
 
       if (this.start && this.end) {
         params.start = this.start;
-        params.end = this.end
+        params.end = this.end;
       } else if (this.start) {
         params.start = this.start;
       }

@@ -132,9 +132,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
   };
   exports.Task = {
     getTasks: function getTasks(params) {
-      return client.post('', { action: 'Task.getTasks', ...params}).then(res => res.data)
+      return client.post('', { action: 'Task.getTasks', ...params }).then(res => res.data);
     }
-  }
+  };
 } else {
   exports.status = function status() {
     return client.get('/status').then(res => res.data);
@@ -244,5 +244,5 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getTasks: function getTasks(params) {
       return client.post('/Task/getTasks', params).then(res => res.data);
     }
-  }
+  };
 }
