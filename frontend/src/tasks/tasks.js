@@ -72,29 +72,22 @@ module.exports = app => app.component('tasks', {
     },
     async rescheduleTask(task) {
       try {
-        // This would call a backend API to reschedule the task
-        // For now, we'll show a confirmation dialog
-        if (confirm(`Reschedule task ${task.id}?`)) {
-          // TODO: Implement reschedule API call
-          console.log('Rescheduling task:', task.id);
-          // await api.Task.rescheduleTask(task.id);
-        }
+        // TODO: Implement reschedule API call
+        console.log('Rescheduling task:', task.id);
+        // await api.Task.rescheduleTask(task.id);
       } catch (error) {
         console.error('Error rescheduling task:', error);
-        alert('Failed to reschedule task');
+        // TODO: Add proper error handling/notification
       }
     },
     async runTask(task) {
       try {
-        // This would call a backend API to run the task immediately
-        if (confirm(`Run task ${task.id} now?`)) {
-          // TODO: Implement run task API call
-          console.log('Running task:', task.id);
-          // await api.Task.runTask(task.id);
-        }
+        // TODO: Implement run task API call
+        console.log('Running task:', task.id);
+        // await api.Task.runTask(task.id);
       } catch (error) {
         console.error('Error running task:', error);
-        alert('Failed to run task');
+        // TODO: Add proper error handling/notification
       }
     },
     async createTask() {
@@ -104,7 +97,8 @@ module.exports = app => app.component('tasks', {
           try {
             parameters = JSON.parse(this.newTask.parameters);
           } catch (e) {
-            alert('Invalid JSON in parameters field');
+            console.error('Invalid JSON in parameters field:', e);
+            // TODO: Add proper validation feedback
             return;
           }
         }
@@ -131,7 +125,7 @@ module.exports = app => app.component('tasks', {
         await this.getTasks();
       } catch (error) {
         console.error('Error creating task:', error);
-        alert('Failed to create task');
+        // TODO: Add proper error handling/notification
       }
     },
     getStatusColor(status) {
