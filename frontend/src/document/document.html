@@ -67,8 +67,8 @@
     </modal>
     <modal v-if="shouldShowDeleteModal">
       <template v-slot:body>
-        <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>
-        <confirm-delete @close="shouldShowConfirmModal = false;" @remove="remove" :value="document"></confirm-delete>
+        <div class="modal-exit" @click="shouldShowDeleteModal = false;">&times;</div>
+        <confirm-delete @close="shouldShowDeleteModal = false;" @remove="remove" :value="document"></confirm-delete>
       </template>
     </modal>
     <modal v-if="shouldShowCloneModal">

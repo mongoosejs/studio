@@ -9,18 +9,14 @@ const roleAccess = {
   dashboards: ['dashboards', 'dashboard']
 };
 
+const allowedRoutesForLocalDev = ['document', 'root', 'chat'];
+
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {
-  // If no roles are provided, deny access
-  if (!roles || !Array.isArray(roles)) return false;
+  // change to true for local development
+  if (!roles) return allowedRoutesForLocalDev.includes(routeName);
+  return roles.some(role => roleAccess[role]?.includes(routeName));
   
-  // Check if any of the user's roles grant access to this route
-  return roles.some(role => {
-    // If the role doesn't exist in roleAccess, deny access
-    if (!roleAccess[role]) return false;
-    // Check if the role has access to this route
-    return roleAccess[role].includes(routeName);
-  });
 }
 
 module.exports = {

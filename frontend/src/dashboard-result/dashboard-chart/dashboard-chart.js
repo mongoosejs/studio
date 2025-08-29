@@ -4,10 +4,29 @@ const template = require('./dashboard-chart.html');
 
 module.exports = app => app.component('dashboard-chart', {
   template: template,
-  props: ['value'],
+  props: ['value', 'fullscreen'],
+  emits: ['fullscreen'],
+  data: () => ({
+    chart: null,
+    showDetailModal: false
+  }),
   mounted() {
     const ctx = this.$refs.chart.getContext('2d');
-    const chart = new Chart(ctx, this.value.$chart);
+    this.chart = new Chart(ctx, this.value.$chart);
+  },
+  methods: {
+    exportPNG() {
+      if (this.chart == null) {
+        return;
+      }
+      const dataUrl = this.chart.toBase64Image();
+      const anchor = document.createElement('a');
+      anchor.href = dataUrl;
+      anchor.download = 'chart.png';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+    }
   },
   computed: {
     header() {

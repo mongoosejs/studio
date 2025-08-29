@@ -3,7 +3,7 @@
     <router-link :to="{ name: defaultRoute }">
       <img src="images/logo.svg" class="h-[32px] mr-1" alt="Mongoose Studio Logo" />
     </router-link>
-    <div v-if="!!state.nodeEnv" class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium text-gray-900" :class="warnEnv ? 'bg-red-300' : 'bg-yellow-300'">
+    <div v-if="!!state.nodeEnv" title="NODE_ENV" class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium text-gray-900" :class="warnEnv ? 'bg-red-300' : 'bg-yellow-300'">
       {{state.nodeEnv}}
     </div>
   </div>
@@ -13,10 +13,22 @@
         href="#/"
         class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
         :class="documentView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Documents</a>
+      <span v-else class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium text-gray-300 cursor-not-allowed" aria-disabled="true">
+        Documents
+        <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+        </svg>
+      </span>
       <a v-if="hasAccess(roles, 'dashboards')"
         href="#/dashboards"
         class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
         :class="dashboardView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Dashboards</a>
+      <span v-else class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium text-gray-300 cursor-not-allowed">
+        Dashboards
+        <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+        </svg>
+      </span>
       <a v-if="hasAccess(roles, 'chat')"
         href="#/chat"
         class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
@@ -25,6 +37,12 @@
       :href="hasTasks"
       class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
       :class="dashboardView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Tasks</a>
+      <span v-else class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium text-gray-300 cursor-not-allowed">
+        Chat
+        <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+        </svg>
+      </span>
 
       <div class="h-full flex items-center" v-if="!user && hasAPIKey">
         <button
@@ -45,6 +63,12 @@
 
         <div v-if="showFlyout" class="absolute right-0 z-10 top-[90%] w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
           <router-link to="/team" v-if="hasAccess(roles, 'team')" @click="showFlyout = false" class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-ultramarine-200" role="menuitem" tabindex="-1" id="user-menu-item-2">Team</router-link>
+          <span v-else class="block px-4 py-2 text-sm text-gray-300 cursor-not-allowed" role="menuitem" tabindex="-1" id="user-menu-item-2">
+            Team
+            <svg class="h-4 w-4 ml-1 inline" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+            </svg>
+          </span>
           <span @click="logout" class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-ultramarine-200" role="menuitem" tabindex="-1" id="user-menu-item-2">Sign out</span>
         </div>
       </div>
@@ -81,14 +105,32 @@
         href="#/"
         class="block px-3 py-2 rounded-md text-base font-medium"
         :class="documentView ? 'text-ultramarine-700 bg-ultramarine-100' : 'text-gray-700 hover:bg-gray-100'">Documents</a>
+      <span v-else class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 cursor-not-allowed">
+        Documents
+        <svg class="h-4 w-4 ml-1 inline" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+        </svg>
+      </span>
       <a v-if="hasAccess(roles, 'dashboards')"
         href="#/dashboards"
         class="block px-3 py-2 rounded-md text-base font-medium"
         :class="dashboardView ? 'text-ultramarine-700 bg-ultramarine-100' : 'text-gray-700 hover:bg-gray-100'">Dashboards</a>
+      <span v-else class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 cursor-not-allowed">
+        Dashboards
+        <svg class="h-4 w-4 ml-1 inline" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+        </svg>
+      </span>
       <a v-if="hasAccess(roles, 'chat')"
         href="#/chat"
         class="block px-3 py-2 rounded-md text-base font-medium"
         :class="chatView ? 'text-ultramarine-700 bg-ultramarine-100' : 'text-gray-700 hover:bg-gray-100'">Chat</a>
+      <span v-else class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 cursor-not-allowed">
+        Chat
+        <svg class="h-4 w-4 ml-1 inline" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+        </svg>
+      </span>
       <div v-if="!user && hasAPIKey" class="mt-4">
         <button
           type="button"
@@ -104,6 +146,12 @@
         </div>
         <div class="mt-2 space-y-1">
           <router-link to="/team" v-if="hasAccess(roles, 'team')" class="block px-3 py-2 rounded-md text-base text-gray-700 hover:bg-ultramarine-100">Team</router-link>
+          <span v-else class="block px-3 py-2 rounded-md text-base text-gray-300 cursor-not-allowed">
+            Team
+            <svg class="h-4 w-4 ml-1 inline" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+            </svg>
+          </span>
           <span @click="logout" class="block px-3 py-2 rounded-md text-base text-gray-700 hover:bg-ultramarine-100 cursor-pointer">Sign out</span>
         </div>
       </div>

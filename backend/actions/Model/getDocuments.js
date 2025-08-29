@@ -52,11 +52,20 @@ module.exports = ({ db }) => async function getDocuments(params) {
   }
 
   const hasSort = typeof sort === 'object' && sort != null && Object.keys(sort).length > 0;
-  const docs = await Model.
+  const sortObj = hasSort ? { ...sort } : {};
+  if (!sortObj.hasOwnProperty('_id')) {
+    sortObj._id = -1;
+  }
+  const cursor = await Model.
     find(filter == null ? {} : filter).
     limit(limit).
     skip(skip).
-    sort(hasSort ? sort : { _id: -1 });
+    sort(sortObj).
+    cursor();
+  const docs = [];
+  for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
+    docs.push(doc);
+  }
 
   const schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {

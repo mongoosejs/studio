@@ -2,6 +2,7 @@
 
 const api = require('../../api');
 const marked = require('marked').marked;
+const vanillatoasts = require('vanillatoasts');
 const template = require('./chat-message.html');
 
 module.exports = app => app.component('chat-message', {
@@ -9,7 +10,7 @@ module.exports = app => app.component('chat-message', {
   props: ['message'],
   computed: {
     styleForMessage() {
-      return this.message.role === 'user' ? 'bg-gray-100' : '';
+      return this.message.role === 'user' ? 'p-3 bg-gray-100' : 'py-3 pr-3';
     },
     contentSplitByScripts() {
       const content = this.message.content;
@@ -61,6 +62,37 @@ module.exports = app => app.component('chat-message', {
       });
       message.executionResult = chatMessage.executionResult;
       console.log(message);
+    },
+    async copyMessage() {
+      const parts = this.contentSplitByScripts;
+      let output = '';
+      for (const part of parts) {
+        if (part.type === 'text') {
+          output += part.content + '\n';
+        } else if (part.type === 'code') {
+          let result = this.message.executionResult?.output;
+          if (result != null && typeof result === 'object') {
+            result = JSON.stringify(result, null, 2);
+          }
+          if (result) {
+            let executionOutput = this.message.executionResult?.output;
+            if (executionOutput != null && typeof executionOutput === 'object') {
+              executionOutput = JSON.stringify(executionOutput, null, 2);
+            }
+            if (executionOutput) {
+              output += '```\n' + executionOutput + '\n```\n';
+            }
+          }
+        }
+      }
+      await navigator.clipboard.writeText(output.trim());
+      vanillatoasts.create({
+        title: 'Message output copied!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     }
   }
 });

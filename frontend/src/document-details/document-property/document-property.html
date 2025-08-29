@@ -1,10 +1,20 @@
 <div>
   <div class="relative path-key p-1 flex">
-    <div class="grow">
-      {{path.path}}
-      <span class="path-type">
-        ({{(path.instance || 'unknown').toLowerCase()}})
-      </span>
+    <div class="grow flex justify-between items-center">
+      <div>
+        {{path.path}}
+        <span class="path-type">
+          ({{(path.instance || 'unknown').toLowerCase()}})
+        </span>
+      </div>
+      <div>
+        <router-link
+          v-if="path.ref && getValueForPath(path.path)"
+          :to="`/model/${path.ref}/document/${getValueForPath(path.path)}`"
+          class="bg-ultramarine-600 hover:bg-ultramarine-500 text-white px-2 py-1 text-sm mr-1 rounded-md"
+          >View Document
+        </router-link>
+      </div>
     </div>
     <div v-if="editting && path.instance === 'Date'" class="flex gap-1.5">
       <div

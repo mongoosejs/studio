@@ -67,6 +67,7 @@ module.exports = async function(apiUrl, conn, options) {
           req._internals.authorization = authorization;
           req._internals.initiatedById = user._id;
           req._internals.roles = roles;
+          req._internals.$workspaceId = workspace._id;
 
           next();
         })

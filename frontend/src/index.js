@@ -4,8 +4,13 @@ if (typeof process === 'undefined') {
   global.process = { env: {} }; // To make `util` package work
 }
 
+const { version } = require('../../package.json');
+console.log(`Mongoose Studio Version ${version}`);
+
 const api = require('./api');
+const format = require('./format');
 const mothership = require('./mothership');
+const { routes } = require('./routes');
 const vanillatoasts = require('vanillatoasts');
 
 const app = Vue.createApp({
@@ -67,7 +72,7 @@ app.component('app-component', {
     window.state = this;
 
     if (mothership.hasAPIKey) {
-      const hash = window.location.hash.replace(/^#?\/?\??/, '') || '';
+      const hash = window.location.hash.replace(/^#?\/?/, '') || '';
       const hashQuery = hash.split('?')[1] || '';
       const hashParams = new URLSearchParams(hashQuery);
       if (hashParams.has('code')) {
@@ -110,6 +115,7 @@ app.component('app-component', {
       const { nodeEnv } = await api.status();
       this.nodeEnv = nodeEnv;
     }
+
     this.status = 'loaded';
   },
   setup() {
@@ -164,9 +170,22 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
+  if (to.name === 'root' && roles && roles[0] === 'dashboards') {
+    return next({ name: 'dashboards' });
+  }
+
   next();
 });
 
+router.beforeEach((to, from, next) => {
+  if (to.name === 'root' && window.state.roles && window.state.roles[0] === 'dashboards') {
+    return next({ name: 'dashboards' });
+  } else {
+    next();
+  }
+});
+
+app.config.globalProperties = { format };
 app.use(router);
 
 app.mount('#content');

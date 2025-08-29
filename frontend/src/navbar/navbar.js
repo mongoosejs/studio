@@ -15,14 +15,6 @@ module.exports = app => app.component('navbar', {
   inject: ['state'],
   data: () => ({ showFlyout: false }),
   mounted: function() {
-    // Redirect to first allowed route if current route is not allowed
-    if (!this.hasAccess(this.roles, this.$route.name)) {
-      const firstAllowedRoute = this.allowedRoutes[0];
-      if (firstAllowedRoute) {
-        this.$router.push({ name: firstAllowedRoute.name });
-      }
-    }
-
     const mobileMenuMask = document.querySelector('#mobile-menu-mask');
     const mobileMenu = document.querySelector('#mobile-menu');
 
@@ -61,11 +53,8 @@ module.exports = app => app.component('navbar', {
     canViewTeam() {
       return this.hasAccess(this.roles, 'team');
     },
-    allowedRoutes() {
-      return routes.filter(route => this.hasAccess(this.roles, route.name));
-    },
     defaultRoute() {
-      return this.allowedRoutes[0]?.name || 'dashboards';
+      return this.roles && this.roles[0] === 'dashboards' ? 'dashboards' : 'root';
     },
     hasTaskVisualizer() {
       if (window.MONGOOSE_STUDIO_CONFIG.enableTaskVisualizer) {
@@ -73,6 +62,7 @@ module.exports = app => app.component('navbar', {
       } else {
         return `https://www.npmjs.com/package/@mongoosejs/task`
       }
+     
     }
   },
   methods: {

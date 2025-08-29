@@ -52,47 +52,54 @@ module.exports = app => app.component('models', {
     query: {},
     scrollHeight: 0,
     interval: null,
-    outputType: 'table' // json, table
+    outputType: 'table', // json, table
+    hideSidebar: null
   }),
   created() {
     this.currentModel = this.model;
   },
   beforeDestroy() {
-    document.removeEventListener('scroll', () => this.onScroll(), true);
+    document.removeEventListener('scroll', this.onScroll, true);
+    window.removeEventListener('popstate', this.onPopState, true);
   },
   async mounted() {
-    document.addEventListener('scroll', () => this.onScroll(), true);
+    this.onScroll = () => this.checkIfScrolledToBottom();
+    document.addEventListener('scroll', this.onScroll, true);
+    this.onPopState = () => this.initSearchFromUrl();
+    window.addEventListener('popstate', this.onPopState, true);
     this.models = await api.Model.listModels().then(res => res.models);
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
     }
 
-    this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
-    if (this.$route.query?.search) {
-      this.searchText = this.$route.query.search;
-      this.filter = eval(`(${this.$route.query.search})`);
-      this.filter = EJSON.stringify(this.filter);
-    }
-    if (this.$route.query?.sort) {
-      const sort = eval(`(${this.$route.query.sort})`);
-      const path = Object.keys(sort)[0];
-      const num = Object.values(sort)[0];
-      this.sortDocs(num, path);
-    }
-
-
-    if (this.currentModel != null) {
-      await this.getDocuments();
-    }
-    if (this.$route.query?.fields) {
-      const filter = this.$route.query.fields.split(',');
-      this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path));
-    }
-
-
-    this.status = 'loaded';
+    await this.initSearchFromUrl();
   },
   methods: {
+    async initSearchFromUrl() {
+      this.status = 'loading';
+      this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
+      if (this.$route.query?.search) {
+        this.searchText = this.$route.query.search;
+        this.filter = eval(`(${this.$route.query.search})`);
+        this.filter = EJSON.stringify(this.filter);
+      }
+      if (this.$route.query?.sort) {
+        const sort = eval(`(${this.$route.query.sort})`);
+        const path = Object.keys(sort)[0];
+        const num = Object.values(sort)[0];
+        this.sortDocs(num, path);
+      }
+
+
+      if (this.currentModel != null) {
+        await this.getDocuments();
+      }
+      if (this.$route.query?.fields) {
+        const filter = this.$route.query.fields.split(',');
+        this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path));
+      }
+      this.status = 'loaded';
+    },
     async dropIndex(name) {
       const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
       this.mongoDBIndexes = mongoDBIndexes;
@@ -142,7 +149,7 @@ module.exports = app => app.component('models', {
       }
       return filteredDoc;
     },
-    async onScroll() {
+    async checkIfScrolledToBottom() {
       if (this.status === 'loading' || this.loadedAllDocs) {
         return;
       }
@@ -185,13 +192,20 @@ module.exports = app => app.component('models', {
         this.filter = eval(`(${this.searchText})`);
         this.filter = EJSON.stringify(this.filter);
         this.query.search = this.searchText;
-        this.$router.push({ query: this.query });
+        const query = this.query;
+        const newUrl = this.$router.resolve({ query }).href;
+        this.$router.push({ query });
       } else {
         this.filter = {};
         delete this.query.search;
-        this.$router.push({ query: this.query });
+        const query = this.query;
+        const newUrl = this.$router.resolve({ query }).href;
+        this.$router.push({ query });
       }
+      this.documents = [];
+      this.status = 'loading';
       await this.loadMoreDocuments();
+      this.status = 'loaded';
     },
     async openIndexModal() {
       this.shouldShowIndexModal = true;
@@ -238,13 +252,14 @@ module.exports = app => app.component('models', {
       this.selectedPaths = [...this.schemaPaths];
     },
     async loadMoreDocuments() {
-      const { docs } = await api.Model.getDocuments({
+      const { docs, numDocs } = await api.Model.getDocuments({
         model: this.currentModel,
         filter: this.filter,
         sort: this.sortBy,
         limit
       });
       this.documents = docs;
+      this.numDocuments = numDocs;
       if (docs.length < limit) {
         this.loadedAllDocs = true;
       }
