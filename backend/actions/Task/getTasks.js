@@ -31,8 +31,26 @@ module.exports = ({ db }) => async function getTasks(params) {
   }
 
   const tasks = await Task.find(filter);
+  
+  // Define all possible statuses
+  const allStatuses = ['pending', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown'];
+  
+  // Initialize groupedTasks with all statuses
+  const groupedTasks = allStatuses.reduce((groups, status) => {
+    groups[status] = [];
+    return groups;
+  }, {});
+  
+  // Group tasks by status
+  tasks.forEach(task => {
+    const taskStatus = task.status || 'unknown';
+    if (groupedTasks.hasOwnProperty(taskStatus)) {
+      groupedTasks[taskStatus].push(task);
+    }
+  });
  
   return {
-    tasks
+    tasks,
+    groupedTasks
   };
 };

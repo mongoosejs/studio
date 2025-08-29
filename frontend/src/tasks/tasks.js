@@ -7,7 +7,8 @@ module.exports = app => app.component('tasks', {
   data: () => ({
     status: 'init',
     tasks: [],
-    selectedRange: 'all',
+    groupedTasks: {},
+    selectedRange: 'today',
     start: null,
     end: null,
     dateFilters: [
@@ -45,8 +46,9 @@ module.exports = app => app.component('tasks', {
       } else if (this.start) {
         params.start = this.start;
       }
-      const { tasks } = await api.Task.getTasks(params);
+      const { tasks, groupedTasks } = await api.Task.getTasks(params);
       this.tasks = tasks;
+      this.groupedTasks = groupedTasks;
     },
     getStatusColor(status) {
       if (status === 'succeeded') {
@@ -149,21 +151,65 @@ module.exports = app => app.component('tasks', {
       }
       return false;
     },
+    tasksByName() {
+      const groups = {};
+      
+      // Process tasks from groupedTasks to create name-based groups
+      Object.entries(this.groupedTasks).forEach(([status, tasks]) => {
+        tasks.forEach(task => {
+          if (!groups[task.name]) {
+            groups[task.name] = {
+              name: task.name,
+              tasks: [],
+              statusCounts: {
+                pending: 0,
+                succeeded: 0,
+                failed: 0,
+                cancelled: 0
+              },
+              totalCount: 0,
+              lastRun: null
+            };
+          }
+          
+          groups[task.name].tasks.push(task);
+          groups[task.name].totalCount++;
+          
+          // Count status using the status from groupedTasks
+          if (groups[task.name].statusCounts.hasOwnProperty(status)) {
+            groups[task.name].statusCounts[status]++;
+          }
+          
+          // Track last run time
+          const taskTime = new Date(task.scheduledAt || task.createdAt || 0);
+          if (!groups[task.name].lastRun || taskTime > new Date(groups[task.name].lastRun)) {
+            groups[task.name].lastRun = taskTime;
+          }
+        });
+      });
+      
+      // Convert to array and sort alphabetically by name
+      return Object.values(groups).sort((a, b) => {
+        return a.name.localeCompare(b.name);
+      });
+    },
     succeededCount() {
-      return this.tasks.filter(task => task.status === 'succeeded').length;
+      return this.groupedTasks.succeeded ? this.groupedTasks.succeeded.length : 0;
     },
     failedCount() {
-      return this.tasks.filter(task => task.status === 'failed').length;
+      return this.groupedTasks.failed ? this.groupedTasks.failed.length : 0;
     },
     cancelledCount() {
-      return this.tasks.filter(task => task.status === 'cancelled').length;
+      return this.groupedTasks.cancelled ? this.groupedTasks.cancelled.length : 0;
     },
     pendingCount() {
-      return this.tasks.filter(task => task.status === 'pending').length;
+      return this.groupedTasks.pending ? this.groupedTasks.pending.length : 0;
     }
   },
   mounted: async function() {
+    await this.updateDateRange();
     await this.getTasks();
+    this.status = 'loaded';
   },
   template: template
 });

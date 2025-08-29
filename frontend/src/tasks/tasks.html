@@ -1,7 +1,10 @@
 <div class="p-4 space-y-6">
     <h1 class="text-2xl font-bold text-gray-700">Task Overview</h1>
+    <div v-if="status == 'init'">
+        <img src="images/loader.gif" />
+    </div>
     <!-- Task List -->
-    <div class="bg-white p-4 rounded-lg shadow">
+    <div class="bg-white p-4 rounded-lg shadow" v-if="status == 'loaded'">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Date:</label>
             <select v-model="selectedRange" @change="updateDateRange" class="border-gray-300 rounded-md shadow-sm w-full p-2">
@@ -45,19 +48,42 @@
                 <div class="text-2xl font-bold">{{cancelledCount}}</div>
             </div>
         </div>
-        <ul class="divide-y divide-gray-200">
-            <li v-for="task in tasks" :key="task.id" class="py-3 flex items-center justify-between">
-                <div>
-                    <div class="font-medium">{{ task.name }}</div>
-                    <div class="text-sm text-gray-500">{{ new Date(task.scheduledAt).toLocaleString() }}</div>
-                </div>
-                <span
-                    class="text-xs px-2 py-1 rounded-full font-medium"
-                    :class="getStatusColor(task.status)"
-                >
-                    {{ task.status }}
-                </span>
-            </li>
-        </ul>
+        
+        <!-- Grouped Task List -->
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">Tasks by Name</h2>
+            <ul class="divide-y divide-gray-200">
+                <li v-for="group in tasksByName" :key="group.name" class="py-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <div class="font-medium text-lg">{{ group.name }}</div>
+                            <div class="text-sm text-gray-500">Total: {{ group.totalCount }} tasks</div>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            Last run: {{ group.lastRun ? new Date(group.lastRun).toLocaleString() : 'Never' }}
+                        </div>
+                    </div>
+                    <!-- Status Counts -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-md p-2 text-center">
+                            <div class="text-xs text-yellow-600 font-medium">Pending</div>
+                            <div class="text-lg font-bold text-yellow-700">{{ group.statusCounts.pending || 0 }}</div>
+                        </div>
+                        <div class="bg-green-50 border border-green-200 rounded-md p-2 text-center">
+                            <div class="text-xs text-green-600 font-medium">Succeeded</div>
+                            <div class="text-lg font-bold text-green-700">{{ group.statusCounts.succeeded || 0 }}</div>
+                        </div>
+                        <div class="bg-red-50 border border-red-200 rounded-md p-2 text-center">
+                            <div class="text-xs text-red-600 font-medium">Failed</div>
+                            <div class="text-lg font-bold text-red-700">{{ group.statusCounts.failed || 0 }}</div>
+                        </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded-md p-2 text-center">
+                            <div class="text-xs text-gray-600 font-medium">Cancelled</div>
+                            <div class="text-lg font-bold text-gray-700">{{ group.statusCounts.cancelled || 0 }}</div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
     </div>
 </div>
