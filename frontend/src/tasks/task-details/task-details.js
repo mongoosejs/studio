@@ -74,37 +74,37 @@ module.exports = app => app.component('task-details', {
         this.$emit('update:currentFilter', status);
       }
     },
-         clearFilter() {
-       this.$emit('update:currentFilter', null);
-     },
-     showRescheduleConfirmation(task) {
-       this.selectedTask = task;
-       this.showRescheduleModal = true;
-     },
-     showRunConfirmation(task) {
-       this.selectedTask = task;
-       this.showRunModal = true;
-     },
-     async confirmRescheduleTask() {
-       try {
-         await this.rescheduleTask(this.selectedTask);
-         this.showRescheduleModal = false;
-         this.selectedTask = null;
-       } catch (error) {
-         console.error('Error in confirmRescheduleTask:', error);
-       }
-     },
-     async confirmRunTask() {
-       try {
-         await this.runTask(this.selectedTask);
-         this.showRunModal = false;
-         this.selectedTask = null;
-       } catch (error) {
-         console.error('Error in confirmRunTask:', error);
-       }
-     }
+    clearFilter() {
+      this.$emit('update:currentFilter', null);
+    },
+    showRescheduleConfirmation(task) {
+      this.selectedTask = task;
+      this.showRescheduleModal = true;
+    },
+    showRunConfirmation(task) {
+      this.selectedTask = task;
+      this.showRunModal = true;
+    },
+    async confirmRescheduleTask() {
+      try {
+        await this.rescheduleTask(this.selectedTask);
+        this.showRescheduleModal = false;
+        this.selectedTask = null;
+      } catch (error) {
+        console.error('Error in confirmRescheduleTask:', error);
+      }
+    },
+    async confirmRunTask() {
+      try {
+        await this.runTask(this.selectedTask);
+        this.showRunModal = false;
+        this.selectedTask = null;
+      } catch (error) {
+        console.error('Error in confirmRunTask:', error);
+      }
+    }
 
-   },
+  },
   mounted() {
     // Check if the task group was already filtered when passed from parent
     if (this.taskGroup.filteredStatus && !this.currentFilter) {

@@ -112,8 +112,8 @@ module.exports = app => app.component('tasks', {
         console.log('Creating task:', taskData);
         // await api.Task.createTask(taskData);
 
-                 // Close modal (which will reset form)
-         this.closeCreateTaskModal();
+        // Close modal (which will reset form)
+        this.closeCreateTaskModal();
 
         // Refresh the task data
         await this.getTasks();
@@ -129,17 +129,17 @@ module.exports = app => app.component('tasks', {
         parameters: ''
       };
     },
-         setDefaultCreateTaskValues() {
-       // Set default scheduled time to 1 hour from now
-       const defaultTime = new Date();
-       defaultTime.setHours(defaultTime.getHours() + 1);
-       this.newTask.scheduledAt = defaultTime.toISOString().slice(0, 16);
-     },
-     closeCreateTaskModal() {
-       this.showCreateTaskModal = false;
-       this.resetCreateTaskForm();
-       this.setDefaultCreateTaskValues();
-     },
+    setDefaultCreateTaskValues() {
+      // Set default scheduled time to 1 hour from now
+      const defaultTime = new Date();
+      defaultTime.setHours(defaultTime.getHours() + 1);
+      this.newTask.scheduledAt = defaultTime.toISOString().slice(0, 16);
+    },
+    closeCreateTaskModal() {
+      this.showCreateTaskModal = false;
+      this.resetCreateTaskForm();
+      this.setDefaultCreateTaskValues();
+    },
     getStatusColor(status) {
       if (status === 'succeeded') {
         // Green (success)
