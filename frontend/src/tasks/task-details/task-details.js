@@ -4,14 +4,9 @@ const template = require('./task-details.html');
 const api = require('../../api');
 
 module.exports = app => app.component('task-details', {
-  props: {
-    taskGroup: {
-      type: Object,
-      required: true
-    }
-  },
+  props: ['taskGroup'],
   data: () => ({
-    showCreateTask: false,
+    showCreateTaskModal: false,
     newTask: {
       name: '',
       scheduledAt: '',
@@ -102,7 +97,7 @@ module.exports = app => app.component('task-details', {
           scheduledAt: '',
           parameters: ''
         };
-        this.showCreateTask = false;
+        this.showCreateTaskModal = false;
 
         // Emit event to refresh parent data
         this.$emit('task-created');

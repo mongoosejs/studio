@@ -66,6 +66,74 @@ module.exports = app => app.component('tasks', {
       // Refresh the task data when a new task is created
       await this.getTasks();
     },
+    formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      return new Date(dateString).toLocaleString();
+    },
+    async rescheduleTask(task) {
+      try {
+        // This would call a backend API to reschedule the task
+        // For now, we'll show a confirmation dialog
+        if (confirm(`Reschedule task ${task.id}?`)) {
+          // TODO: Implement reschedule API call
+          console.log('Rescheduling task:', task.id);
+          // await api.Task.rescheduleTask(task.id);
+        }
+      } catch (error) {
+        console.error('Error rescheduling task:', error);
+        alert('Failed to reschedule task');
+      }
+    },
+    async runTask(task) {
+      try {
+        // This would call a backend API to run the task immediately
+        if (confirm(`Run task ${task.id} now?`)) {
+          // TODO: Implement run task API call
+          console.log('Running task:', task.id);
+          // await api.Task.runTask(task.id);
+        }
+      } catch (error) {
+        console.error('Error running task:', error);
+        alert('Failed to run task');
+      }
+    },
+    async createTask() {
+      try {
+        let parameters = {};
+        if (this.newTask.parameters.trim()) {
+          try {
+            parameters = JSON.parse(this.newTask.parameters);
+          } catch (e) {
+            alert('Invalid JSON in parameters field');
+            return;
+          }
+        }
+
+        const taskData = {
+          name: this.newTask.name || this.selectedTaskGroup.name,
+          scheduledAt: this.newTask.scheduledAt,
+          parameters: parameters
+        };
+
+        // TODO: Implement create task API call
+        console.log('Creating task:', taskData);
+        // await api.Task.createTask(taskData);
+
+        // Reset form and close modal
+        this.newTask = {
+          name: '',
+          scheduledAt: '',
+          parameters: ''
+        };
+        this.showCreateTask = false;
+
+        // Refresh the task data
+        await this.getTasks();
+      } catch (error) {
+        console.error('Error creating task:', error);
+        alert('Failed to create task');
+      }
+    },
     getStatusColor(status) {
       if (status === 'succeeded') {
         // Green (success)

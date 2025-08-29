@@ -65,9 +65,17 @@
                 <ul class="divide-y divide-gray-200">
                     <li v-for="group in tasksByName" :key="group.name" class="py-4">
                         <div class="flex items-center justify-between mb-3">
-                            <div class="flex-1 cursor-pointer" @click="openTaskGroupDetails(group)">
-                                <div class="font-medium text-lg hover:text-ultramarine-600">{{ group.name }}</div>
-                                <div class="text-sm text-gray-500">Total: {{ group.totalCount }} tasks</div>
+                            <div class="flex-1 cursor-pointer group" @click="openTaskGroupDetails(group)">
+                                <div class="flex items-center gap-2">
+                                    <div class="font-medium text-lg group-hover:text-ultramarine-600 transition-colors">{{ group.name }}</div>
+                                    <svg class="w-4 h-4 text-gray-400 group-hover:text-ultramarine-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                                <div class="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">Total: {{ group.totalCount }} tasks</div>
+                                <div class="text-xs text-ultramarine-600 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                                    Click to view details
+                                </div>
                             </div>
                             <div class="text-sm text-gray-500">
                                 Last run: {{ group.lastRun ? new Date(group.lastRun).toLocaleString() : 'Never' }}
