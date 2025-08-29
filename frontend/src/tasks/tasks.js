@@ -3,6 +3,7 @@
 const template = require('./tasks.html');
 const api = require('../api');
 
+
 module.exports = app => app.component('tasks', {
   data: () => ({
     status: 'init',
@@ -29,7 +30,10 @@ module.exports = app => app.component('tasks', {
       { label: 'Failed', value: 'failed' },
       { label: 'Cancelled', value: 'cancelled' }
     ],
-    newTask: { status: 'pending' }
+    newTask: { status: 'pending' },
+    // Task details view state
+    showTaskDetails: false,
+    selectedTaskGroup: null
   }),
   methods: {
     async getTasks() {
@@ -49,6 +53,18 @@ module.exports = app => app.component('tasks', {
       const { tasks, groupedTasks } = await api.Task.getTasks(params);
       this.tasks = tasks;
       this.groupedTasks = groupedTasks;
+    },
+    openTaskGroupDetails(group) {
+      this.selectedTaskGroup = group;
+      this.showTaskDetails = true;
+    },
+    hideTaskDetails() {
+      this.showTaskDetails = false;
+      this.selectedTaskGroup = null;
+    },
+    async onTaskCreated() {
+      // Refresh the task data when a new task is created
+      await this.getTasks();
     },
     getStatusColor(status) {
       if (status === 'succeeded') {

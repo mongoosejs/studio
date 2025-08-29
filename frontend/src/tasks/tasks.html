@@ -1,89 +1,101 @@
 <div class="p-4 space-y-6">
-    <h1 class="text-2xl font-bold text-gray-700">Task Overview</h1>
-    <div v-if="status == 'init'">
-        <img src="images/loader.gif" />
-    </div>
-    <!-- Task List -->
-    <div class="bg-white p-4 rounded-lg shadow" v-if="status == 'loaded'">
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Date:</label>
-            <select v-model="selectedRange" @change="updateDateRange" class="border-gray-300 rounded-md shadow-sm w-full p-2">
-                <option v-for="option in dateFilters" :key="option.value" :value="option.value">
-                {{ option.label }}
-                </option>
-            </select>
+    <!-- Task Details View -->
+    <task-details 
+        v-if="showTaskDetails && selectedTaskGroup"
+        :task-group="selectedTaskGroup"
+        @back="hideTaskDetails"
+        @task-created="onTaskCreated"
+    ></task-details>
+
+    <!-- Main Tasks View -->
+    <div v-else>
+        <h1 class="text-2xl font-bold text-gray-700">Task Overview</h1>
+        <div v-if="status == 'init'">
+            <img src="images/loader.gif" />
         </div>
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status:</label>
-            <select v-model="selectedStatus" @change="getTasks" class="border-gray-300 rounded-md shadow-sm w-full p-2">
-                <option v-for="option in statusFilters" :key="option.value" :value="option.value">
-                {{ option.label }}
-                </option>
-            </select>
-        </div>
-        <div class="mb-6">
-            <button
-              @click="resetFilters"
-              class="w-full bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium py-2 px-4 rounded-md transition"
-            >
-              Reset Filters
-            </button>
-        </div>
-          <!-- Summary Section -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div class="bg-yellow-100 text-yellow-800 p-4 rounded-lg shadow">
-                <div class="text-sm">Scheduled</div>
-                <div class="text-2xl font-bold">{{pendingCount}}</div>
+        <!-- Task List -->
+        <div class="bg-white p-4 rounded-lg shadow" v-if="status == 'loaded'">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Date:</label>
+                <select v-model="selectedRange" @change="updateDateRange" class="border-gray-300 rounded-md shadow-sm w-full p-2">
+                    <option v-for="option in dateFilters" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                    </option>
+                </select>
             </div>
-            <div class="bg-green-100 text-green-800 p-4 rounded-lg shadow">
-                <div class="text-sm">Completed</div>
-                <div class="text-2xl font-bold">{{succeededCount}}</div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status:</label>
+                <select v-model="selectedStatus" @change="getTasks" class="border-gray-300 rounded-md shadow-sm w-full p-2">
+                    <option v-for="option in statusFilters" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                    </option>
+                </select>
             </div>
-            <div class="bg-red-100 text-red-800 p-4 rounded-lg shadow">
-                <div class="text-sm">Failed</div>
-                <div class="text-2xl font-bold">{{failedCount}}</div>
+            <div class="mb-6">
+                <button
+                  @click="resetFilters"
+                  class="w-full bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium py-2 px-4 rounded-md transition"
+                >
+                  Reset Filters
+                </button>
             </div>
-            <div class="bg-blue-100 text-blue-800 p-4 rounded-lg shadow">
-                <div class="text-sm">Cancelled</div>
-                <div class="text-2xl font-bold">{{cancelledCount}}</div>
+              <!-- Summary Section -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-yellow-100 text-yellow-800 p-4 rounded-lg shadow">
+                    <div class="text-sm">Scheduled</div>
+                    <div class="text-2xl font-bold">{{pendingCount}}</div>
+                </div>
+                <div class="bg-green-100 text-green-800 p-4 rounded-lg shadow">
+                    <div class="text-sm">Completed</div>
+                    <div class="text-2xl font-bold">{{succeededCount}}</div>
+                </div>
+                <div class="bg-red-100 text-red-800 p-4 rounded-lg shadow">
+                    <div class="text-sm">Failed</div>
+                    <div class="text-2xl font-bold">{{failedCount}}</div>
+                </div>
+                <div class="bg-blue-100 text-blue-800 p-4 rounded-lg shadow">
+                    <div class="text-sm">Cancelled</div>
+                    <div class="text-2xl font-bold">{{cancelledCount}}</div>
+                </div>
             </div>
-        </div>
-        
-        <!-- Grouped Task List -->
-        <div class="mt-6">
-            <h2 class="text-lg font-semibold text-gray-700 mb-4">Tasks by Name</h2>
-            <ul class="divide-y divide-gray-200">
-                <li v-for="group in tasksByName" :key="group.name" class="py-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <div class="font-medium text-lg">{{ group.name }}</div>
-                            <div class="text-sm text-gray-500">Total: {{ group.totalCount }} tasks</div>
+            
+            <!-- Grouped Task List -->
+            <div class="mt-6">
+                <h2 class="text-lg font-semibold text-gray-700 mb-4">Tasks by Name</h2>
+                <ul class="divide-y divide-gray-200">
+                    <li v-for="group in tasksByName" :key="group.name" class="py-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex-1 cursor-pointer" @click="openTaskGroupDetails(group)">
+                                <div class="font-medium text-lg hover:text-ultramarine-600">{{ group.name }}</div>
+                                <div class="text-sm text-gray-500">Total: {{ group.totalCount }} tasks</div>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                Last run: {{ group.lastRun ? new Date(group.lastRun).toLocaleString() : 'Never' }}
+                            </div>
                         </div>
-                        <div class="text-sm text-gray-500">
-                            Last run: {{ group.lastRun ? new Date(group.lastRun).toLocaleString() : 'Never' }}
+                        
+                        <!-- Status Counts -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-2 text-center">
+                                <div class="text-xs text-yellow-600 font-medium">Pending</div>
+                                <div class="text-lg font-bold text-yellow-700">{{ group.statusCounts.pending || 0 }}</div>
+                            </div>
+                            <div class="bg-green-50 border border-green-200 rounded-md p-2 text-center">
+                                <div class="text-xs text-green-600 font-medium">Succeeded</div>
+                                <div class="text-lg font-bold text-green-700">{{ group.statusCounts.succeeded || 0 }}</div>
+                            </div>
+                            <div class="bg-red-50 border border-red-200 rounded-md p-2 text-center">
+                                <div class="text-xs text-red-600 font-medium">Failed</div>
+                                <div class="text-lg font-bold text-red-700">{{ group.statusCounts.failed || 0 }}</div>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 rounded-md p-2 text-center">
+                                <div class="text-xs text-gray-600 font-medium">Cancelled</div>
+                                <div class="text-lg font-bold text-gray-700">{{ group.statusCounts.cancelled || 0 }}</div>
+                            </div>
                         </div>
-                    </div>
-                    <!-- Status Counts -->
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-md p-2 text-center">
-                            <div class="text-xs text-yellow-600 font-medium">Pending</div>
-                            <div class="text-lg font-bold text-yellow-700">{{ group.statusCounts.pending || 0 }}</div>
-                        </div>
-                        <div class="bg-green-50 border border-green-200 rounded-md p-2 text-center">
-                            <div class="text-xs text-green-600 font-medium">Succeeded</div>
-                            <div class="text-lg font-bold text-green-700">{{ group.statusCounts.succeeded || 0 }}</div>
-                        </div>
-                        <div class="bg-red-50 border border-red-200 rounded-md p-2 text-center">
-                            <div class="text-xs text-red-600 font-medium">Failed</div>
-                            <div class="text-lg font-bold text-red-700">{{ group.statusCounts.failed || 0 }}</div>
-                        </div>
-                        <div class="bg-gray-50 border border-gray-200 rounded-md p-2 text-center">
-                            <div class="text-xs text-gray-600 font-medium">Cancelled</div>
-                            <div class="text-lg font-bold text-gray-700">{{ group.statusCounts.cancelled || 0 }}</div>
-                        </div>
-                    </div>
-                </li>
-            </ul>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
