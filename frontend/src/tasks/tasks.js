@@ -112,9 +112,8 @@ module.exports = app => app.component('tasks', {
         console.log('Creating task:', taskData);
         // await api.Task.createTask(taskData);
 
-        // Reset form and close modal
-        this.resetCreateTaskForm();
-        this.showCreateTaskModal = false;
+                 // Close modal (which will reset form)
+         this.closeCreateTaskModal();
 
         // Refresh the task data
         await this.getTasks();
@@ -130,12 +129,17 @@ module.exports = app => app.component('tasks', {
         parameters: ''
       };
     },
-    setDefaultCreateTaskValues() {
-      // Set default scheduled time to 1 hour from now
-      const defaultTime = new Date();
-      defaultTime.setHours(defaultTime.getHours() + 1);
-      this.newTask.scheduledAt = defaultTime.toISOString().slice(0, 16);
-    },
+         setDefaultCreateTaskValues() {
+       // Set default scheduled time to 1 hour from now
+       const defaultTime = new Date();
+       defaultTime.setHours(defaultTime.getHours() + 1);
+       this.newTask.scheduledAt = defaultTime.toISOString().slice(0, 16);
+     },
+     closeCreateTaskModal() {
+       this.showCreateTaskModal = false;
+       this.resetCreateTaskForm();
+       this.setDefaultCreateTaskValues();
+     },
     getStatusColor(status) {
       if (status === 'succeeded') {
         // Green (success)
@@ -300,13 +304,6 @@ module.exports = app => app.component('tasks', {
     this.status = 'loaded';
     this.setDefaultCreateTaskValues();
   },
-  watch: {
-    showCreateTaskModal(newVal) {
-      if (newVal) {
-        this.resetCreateTaskForm();
-        this.setDefaultCreateTaskValues();
-      }
-    }
-  },
+
   template: template
 });
