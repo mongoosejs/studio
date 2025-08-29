@@ -89,26 +89,6 @@ module.exports = app => app.component('tasks', {
       if (!dateString) return 'N/A';
       return new Date(dateString).toLocaleString();
     },
-    async rescheduleTask(task) {
-      try {
-        // TODO: Implement reschedule API call
-        console.log('Rescheduling task:', task.id);
-        // await api.Task.rescheduleTask(task.id);
-      } catch (error) {
-        console.error('Error rescheduling task:', error);
-        // TODO: Add proper error handling/notification
-      }
-    },
-    async runTask(task) {
-      try {
-        // TODO: Implement run task API call
-        console.log('Running task:', task.id);
-        // await api.Task.runTask(task.id);
-      } catch (error) {
-        console.error('Error running task:', error);
-        // TODO: Add proper error handling/notification
-      }
-    },
     async createTask() {
       try {
         let parameters = {};
