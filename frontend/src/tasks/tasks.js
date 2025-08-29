@@ -25,15 +25,22 @@ module.exports = app => app.component('tasks', {
     statusFilters: [
       { label: 'All', value: 'all' },
       { label: 'Pending', value: 'pending' },
-      { label: 'In Progress', value: 'in_progress' },
+      // { label: 'In Progress', value: 'in_progress' },
       { label: 'Succeeded', value: 'succeeded' },
       { label: 'Failed', value: 'failed' },
       { label: 'Cancelled', value: 'cancelled' }
     ],
-    newTask: { status: 'pending' },
     // Task details view state
     showTaskDetails: false,
-    selectedTaskGroup: null
+    selectedTaskGroup: null,
+    taskDetailsFilter: null,
+    // Create task modal state
+    showCreateTaskModal: false,
+    newTask: {
+      name: '',
+      scheduledAt: '',
+      parameters: ''
+    }
   }),
   methods: {
     async getTasks() {
@@ -58,9 +65,21 @@ module.exports = app => app.component('tasks', {
       this.selectedTaskGroup = group;
       this.showTaskDetails = true;
     },
+    openTaskGroupDetailsWithFilter(group, status) {
+      // Create a filtered version of the task group with only the specified status
+      const filteredGroup = {
+        ...group,
+        tasks: group.tasks.filter(task => task.status === status),
+        filteredStatus: status
+      };
+      this.selectedTaskGroup = filteredGroup;
+      this.taskDetailsFilter = status;
+      this.showTaskDetails = true;
+    },
     hideTaskDetails() {
       this.showTaskDetails = false;
       this.selectedTaskGroup = null;
+      this.taskDetailsFilter = null;
     },
     async onTaskCreated() {
       // Refresh the task data when a new task is created
@@ -104,7 +123,7 @@ module.exports = app => app.component('tasks', {
         }
 
         const taskData = {
-          name: this.newTask.name || this.selectedTaskGroup.name,
+          name: this.newTask.name,
           scheduledAt: this.newTask.scheduledAt,
           parameters: parameters
         };
@@ -114,12 +133,8 @@ module.exports = app => app.component('tasks', {
         // await api.Task.createTask(taskData);
 
         // Reset form and close modal
-        this.newTask = {
-          name: '',
-          scheduledAt: '',
-          parameters: ''
-        };
-        this.showCreateTask = false;
+        this.resetCreateTaskForm();
+        this.showCreateTaskModal = false;
 
         // Refresh the task data
         await this.getTasks();
@@ -127,6 +142,19 @@ module.exports = app => app.component('tasks', {
         console.error('Error creating task:', error);
         // TODO: Add proper error handling/notification
       }
+    },
+    resetCreateTaskForm() {
+      this.newTask = {
+        name: '',
+        scheduledAt: '',
+        parameters: ''
+      };
+    },
+    setDefaultCreateTaskValues() {
+      // Set default scheduled time to 1 hour from now
+      const defaultTime = new Date();
+      defaultTime.setHours(defaultTime.getHours() + 1);
+      this.newTask.scheduledAt = defaultTime.toISOString().slice(0, 16);
     },
     getStatusColor(status) {
       if (status === 'succeeded') {
@@ -151,9 +179,11 @@ module.exports = app => app.component('tasks', {
     },
     async resetFilters() {
       this.selectedStatus = 'all';
-      this.selectedRange = 'all';
-      this.start = null;
-      this.end = null;
+      this.selectedRange = 'today';
+      await this.updateDateRange();
+    },
+    async setStatusFilter(status) {
+      this.selectedStatus = status;
       await this.getTasks();
     },
     async updateDateRange() {
@@ -288,6 +318,15 @@ module.exports = app => app.component('tasks', {
     await this.updateDateRange();
     await this.getTasks();
     this.status = 'loaded';
+    this.setDefaultCreateTaskValues();
+  },
+  watch: {
+    showCreateTaskModal(newVal) {
+      if (newVal) {
+        this.resetCreateTaskForm();
+        this.setDefaultCreateTaskValues();
+      }
+    }
   },
   template: template
 });

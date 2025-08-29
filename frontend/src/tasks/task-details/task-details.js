@@ -4,18 +4,22 @@ const template = require('./task-details.html');
 const api = require('../../api');
 
 module.exports = app => app.component('task-details', {
-  props: ['taskGroup'],
+  props: ['taskGroup', 'currentFilter'],
   data: () => ({
-    showCreateTaskModal: false,
-    newTask: {
-      name: '',
-      scheduledAt: '',
-      parameters: ''
-    }
+    showRescheduleModal: false,
+    showRunModal: false,
+    selectedTask: null
   }),
   computed: {
     sortedTasks() {
-      return [...this.taskGroup.tasks].sort((a, b) => {
+      let tasks = this.taskGroup.tasks;
+      
+      // Apply filter if one is set
+      if (this.currentFilter) {
+        tasks = tasks.filter(task => task.status === this.currentFilter);
+      }
+      
+      return tasks.sort((a, b) => {
         const dateA = new Date(a.scheduledAt || a.createdAt || 0);
         const dateB = new Date(b.scheduledAt || b.createdAt || 0);
         return dateB - dateA; // Most recent first
@@ -62,53 +66,50 @@ module.exports = app => app.component('task-details', {
         // TODO: Add proper error handling/notification
       }
     },
-    async createTask() {
-      try {
-        let parameters = {};
-        if (this.newTask.parameters.trim()) {
-          try {
-            parameters = JSON.parse(this.newTask.parameters);
-          } catch (e) {
-            console.error('Invalid JSON in parameters field:', e);
-            // TODO: Add proper validation feedback
-            return;
-          }
-        }
-
-        const taskData = {
-          name: this.newTask.name || this.taskGroup.name,
-          scheduledAt: this.newTask.scheduledAt,
-          parameters: parameters
-        };
-
-        // TODO: Implement create task API call
-        console.log('Creating task:', taskData);
-        // await api.Task.createTask(taskData);
-
-        // Reset form and close modal
-        this.newTask = {
-          name: '',
-          scheduledAt: '',
-          parameters: ''
-        };
-        this.showCreateTaskModal = false;
-
-        // Emit event to refresh parent data
-        this.$emit('task-created');
-      } catch (error) {
-        console.error('Error creating task:', error);
-        // TODO: Add proper error handling/notification
+    filterByStatus(status) {
+      // If clicking the same status, clear the filter
+      if (this.currentFilter === status) {
+        this.$emit('update:currentFilter', null);
+      } else {
+        this.$emit('update:currentFilter', status);
       }
-    }
-  },
+    },
+         clearFilter() {
+       this.$emit('update:currentFilter', null);
+     },
+     showRescheduleConfirmation(task) {
+       this.selectedTask = task;
+       this.showRescheduleModal = true;
+     },
+     showRunConfirmation(task) {
+       this.selectedTask = task;
+       this.showRunModal = true;
+     },
+     async confirmRescheduleTask() {
+       try {
+         await this.rescheduleTask(this.selectedTask);
+         this.showRescheduleModal = false;
+         this.selectedTask = null;
+       } catch (error) {
+         console.error('Error in confirmRescheduleTask:', error);
+       }
+     },
+     async confirmRunTask() {
+       try {
+         await this.runTask(this.selectedTask);
+         this.showRunModal = false;
+         this.selectedTask = null;
+       } catch (error) {
+         console.error('Error in confirmRunTask:', error);
+       }
+     }
+
+   },
   mounted() {
-    // Set default values
-    this.newTask.name = this.taskGroup.name;
-    
-    // Set default scheduled time to 1 hour from now
-    const defaultTime = new Date();
-    defaultTime.setHours(defaultTime.getHours() + 1);
-    this.newTask.scheduledAt = defaultTime.toISOString().slice(0, 16);
+    // Check if the task group was already filtered when passed from parent
+    if (this.taskGroup.filteredStatus && !this.currentFilter) {
+      this.$emit('update:currentFilter', this.taskGroup.filteredStatus);
+    }
   },
   template: template
 });
