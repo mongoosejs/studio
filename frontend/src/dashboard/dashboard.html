@@ -59,7 +59,8 @@
         :currentDescription="description"
         :currentTitle="title"
         @close="showEditor=false;"
-        @update="updateCode"></edit-dashboard>
+        @update="updateCode"
+        @clearError="errorMessage = null"></edit-dashboard>
     </div>
     <div v-if="errorMessage" class="rounded-md bg-red-50 p-4 mt-4">
       <div class="flex">

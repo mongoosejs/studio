@@ -6,6 +6,7 @@ const template = require('./edit-dashboard.html');
 module.exports = app => app.component('edit-dashboard', {
   template: template,
   props: ['dashboardId', 'code', 'currentDescription', 'currentTitle'],
+  emits: ['close', 'clearError'],
   data: function() {
     return {
       status: 'loaded',
@@ -19,6 +20,7 @@ module.exports = app => app.component('edit-dashboard', {
       this.$emit('close');
     },
     async updateCode() {
+      this.$emit('clearError');
       this.status = 'loading';
       try {
         const { doc, result, error } = await api.Dashboard.updateDashboard({
