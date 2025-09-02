@@ -35,16 +35,19 @@ module.exports = app => app.component('dashboard', {
     },
     async evaluateDashboard() {
       this.status = 'evaluating';
+      this.errorMessage = null;
       try {
         const { dashboard, dashboardResult, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
         this.dashboard = dashboard;
-        if (error) {
-          this.errorMessage = error.message;
-        }
         this.code = this.dashboard.code;
         this.title = this.dashboard.title;
         this.description = this.dashboard.description ?? '';
-        this.dashboardResults.unshift(dashboardResult);
+        if (dashboardResult) {
+          this.dashboardResults.unshift(dashboardResult);
+        }
+        if (error) {
+          this.errorMessage = error.message;
+        }
       } finally {
         this.status = 'loaded';
       }
