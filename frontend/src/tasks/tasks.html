@@ -6,6 +6,7 @@
          :current-filter="taskDetailsFilter"
          @back="hideTaskDetails"
          @task-created="onTaskCreated"
+         @task-cancelled="onTaskCancelled"
          @update:current-filter="taskDetailsFilter = $event"
      ></task-details>
 
@@ -32,6 +33,16 @@
                     {{ option.label }}
                     </option>
                 </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search by Task Name:</label>
+                <input 
+                    v-model="searchQuery" 
+                    type="text" 
+                    @input="onSearchInput"
+                    class="border-gray-300 rounded-md shadow-sm w-full p-2"
+                    placeholder="Enter task name to search..."
+                >
             </div>
             <div class="mb-4">
                 <button
@@ -175,6 +186,19 @@
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ultramarine-500"
                         placeholder='{"key": "value"}'
                     ></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Repeat Interval (ms):</label>
+                    <input 
+                        v-model="newTask.repeatInterval" 
+                        type="number" 
+                        min="0"
+                        step="1000"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ultramarine-500"
+                        placeholder="0 for no repetition"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">Enter 0 or leave empty for no repetition. Use 1000 for 1 second, 60000 for 1 minute, etc.</p>
                 </div>
                 
                 <div class="flex gap-2 pt-4">

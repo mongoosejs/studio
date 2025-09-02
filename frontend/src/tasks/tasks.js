@@ -30,6 +30,8 @@ module.exports = app => app.component('tasks', {
       { label: 'Failed', value: 'failed' },
       { label: 'Cancelled', value: 'cancelled' }
     ],
+    searchQuery: '',
+    searchTimeout: null,
     // Task details view state
     showTaskDetails: false,
     selectedTaskGroup: null,
@@ -39,7 +41,8 @@ module.exports = app => app.component('tasks', {
     newTask: {
       name: '',
       scheduledAt: '',
-      parameters: ''
+      parameters: '',
+      repeatInterval: ''
     }
   }),
   methods: {
@@ -57,6 +60,11 @@ module.exports = app => app.component('tasks', {
       } else if (this.start) {
         params.start = this.start;
       }
+      
+      if (this.searchQuery.trim()) {
+        params.name = this.searchQuery.trim();
+      }
+      
       const { tasks, groupedTasks } = await api.Task.getTasks(params);
       this.tasks = tasks;
       this.groupedTasks = groupedTasks;
@@ -75,6 +83,10 @@ module.exports = app => app.component('tasks', {
       this.selectedTaskGroup = filteredGroup;
       this.taskDetailsFilter = status;
       this.showTaskDetails = true;
+    },
+    async onTaskCancelled() {
+      // Refresh the task data when a task is cancelled
+      await this.getTasks();
     },
     hideTaskDetails() {
       this.showTaskDetails = false;
@@ -102,15 +114,28 @@ module.exports = app => app.component('tasks', {
           }
         }
 
+        // Validate repeat interval
+        let repeatInterval = null;
+        if (this.newTask.repeatInterval && this.newTask.repeatInterval.trim()) {
+          const interval = parseInt(this.newTask.repeatInterval);
+          if (isNaN(interval) || interval < 0) {
+            console.error('Invalid repeat interval. Must be a positive number.');
+            // TODO: Add proper validation feedback
+            return;
+          }
+          repeatInterval = interval;
+        }
+
         const taskData = {
           name: this.newTask.name,
           scheduledAt: this.newTask.scheduledAt,
-          parameters: parameters
+          payload: parameters,
+          repeatAfterMS: repeatInterval
         };
 
         // TODO: Implement create task API call
         console.log('Creating task:', taskData);
-        // await api.Task.createTask(taskData);
+        await api.Task.createTask(taskData);
 
         // Close modal (which will reset form)
         this.closeCreateTaskModal();
@@ -126,7 +151,8 @@ module.exports = app => app.component('tasks', {
       this.newTask = {
         name: '',
         scheduledAt: '',
-        parameters: ''
+        parameters: '',
+        repeatInterval: ''
       };
     },
     setDefaultCreateTaskValues() {
@@ -164,31 +190,23 @@ module.exports = app => app.component('tasks', {
     async resetFilters() {
       this.selectedStatus = 'all';
       this.selectedRange = 'today';
+      this.searchQuery = '';
       await this.updateDateRange();
     },
     async setStatusFilter(status) {
       this.selectedStatus = status;
       await this.getTasks();
     },
+    async onSearchInput() {
+      // Debounce the search to avoid too many API calls
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(async () => {
+        await this.getTasks();
+      }, 300);
+    },
     async updateDateRange() {
       const now = new Date();
       let start, end;
-
-      const getStartOfWeek = (d) => {
-        const date = new Date(d);
-        const day = date.getDay();
-        date.setDate(date.getDate() - day);
-        date.setHours(0, 0, 0, 0);
-        return date;
-      };
-
-      const getEndOfWeek = (d) => {
-        const date = new Date(d);
-        const day = date.getDay();
-        date.setDate(date.getDate() + (6 - day));
-        date.setHours(23, 59, 59, 999);
-        return date;
-      };
 
       switch (this.selectedRange) {
         case 'today':
@@ -202,18 +220,18 @@ module.exports = app => app.component('tasks', {
           start.setDate(start.getDate() - 1);
           start.setHours(0, 0, 0, 0);
           end = new Date();
-          end.setDate(end.getDate() - 1);
-          end.setHours(23, 59, 59, 999);
           break;
         case 'thisWeek':
-          start = getStartOfWeek(now);
-          end = getEndOfWeek(now);
+          start = new Date(now.getTime() - (7 * 86400000));
+          start.setHours(0, 0, 0, 0);
+          end = new Date();
+          end.setHours(23, 59, 59, 999);
           break;
         case 'lastWeek':
-          const lastWeekStart = getStartOfWeek(new Date(now.getTime() - 7 * 86400000));
-          const lastWeekEnd = getEndOfWeek(new Date(now.getTime() - 7 * 86400000));
-          start = lastWeekStart;
-          end = lastWeekEnd;
+          start = new Date(now.getTime() - (14 * 86400000));
+          start.setHours(0, 0, 0, 0);
+          end = new Date(now.getTime() - (7 * 86400000));
+          end.setHours(23, 59, 59, 999);
           break;
         case 'thisMonth':
           start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -227,7 +245,7 @@ module.exports = app => app.component('tasks', {
         default:
           this.start = null;
           this.end = null;
-          return;
+          break;
       }
 
       this.start = start;
@@ -237,12 +255,6 @@ module.exports = app => app.component('tasks', {
     }
   },
   computed: {
-    canCreateNewTask() {
-      if (this.newTask.status && this.newTask.time && this.newTask.name) {
-        return true;
-      }
-      return false;
-    },
     tasksByName() {
       const groups = {};
       

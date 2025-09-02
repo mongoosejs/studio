@@ -8,7 +8,9 @@ module.exports = app => app.component('task-details', {
   data: () => ({
     showRescheduleModal: false,
     showRunModal: false,
-    selectedTask: null
+    showCancelModal: false,
+    selectedTask: null,
+    newScheduledTime: ''
   }),
   computed: {
     sortedTasks() {
@@ -49,8 +51,12 @@ module.exports = app => app.component('task-details', {
     async rescheduleTask(task) {
       try {
         // TODO: Implement reschedule API call
-        console.log('Rescheduling task:', task.id);
-        // await api.Task.rescheduleTask(task.id);
+        if (!this.newScheduledTime) {
+          return;
+        }
+        console.log('Rescheduling task:', task.id, 'to:', this.newScheduledTime);
+        await api.Task.rescheduleTask({ taskId: task.id, scheduledAt: this.newScheduledTime });
+        // await api.Task.rescheduleTask(task.id, { scheduledAt: this.newScheduledTime });
       } catch (error) {
         console.error('Error rescheduling task:', error);
         // TODO: Add proper error handling/notification
@@ -63,6 +69,16 @@ module.exports = app => app.component('task-details', {
         // await api.Task.runTask(task.id);
       } catch (error) {
         console.error('Error running task:', error);
+        // TODO: Add proper error handling/notification
+      }
+    },
+    async cancelTask(task) {
+      try {
+        await api.Task.cancelTask({ taskId: task.id });
+        // Refresh the task data by emitting an event to the parent
+        this.$emit('task-cancelled');
+      } catch (error) {
+        console.error('Error cancelling task:', error);
         // TODO: Add proper error handling/notification
       }
     },
@@ -79,17 +95,26 @@ module.exports = app => app.component('task-details', {
     },
     showRescheduleConfirmation(task) {
       this.selectedTask = task;
+      // Set default time to 1 hour from now
+      const defaultTime = new Date();
+      defaultTime.setHours(defaultTime.getHours() + 1);
+      this.newScheduledTime = defaultTime.toISOString().slice(0, 16);
       this.showRescheduleModal = true;
     },
     showRunConfirmation(task) {
       this.selectedTask = task;
       this.showRunModal = true;
     },
+    showCancelConfirmation(task) {
+      this.selectedTask = task;
+      this.showCancelModal = true;
+    },
     async confirmRescheduleTask() {
       try {
         await this.rescheduleTask(this.selectedTask);
         this.showRescheduleModal = false;
         this.selectedTask = null;
+        this.newScheduledTime = '';
       } catch (error) {
         console.error('Error in confirmRescheduleTask:', error);
       }
@@ -101,6 +126,15 @@ module.exports = app => app.component('task-details', {
         this.selectedTask = null;
       } catch (error) {
         console.error('Error in confirmRunTask:', error);
+      }
+    },
+    async confirmCancelTask() {
+      try {
+        await this.cancelTask(this.selectedTask);
+        this.showCancelModal = false;
+        this.selectedTask = null;
+      } catch (error) {
+        console.error('Error in confirmCancelTask:', error);
       }
     }
 

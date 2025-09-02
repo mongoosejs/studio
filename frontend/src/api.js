@@ -131,8 +131,20 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
   exports.Task = {
+    cancelTask: function cancelTask(params) {
+      return client.post('', { action: 'Task.cancelTask', ...params }).then(res => res.data);
+    },
+    createTask: function createTask(params) {
+      return client.post('', { action: 'Task.createTask', ...params }).then(res => res.data);
+    },
     getTasks: function getTasks(params) {
       return client.post('', { action: 'Task.getTasks', ...params }).then(res => res.data);
+    },
+    rescheduleTask: function rescheduleTask(params) {
+      return client.post('', { action: 'Task.rescheduleTask', ...params }).then(res => res.data);
+    },
+    runTask: function runTask(params) {
+      return client.post('', { action: 'Task.runTask', ...params }).then(res => res.data);
     }
   };
 } else {
@@ -241,8 +253,20 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
   exports.Task = {
+    cancelTask: function cancelTask(params) {
+      return client.post('/Task/cancelTask', params).then(res => res.data);
+    },
+    createTask: function createTask(params) {
+      return client.post('/Task/createTask', params).then(res => res.data);
+    },
     getTasks: function getTasks(params) {
       return client.post('/Task/getTasks', params).then(res => res.data);
+    },
+    rescheduleTask: function rescheduleTask(params) {
+      return client.post('/Task/rescheduleTask', params).then(res => res.data);
+    },
+    runTask: function runTask(params) {
+      return client.post('/Task/runTask', params).then(res => res.data);
     }
   };
 }

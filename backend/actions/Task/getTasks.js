@@ -11,23 +11,29 @@ const GetTasksParams = new Archetype({
   },
   status: {
     $type: 'string'
+  },
+  name: {
+    $type: 'string'
   }
 }).compile('GetTasksParams');
 
 module.exports = ({ db }) => async function getTasks(params) {
   params = new GetTasksParams(params);
-  const { start, end, status } = params;
+  const { start, end, status, name } = params;
   const { Task } = db.models;
 
   const filter = {};
 
   if (start && end) {
-    filter.scheduledAt = { $gte: start, $lte: end };
+    filter.scheduledAt = { $gte: start, $lt: end };
   } else if (start) {
     filter.scheduledAt = { $gte: start };
   }
   if (status) {
     filter.status = status;
+  }
+  if (name) {
+    filter.name = { $regex: name, $options: 'i' };
   }
 
   const tasks = await Task.find(filter);
