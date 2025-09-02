@@ -4,14 +4,14 @@ const Archetype = require('archetype');
 const mongoose = require('mongoose');
 
 const RescheduleTaskParams = new Archetype({
-    taskId: {
-        $type: mongoose.Types.ObjectId,
-        $required: true
-    },
-    scheduledAt: {
-        $type: Date,
-        $required: true
-    }
+  taskId: {
+    $type: mongoose.Types.ObjectId,
+    $required: true
+  },
+  scheduledAt: {
+    $type: Date,
+    $required: true
+  }
 }).compile('RescheduleTaskParams');
 
 module.exports = ({ db }) => async function rescheduleTask(params) {
@@ -22,11 +22,11 @@ module.exports = ({ db }) => async function rescheduleTask(params) {
   const task = await Task.findOne({ _id: taskId }).orFail();
 
   if (scheduledAt < Date.now()) {
-    throw new Error ('Cannot reschedule a task for the past')
+    throw new Error('Cannot reschedule a task for the past');
   }
 
   if (task.status != 'pending') {
-    throw new Error('Cannot reschedule a task that is not pending')
+    throw new Error('Cannot reschedule a task that is not pending');
   }
 
   task.scheduledAt = scheduledAt;

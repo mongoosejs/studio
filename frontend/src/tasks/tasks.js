@@ -200,7 +200,7 @@ module.exports = app => app.component('tasks', {
     async onSearchInput() {
       // Debounce the search to avoid too many API calls
       clearTimeout(this.searchTimeout);
-      this.searchTimeout = setTimeout(async () => {
+      this.searchTimeout = setTimeout(async() => {
         await this.getTasks();
       }, 300);
     },

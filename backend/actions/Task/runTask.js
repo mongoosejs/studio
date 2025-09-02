@@ -4,10 +4,10 @@ const Archetype = require('archetype');
 const mongoose = require('mongoose');
 
 const RunTaskParams = new Archetype({
-    taskId: {
-        $type: mongoose.Types.ObjectId,
-        $required: true
-    }
+  taskId: {
+    $type: mongoose.Types.ObjectId,
+    $required: true
+  }
 }).compile('RunTaskParams');
 
 module.exports = ({ db }) => async function runTask(params) {

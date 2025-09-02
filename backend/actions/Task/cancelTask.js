@@ -4,10 +4,10 @@ const Archetype = require('archetype');
 const mongoose = require('mongoose');
 
 const CancelTaskParams = new Archetype({
-    taskId: {
-        $type: mongoose.Types.ObjectId,
-        $required: true
-    }
+  taskId: {
+    $type: mongoose.Types.ObjectId,
+    $required: true
+  }
 }).compile('CancelTaskParams');
 
 module.exports = ({ db }) => async function cancelTask(params) {
