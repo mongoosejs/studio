@@ -24,7 +24,7 @@ const UpdateDashboardParams = new Archetype({
 }).compile('UpdateDashboardParams');
 
 module.exports = ({ db }) => async function updateDashboard(params) {
-  const { dashboardId, code, title, description, roles } = new UpdateDashboardParams(params);
+  const { dashboardId, code, title, description, roles, evaluate } = new UpdateDashboardParams(params);
 
   const Dashboard = db.models['__Studio_Dashboard'];
 
@@ -43,12 +43,5 @@ module.exports = ({ db }) => async function updateDashboard(params) {
   const doc = await Dashboard.
     findByIdAndUpdate(dashboardId, updateObj, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true });
 
-  let result = null;
-  try {
-    result = await doc.evaluate();
-  } catch (error) {
-    return { doc, error: { message: error.message } };
-  }
-
-  return { doc, result };
+  return { doc };
 };
