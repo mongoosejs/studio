@@ -16,6 +16,7 @@ function hasAccess(roles, routeName) {
   // change to true for local development
   if (!roles) return allowedRoutesForLocalDev.includes(routeName);
   return roles.some(role => roleAccess[role]?.includes(routeName));
+  
 }
 
 module.exports = {
@@ -33,7 +34,7 @@ module.exports = {
       name: 'model',
       component: 'models',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -41,7 +42,7 @@ module.exports = {
       name: 'document',
       component: 'document',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -49,7 +50,7 @@ module.exports = {
       name: 'dashboards',
       component: 'dashboards',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -57,13 +58,21 @@ module.exports = {
       name: 'dashboard',
       component: 'dashboard',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
       path: '/team',
       name: 'team',
       component: 'team',
+      meta: {
+        authorized: false
+      }
+    },
+    {
+      path: '/tasks',
+      name: 'tasks',
+      component: 'tasks',
       meta: {
         authorized: true
       }
