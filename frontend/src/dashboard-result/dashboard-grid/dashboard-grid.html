@@ -1,0 +1,9 @@
+<div class="grid gap-2" :style="{ gridTemplateColumns: gridTemplateColumns }">
+  <template v-for="(row, rowIndex) in value.$grid" :key="rowIndex">
+    <dashboard-result
+      v-for="(cell, colIndex) in row"
+      :key="rowIndex + '-' + colIndex"
+      :result="cell">
+    </dashboard-result>
+  </template>
+</div>
