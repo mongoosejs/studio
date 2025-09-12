@@ -38,8 +38,8 @@
             <input ref="searchInput" class="w-full font-mono rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter" v-model="searchText" @click="initFilter" />
           </form>
           <div>
-            <span v-if="status === 'loading'">Loading ...</span>
-            <span v-if="status === 'loaded'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
+            <span v-if="numDocuments == null">Loading ...</span>
+            <span v-else-if="typeof numDocuments === 'number'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
           </div>
           <button
             @click="shouldShowExportModal = true"
