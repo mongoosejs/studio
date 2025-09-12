@@ -15,6 +15,18 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 
 const appendCSS = require('../appendCSS');
 
+function safeEval(code) {
+  const sandbox = { ObjectId, Date, Math };
+  return Function('sandbox', `"use strict";
+    const { ObjectId, Date, Math } = sandbox;
+    const window = undefined;
+    const document = undefined;
+    const globalThis = undefined;
+    const Function = undefined;
+    const eval = undefined;
+    return (${code});
+  `)(sandbox);
+}
 
 appendCSS(require('./models.css'));
 
@@ -80,11 +92,11 @@ module.exports = app => app.component('models', {
       this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
       if (this.$route.query?.search) {
         this.searchText = this.$route.query.search;
-        this.filter = eval(`(${this.$route.query.search})`);
+        this.filter = safeEval(this.$route.query.search);
         this.filter = EJSON.stringify(this.filter);
       }
       if (this.$route.query?.sort) {
-        const sort = eval(`(${this.$route.query.sort})`);
+        const sort = safeEval(this.$route.query.sort);
         const path = Object.keys(sort)[0];
         const num = Object.values(sort)[0];
         this.sortDocs(num, path);
@@ -189,7 +201,7 @@ module.exports = app => app.component('models', {
     },
     async search() {
       if (this.searchText && Object.keys(this.searchText).length) {
-        this.filter = eval(`(${this.searchText})`);
+        this.filter = safeEval(this.searchText);
         this.filter = EJSON.stringify(this.filter);
         this.query.search = this.searchText;
         const query = this.query;
