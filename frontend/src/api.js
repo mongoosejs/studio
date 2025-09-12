@@ -114,6 +114,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getDocuments: function getDocuments(params) {
       return client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
     },
+    getDocumentsStream: function getDocumentsStream(params) {
+      return client.post('', { action: 'Model.getDocumentsStream', ...params }).then(res => res.data);
+    },
     getIndexes: function getIndexes(params) {
       return client.post('', { action: 'Model.getIndexes', ...params }).then(res => res.data);
     },
@@ -218,6 +221,55 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getDocuments: function getDocuments(params) {
       return client.post('/Model/getDocuments', params).then(res => res.data);
+    },
+    getDocumentsStream: async function* getDocumentsStream(params) {
+      const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
+      const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/getDocumentsStream?' + new URLSearchParams(params).toString();
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `${accessToken}`,
+          Accept: 'text/event-stream'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let eventEnd;
+        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
+          const eventStr = buffer.slice(0, eventEnd);
+          buffer = buffer.slice(eventEnd + 2);
+
+          // Parse SSE event
+          const lines = eventStr.split('\n');
+          let data = '';
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              data += line.slice(5).trim();
+            }
+          }
+          if (data) {
+            try {
+              yield JSON.parse(data);
+            } catch (err) {
+              // If not JSON, yield as string
+              yield data;
+            }
+          }
+        }
+      }
     },
     getIndexes: function getIndexes(params) {
       return client.post('/Model/getIndexes', params).then(res => res.data);

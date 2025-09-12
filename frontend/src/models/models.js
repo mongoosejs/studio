@@ -30,7 +30,7 @@ module.exports = app => app.component('models', {
     schemaPaths: [],
     filteredPaths: [],
     selectedPaths: [],
-    numDocuments: 0,
+    numDocuments: null,
     mongoDBIndexes: [],
     schemaIndexes: [],
     status: 'loading',
@@ -223,44 +223,85 @@ module.exports = app => app.component('models', {
       }
     },
     async getDocuments() {
-      const { docs, schemaPaths, numDocs } = await api.Model.getDocuments({
+      // Clear previous data
+      this.documents = [];
+      this.schemaPaths = [];
+      this.numDocuments = null;
+      this.loadedAllDocs = false;
+
+      let docsCount = 0;
+      let schemaPathsReceived = false;
+
+      // Use async generator to stream SSEs
+      for await (const event of api.Model.getDocumentsStream({
         model: this.currentModel,
         filter: this.filter,
         sort: this.sortBy,
         limit
-      });
-      this.documents = docs;
-      if (docs.length < limit) {
+      })) {
+        if (event.schemaPaths && !schemaPathsReceived) {
+          // Sort schemaPaths with _id first
+          this.schemaPaths = Object.keys(event.schemaPaths).sort((k1, k2) => {
+            if (k1 === '_id' && k2 !== '_id') {
+              return -1;
+            }
+            if (k1 !== '_id' && k2 === '_id') {
+              return 1;
+            }
+            return 0;
+          }).map(key => event.schemaPaths[key]);
+          this.shouldExport = {};
+          for (const { path } of this.schemaPaths) {
+            this.shouldExport[path] = true;
+          }
+          this.filteredPaths = [...this.schemaPaths];
+          this.selectedPaths = [...this.schemaPaths];
+          schemaPathsReceived = true;
+        }
+        if (event.numDocs !== undefined) {
+          this.numDocuments = event.numDocs;
+        }
+        if (event.document) {
+          this.documents.push(event.document);
+          docsCount++;
+        }
+        if (event.message) {
+          this.status = 'loaded';
+          throw new Error(event.message);
+        }
+      }
+
+      if (docsCount < limit) {
         this.loadedAllDocs = true;
       }
-      this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
-        if (k1 === '_id' && k2 !== '_id') {
-          return -1;
-        }
-        if (k1 !== '_id' && k2 === '_id') {
-          return 1;
-        }
-        return 0;
-      }).map(key => schemaPaths[key]);
-      this.numDocuments = numDocs;
-
-      this.shouldExport = {};
-      for (const { path } of this.schemaPaths) {
-        this.shouldExport[path] = true;
-      }
-      this.filteredPaths = [...this.schemaPaths];
-      this.selectedPaths = [...this.schemaPaths];
     },
     async loadMoreDocuments() {
-      const { docs, numDocs } = await api.Model.getDocuments({
+      let docsCount = 0;
+      let numDocsReceived = false;
+
+      // Use async generator to stream SSEs
+      for await (const event of api.Model.getDocumentsStream({
         model: this.currentModel,
         filter: this.filter,
         sort: this.sortBy,
+        skip: this.documents.length,
         limit
-      });
-      this.documents = docs;
-      this.numDocuments = numDocs;
-      if (docs.length < limit) {
+      })) {
+        if (event.numDocs !== undefined && !numDocsReceived) {
+          this.numDocuments = event.numDocs;
+          numDocsReceived = true;
+        }
+        if (event.document) {
+          this.documents.push(event.document);
+          docsCount++;
+        }
+        if (event.message) {
+          this.status = 'loaded';
+          throw new Error(event.message);
+        }
+      }
+
+      if (docsCount < limit) {
         this.loadedAllDocs = true;
       }
     },
