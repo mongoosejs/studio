@@ -108,7 +108,6 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
         }
         numDocsYielded = true;
       }
-      console.log('Yield', doc._id);
       yield { document: doc.toJSON({ virtuals: false, getters: false, transform: false }) };
     }
 
