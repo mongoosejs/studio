@@ -47,9 +47,5 @@ module.exports = function evaluateFilter(searchText) {
     return result;
   }
 
-  if (typeof result === 'string') {
-    return { '$**': result };
-  }
-
-  throw new Error('Invalid search filter: must evaluate to an object or string');
+  throw new Error('Invalid search filter: must evaluate to an object');
 };
