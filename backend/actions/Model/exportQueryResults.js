@@ -4,14 +4,15 @@ const Archetype = require('archetype');
 const mongoose = require('mongoose');
 const { stringify } = require('csv-stringify/sync');
 const authorize = require('../../authorize');
+const evaluateFilter = require('../../helpers/evaluateFilter');
 
 const GetDocumentsParams = new Archetype({
   model: {
     $type: 'string',
     $required: true
   },
-  filter: {
-    $type: Archetype.Any
+  searchText: {
+    $type: 'string'
   },
   propertiesToInclude: {
     $type: ['string'],
@@ -30,8 +31,7 @@ const GetDocumentsParams = new Archetype({
 
 module.exports = ({ db }) => async function exportQueryResults(params, req, res) {
   params = new GetDocumentsParams(params);
-  let { filter } = params;
-  const { model, propertiesToInclude, roles } = params;
+  const { model, propertiesToInclude, roles, searchText } = params;
 
   await authorize('Model.exportQueryResults', roles);
 
@@ -40,12 +40,11 @@ module.exports = ({ db }) => async function exportQueryResults(params, req, res)
     throw new Error(`Model ${model} not found`);
   }
 
-  if (typeof filter === 'string') {
-    filter = { '$**': filter };
-  }
+  const parsedFilter = evaluateFilter(searchText);
+  const filter = parsedFilter == null ? {} : parsedFilter;
 
   const docs = await Model.
-    find(filter == null ? {} : filter).
+    find(filter).
     setOptions({ sanitizeFilter: true }).
     sort({ _id: -1 });
 

@@ -3,15 +3,6 @@
 const api = require('../api');
 const template = require('./models.html');
 const mpath = require('mpath');
-const { BSON, EJSON } = require('bson');
-
-
-
-const ObjectId = new Proxy(BSON.ObjectId, {
-  apply(target, thisArg, argumentsList) {
-    return new target(...argumentsList);
-  }
-});
 
 const appendCSS = require('../appendCSS');
 
@@ -37,7 +28,6 @@ module.exports = app => app.component('models', {
     loadedAllDocs: false,
     edittingDoc: null,
     docEdits: null,
-    filter: null,
     selectMultiple: false,
     selectedDocuments: [],
     searchText: '',
@@ -80,8 +70,8 @@ module.exports = app => app.component('models', {
       this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
       if (this.$route.query?.search) {
         this.searchText = this.$route.query.search;
-        this.filter = eval(`(${this.$route.query.search})`);
-        this.filter = EJSON.stringify(this.filter);
+      } else {
+        this.searchText = '';
       }
       if (this.$route.query?.sort) {
         const sort = eval(`(${this.$route.query.sort})`);
@@ -156,13 +146,16 @@ module.exports = app => app.component('models', {
       const container = this.$refs.documentsList;
       if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
         this.status = 'loading';
-        const { docs } = await api.Model.getDocuments({
+        const params = {
           model: this.currentModel,
-          filter: this.filter,
           sort: this.sortBy,
           skip: this.documents.length,
           limit
-        });
+        };
+        if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+          params.searchText = this.searchText;
+        }
+        const { docs } = await api.Model.getDocuments(params);
         if (docs.length < limit) {
           this.loadedAllDocs = true;
         }
@@ -188,21 +181,16 @@ module.exports = app => app.component('models', {
       await this.loadMoreDocuments();
     },
     async search() {
-      if (this.searchText && Object.keys(this.searchText).length) {
-        this.filter = eval(`(${this.searchText})`);
-        this.filter = EJSON.stringify(this.filter);
+      const hasSearch = typeof this.searchText === 'string' && this.searchText.trim().length > 0;
+      if (hasSearch) {
         this.query.search = this.searchText;
-        const query = this.query;
-        const newUrl = this.$router.resolve({ query }).href;
-        this.$router.push({ query });
       } else {
-        this.filter = {};
         delete this.query.search;
-        const query = this.query;
-        const newUrl = this.$router.resolve({ query }).href;
-        this.$router.push({ query });
       }
+      const query = this.query;
+      this.$router.push({ query });
       this.documents = [];
+      this.loadedAllDocs = false;
       this.status = 'loading';
       await this.loadMoreDocuments();
       this.status = 'loaded';
@@ -233,12 +221,15 @@ module.exports = app => app.component('models', {
       let schemaPathsReceived = false;
 
       // Use async generator to stream SSEs
-      for await (const event of api.Model.getDocumentsStream({
+      const params = {
         model: this.currentModel,
-        filter: this.filter,
         sort: this.sortBy,
         limit
-      })) {
+      };
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        params.searchText = this.searchText;
+      }
+      for await (const event of api.Model.getDocumentsStream(params)) {
         if (event.schemaPaths && !schemaPathsReceived) {
           // Sort schemaPaths with _id first
           this.schemaPaths = Object.keys(event.schemaPaths).sort((k1, k2) => {
@@ -280,13 +271,16 @@ module.exports = app => app.component('models', {
       let numDocsReceived = false;
 
       // Use async generator to stream SSEs
-      for await (const event of api.Model.getDocumentsStream({
+      const params = {
         model: this.currentModel,
-        filter: this.filter,
         sort: this.sortBy,
         skip: this.documents.length,
         limit
-      })) {
+      };
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        params.searchText = this.searchText;
+      }
+      for await (const event of api.Model.getDocumentsStream(params)) {
         if (event.numDocs !== undefined && !numDocsReceived) {
           this.numDocuments = event.numDocs;
           numDocsReceived = true;
