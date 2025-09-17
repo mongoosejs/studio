@@ -152,7 +152,7 @@
       <div class="modal-exit" @click="shouldShowExportModal = false">&times;</div>
       <export-query-results
         :schemaPaths="schemaPaths"
-        :filter="filter"
+        :search-text="searchText"
         :currentModel="currentModel"
         @done="shouldShowExportModal = false">
       </export-query-results>

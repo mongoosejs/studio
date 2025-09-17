@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
-const { EJSON } = require('bson');
+const evaluateFilter = require('../../helpers/evaluateFilter');
 const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
@@ -20,8 +20,8 @@ const GetDocumentsParams = new Archetype({
     $required: true,
     $default: 0
   },
-  filter: {
-    $type: Archetype.Any
+  searchText: {
+    $type: 'string'
   },
   sort: {
     $type: Archetype.Any
@@ -36,20 +36,15 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   const { roles } = params;
   await authorize('Model.getDocumentsStream', roles);
 
-  let { filter } = params;
-  if (filter != null && Object.keys(filter).length > 0) {
-    filter = EJSON.parse(filter);
-  }
-  const { model, limit, skip, sort } = params;
+  const { model, limit, skip, sort, searchText } = params;
 
   const Model = db.models[model];
   if (Model == null) {
     throw new Error(`Model ${model} not found`);
   }
 
-  if (typeof filter === 'string') {
-    filter = { '$**': filter };
-  }
+  const parsedFilter = evaluateFilter(searchText);
+  const filter = parsedFilter == null ? {} : parsedFilter;
 
   const hasSort = typeof sort === 'object' && sort != null && Object.keys(sort).length > 0;
   const sortObj = hasSort ? { ...sort } : {};
@@ -71,12 +66,12 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   yield { schemaPaths };
 
   // Start counting documents in parallel with streaming documents
-  const numDocsPromise = (filter == null)
+  const numDocsPromise = (parsedFilter == null)
     ? Model.estimatedDocumentCount().exec()
     : Model.countDocuments(filter).exec();
 
   const cursor = await Model.
-    find(filter == null ? {} : filter).
+    find(filter).
     limit(limit).
     skip(skip).
     sort(sortObj).
