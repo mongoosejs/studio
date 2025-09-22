@@ -11,7 +11,7 @@
     "archetype": "0.13.1",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
-    "extrovert": "0.1.0",
+    "extrovert": "^0.1.0",
     "marked": "15.0.12",
     "node-inspect-extracted": "3.x",
     "tailwindcss": "3.4.0",
