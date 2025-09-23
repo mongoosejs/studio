@@ -34,8 +34,11 @@
     <div class="relative h-[42px]">
       <div class="documents-menu">
         <div class="flex flex-row items-center w-full gap-2">
-          <form @submit.prevent="search" class="flex-grow m-0">
-            <input ref="searchInput" class="w-full font-mono rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter" v-model="searchText" @click="initFilter" />
+          <form @submit.prevent="search" class="relative flex-grow m-0">
+            <input ref="searchInput" class="w-full font-mono rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter" v-model="searchText" @click="initFilter" @input="updateAutocomplete" @keydown="handleKeyDown" />
+            <ul v-if="autocompleteSuggestions.length" class="absolute z-10 bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto shadow">
+              <li v-for="(suggestion, index) in autocompleteSuggestions" :key="suggestion" class="px-2 py-1 cursor-pointer" :class="{ 'bg-ultramarine-100': index === autocompleteIndex }" @mousedown.prevent="applySuggestion(index)">{{ suggestion }}</li>
+            </ul>
           </form>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
