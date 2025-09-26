@@ -1,22 +1,37 @@
-<div>
-  <div class="relative path-key p-1 flex">
-    <div class="grow flex justify-between items-center">
-      <div>
-        {{path.path}}
-        <span class="path-type">
-          ({{(path.instance || 'unknown').toLowerCase()}})
-        </span>
-      </div>
-      <div>
-        <router-link
-          v-if="path.ref && getValueForPath(path.path)"
-          :to="`/model/${path.ref}/document/${getValueForPath(path.path)}`"
-          class="bg-ultramarine-600 hover:bg-ultramarine-500 text-white px-2 py-1 text-sm mr-1 rounded-md"
-          >View Document
-        </router-link>
-      </div>
+<div class="border border-gray-200 rounded-lg mb-2">
+  <!-- Collapsible Header -->
+  <div 
+    @click="toggleCollapse"
+    class="p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200"
+  >
+    <div class="flex items-center">
+      <svg 
+        :class="isCollapsed ? 'rotate-0' : 'rotate-90'"
+        class="w-4 h-4 text-gray-500 mr-2 transition-transform duration-200"
+        fill="none" 
+        stroke="currentColor" 
+        viewBox="0 0 24 24"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+      <span class="font-medium text-gray-900">{{path.path}}</span>
+      <span class="ml-2 text-sm text-gray-500">({{(path.instance || 'unknown').toLowerCase()}})</span>
     </div>
-    <div v-if="editting && path.instance === 'Date'" class="flex gap-1.5">
+    <div class="flex items-center gap-2">
+      <router-link
+        v-if="path.ref && getValueForPath(path.path)"
+        :to="`/model/${path.ref}/document/${getValueForPath(path.path)}`"
+        class="bg-ultramarine-600 hover:bg-ultramarine-500 text-white px-2 py-1 text-sm rounded-md"
+        @click.stop
+        >View Document
+      </router-link>
+    </div>
+  </div>
+  
+  <!-- Collapsible Content -->
+  <div v-if="!isCollapsed" class="p-3">
+    <!-- Date Type Selector (when editing dates) -->
+    <div v-if="editting && path.instance === 'Date'" class="mb-3 flex gap-1.5">
       <div
         @click="dateType = 'picker'"
         :class="dateType === 'picker' ? 'bg-teal-600' : ''"
@@ -38,18 +53,20 @@
         </div>
       </div>
     </div>
-  </div>
-  <div v-if="editting && path.path !== '_id'" class="pl-1">
-    <component
-      :is="getEditComponentForPath(path)"
-      :value="getEditValueForPath(path)"
-      :format="dateType"
-      @input="changes[path.path] = $event; delete invalid[path.path];"
-      @error="invalid[path.path] = $event;"
-      >
-    </component>
-  </div>
-  <div v-else class="pl-1">
-    <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
+    
+    <!-- Field Content -->
+    <div v-if="editting && path.path !== '_id'">
+      <component
+        :is="getEditComponentForPath(path)"
+        :value="getEditValueForPath(path)"
+        :format="dateType"
+        @input="changes[path.path] = $event; delete invalid[path.path];"
+        @error="invalid[path.path] = $event;"
+        >
+      </component>
+    </div>
+    <div v-else>
+      <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
+    </div>
   </div>
 </div>

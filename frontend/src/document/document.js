@@ -89,6 +89,24 @@ module.exports = app => app.component('document', {
     },
     showClonedDocument(doc) {
       this.$router.push({ path: `/model/${this.model}/document/${doc._id}` });
+    },
+    async addField(fieldData) {
+      const { doc } = await api.Model.addField({
+        model: this.model,
+        _id: this.document._id,
+        fieldName: fieldData.name,
+        fieldValue: fieldData.value
+      });
+      this.document = doc;
+      
+      // Show success message
+      vanillatoast.create({
+        title: 'Field Added!',
+        text: `Field "${fieldData.name}" has been added to the document`,
+        type: 'success',
+        timeout: 3000,
+        positionClass: 'bottomRight'
+      });
     }
   }
 });
