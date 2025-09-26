@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@masteringjs/eslint-config": "0.1.1",
+    "@mongoosejs/task": "^0.3.0",
     "axios": "1.2.2",
     "dedent": "^1.6.0",
     "eslint": "9.30.0",
