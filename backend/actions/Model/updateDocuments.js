@@ -31,15 +31,33 @@ module.exports = ({ db }) => async function updateDocuments(params) {
     throw new Error(`Model ${model} not found`);
   }
 
-  let processedUpdate = update;
+  let setFields = {};
+  let unsetFields = {};
+  
   if (Object.keys(update).length > 0) {
-    processedUpdate = Object.fromEntries(
-      Object.entries(update).map(([key, value]) => [key, value === 'null' ? null : value === 'undefined' ? undefined : value])
-    );
+    Object.entries(update).forEach(([key, value]) => {
+      if (value === 'null') {
+        setFields[key] = null;
+      } else if (value === 'undefined') {
+        // Use $unset to remove the field for undefined values
+        unsetFields[key] = "";
+      } else {
+        setFields[key] = value;
+      }
+    });
+  }
+
+  // Build the update operation with both $set and $unset
+  const updateOperation = {};
+  if (Object.keys(setFields).length > 0) {
+    updateOperation.$set = setFields;
+  }
+  if (Object.keys(unsetFields).length > 0) {
+    updateOperation.$unset = unsetFields;
   }
 
   const result = await Model.
-    updateMany({ _id: { $in: _id } }, processedUpdate, { overwriteImmutable: true, runValidators: false });
+    updateMany({ _id: { $in: _id } }, updateOperation, { overwriteImmutable: true, runValidators: false });
 
   return { result };
 };

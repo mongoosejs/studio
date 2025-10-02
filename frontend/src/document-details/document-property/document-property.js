@@ -54,11 +54,8 @@ module.exports = app => app.component('document-property', {
       if (!this.document) {
         return;
       }
-      // Check if the path exists in changes (including undefined values)
-      if (Object.prototype.hasOwnProperty.call(this.changes, path)) {
-        return this.changes[path];
-      }
-      return mpath.get(path, this.document);
+      const documentValue = mpath.get(path, this.document);
+      return documentValue;
     },
     toggleCollapse() {
       this.isCollapsed = !this.isCollapsed;
