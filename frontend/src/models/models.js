@@ -354,12 +354,6 @@ module.exports = app => app.component('models', {
       }
       this.edittingDoc = null;
     },
-    handleModelClick(model) {
-      console.log('Model clicked:', model);
-      console.log('Current model:', this.currentModel);
-      console.log('Router:', this.$router);
-      // Let the router-link handle the navigation
-    },
     handleDocumentClick(document) {
       console.log(this.selectedDocuments);
       if (this.selectMultiple) {
