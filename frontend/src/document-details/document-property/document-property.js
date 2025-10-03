@@ -11,7 +11,8 @@ module.exports = app => app.component('document-property', {
   template,
   data: function() {
     return {
-      dateType: 'picker' // picker, iso
+      dateType: 'picker', // picker, iso
+      isCollapsed: true // Start collapsed by default
     };
   },
   props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid'],
@@ -35,6 +36,9 @@ module.exports = app => app.component('document-property', {
       if (path.instance === 'Embedded') {
         return 'edit-subdocument';
       }
+      if (path.instance === 'Boolean') {
+        return 'edit-boolean';
+      }
       return 'edit-default';
     },
     getValueForPath(path) {
@@ -50,7 +54,11 @@ module.exports = app => app.component('document-property', {
       if (!this.document) {
         return;
       }
-      return path in this.changes ? this.changes[path] : mpath.get(path, this.document);
+      const documentValue = mpath.get(path, this.document);
+      return documentValue;
+    },
+    toggleCollapse() {
+      this.isCollapsed = !this.isCollapsed;
     }
   }
 });

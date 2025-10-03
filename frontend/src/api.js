@@ -69,6 +69,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
   exports.Model = {
+    addField(params) {
+      return client.post('', { action: 'Model.addField', ...params }).then(res => res.data);
+    },
     createChart(params) {
       return client.post('', { action: 'Model.createChart', ...params }).then(res => res.data);
     },
@@ -182,6 +185,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
   exports.Model = {
+    addField(params) {
+      return client.post('/Model/addField', params).then(res => res.data);
+    },
     createChart: function(params) {
       return client.post('/Model/createChart', params).then(res => res.data);
     },
