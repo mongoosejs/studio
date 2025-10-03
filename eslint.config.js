@@ -36,9 +36,9 @@ module.exports = defineConfig([
         fetch: true,
         __dirname: true,
         process: true,
-        setTimeout: true,
         clearTimeout: true,
         navigator: true
+        TextDecoder: true
       },
       sourceType: 'commonjs'
     },

@@ -38,7 +38,19 @@ module.exports = ({ db }) => async function getDashboard(params) {
     try {
       result = await dashboard.evaluate();
     } catch (error) {
-      return { dashboard, error: { message: error.message } };
+      const { dashboardResult } = await startExec.then(({ dashboardResult }) => {
+        if (!dashboardResult) {
+          return {};
+        }
+        return completeDashboardEvaluate(
+          dashboardResult._id,
+          $workspaceId,
+          authorization,
+          null,
+          { message: error.message }
+        );
+      });
+      return { dashboard, dashboardResult, error: { message: error.message } };
     }
 
     try {
@@ -64,7 +76,7 @@ module.exports = ({ db }) => async function getDashboard(params) {
   }
 };
 
-async function completeDashboardEvaluate(dashboardResultId, workspaceId, authorization, result) {
+async function completeDashboardEvaluate(dashboardResultId, workspaceId, authorization, result, error) {
   if (!workspaceId) {
     return {};
   }
@@ -79,7 +91,8 @@ async function completeDashboardEvaluate(dashboardResultId, workspaceId, authori
       dashboardResultId,
       workspaceId,
       finishedEvaluatingAt: new Date(),
-      result
+      result,
+      error
     })
   }).then(response => {
     if (response.status < 200 || response.status >= 400) {

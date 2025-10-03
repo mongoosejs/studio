@@ -27,24 +27,20 @@ module.exports = app => app.component('dashboard', {
       this.code = update.doc.code;
       this.title = update.doc.title;
       this.description = update.doc.description;
-      if (update.result) {
-        this.result = update.result;
-      } else {
-        this.errorMessage = update.error.message;
-      }
+
+      await this.evaluateDashboard();
     },
     async evaluateDashboard() {
       this.status = 'evaluating';
       try {
-        const { dashboard, dashboardResult, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
+        const { dashboard, dashboardResult } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
         this.dashboard = dashboard;
-        if (error) {
-          this.errorMessage = error.message;
-        }
         this.code = this.dashboard.code;
         this.title = this.dashboard.title;
         this.description = this.dashboard.description ?? '';
-        this.dashboardResults.unshift(dashboardResult);
+        if (dashboardResult) {
+          this.dashboardResults.unshift(dashboardResult);
+        }
       } finally {
         this.status = 'loaded';
       }
@@ -62,9 +58,6 @@ module.exports = app => app.component('dashboard', {
       return;
     }
     this.dashboard = dashboard;
-    if (error) {
-      this.errorMessage = error.message;
-    }
     this.code = this.dashboard.code;
     this.title = this.dashboard.title;
     this.description = this.dashboard.description ?? '';

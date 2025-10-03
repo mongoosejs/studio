@@ -9,7 +9,7 @@ appendCSS(require('./export-query-results.css'));
 
 module.exports = app => app.component('export-query-results', {
   template: template,
-  props: ['schemaPaths', 'filter', 'currentModel'],
+  props: ['schemaPaths', 'searchText', 'currentModel'],
   emits: ['done'],
   data: () => ({
     shouldExport: {}
@@ -26,8 +26,8 @@ module.exports = app => app.component('export-query-results', {
         model: this.currentModel,
         propertiesToInclude: Object.keys(this.shouldExport).filter(key => this.shouldExport[key])
       };
-      if (this.filter) {
-        params.filter = this.filter;
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        params.searchText = this.searchText;
       }
       await api.Model.exportQueryResults(params);
 

@@ -18,7 +18,7 @@ const dashboardSchema = new mongoose.Schema({
 });
 
 dashboardSchema.methods.evaluate = async function evaluate() {
-  const context = vm.createContext({ db: this.constructor.db, setTimeout });
+  const context = vm.createContext({ db: this.constructor.db, setTimeout, ObjectId: mongoose.Types.ObjectId });
   let result = null;
   result = await vm.runInContext(formatFunction(this.code), context);
   if (result.$document?.constructor?.modelName) {

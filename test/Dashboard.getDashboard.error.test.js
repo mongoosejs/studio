@@ -23,5 +23,6 @@ describe('Dashboard.getDashboard() error handling', function () {
 
     assert.ok(res.dashboard);
     assert.deepStrictEqual(res.error, { message: 'test error' });
+    assert.strictEqual(res.dashboardResult, undefined);
   });
 });
