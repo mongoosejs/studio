@@ -43,7 +43,8 @@ module.exports = app => app.component('models', {
     scrollHeight: 0,
     interval: null,
     outputType: 'table', // json, table
-    hideSidebar: null
+    hideSidebar: null,
+    lastSelectedIndex: null
   }),
   created() {
     this.currentModel = this.model;
@@ -216,6 +217,7 @@ module.exports = app => app.component('models', {
       this.schemaPaths = [];
       this.numDocuments = null;
       this.loadedAllDocs = false;
+      this.lastSelectedIndex = null;
 
       let docsCount = 0;
       let schemaPathsReceived = false;
@@ -389,17 +391,38 @@ module.exports = app => app.component('models', {
       }
       this.edittingDoc = null;
     },
-    handleDocumentClick(document) {
-      console.log(this.selectedDocuments);
+    handleDocumentClick(document, event) {
       if (this.selectMultiple) {
-        const exists = this.selectedDocuments.find(x => x._id.toString() == document._id.toString());
-        if (exists) {
-          const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
-          if (index !== -1) {
-            this.selectedDocuments.splice(index, 1);
+        const documentIndex = this.documents.findIndex(doc => doc._id.toString() == document._id.toString());
+        if (event?.shiftKey && this.selectedDocuments.length > 0) {
+          const anchorIndex = this.lastSelectedIndex;
+          if (anchorIndex != null && anchorIndex !== -1 && documentIndex !== -1) {
+            const start = Math.min(anchorIndex, documentIndex);
+            const end = Math.max(anchorIndex, documentIndex);
+            const selectedDocumentIds = new Set(this.selectedDocuments.map(doc => doc._id.toString()));
+            for (let i = start; i <= end; i++) {
+              const docInRange = this.documents[i];
+              const existsInRange = selectedDocumentIds.has(docInRange._id.toString());
+              if (!existsInRange) {
+                this.selectedDocuments.push(docInRange);
+              }
+            }
+            this.lastSelectedIndex = documentIndex;
+            return;
+          }
+        }
+        const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
+        if (index !== -1) {
+          this.selectedDocuments.splice(index, 1);
+          if (this.selectedDocuments.length === 0) {
+            this.lastSelectedIndex = null;
+          } else {
+            const lastDoc = this.selectedDocuments[this.selectedDocuments.length - 1];
+            this.lastSelectedIndex = this.documents.findIndex(doc => doc._id.toString() == lastDoc._id.toString());
           }
         } else {
           this.selectedDocuments.push(document);
+          this.lastSelectedIndex = documentIndex;
         }
       } else {
         this.$router.push('/model/' + this.currentModel + '/document/' + document._id);
@@ -413,18 +436,21 @@ module.exports = app => app.component('models', {
       });
       await this.getDocuments();
       this.selectedDocuments.length = 0;
+      this.lastSelectedIndex = null;
       this.shouldShowDeleteMultipleModal = false;
       this.selectMultiple = false;
     },
     async updateDocuments() {
       await this.getDocuments();
       this.selectedDocuments.length = 0;
+      this.lastSelectedIndex = null;
       this.selectMultiple = false;
     },
     stagingSelect() {
       if (this.selectMultiple) {
         this.selectMultiple = false;
         this.selectedDocuments.length = 0;
+        this.lastSelectedIndex = null;
       } else {
         this.selectMultiple = true;
       }
