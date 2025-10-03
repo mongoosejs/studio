@@ -392,23 +392,17 @@ module.exports = app => app.component('models', {
       this.edittingDoc = null;
     },
     handleDocumentClick(document, event) {
-      console.log(this.selectedDocuments);
       if (this.selectMultiple) {
         const documentIndex = this.documents.findIndex(doc => doc._id.toString() == document._id.toString());
         if (event?.shiftKey && this.selectedDocuments.length > 0) {
-          let anchorIndex = this.lastSelectedIndex;
-          if (anchorIndex == null || anchorIndex === -1) {
-            const anchorDoc = this.selectedDocuments[this.selectedDocuments.length - 1];
-            if (anchorDoc) {
-              anchorIndex = this.documents.findIndex(doc => doc._id.toString() == anchorDoc._id.toString());
-            }
-          }
+          const anchorIndex = this.lastSelectedIndex;
           if (anchorIndex != null && anchorIndex !== -1 && documentIndex !== -1) {
             const start = Math.min(anchorIndex, documentIndex);
             const end = Math.max(anchorIndex, documentIndex);
+            const selectedDocumentIds = new Set(this.selectedDocuments.map(doc => doc._id.toString()));
             for (let i = start; i <= end; i++) {
               const docInRange = this.documents[i];
-              const existsInRange = this.selectedDocuments.some(x => x._id.toString() == docInRange._id.toString());
+              const existsInRange = selectedDocumentIds.has(docInRange._id.toString());
               if (!existsInRange) {
                 this.selectedDocuments.push(docInRange);
               }
@@ -417,17 +411,14 @@ module.exports = app => app.component('models', {
             return;
           }
         }
-        const exists = this.selectedDocuments.find(x => x._id.toString() == document._id.toString());
-        if (exists) {
-          const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
-          if (index !== -1) {
-            this.selectedDocuments.splice(index, 1);
-            if (this.selectedDocuments.length === 0) {
-              this.lastSelectedIndex = null;
-            } else {
-              const lastDoc = this.selectedDocuments[this.selectedDocuments.length - 1];
-              this.lastSelectedIndex = this.documents.findIndex(doc => doc._id.toString() == lastDoc._id.toString());
-            }
+        const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
+        if (index !== -1) {
+          this.selectedDocuments.splice(index, 1);
+          if (this.selectedDocuments.length === 0) {
+            this.lastSelectedIndex = null;
+          } else {
+            const lastDoc = this.selectedDocuments[this.selectedDocuments.length - 1];
+            this.lastSelectedIndex = this.documents.findIndex(doc => doc._id.toString() == lastDoc._id.toString());
           }
         } else {
           this.selectedDocuments.push(document);

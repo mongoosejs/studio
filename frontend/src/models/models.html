@@ -51,10 +51,10 @@
           <button
             @click="stagingSelect"
             type="button"
-            :class="{ 'bg-ultramarine-500 ring-inset ring-2 ring-gray-300 hover:bg-ultramarine-600': selectMultiple }"
-            class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            :class="{ 'bg-gray-500 ring-inset ring-2 ring-gray-300 hover:bg-gray-600': selectMultiple, 'bg-ultramarine-600 hover:bg-ultramarine-500' : !selectMultiple }"
+            class="rounded px-2 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
           >
-            Select
+            {{ selectMultiple ? 'Cancel' : 'Select' }}
           </button>
           <button
             v-show="selectMultiple"
