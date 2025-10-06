@@ -5,6 +5,34 @@ const template = require('./models.html');
 const mpath = require('mpath');
 
 const appendCSS = require('../appendCSS');
+const { Trie } = require('./trie');
+
+const QUERY_SELECTORS = [
+  '$eq',
+  '$ne',
+  '$gt',
+  '$gte',
+  '$lt',
+  '$lte',
+  '$in',
+  '$nin',
+  '$exists',
+  '$regex',
+  '$options',
+  '$text',
+  '$search',
+  '$and',
+  '$or',
+  '$nor',
+  '$not',
+  '$elemMatch',
+  '$size',
+  '$all',
+  '$type',
+  '$expr',
+  '$jsonSchema',
+  '$mod'
+];
 
 
 appendCSS(require('./models.css'));
@@ -33,6 +61,7 @@ module.exports = app => app.component('models', {
     searchText: '',
     autocompleteSuggestions: [],
     autocompleteIndex: 0,
+    autocompleteTrie: null,
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
@@ -50,6 +79,7 @@ module.exports = app => app.component('models', {
   }),
   created() {
     this.currentModel = this.model;
+    this.buildAutocompleteTrie();
   },
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
@@ -68,6 +98,16 @@ module.exports = app => app.component('models', {
     await this.initSearchFromUrl();
   },
   methods: {
+    buildAutocompleteTrie() {
+      this.autocompleteTrie = new Trie();
+      this.autocompleteTrie.bulkInsert(QUERY_SELECTORS, 5);
+      if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
+        const paths = this.schemaPaths
+          .map(path => path?.path)
+          .filter(path => typeof path === 'string' && path.length > 0);
+        this.autocompleteTrie.bulkInsert(paths, 10);
+      }
+    },
     async initSearchFromUrl() {
       this.status = 'loading';
       this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
@@ -111,14 +151,18 @@ module.exports = app => app.component('models', {
       const before = this.searchText.slice(0, cursorPos);
       const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
       if (match && match[1]) {
-        const term = match[1];
-        this.autocompleteSuggestions = this.schemaPaths
-          .map(p => p.path)
-          .filter(p => p.startsWith(term));
-        this.autocompleteIndex = 0;
-      } else {
-        this.autocompleteSuggestions = [];
+        const term = match[1].replace(/["']/g, '');
+        if (!term) {
+          this.autocompleteSuggestions = [];
+          return;
+        }
+        if (this.autocompleteTrie) {
+          this.autocompleteSuggestions = this.autocompleteTrie.getSuggestions(term, 10);
+          this.autocompleteIndex = 0;
+          return;
+        }
       }
+      this.autocompleteSuggestions = [];
     },
     handleKeyDown(ev) {
       if (this.autocompleteSuggestions.length === 0) {
@@ -269,6 +313,7 @@ module.exports = app => app.component('models', {
       // Clear previous data
       this.documents = [];
       this.schemaPaths = [];
+      this.buildAutocompleteTrie();
       this.numDocuments = null;
       this.loadedAllDocs = false;
       this.lastSelectedIndex = null;
@@ -303,6 +348,7 @@ module.exports = app => app.component('models', {
           }
           this.filteredPaths = [...this.schemaPaths];
           this.selectedPaths = [...this.schemaPaths];
+          this.buildAutocompleteTrie();
           schemaPathsReceived = true;
         }
         if (event.numDocs !== undefined) {
