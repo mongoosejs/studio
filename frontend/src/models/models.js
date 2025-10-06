@@ -31,6 +31,8 @@ module.exports = app => app.component('models', {
     selectMultiple: false,
     selectedDocuments: [],
     searchText: '',
+    autocompleteSuggestions: [],
+    autocompleteIndex: 0,
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
@@ -102,6 +104,58 @@ module.exports = app => app.component('models', {
           ev.target.setSelectionRange(1, 1);
         });
       }
+    },
+    updateAutocomplete() {
+      const input = this.$refs.searchInput;
+      const cursorPos = input ? input.selectionStart : 0;
+      const before = this.searchText.slice(0, cursorPos);
+      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
+      if (match && match[1]) {
+        const term = match[1];
+        this.autocompleteSuggestions = this.schemaPaths
+          .map(p => p.path)
+          .filter(p => p.startsWith(term));
+        this.autocompleteIndex = 0;
+      } else {
+        this.autocompleteSuggestions = [];
+      }
+    },
+    handleKeyDown(ev) {
+      if (this.autocompleteSuggestions.length === 0) {
+        return;
+      }
+      if (ev.key === 'Tab' || ev.key === 'Enter') {
+        ev.preventDefault();
+        this.applySuggestion(this.autocompleteIndex);
+      } else if (ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        this.autocompleteIndex = (this.autocompleteIndex + 1) % this.autocompleteSuggestions.length;
+      } else if (ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        this.autocompleteIndex = (this.autocompleteIndex + this.autocompleteSuggestions.length - 1) % this.autocompleteSuggestions.length;
+      }
+    },
+    applySuggestion(index) {
+      const suggestion = this.autocompleteSuggestions[index];
+      if (!suggestion) {
+        return;
+      }
+      const input = this.$refs.searchInput;
+      const cursorPos = input.selectionStart;
+      const before = this.searchText.slice(0, cursorPos);
+      const after = this.searchText.slice(cursorPos);
+      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
+      if (!match) {
+        return;
+      }
+      const token = match[1];
+      const start = cursorPos - token.length;
+      this.searchText = this.searchText.slice(0, start) + suggestion + after;
+      this.$nextTick(() => {
+        const pos = start + suggestion.length;
+        input.setSelectionRange(pos, pos);
+      });
+      this.autocompleteSuggestions = [];
     },
     clickFilter(path) {
       if (this.searchText) {
