@@ -114,8 +114,13 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getDocuments: function getDocuments(params) {
       return client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
     },
-    getDocumentsStream: function getDocumentsStream(params) {
-      return client.post('', { action: 'Model.getDocumentsStream', ...params }).then(res => res.data);
+    getDocumentsStream: async function* getDocumentsStream(params) {
+      const data = await client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
+      yield { schemaPaths: data.schemaPaths };
+      yield { numDocs: data.numDocs };
+      for (const doc of data.docs) {
+        yield { document: doc };
+      }
     },
     getIndexes: function getIndexes(params) {
       return client.post('', { action: 'Model.getIndexes', ...params }).then(res => res.data);

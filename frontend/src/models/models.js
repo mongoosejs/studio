@@ -3,15 +3,6 @@
 const api = require('../api');
 const template = require('./models.html');
 const mpath = require('mpath');
-const { BSON, EJSON } = require('bson');
-
-
-
-const ObjectId = new Proxy(BSON.ObjectId, {
-  apply(target, thisArg, argumentsList) {
-    return new target(...argumentsList);
-  }
-});
 
 const appendCSS = require('../appendCSS');
 
@@ -37,7 +28,6 @@ module.exports = app => app.component('models', {
     loadedAllDocs: false,
     edittingDoc: null,
     docEdits: null,
-    filter: null,
     selectMultiple: false,
     selectedDocuments: [],
     searchText: '',
@@ -55,7 +45,8 @@ module.exports = app => app.component('models', {
     scrollHeight: 0,
     interval: null,
     outputType: 'table', // json, table
-    hideSidebar: null
+    hideSidebar: null,
+    lastSelectedIndex: null
   }),
   created() {
     this.currentModel = this.model;
@@ -82,8 +73,8 @@ module.exports = app => app.component('models', {
       this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
       if (this.$route.query?.search) {
         this.searchText = this.$route.query.search;
-        this.filter = eval(`(${this.$route.query.search})`);
-        this.filter = EJSON.stringify(this.filter);
+      } else {
+        this.searchText = '';
       }
       if (this.$route.query?.sort) {
         const sort = eval(`(${this.$route.query.sort})`);
@@ -210,13 +201,16 @@ module.exports = app => app.component('models', {
       const container = this.$refs.documentsList;
       if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
         this.status = 'loading';
-        const { docs } = await api.Model.getDocuments({
+        const params = {
           model: this.currentModel,
-          filter: this.filter,
           sort: this.sortBy,
           skip: this.documents.length,
           limit
-        });
+        };
+        if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+          params.searchText = this.searchText;
+        }
+        const { docs } = await api.Model.getDocuments(params);
         if (docs.length < limit) {
           this.loadedAllDocs = true;
         }
@@ -242,21 +236,16 @@ module.exports = app => app.component('models', {
       await this.loadMoreDocuments();
     },
     async search() {
-      if (this.searchText && Object.keys(this.searchText).length) {
-        this.filter = eval(`(${this.searchText})`);
-        this.filter = EJSON.stringify(this.filter);
+      const hasSearch = typeof this.searchText === 'string' && this.searchText.trim().length > 0;
+      if (hasSearch) {
         this.query.search = this.searchText;
-        const query = this.query;
-        const newUrl = this.$router.resolve({ query }).href;
-        this.$router.push({ query });
       } else {
-        this.filter = {};
         delete this.query.search;
-        const query = this.query;
-        const newUrl = this.$router.resolve({ query }).href;
-        this.$router.push({ query });
       }
+      const query = this.query;
+      this.$router.push({ query });
       this.documents = [];
+      this.loadedAllDocs = false;
       this.status = 'loading';
       await this.loadMoreDocuments();
       this.status = 'loaded';
@@ -282,17 +271,21 @@ module.exports = app => app.component('models', {
       this.schemaPaths = [];
       this.numDocuments = null;
       this.loadedAllDocs = false;
+      this.lastSelectedIndex = null;
 
       let docsCount = 0;
       let schemaPathsReceived = false;
 
       // Use async generator to stream SSEs
-      for await (const event of api.Model.getDocumentsStream({
+      const params = {
         model: this.currentModel,
-        filter: this.filter,
         sort: this.sortBy,
         limit
-      })) {
+      };
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        params.searchText = this.searchText;
+      }
+      for await (const event of api.Model.getDocumentsStream(params)) {
         if (event.schemaPaths && !schemaPathsReceived) {
           // Sort schemaPaths with _id first
           this.schemaPaths = Object.keys(event.schemaPaths).sort((k1, k2) => {
@@ -334,13 +327,16 @@ module.exports = app => app.component('models', {
       let numDocsReceived = false;
 
       // Use async generator to stream SSEs
-      for await (const event of api.Model.getDocumentsStream({
+      const params = {
         model: this.currentModel,
-        filter: this.filter,
         sort: this.sortBy,
         skip: this.documents.length,
         limit
-      })) {
+      };
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        params.searchText = this.searchText;
+      }
+      for await (const event of api.Model.getDocumentsStream(params)) {
         if (event.numDocs !== undefined && !numDocsReceived) {
           this.numDocuments = event.numDocs;
           numDocsReceived = true;
@@ -449,17 +445,38 @@ module.exports = app => app.component('models', {
       }
       this.edittingDoc = null;
     },
-    handleDocumentClick(document) {
-      console.log(this.selectedDocuments);
+    handleDocumentClick(document, event) {
       if (this.selectMultiple) {
-        const exists = this.selectedDocuments.find(x => x._id.toString() == document._id.toString());
-        if (exists) {
-          const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
-          if (index !== -1) {
-            this.selectedDocuments.splice(index, 1);
+        const documentIndex = this.documents.findIndex(doc => doc._id.toString() == document._id.toString());
+        if (event?.shiftKey && this.selectedDocuments.length > 0) {
+          const anchorIndex = this.lastSelectedIndex;
+          if (anchorIndex != null && anchorIndex !== -1 && documentIndex !== -1) {
+            const start = Math.min(anchorIndex, documentIndex);
+            const end = Math.max(anchorIndex, documentIndex);
+            const selectedDocumentIds = new Set(this.selectedDocuments.map(doc => doc._id.toString()));
+            for (let i = start; i <= end; i++) {
+              const docInRange = this.documents[i];
+              const existsInRange = selectedDocumentIds.has(docInRange._id.toString());
+              if (!existsInRange) {
+                this.selectedDocuments.push(docInRange);
+              }
+            }
+            this.lastSelectedIndex = documentIndex;
+            return;
+          }
+        }
+        const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
+        if (index !== -1) {
+          this.selectedDocuments.splice(index, 1);
+          if (this.selectedDocuments.length === 0) {
+            this.lastSelectedIndex = null;
+          } else {
+            const lastDoc = this.selectedDocuments[this.selectedDocuments.length - 1];
+            this.lastSelectedIndex = this.documents.findIndex(doc => doc._id.toString() == lastDoc._id.toString());
           }
         } else {
           this.selectedDocuments.push(document);
+          this.lastSelectedIndex = documentIndex;
         }
       } else {
         this.$router.push('/model/' + this.currentModel + '/document/' + document._id);
@@ -473,18 +490,21 @@ module.exports = app => app.component('models', {
       });
       await this.getDocuments();
       this.selectedDocuments.length = 0;
+      this.lastSelectedIndex = null;
       this.shouldShowDeleteMultipleModal = false;
       this.selectMultiple = false;
     },
     async updateDocuments() {
       await this.getDocuments();
       this.selectedDocuments.length = 0;
+      this.lastSelectedIndex = null;
       this.selectMultiple = false;
     },
     stagingSelect() {
       if (this.selectMultiple) {
         this.selectMultiple = false;
         this.selectedDocuments.length = 0;
+        this.lastSelectedIndex = null;
       } else {
         this.selectMultiple = true;
       }
