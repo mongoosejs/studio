@@ -48,7 +48,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
 
   let summarizePromise = Promise.resolve();
   if (chatThread.title == null) {
-    summarizePromise = summarizeChatThread(llmMessages, authorization).then(res => {
+    summarizePromise = summarizeChatThread(llmMessages, authorization, options).then(res => {
       const title = res.response;
       chatThread.title = title;
       return chatThread.save();
@@ -73,7 +73,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
       script,
       executionResult: null
     }),
-    createChatMessageCore(llmMessages, modelDescriptions, options?.model, authorization).then(res => {
+    createChatMessageCore(llmMessages, modelDescriptions, options?.model, authorization, options).then(res => {
       const content = res.response;
       return ChatMessage.create({
         chatThreadId,
@@ -87,7 +87,23 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   return { chatMessages, chatThread };
 };
 
-async function summarizeChatThread(messages, authorization) {
+async function summarizeChatThread(messages, authorization, options) {
+  if (options?.openAIAPIKey) {
+    const response = await callOpenAI({
+      apiKey: options.openAIAPIKey,
+      model: options.model,
+      messages: [
+        {
+          role: 'system',
+          content: 'Summarize the following conversation into a concise title of at most 7 words. Respond with the title only.'
+        },
+        ...messages
+      ]
+    });
+
+    return { response };
+  }
+
   const headers = { 'Content-Type': 'application/json' };
   if (authorization) {
     headers.Authorization = authorization;
@@ -110,7 +126,26 @@ async function summarizeChatThread(messages, authorization) {
   return await response.json();
 }
 
-async function createChatMessageCore(messages, modelDescriptions, model, authorization) {
+async function createChatMessageCore(messages, modelDescriptions, model, authorization, options) {
+  if (options?.openAIAPIKey) {
+    const openAIMessages = [];
+    if (modelDescriptions) {
+      openAIMessages.push({
+        role: 'system',
+        content: `Here are the Mongoose model descriptions you can refer to:\n\n${modelDescriptions}`
+      });
+    }
+    openAIMessages.push(...messages);
+
+    const response = await callOpenAI({
+      apiKey: options.openAIAPIKey,
+      model,
+      messages: openAIMessages
+    });
+
+    return { response };
+  }
+
   const headers = { 'Content-Type': 'application/json' };
   if (authorization) {
     headers.Authorization = authorization;
@@ -133,4 +168,35 @@ async function createChatMessageCore(messages, modelDescriptions, model, authori
   });
 
   return await response.json();
+}
+
+async function callOpenAI({ apiKey, model, messages }) {
+  if (!apiKey) {
+    throw new Error('OpenAI API key required');
+  }
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: model || 'gpt-4o-mini',
+      messages
+    })
+  });
+
+  const data = await response.json();
+
+  if (response.status < 200 || response.status >= 400) {
+    throw new Error(`OpenAI chat completion error ${response.status}: ${data.error?.message || data.message || 'Unknown error'}`);
+  }
+
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error('OpenAI chat completion error: missing response content');
+  }
+
+  return content.trim();
 }
