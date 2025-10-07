@@ -37,7 +37,8 @@ module.exports = defineConfig([
         __dirname: true,
         process: true,
         clearTimeout: true,
-        navigator: true
+        setTimeout: true,
+        navigator: true,
         TextDecoder: true
       },
       sourceType: 'commonjs'
