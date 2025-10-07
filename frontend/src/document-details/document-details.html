@@ -5,6 +5,7 @@
       <!-- Search Bar -->
       <div class="relative flex-1">
         <input
+          ref="searchInput"
           v-model="searchQuery"
           type="text"
           placeholder="Search fields..."
@@ -49,7 +50,7 @@
   </div>
 
   <!-- Schema Paths -->
-  <div v-for="path in filteredSchemaPaths" class="value">
+  <div v-for="path in filteredSchemaPaths" :key="path" class="value">
     <document-property
       :path="path"
       :document="document"

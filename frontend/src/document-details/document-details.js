@@ -27,8 +27,12 @@ module.exports = app => app.component('document-details', {
     };
   },
   mounted() {
-    // Initialize CodeMirror when modal opens
+    // Focus on search input when component loads
     this.$nextTick(() => {
+      if (this.$refs.searchInput) {
+        this.$refs.searchInput.focus();
+      }
+      
       if (this.showAddFieldModal) {
         this.initializeFieldValueEditor();
       }
