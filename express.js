@@ -79,6 +79,7 @@ module.exports = async function(apiUrl, conn, options) {
 
   console.log('Workspace', workspace);
   const { config } = await frontend(apiUrl, false, options, workspace);
+  config.enableTaskVisualizer = options.enableTaskVisualizer;
   router.get('/config.js', function (req, res) {
     res.setHeader('Content-Type', 'application/javascript');
     res.end(`window.MONGOOSE_STUDIO_CONFIG = ${JSON.stringify(config, null, 2)};`);
