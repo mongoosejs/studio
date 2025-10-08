@@ -84,7 +84,7 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
-      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
+      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '?' + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
         method: 'GET',
         headers: {
           Authorization: `${accessToken}`, // Set your authorization token here
