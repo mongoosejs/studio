@@ -9,7 +9,7 @@ appendCSS(require('./document-details.css'));
 
 module.exports = app => app.component('document-details', {
   template,
-  props: ['document', 'schemaPaths', 'editting', 'changes', 'invalid'],
+  props: ['document', 'schemaPaths', 'virtualPaths', 'editting', 'changes', 'invalid'],
   data() {
     return {
       searchQuery: '',
@@ -70,7 +70,13 @@ module.exports = app => app.component('document-details', {
       const result = [];
       for (let i = 0; i < docKeys.length; i++) {
         if (!exists.includes(docKeys[i])) {
-          result.push({ name: docKeys[i], value: this.document[docKeys[i]] });
+          const isVirtual = this.virtualPaths && this.virtualPaths.includes(docKeys[i]);
+          result.push({ 
+            name: docKeys[i], 
+            value: this.document[docKeys[i]],
+            isVirtual: isVirtual,
+            isUserAdded: !isVirtual
+          });
         }
       }
 

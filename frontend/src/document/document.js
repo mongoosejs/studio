@@ -20,13 +20,14 @@ module.exports = app => app.component('document', {
     invalid: {},
     editting: false,
     virtuals: [],
+    virtualPaths: [],
     shouldShowConfirmModal: false,
     shouldShowDeleteModal: false,
     shouldShowCloneModal: false
   }),
   async mounted() {
     window.pageState = this;
-    const { doc, schemaPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
+    const { doc, schemaPaths, virtualPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
     window.doc = doc;
     this.document = doc;
     this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
@@ -38,6 +39,7 @@ module.exports = app => app.component('document', {
       }
       return 0;
     }).map(key => schemaPaths[key]);
+    this.virtualPaths = virtualPaths || [];
     this.status = 'loaded';
   },
   computed: {

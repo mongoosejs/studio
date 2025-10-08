@@ -78,7 +78,8 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
         <span class="font-medium text-gray-900">{{path.name}}</span>
-        <span class="ml-2 text-sm text-gray-500">(virtual - {{getVirtualFieldType(path)}})</span>
+        <span v-if="path.isVirtual" class="ml-2 text-sm text-purple-600">(virtual - {{getVirtualFieldType(path)}})</span>
+        <span v-else class="ml-2 text-sm text-blue-600">(user-added - {{getVirtualFieldType(path)}})</span>
       </div>
     </div>
     
