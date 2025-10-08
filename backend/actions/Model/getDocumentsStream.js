@@ -54,11 +54,16 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
 
   const schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
+    const schemaPath = Model.schema.paths[path];
+    const rawEnumValues = Array.isArray(schemaPath?.options?.enum) && schemaPath.options.enum.length > 0 ?
+      schemaPath.options.enum : schemaPath?.enumValues;
+    const enumValues = Array.isArray(rawEnumValues) ? rawEnumValues.filter(value => value != null) : undefined;
     schemaPaths[path] = {
-      instance: Model.schema.paths[path].instance,
+      instance: schemaPath.instance,
       path,
-      ref: Model.schema.paths[path].options?.ref,
-      required: Model.schema.paths[path].options?.required
+      ref: schemaPath.options?.ref,
+      required: schemaPath.options?.required,
+      enumValues: Array.isArray(enumValues) && enumValues.length > 0 ? enumValues : undefined
     };
   }
   removeSpecifiedPaths(schemaPaths, '.$*');

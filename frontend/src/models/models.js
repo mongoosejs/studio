@@ -62,6 +62,8 @@ module.exports = app => app.component('models', {
     autocompleteSuggestions: [],
     autocompleteIndex: 0,
     autocompleteTrie: null,
+    autocompleteContext: null,
+    enumValuesByPath: {},
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
@@ -100,12 +102,24 @@ module.exports = app => app.component('models', {
   methods: {
     buildAutocompleteTrie() {
       this.autocompleteTrie = new Trie();
+      this.enumValuesByPath = {};
       this.autocompleteTrie.bulkInsert(QUERY_SELECTORS, 5);
       if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
         const paths = this.schemaPaths
           .map(path => path?.path)
           .filter(path => typeof path === 'string' && path.length > 0);
         this.autocompleteTrie.bulkInsert(paths, 10);
+        for (const schemaPath of this.schemaPaths) {
+          if (schemaPath?.path && Array.isArray(schemaPath.enumValues) && schemaPath.enumValues.length > 0) {
+            const values = schemaPath.enumValues
+              .filter(value => value != null)
+              .map(value => String(value));
+            if (values.length > 0) {
+              const uniqueValues = Array.from(new Set(values));
+              this.enumValuesByPath[schemaPath.path] = uniqueValues;
+            }
+          }
+        }
       }
     },
     async initSearchFromUrl() {
@@ -149,20 +163,78 @@ module.exports = app => app.component('models', {
       const input = this.$refs.searchInput;
       const cursorPos = input ? input.selectionStart : 0;
       const before = this.searchText.slice(0, cursorPos);
+      this.autocompleteContext = null;
+
+      const colonIndex = before.lastIndexOf(':');
+      let handledValueContext = false;
+      if (colonIndex !== -1) {
+        const keyPart = before.slice(0, colonIndex);
+        const keyMatch = keyPart.match(/(?:\{|,)\s*["']?([^"'\s]+)["']?\s*$/);
+        if (keyMatch && keyMatch[1]) {
+          const fieldPath = keyMatch[1];
+          handledValueContext = true;
+          const enumValues = this.enumValuesByPath?.[fieldPath];
+          if (Array.isArray(enumValues) && enumValues.length > 0) {
+            const valuePart = before.slice(colonIndex + 1);
+            const valueMatch = valuePart.match(/^(\s*)(["']?)([^"',}\s]*)$/);
+            if (valueMatch) {
+              const [, , existingQuote = '', partialValue = ''] = valueMatch;
+              const lowerPartial = partialValue.toLowerCase();
+              const suggestions = enumValues
+                .filter(value => value.toLowerCase().startsWith(lowerPartial));
+              if (suggestions.length > 0) {
+                this.autocompleteSuggestions = suggestions.map(value => ({
+                  value,
+                  display: existingQuote ? `${existingQuote}${value}${existingQuote}` : `'${value}'`
+                }));
+                this.autocompleteIndex = 0;
+                const replaceStart = cursorPos - partialValue.length - (existingQuote ? existingQuote.length : 0);
+                this.autocompleteContext = {
+                  type: 'value',
+                  start: replaceStart,
+                  end: cursorPos,
+                  quote: existingQuote || null
+                };
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      if (handledValueContext) {
+        this.autocompleteSuggestions = [];
+        this.autocompleteIndex = 0;
+        return;
+      }
+
       const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
       if (match && match[1]) {
-        const term = match[1].replace(/["']/g, '');
+        const rawToken = match[1];
+        const term = rawToken.replace(/["']/g, '');
         if (!term) {
           this.autocompleteSuggestions = [];
           return;
         }
         if (this.autocompleteTrie) {
-          this.autocompleteSuggestions = this.autocompleteTrie.getSuggestions(term, 10);
-          this.autocompleteIndex = 0;
-          return;
+          const suggestions = this.autocompleteTrie.getSuggestions(term, 10).map(value => ({
+            value,
+            display: value
+          }));
+          if (suggestions.length > 0) {
+            this.autocompleteSuggestions = suggestions;
+            this.autocompleteIndex = 0;
+            this.autocompleteContext = {
+              type: 'field',
+              start: cursorPos - rawToken.length,
+              end: cursorPos
+            };
+            return;
+          }
         }
       }
       this.autocompleteSuggestions = [];
+      this.autocompleteIndex = 0;
     },
     handleKeyDown(ev) {
       if (this.autocompleteSuggestions.length === 0) {
@@ -180,26 +252,54 @@ module.exports = app => app.component('models', {
       }
     },
     applySuggestion(index) {
-      const suggestion = this.autocompleteSuggestions[index];
-      if (!suggestion) {
+      const suggestionEntry = this.autocompleteSuggestions[index];
+      if (!suggestionEntry) {
+        return;
+      }
+      const suggestionValue = typeof suggestionEntry === 'string' ? suggestionEntry : suggestionEntry.value;
+      if (suggestionValue == null) {
         return;
       }
       const input = this.$refs.searchInput;
-      const cursorPos = input.selectionStart;
-      const before = this.searchText.slice(0, cursorPos);
-      const after = this.searchText.slice(cursorPos);
-      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
-      if (!match) {
+      if (!input) {
         return;
       }
-      const token = match[1];
-      const start = cursorPos - token.length;
-      this.searchText = this.searchText.slice(0, start) + suggestion + after;
+      const cursorPos = input.selectionStart;
+      const context = this.autocompleteContext;
+      if (context?.type === 'value' && typeof context.start === 'number' && typeof context.end === 'number') {
+        const quoteChar = context.quote || '\'';
+        const suggestionText = `${quoteChar}${suggestionValue}${quoteChar}`;
+        this.searchText = this.searchText.slice(0, context.start) + suggestionText + this.searchText.slice(context.end);
+        this.$nextTick(() => {
+          const pos = context.start + suggestionText.length;
+          input.setSelectionRange(pos, pos);
+        });
+        this.autocompleteSuggestions = [];
+        this.autocompleteContext = null;
+        this.autocompleteIndex = 0;
+        return;
+      }
+
+      let start = context?.type === 'field' && typeof context.start === 'number' ? context.start : null;
+      let end = context?.type === 'field' && typeof context.end === 'number' ? context.end : null;
+      if (start == null || end == null) {
+        const before = this.searchText.slice(0, cursorPos);
+        const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
+        if (!match) {
+          return;
+        }
+        const token = match[1];
+        start = cursorPos - token.length;
+        end = cursorPos;
+      }
+      this.searchText = this.searchText.slice(0, start) + suggestionValue + this.searchText.slice(end);
       this.$nextTick(() => {
-        const pos = start + suggestion.length;
+        const pos = start + suggestionValue.length;
         input.setSelectionRange(pos, pos);
       });
       this.autocompleteSuggestions = [];
+      this.autocompleteContext = null;
+      this.autocompleteIndex = 0;
     },
     clickFilter(path) {
       if (this.searchText) {
