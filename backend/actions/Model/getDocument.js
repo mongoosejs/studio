@@ -42,5 +42,7 @@ module.exports = ({ db }) => async function getDocument(params) {
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
 
-  return { doc: doc.toJSON({ virtuals: true, getters: false, transform: false }), schemaPaths };
+  const virtualPaths = Object.keys(Model.schema.virtuals);
+
+  return { doc: doc.toJSON({ virtuals: true, getters: false, transform: false }), schemaPaths, virtualPaths };
 };

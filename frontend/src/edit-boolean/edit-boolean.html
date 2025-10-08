@@ -1,0 +1,47 @@
+<div class="edit-boolean">
+  <div class="flex flex-wrap gap-2">
+    <label class="flex items-center gap-2 px-3 py-2 border rounded cursor-pointer hover:bg-gray-50" 
+           :class="selectedValue === true ? 'bg-blue-100 border-blue-300 text-blue-800' : 'border-gray-300 text-gray-700'">
+      <input
+        type="radio"
+        :checked="selectedValue === true"
+        @change="selectValue(true)"
+        class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+      />
+      <span class="text-sm font-medium">true</span>
+    </label>
+    
+    <label class="flex items-center gap-2 px-3 py-2 border rounded cursor-pointer hover:bg-gray-50"
+           :class="selectedValue === false ? 'bg-blue-100 border-blue-300 text-blue-800' : 'border-gray-300 text-gray-700'">
+      <input
+        type="radio"
+        :checked="selectedValue === false"
+        @change="selectValue(false)"
+        class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+      />
+      <span class="text-sm font-medium">false</span>
+    </label>
+    
+    <label class="flex items-center gap-2 px-3 py-2 border rounded cursor-pointer hover:bg-gray-50"
+           :class="selectedValue === null ? 'bg-blue-100 border-blue-300 text-blue-800' : 'border-gray-300 text-gray-700'">
+      <input
+        type="radio"
+        :checked="selectedValue === null"
+        @change="selectValue(null)"
+        class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+      />
+      <span class="text-sm font-medium">null</span>
+    </label>
+    
+    <label class="flex items-center gap-2 px-3 py-2 border rounded cursor-pointer hover:bg-gray-50"
+           :class="selectedValue === undefined ? 'bg-blue-100 border-blue-300 text-blue-800' : 'border-gray-300 text-gray-700'">
+      <input
+        type="radio"
+        :checked="selectedValue === undefined"
+        @change="selectValue(undefined)"
+        class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+      />
+      <span class="text-sm font-medium">undefined</span>
+    </label>
+  </div>
+</div>
