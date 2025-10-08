@@ -21,6 +21,7 @@ module.exports = app => app.component('document', {
     editting: false,
     virtuals: [],
     virtualPaths: [],
+    viewMode: 'fields',
     shouldShowConfirmModal: false,
     shouldShowDeleteModal: false,
     shouldShowCloneModal: false
@@ -51,6 +52,9 @@ module.exports = app => app.component('document', {
         return false;
       }
       return !this.roles.includes('readonly');
+    },
+    canEdit() {
+      return this.canManipulate && this.viewMode === 'fields';
     }
   },
   methods: {
@@ -109,6 +113,14 @@ module.exports = app => app.component('document', {
         timeout: 3000,
         positionClass: 'bottomRight'
       });
+    },
+    updateViewMode(mode) {
+      this.viewMode = mode;
+      // Exit edit mode when switching to JSON view
+      if (mode === 'json' && this.editting) {
+        this.editting = false;
+        this.changes = {};
+      }
     }
   }
 });

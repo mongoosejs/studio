@@ -16,6 +16,7 @@ module.exports = app => app.component('document-details', {
       selectedType: '',
       collapsedVirtuals: new Set(),
       showAddFieldModal: false,
+      viewMode: 'fields', // 'fields' or 'json'
       fieldData: {
         name: '',
         type: '',
@@ -155,6 +156,12 @@ module.exports = app => app.component('document-details', {
       }
       
       return virtuals;
+    },
+    formattedJson() {
+      if (!this.document) {
+        return '{}';
+      }
+      return JSON.stringify(this.document, null, 2);
     }
   },
   methods: {
@@ -347,6 +354,10 @@ module.exports = app => app.component('document-details', {
         return 'String';
       }
       return 'unknown';
+    },
+    setViewMode(mode) {
+      this.viewMode = mode;
+      this.$emit('view-mode-change', mode);
     }
   }
 });

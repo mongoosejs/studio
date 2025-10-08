@@ -12,8 +12,8 @@
       <button
         v-if="!editting"
         @click="editting = true"
-        :disabled="!canManipulate"
-        :class="{'cursor-not-allowed opacity-50': !canManipulate}"
+        :disabled="!canEdit"
+        :class="{'cursor-not-allowed opacity-50': !canEdit}"
         type="button"
         class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
         <img src="images/edit.svg" class="inline" /> Edit
@@ -60,7 +60,8 @@
       :editting="editting"
       :changes="changes"
       :invalid="invalid"
-      @add-field="addField"></document-details>
+      @add-field="addField"
+      @view-mode-change="updateViewMode"></document-details>
     <modal v-if="shouldShowConfirmModal">
       <template v-slot:body>
         <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>

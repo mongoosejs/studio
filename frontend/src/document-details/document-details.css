@@ -88,3 +88,34 @@
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+
+/* JSON View Styles */
+.json-view {
+  width: 100%;
+}
+
+.json-view pre {
+  margin: 0;
+  max-height: 70vh;
+  overflow: auto;
+  line-height: 1.5;
+}
+
+.json-view pre::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.json-view pre::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.json-view pre::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.json-view pre::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

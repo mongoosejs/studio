@@ -1,7 +1,32 @@
 <div class="document-details">
-  <!-- Search and Filter Bar -->
+  <!-- View Toggle and Search/Filter Bar -->
   <div class="mb-4 mt-4">
-    <div class="flex gap-3">
+    <!-- View Toggle -->
+    <div class="mb-3 flex gap-2">
+      <button
+        @click="setViewMode('fields')"
+        :class="viewMode === 'fields' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+        class="px-4 py-2 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+        </svg>
+        Fields
+      </button>
+      <button
+        @click="setViewMode('json')"
+        :class="viewMode === 'json' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+        class="px-4 py-2 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+        </svg>
+        JSON
+      </button>
+    </div>
+
+    <!-- Search and Filter Bar (only show in fields view) -->
+    <div v-if="viewMode === 'fields'" class="flex gap-3">
       <!-- Search Bar -->
       <div class="relative flex-1">
         <input
@@ -49,19 +74,21 @@
     </div>
   </div>
 
-  <!-- Schema Paths -->
-  <div v-for="path in filteredSchemaPaths" :key="path" class="value">
-    <document-property
-      :path="path"
-      :document="document"
-      :schemaPaths="schemaPaths"
-      :editting="editting"
-      :changes="changes"
-      :invalid="invalid"></document-property>
-  </div>
-  
-  <!-- Virtual Fields -->
-  <div v-for="path in filteredVirtuals" class="border border-gray-200 rounded-lg mb-2">
+  <!-- Fields View -->
+  <div v-if="viewMode === 'fields'">
+    <!-- Schema Paths -->
+    <div v-for="path in filteredSchemaPaths" :key="path" class="value">
+      <document-property
+        :path="path"
+        :document="document"
+        :schemaPaths="schemaPaths"
+        :editting="editting"
+        :changes="changes"
+        :invalid="invalid"></document-property>
+    </div>
+    
+    <!-- Virtual Fields -->
+    <div v-for="path in filteredVirtuals" class="border border-gray-200 rounded-lg mb-2">
     <!-- Virtual Field Header (Always Visible) -->
     <div 
       @click="toggleVirtualField(path.name)"
@@ -94,12 +121,20 @@
     </div>
   </div>
 
-  <!-- No Results Message -->
-  <div v-if="searchQuery && filteredSchemaPaths.length === 0 && filteredVirtuals.length === 0" class="text-center py-8 text-gray-500">
-    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.709M15 6.291A7.962 7.962 0 0012 5c-2.34 0-4.29 1.009-5.824 2.709"></path>
-    </svg>
-    <p>No fields found matching "{{searchQuery}}"</p>
+    <!-- No Results Message -->
+    <div v-if="searchQuery && filteredSchemaPaths.length === 0 && filteredVirtuals.length === 0" class="text-center py-8 text-gray-500">
+      <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.709M15 6.291A7.962 7.962 0 0012 5c-2.34 0-4.29 1.009-5.824 2.709"></path>
+      </svg>
+      <p>No fields found matching "{{searchQuery}}"</p>
+    </div>
+  </div>
+
+  <!-- JSON View -->
+  <div v-if="viewMode === 'json'" class="json-view">
+    <div class="border border-gray-300 rounded-lg bg-gray-50 p-4 overflow-auto">
+      <pre class="text-sm font-mono text-gray-800 whitespace-pre">{{formattedJson}}</pre>
+    </div>
   </div>
 
   <!-- Add Field Modal -->
