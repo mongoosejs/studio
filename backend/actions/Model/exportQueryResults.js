@@ -45,7 +45,6 @@ module.exports = ({ db }) => async function exportQueryResults(params, req, res)
 
   const docs = await Model.
     find(filter).
-    setOptions({ sanitizeFilter: true }).
     sort({ _id: -1 });
 
   const rows = [propertiesToInclude];
