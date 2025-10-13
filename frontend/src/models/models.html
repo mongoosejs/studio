@@ -31,11 +31,14 @@
     </nav>
   </aside>
   <div class="documents" ref="documentsList">
-    <div class="relative h-[42px]">
+    <div class="relative h-[42px] z-10">
       <div class="documents-menu">
         <div class="flex flex-row items-center w-full gap-2">
-          <form @submit.prevent="search" class="flex-grow m-0">
-            <input ref="searchInput" class="w-full font-mono rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter" v-model="searchText" @click="initFilter" />
+          <form @submit.prevent="search" class="relative flex-grow m-0">
+            <input ref="searchInput" class="w-full font-mono rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter" v-model="searchText" @click="initFilter" @input="updateAutocomplete" @keydown="handleKeyDown" />
+            <ul v-if="autocompleteSuggestions.length" class="absolute z-[9999] bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto shadow">
+              <li v-for="(suggestion, index) in autocompleteSuggestions" :key="suggestion" class="px-2 py-1 cursor-pointer" :class="{ 'bg-ultramarine-100': index === autocompleteIndex }" @mousedown.prevent="applySuggestion(index)">{{ suggestion }}</li>
+            </ul>
           </form>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
@@ -51,10 +54,10 @@
           <button
             @click="stagingSelect"
             type="button"
-            :class="{ 'bg-ultramarine-500 ring-inset ring-2 ring-gray-300 hover:bg-ultramarine-600': selectMultiple }"
-            class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            :class="{ 'bg-gray-500 ring-inset ring-2 ring-gray-300 hover:bg-gray-600': selectMultiple, 'bg-ultramarine-600 hover:bg-ultramarine-500' : !selectMultiple }"
+            class="rounded px-2 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
           >
-            Select
+            {{ selectMultiple ? 'Cancel' : 'Select' }}
           </button>
           <button
             v-show="selectMultiple"
@@ -125,7 +128,7 @@
           </th>
         </thead>
         <tbody>
-          <tr v-for="document in documents" @click="handleDocumentClick(document)" :key="document._id">
+          <tr v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id">
             <td v-for="schemaPath in filteredPaths" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
               <component
                 :is="getComponentForPath(schemaPath)"
@@ -137,7 +140,7 @@
         </tbody>
       </table>
       <div v-if="outputType === 'json'">
-        <div v-for="document in documents" @click="handleDocumentClick(document)" :key="document._id" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
+        <div v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
           <list-json :value="filterDocument(document)">
           </list-json>
         </div>

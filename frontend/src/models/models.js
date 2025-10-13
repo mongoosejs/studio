@@ -5,6 +5,34 @@ const template = require('./models.html');
 const mpath = require('mpath');
 
 const appendCSS = require('../appendCSS');
+const { Trie } = require('./trie');
+
+const QUERY_SELECTORS = [
+  '$eq',
+  '$ne',
+  '$gt',
+  '$gte',
+  '$lt',
+  '$lte',
+  '$in',
+  '$nin',
+  '$exists',
+  '$regex',
+  '$options',
+  '$text',
+  '$search',
+  '$and',
+  '$or',
+  '$nor',
+  '$not',
+  '$elemMatch',
+  '$size',
+  '$all',
+  '$type',
+  '$expr',
+  '$jsonSchema',
+  '$mod'
+];
 
 
 appendCSS(require('./models.css'));
@@ -31,6 +59,9 @@ module.exports = app => app.component('models', {
     selectMultiple: false,
     selectedDocuments: [],
     searchText: '',
+    autocompleteSuggestions: [],
+    autocompleteIndex: 0,
+    autocompleteTrie: null,
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
@@ -43,10 +74,12 @@ module.exports = app => app.component('models', {
     scrollHeight: 0,
     interval: null,
     outputType: 'table', // json, table
-    hideSidebar: null
+    hideSidebar: null,
+    lastSelectedIndex: null
   }),
   created() {
     this.currentModel = this.model;
+    this.buildAutocompleteTrie();
   },
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
@@ -65,6 +98,44 @@ module.exports = app => app.component('models', {
     await this.initSearchFromUrl();
   },
   methods: {
+    buildAutocompleteTrie() {
+      this.autocompleteTrie = new Trie();
+      this.autocompleteTrie.bulkInsert(QUERY_SELECTORS, 5);
+      if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
+        const paths = this.schemaPaths
+          .map(path => path?.path)
+          .filter(path => typeof path === 'string' && path.length > 0);
+        this.autocompleteTrie.bulkInsert(paths, 10);
+      }
+    },
+    buildDocumentFetchParams(options = {}) {
+      const params = {
+        model: this.currentModel,
+        limit
+      };
+
+      if (typeof options.skip === 'number') {
+        params.skip = options.skip;
+      }
+
+      const sortKeys = Object.keys(this.sortBy);
+      if (sortKeys.length > 0) {
+        const key = sortKeys[0];
+        if (typeof key === 'string' && key.length > 0) {
+          params.sortKey = key;
+          const direction = this.sortBy[key];
+          if (direction !== undefined && direction !== null) {
+            params.sortDirection = direction;
+          }
+        }
+      }
+
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        params.searchText = this.searchText;
+      }
+
+      return params;
+    },
     async initSearchFromUrl() {
       this.status = 'loading';
       this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
@@ -101,6 +172,106 @@ module.exports = app => app.component('models', {
           ev.target.setSelectionRange(1, 1);
         });
       }
+    },
+    updateAutocomplete() {
+      const input = this.$refs.searchInput;
+      const cursorPos = input ? input.selectionStart : 0;
+      const before = this.searchText.slice(0, cursorPos);
+      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
+      if (match && match[1]) {
+        const token = match[1];
+        const leadingQuoteMatch = token.match(/^["']/);
+        const trailingQuoteMatch = token.length > 1 && /["']$/.test(token)
+          ? token[token.length - 1]
+          : '';
+        const term = token
+          .replace(/^["']/, '')
+          .replace(trailingQuoteMatch ? new RegExp(`[${trailingQuoteMatch}]$`) : '', '')
+          .trim();
+        if (!term) {
+          this.autocompleteSuggestions = [];
+          return;
+        }
+        if (this.autocompleteTrie) {
+          const primarySuggestions = this.autocompleteTrie.getSuggestions(term, 10);
+          const suggestionsSet = new Set(primarySuggestions);
+          if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
+            for (const schemaPath of this.schemaPaths) {
+              const path = schemaPath?.path;
+              if (
+                typeof path === 'string' &&
+                path.startsWith(`${term}.`) &&
+                !suggestionsSet.has(path)
+              ) {
+                suggestionsSet.add(path);
+                if (suggestionsSet.size >= 10) {
+                  break;
+                }
+              }
+            }
+          }
+          let suggestions = Array.from(suggestionsSet);
+          if (leadingQuoteMatch) {
+            const leadingQuote = leadingQuoteMatch[0];
+            suggestions = suggestions.map(suggestion => `${leadingQuote}${suggestion}`);
+          }
+          if (trailingQuoteMatch) {
+            suggestions = suggestions.map(suggestion =>
+              suggestion.endsWith(trailingQuoteMatch) ? suggestion : `${suggestion}${trailingQuoteMatch}`
+            );
+          }
+          this.autocompleteSuggestions = suggestions;
+          this.autocompleteIndex = 0;
+          return;
+        }
+      }
+      this.autocompleteSuggestions = [];
+    },
+    handleKeyDown(ev) {
+      if (this.autocompleteSuggestions.length === 0) {
+        return;
+      }
+      if (ev.key === 'Tab' || ev.key === 'Enter') {
+        ev.preventDefault();
+        this.applySuggestion(this.autocompleteIndex);
+      } else if (ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        this.autocompleteIndex = (this.autocompleteIndex + 1) % this.autocompleteSuggestions.length;
+      } else if (ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        this.autocompleteIndex = (this.autocompleteIndex + this.autocompleteSuggestions.length - 1) % this.autocompleteSuggestions.length;
+      }
+    },
+    applySuggestion(index) {
+      const suggestion = this.autocompleteSuggestions[index];
+      if (!suggestion) {
+        return;
+      }
+      const input = this.$refs.searchInput;
+      const cursorPos = input.selectionStart;
+      const before = this.searchText.slice(0, cursorPos);
+      const after = this.searchText.slice(cursorPos);
+      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
+      if (!match) {
+        return;
+      }
+      const token = match[1];
+      const start = cursorPos - token.length;
+      let replacement = suggestion;
+      const leadingQuote = token.startsWith('"') || token.startsWith('\'') ? token[0] : '';
+      const trailingQuote = token.length > 1 && (token.endsWith('"') || token.endsWith('\'')) ? token[token.length - 1] : '';
+      if (leadingQuote && !replacement.startsWith(leadingQuote)) {
+        replacement = `${leadingQuote}${replacement}`;
+      }
+      if (trailingQuote && !replacement.endsWith(trailingQuote)) {
+        replacement = `${replacement}${trailingQuote}`;
+      }
+      this.searchText = this.searchText.slice(0, start) + replacement + after;
+      this.$nextTick(() => {
+        const pos = start + replacement.length;
+        input.setSelectionRange(pos, pos);
+      });
+      this.autocompleteSuggestions = [];
     },
     clickFilter(path) {
       if (this.searchText) {
@@ -146,15 +317,7 @@ module.exports = app => app.component('models', {
       const container = this.$refs.documentsList;
       if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
         this.status = 'loading';
-        const params = {
-          model: this.currentModel,
-          sort: this.sortBy,
-          skip: this.documents.length,
-          limit
-        };
-        if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
-          params.searchText = this.searchText;
-        }
+        const params = this.buildDocumentFetchParams({ skip: this.documents.length });
         const { docs } = await api.Model.getDocuments(params);
         if (docs.length < limit) {
           this.loadedAllDocs = true;
@@ -214,21 +377,16 @@ module.exports = app => app.component('models', {
       // Clear previous data
       this.documents = [];
       this.schemaPaths = [];
+      this.buildAutocompleteTrie();
       this.numDocuments = null;
       this.loadedAllDocs = false;
+      this.lastSelectedIndex = null;
 
       let docsCount = 0;
       let schemaPathsReceived = false;
 
       // Use async generator to stream SSEs
-      const params = {
-        model: this.currentModel,
-        sort: this.sortBy,
-        limit
-      };
-      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
-        params.searchText = this.searchText;
-      }
+      const params = this.buildDocumentFetchParams();
       for await (const event of api.Model.getDocumentsStream(params)) {
         if (event.schemaPaths && !schemaPathsReceived) {
           // Sort schemaPaths with _id first
@@ -247,6 +405,7 @@ module.exports = app => app.component('models', {
           }
           this.filteredPaths = [...this.schemaPaths];
           this.selectedPaths = [...this.schemaPaths];
+          this.buildAutocompleteTrie();
           schemaPathsReceived = true;
         }
         if (event.numDocs !== undefined) {
@@ -271,15 +430,7 @@ module.exports = app => app.component('models', {
       let numDocsReceived = false;
 
       // Use async generator to stream SSEs
-      const params = {
-        model: this.currentModel,
-        sort: this.sortBy,
-        skip: this.documents.length,
-        limit
-      };
-      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
-        params.searchText = this.searchText;
-      }
+      const params = this.buildDocumentFetchParams({ skip: this.documents.length });
       for await (const event of api.Model.getDocumentsStream(params)) {
         if (event.numDocs !== undefined && !numDocsReceived) {
           this.numDocuments = event.numDocs;
@@ -389,17 +540,38 @@ module.exports = app => app.component('models', {
       }
       this.edittingDoc = null;
     },
-    handleDocumentClick(document) {
-      console.log(this.selectedDocuments);
+    handleDocumentClick(document, event) {
       if (this.selectMultiple) {
-        const exists = this.selectedDocuments.find(x => x._id.toString() == document._id.toString());
-        if (exists) {
-          const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
-          if (index !== -1) {
-            this.selectedDocuments.splice(index, 1);
+        const documentIndex = this.documents.findIndex(doc => doc._id.toString() == document._id.toString());
+        if (event?.shiftKey && this.selectedDocuments.length > 0) {
+          const anchorIndex = this.lastSelectedIndex;
+          if (anchorIndex != null && anchorIndex !== -1 && documentIndex !== -1) {
+            const start = Math.min(anchorIndex, documentIndex);
+            const end = Math.max(anchorIndex, documentIndex);
+            const selectedDocumentIds = new Set(this.selectedDocuments.map(doc => doc._id.toString()));
+            for (let i = start; i <= end; i++) {
+              const docInRange = this.documents[i];
+              const existsInRange = selectedDocumentIds.has(docInRange._id.toString());
+              if (!existsInRange) {
+                this.selectedDocuments.push(docInRange);
+              }
+            }
+            this.lastSelectedIndex = documentIndex;
+            return;
+          }
+        }
+        const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
+        if (index !== -1) {
+          this.selectedDocuments.splice(index, 1);
+          if (this.selectedDocuments.length === 0) {
+            this.lastSelectedIndex = null;
+          } else {
+            const lastDoc = this.selectedDocuments[this.selectedDocuments.length - 1];
+            this.lastSelectedIndex = this.documents.findIndex(doc => doc._id.toString() == lastDoc._id.toString());
           }
         } else {
           this.selectedDocuments.push(document);
+          this.lastSelectedIndex = documentIndex;
         }
       } else {
         this.$router.push('/model/' + this.currentModel + '/document/' + document._id);
@@ -413,18 +585,21 @@ module.exports = app => app.component('models', {
       });
       await this.getDocuments();
       this.selectedDocuments.length = 0;
+      this.lastSelectedIndex = null;
       this.shouldShowDeleteMultipleModal = false;
       this.selectMultiple = false;
     },
     async updateDocuments() {
       await this.getDocuments();
       this.selectedDocuments.length = 0;
+      this.lastSelectedIndex = null;
       this.selectMultiple = false;
     },
     stagingSelect() {
       if (this.selectMultiple) {
         this.selectMultiple = false;
         this.selectedDocuments.length = 0;
+        this.lastSelectedIndex = null;
       } else {
         this.selectMultiple = true;
       }
