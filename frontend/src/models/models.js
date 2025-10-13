@@ -108,6 +108,34 @@ module.exports = app => app.component('models', {
         this.autocompleteTrie.bulkInsert(paths, 10);
       }
     },
+    buildDocumentFetchParams(options = {}) {
+      const params = {
+        model: this.currentModel,
+        limit
+      };
+
+      if (typeof options.skip === 'number') {
+        params.skip = options.skip;
+      }
+
+      const sortKeys = Object.keys(this.sortBy);
+      if (sortKeys.length > 0) {
+        const key = sortKeys[0];
+        if (typeof key === 'string' && key.length > 0) {
+          params.sortKey = key;
+          const direction = this.sortBy[key];
+          if (direction !== undefined && direction !== null) {
+            params.sortDirection = direction;
+          }
+        }
+      }
+
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        params.searchText = this.searchText;
+      }
+
+      return params;
+    },
     async initSearchFromUrl() {
       this.status = 'loading';
       this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
@@ -245,15 +273,7 @@ module.exports = app => app.component('models', {
       const container = this.$refs.documentsList;
       if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
         this.status = 'loading';
-        const params = {
-          model: this.currentModel,
-          sort: this.sortBy,
-          skip: this.documents.length,
-          limit
-        };
-        if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
-          params.searchText = this.searchText;
-        }
+        const params = this.buildDocumentFetchParams({ skip: this.documents.length });
         const { docs } = await api.Model.getDocuments(params);
         if (docs.length < limit) {
           this.loadedAllDocs = true;
@@ -322,14 +342,7 @@ module.exports = app => app.component('models', {
       let schemaPathsReceived = false;
 
       // Use async generator to stream SSEs
-      const params = {
-        model: this.currentModel,
-        sort: this.sortBy,
-        limit
-      };
-      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
-        params.searchText = this.searchText;
-      }
+      const params = this.buildDocumentFetchParams();
       for await (const event of api.Model.getDocumentsStream(params)) {
         if (event.schemaPaths && !schemaPathsReceived) {
           // Sort schemaPaths with _id first
@@ -373,15 +386,7 @@ module.exports = app => app.component('models', {
       let numDocsReceived = false;
 
       // Use async generator to stream SSEs
-      const params = {
-        model: this.currentModel,
-        sort: this.sortBy,
-        skip: this.documents.length,
-        limit
-      };
-      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
-        params.searchText = this.searchText;
-      }
+      const params = this.buildDocumentFetchParams({ skip: this.documents.length });
       for await (const event of api.Model.getDocumentsStream(params)) {
         if (event.numDocs !== undefined && !numDocsReceived) {
           this.numDocuments = event.numDocs;
