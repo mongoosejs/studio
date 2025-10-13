@@ -39,7 +39,8 @@ module.exports = app => app.component('team', {
       }
 
       const roles = this.getRolesForUser(user);
-      const currentRole = roles.find(role => role !== 'owner') ?? roles[0] ?? null;
+      const nonOwnerRoles = roles.filter(role => role !== 'owner');
+      const currentRole = nonOwnerRoles[0] ?? null;
       const editableRole = currentRole ?? (this.workspace?.subscriptionTier ? 'member' : 'dashboards');
 
       this.showEditModal = {
