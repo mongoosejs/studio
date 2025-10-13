@@ -179,13 +179,48 @@ module.exports = app => app.component('models', {
       const before = this.searchText.slice(0, cursorPos);
       const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
       if (match && match[1]) {
-        const term = match[1].replace(/["']/g, '');
+        const token = match[1];
+        const leadingQuoteMatch = token.match(/^["']/);
+        const trailingQuoteMatch = token.length > 1 && /["']$/.test(token)
+          ? token[token.length - 1]
+          : '';
+        const term = token
+          .replace(/^["']/, '')
+          .replace(trailingQuoteMatch ? new RegExp(`[${trailingQuoteMatch}]$`) : '', '')
+          .trim();
         if (!term) {
           this.autocompleteSuggestions = [];
           return;
         }
         if (this.autocompleteTrie) {
-          this.autocompleteSuggestions = this.autocompleteTrie.getSuggestions(term, 10);
+          const primarySuggestions = this.autocompleteTrie.getSuggestions(term, 10);
+          const suggestionsSet = new Set(primarySuggestions);
+          if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
+            for (const schemaPath of this.schemaPaths) {
+              const path = schemaPath?.path;
+              if (
+                typeof path === 'string' &&
+                path.startsWith(`${term}.`) &&
+                !suggestionsSet.has(path)
+              ) {
+                suggestionsSet.add(path);
+                if (suggestionsSet.size >= 10) {
+                  break;
+                }
+              }
+            }
+          }
+          let suggestions = Array.from(suggestionsSet);
+          if (leadingQuoteMatch) {
+            const leadingQuote = leadingQuoteMatch[0];
+            suggestions = suggestions.map(suggestion => `${leadingQuote}${suggestion}`);
+          }
+          if (trailingQuoteMatch) {
+            suggestions = suggestions.map(suggestion =>
+              suggestion.endsWith(trailingQuoteMatch) ? suggestion : `${suggestion}${trailingQuoteMatch}`
+            );
+          }
+          this.autocompleteSuggestions = suggestions;
           this.autocompleteIndex = 0;
           return;
         }
@@ -222,9 +257,18 @@ module.exports = app => app.component('models', {
       }
       const token = match[1];
       const start = cursorPos - token.length;
-      this.searchText = this.searchText.slice(0, start) + suggestion + after;
+      let replacement = suggestion;
+      const leadingQuote = token.startsWith('"') || token.startsWith("'") ? token[0] : '';
+      const trailingQuote = token.length > 1 && (token.endsWith('"') || token.endsWith("'")) ? token[token.length - 1] : '';
+      if (leadingQuote && !replacement.startsWith(leadingQuote)) {
+        replacement = `${leadingQuote}${replacement}`;
+      }
+      if (trailingQuote && !replacement.endsWith(trailingQuote)) {
+        replacement = `${replacement}${trailingQuote}`;
+      }
+      this.searchText = this.searchText.slice(0, start) + replacement + after;
       this.$nextTick(() => {
-        const pos = start + suggestion.length;
+        const pos = start + replacement.length;
         input.setSelectionRange(pos, pos);
       });
       this.autocompleteSuggestions = [];
