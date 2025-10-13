@@ -258,8 +258,8 @@ module.exports = app => app.component('models', {
       const token = match[1];
       const start = cursorPos - token.length;
       let replacement = suggestion;
-      const leadingQuote = token.startsWith('"') || token.startsWith("'") ? token[0] : '';
-      const trailingQuote = token.length > 1 && (token.endsWith('"') || token.endsWith("'")) ? token[token.length - 1] : '';
+      const leadingQuote = token.startsWith('"') || token.startsWith('\'') ? token[0] : '';
+      const trailingQuote = token.length > 1 && (token.endsWith('"') || token.endsWith('\'')) ? token[token.length - 1] : '';
       if (leadingQuote && !replacement.startsWith(leadingQuote)) {
         replacement = `${leadingQuote}${replacement}`;
       }
