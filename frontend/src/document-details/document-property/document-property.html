@@ -1,15 +1,16 @@
 <div class="border border-gray-200 rounded-lg mb-2">
   <!-- Collapsible Header -->
-  <div 
+  <div
     @click="toggleCollapse"
-    class="p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200"
+    class="p-3 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
+    :class="{ 'bg-amber-100': highlight, 'bg-gray-50': !highlight }"
   >
-    <div class="flex items-center">
-      <svg 
+    <div class="flex items-center" >
+      <svg
         :class="isCollapsed ? 'rotate-0' : 'rotate-90'"
         class="w-4 h-4 text-gray-500 mr-2 transition-transform duration-200"
-        fill="none" 
-        stroke="currentColor" 
+        fill="none"
+        stroke="currentColor"
         viewBox="0 0 24 24"
       >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -27,7 +28,7 @@
       </router-link>
     </div>
   </div>
-  
+
   <!-- Collapsible Content -->
   <div v-if="!isCollapsed" class="p-3">
     <!-- Date Type Selector (when editing dates) -->
@@ -53,7 +54,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Field Content -->
     <div v-if="editting && path.path !== '_id'">
       <component
@@ -69,7 +70,7 @@
       <!-- Show truncated or full value based on needsTruncation and isValueExpanded -->
       <div v-if="needsTruncation && !isValueExpanded" class="truncated-value-container">
         <div class="text-gray-700 whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>
-        <button 
+        <button
           @click="toggleValueExpansion"
           class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
         >
@@ -81,7 +82,7 @@
       </div>
       <div v-else-if="needsTruncation && isValueExpanded" class="expanded-value-container">
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
-        <button 
+        <button
           @click="toggleValueExpansion"
           class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
         >

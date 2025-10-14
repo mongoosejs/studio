@@ -41,12 +41,11 @@
       <!-- Add Field Button -->
       <button
         @click="openAddFieldModal"
-        class="hidden md:block px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center gap-2"
+        class="hidden md:flex px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 items-center gap-2"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
-        Add Field
+        </svg> Add Field
       </button>
     </div>
   </div>
@@ -57,8 +56,7 @@
     <div
       v-for="path in filteredSchemaPaths"
       :key="path.path || path"
-      class="value transition-colors duration-200 ease-in-out"
-      :class="{ 'bg-amber-100 rounded-lg': isSchemaPathMatched(path) }"
+      class="value"
     >
       <document-property
         :path="path"
@@ -66,6 +64,7 @@
         :schemaPaths="schemaPaths"
         :editting="editting"
         :changes="changes"
+        :highlight="isSchemaPathMatched(path)"
         :invalid="invalid"></document-property>
     </div>
 
