@@ -1,5 +1,6 @@
 'use strict';
 
+exports.addField = require('./addField');
 exports.createDocument = require('./createDocument');
 exports.deleteDocument = require('./deleteDocument');
 exports.deleteDocuments = require('./deleteDocuments');
