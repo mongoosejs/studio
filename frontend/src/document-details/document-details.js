@@ -9,14 +9,13 @@ appendCSS(require('./document-details.css'));
 
 module.exports = app => app.component('document-details', {
   template,
-  props: ['document', 'schemaPaths', 'virtualPaths', 'editting', 'changes', 'invalid'],
+  props: ['document', 'schemaPaths', 'virtualPaths', 'editting', 'changes', 'invalid', 'viewMode'],
   data() {
     return {
       searchQuery: '',
       selectedType: '',
       collapsedVirtuals: new Set(),
       showAddFieldModal: false,
-      viewMode: 'fields', // 'fields' or 'json'
       fieldData: {
         name: '',
         type: '',
@@ -33,7 +32,7 @@ module.exports = app => app.component('document-details', {
       if (this.$refs.searchInput) {
         this.$refs.searchInput.focus();
       }
-      
+
       if (this.showAddFieldModal) {
         this.initializeFieldValueEditor();
       }
@@ -48,7 +47,7 @@ module.exports = app => app.component('document-details', {
       if (newType !== oldType) {
         // Destroy existing CodeMirror if it exists
         this.destroyFieldValueEditor();
-        
+
         // If switching to a type that needs CodeMirror, initialize it
         if (this.shouldUseCodeMirror) {
           this.$nextTick(() => {
@@ -72,8 +71,8 @@ module.exports = app => app.component('document-details', {
       for (let i = 0; i < docKeys.length; i++) {
         if (!exists.includes(docKeys[i])) {
           const isVirtual = this.virtualPaths && this.virtualPaths.includes(docKeys[i]);
-          result.push({ 
-            name: docKeys[i], 
+          result.push({
+            name: docKeys[i],
             value: this.document[docKeys[i]],
             isVirtual: isVirtual,
             isUserAdded: !isVirtual
@@ -91,7 +90,7 @@ module.exports = app => app.component('document-details', {
           types.add(path.instance);
         }
       });
-      
+
       // Add virtual field types to the available types
       this.virtuals.forEach(virtual => {
         const virtualType = this.getVirtualFieldType(virtual);
@@ -99,13 +98,13 @@ module.exports = app => app.component('document-details', {
           types.add(virtualType);
         }
       });
-      
+
       return Array.from(types).sort();
     },
     allFieldTypes() {
       const schemaTypes = this.availableTypes;
       const commonTypes = ['String', 'Number', 'Boolean', 'Date', 'Array', 'Object'];
-      
+
       // Combine schema types with common types, avoiding duplicates
       const allTypes = new Set([...schemaTypes, ...commonTypes]);
       return Array.from(allTypes).sort();
@@ -118,35 +117,35 @@ module.exports = app => app.component('document-details', {
     },
     filteredSchemaPaths() {
       let paths = this.schemaPaths || [];
-      
+
       // Filter by search query
       if (this.searchQuery.trim()) {
         const query = this.searchQuery.toLowerCase();
-        paths = paths.filter(path => 
+        paths = paths.filter(path =>
           path.path.toLowerCase().includes(query)
         );
       }
-      
+
       // Filter by data type
       if (this.selectedType) {
-        paths = paths.filter(path => 
+        paths = paths.filter(path =>
           path.instance === this.selectedType
         );
       }
-      
+
       return paths;
     },
     filteredVirtuals() {
       let virtuals = this.virtuals;
-      
+
       // Filter by search query
       if (this.searchQuery.trim()) {
         const query = this.searchQuery.toLowerCase();
-        virtuals = virtuals.filter(virtual => 
+        virtuals = virtuals.filter(virtual =>
           virtual.name.toLowerCase().includes(query)
         );
       }
-      
+
       // Filter by data type
       if (this.selectedType) {
         virtuals = virtuals.filter(virtual => {
@@ -154,7 +153,7 @@ module.exports = app => app.component('document-details', {
           return virtualType === this.selectedType;
         });
       }
-      
+
       return virtuals;
     },
     formattedJson() {
@@ -195,7 +194,7 @@ module.exports = app => app.component('document-details', {
     },
     validateFieldForm() {
       this.fieldErrors = {};
-      
+
       // Validate field name
       const trimmedName = this.fieldData.name.trim();
       if (!trimmedName) {
@@ -208,12 +207,12 @@ module.exports = app => app.component('document-details', {
           this.fieldErrors.name = 'Field name must start with a letter, underscore, or $ and contain only letters, numbers, underscores, and $';
         }
       }
-      
+
       // Validate field type
       if (!this.fieldData.type) {
         this.fieldErrors.type = 'Field type is required';
       }
-      
+
       // Validate field value if provided
       if (this.fieldData.value && this.fieldData.value.trim()) {
         if (['Object', 'Array'].includes(this.fieldData.type)) {
@@ -239,14 +238,14 @@ module.exports = app => app.component('document-details', {
           }
         }
       }
-      
+
       return Object.keys(this.fieldErrors).length === 0;
     },
     parseFieldValue(value, type) {
       if (!value || !value.trim()) {
         return null;
       }
-      
+
       switch (type) {
         case 'Number':
           return Number(value);
@@ -267,16 +266,16 @@ module.exports = app => app.component('document-details', {
       if (!this.validateFieldForm()) {
         return;
       }
-      
+
       this.isSubmittingField = true;
-      
+
       try {
         const fieldData = {
           name: this.getTransformedFieldName(),
           type: this.fieldData.type,
           value: this.parseFieldValue(this.fieldData.value, this.fieldData.type)
         };
-        
+
         this.$emit('add-field', fieldData);
         this.closeAddFieldModal();
       } catch (error) {
@@ -354,10 +353,6 @@ module.exports = app => app.component('document-details', {
         return 'String';
       }
       return 'unknown';
-    },
-    setViewMode(mode) {
-      this.viewMode = mode;
-      this.$emit('view-mode-change', mode);
     }
   }
 });

@@ -21,6 +21,7 @@ module.exports = app => app.component('document', {
     editting: false,
     virtuals: [],
     virtualPaths: [],
+    mobileMenuOpen: false,
     viewMode: 'fields',
     shouldShowConfirmModal: false,
     shouldShowDeleteModal: false,
@@ -104,7 +105,7 @@ module.exports = app => app.component('document', {
         fieldValue: fieldData.value
       });
       this.document = doc;
-      
+
       // Show success message
       vanillatoast.create({
         title: 'Field Added!',
