@@ -96,3 +96,11 @@
 .modal-container .modal-exit:hover {
   background-color: #f1f5ff;
 }
+
+@media (max-width: 767px) {
+  .modal-container {
+    width: calc(100vw - 10px);
+    margin: 0;
+    margin-left: 5px;
+  }
+}

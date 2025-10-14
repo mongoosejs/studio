@@ -21,10 +21,10 @@
       </div>
 
       <!-- Data Type Filter -->
-      <div class="relative">
+      <div class="relative hidden md:block">
         <select
           v-model="selectedType"
-          class="hidden md:block px-4 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px] appearance-none"
+          class="px-4 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px] appearance-none"
         >
           <option value="">All Types</option>
           <option v-for="type in availableTypes" :key="type" :value="type">
