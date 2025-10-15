@@ -2,6 +2,7 @@
 
 const template = require('./task-details.html');
 const api = require('../../api');
+const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('task-details', {
   props: ['taskGroup', 'currentFilter'],
@@ -49,38 +50,20 @@ module.exports = app => app.component('task-details', {
       return new Date(dateString).toLocaleString();
     },
     async rescheduleTask(task) {
-      try {
-        // TODO: Implement reschedule API call
-        if (!this.newScheduledTime) {
-          return;
-        }
-        console.log('Rescheduling task:', task.id, 'to:', this.newScheduledTime);
-        await api.Task.rescheduleTask({ taskId: task.id, scheduledAt: this.newScheduledTime });
-        // await api.Task.rescheduleTask(task.id, { scheduledAt: this.newScheduledTime });
-      } catch (error) {
-        console.error('Error rescheduling task:', error);
-        // TODO: Add proper error handling/notification
+      if (!this.newScheduledTime) {
+        return;
       }
+      console.log('Rescheduling task:', task.id, 'to:', this.newScheduledTime);
+      await api.Task.rescheduleTask({ taskId: task.id, scheduledAt: this.newScheduledTime });
     },
     async runTask(task) {
-      try {
-        // TODO: Implement run task API call
-        console.log('Running task:', task.id);
-        // await api.Task.runTask(task.id);
-      } catch (error) {
-        console.error('Error running task:', error);
-        // TODO: Add proper error handling/notification
-      }
+      console.log('Running task:', task.id);
+      await api.Task.runTask({ taskId: task.id });
     },
     async cancelTask(task) {
-      try {
-        await api.Task.cancelTask({ taskId: task.id });
-        // Refresh the task data by emitting an event to the parent
-        this.$emit('task-cancelled');
-      } catch (error) {
-        console.error('Error cancelling task:', error);
-        // TODO: Add proper error handling/notification
-      }
+      await api.Task.cancelTask({ taskId: task.id });
+      // Refresh the task data by emitting an event to the parent
+      this.$emit('task-cancelled');
     },
     filterByStatus(status) {
       // If clicking the same status, clear the filter
@@ -112,29 +95,80 @@ module.exports = app => app.component('task-details', {
     async confirmRescheduleTask() {
       try {
         await this.rescheduleTask(this.selectedTask);
+        
+        // Show success message
+        vanillatoasts.create({
+          title: 'Task Rescheduled Successfully!',
+          text: `Task ${this.selectedTask.id} has been rescheduled`,
+          type: 'success',
+          timeout: 3000,
+          positionClass: 'bottomRight'
+        });
+        
         this.showRescheduleModal = false;
         this.selectedTask = null;
         this.newScheduledTime = '';
       } catch (error) {
         console.error('Error in confirmRescheduleTask:', error);
+        vanillatoasts.create({
+          title: 'Failed to Reschedule Task',
+          text: error?.response?.data?.message || error.message || 'An unexpected error occurred',
+          type: 'error',
+          timeout: 5000,
+          positionClass: 'bottomRight'
+        });
       }
     },
     async confirmRunTask() {
       try {
         await this.runTask(this.selectedTask);
+        
+        // Show success message
+        vanillatoasts.create({
+          title: 'Task Started Successfully!',
+          text: `Task ${this.selectedTask.id} is now running`,
+          type: 'success',
+          timeout: 3000,
+          positionClass: 'bottomRight'
+        });
+        
         this.showRunModal = false;
         this.selectedTask = null;
       } catch (error) {
         console.error('Error in confirmRunTask:', error);
+        vanillatoasts.create({
+          title: 'Failed to Run Task',
+          text: error?.response?.data?.message || error.message || 'An unexpected error occurred',
+          type: 'error',
+          timeout: 5000,
+          positionClass: 'bottomRight'
+        });
       }
     },
     async confirmCancelTask() {
       try {
         await this.cancelTask(this.selectedTask);
+        
+        // Show success message
+        vanillatoasts.create({
+          title: 'Task Cancelled Successfully!',
+          text: `Task ${this.selectedTask.id} has been cancelled`,
+          type: 'success',
+          timeout: 3000,
+          positionClass: 'bottomRight'
+        });
+        
         this.showCancelModal = false;
         this.selectedTask = null;
       } catch (error) {
         console.error('Error in confirmCancelTask:', error);
+        vanillatoasts.create({
+          title: 'Failed to Cancel Task',
+          text: error?.response?.data?.message || error.message || 'An unexpected error occurred',
+          type: 'error',
+          timeout: 5000,
+          positionClass: 'bottomRight'
+        });
       }
     }
 

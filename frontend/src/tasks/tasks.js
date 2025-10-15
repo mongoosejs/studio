@@ -2,6 +2,7 @@
 
 const template = require('./tasks.html');
 const api = require('../api');
+const vanillatoasts = require('vanillatoasts');
 
 
 module.exports = app => app.component('tasks', {
@@ -43,7 +44,8 @@ module.exports = app => app.component('tasks', {
       scheduledAt: '',
       parameters: '',
       repeatInterval: ''
-    }
+    },
+    parametersEditor: null
   }),
   methods: {
     async getTasks() {
@@ -104,12 +106,19 @@ module.exports = app => app.component('tasks', {
     async createTask() {
       try {
         let parameters = {};
-        if (this.newTask.parameters.trim()) {
+        const parametersText = this.parametersEditor ? this.parametersEditor.getValue() : '';
+        if (parametersText.trim()) {
           try {
-            parameters = JSON.parse(this.newTask.parameters);
+            parameters = JSON.parse(parametersText);
           } catch (e) {
             console.error('Invalid JSON in parameters field:', e);
-            // TODO: Add proper validation feedback
+            vanillatoasts.create({
+              title: 'Invalid JSON Parameters',
+              text: 'Please check your JSON syntax in the parameters field',
+              type: 'error',
+              timeout: 5000,
+              positionClass: 'bottomRight'
+            });
             return;
           }
         }
@@ -120,7 +129,13 @@ module.exports = app => app.component('tasks', {
           const interval = parseInt(this.newTask.repeatInterval);
           if (isNaN(interval) || interval < 0) {
             console.error('Invalid repeat interval. Must be a positive number.');
-            // TODO: Add proper validation feedback
+            vanillatoasts.create({
+              title: 'Invalid Repeat Interval',
+              text: 'Repeat interval must be a positive number (in milliseconds)',
+              type: 'error',
+              timeout: 5000,
+              positionClass: 'bottomRight'
+            });
             return;
           }
           repeatInterval = interval;
@@ -133,9 +148,17 @@ module.exports = app => app.component('tasks', {
           repeatAfterMS: repeatInterval
         };
 
-        // TODO: Implement create task API call
         console.log('Creating task:', taskData);
         await api.Task.createTask(taskData);
+
+        // Show success message
+        vanillatoasts.create({
+          title: 'Task Created Successfully!',
+          text: `Task "${taskData.name}" has been scheduled`,
+          type: 'success',
+          timeout: 3000,
+          positionClass: 'bottomRight'
+        });
 
         // Close modal (which will reset form)
         this.closeCreateTaskModal();
@@ -144,7 +167,13 @@ module.exports = app => app.component('tasks', {
         await this.getTasks();
       } catch (error) {
         console.error('Error creating task:', error);
-        // TODO: Add proper error handling/notification
+        vanillatoasts.create({
+          title: 'Failed to Create Task',
+          text: error?.response?.data?.message || error.message || 'An unexpected error occurred',
+          type: 'error',
+          timeout: 5000,
+          positionClass: 'bottomRight'
+        });
       }
     },
     resetCreateTaskForm() {
@@ -154,6 +183,9 @@ module.exports = app => app.component('tasks', {
         parameters: '',
         repeatInterval: ''
       };
+      if (this.parametersEditor) {
+        this.parametersEditor.setValue('');
+      }
     },
     setDefaultCreateTaskValues() {
       // Set default scheduled time to 1 hour from now
@@ -165,6 +197,22 @@ module.exports = app => app.component('tasks', {
       this.showCreateTaskModal = false;
       this.resetCreateTaskForm();
       this.setDefaultCreateTaskValues();
+    },
+    initializeParametersEditor() {
+      if (this.$refs.parametersEditor && !this.parametersEditor) {
+        this.parametersEditor = CodeMirror.fromTextArea(this.$refs.parametersEditor, {
+          mode: 'javascript',
+          lineNumbers: true,
+          smartIndent: false,
+          theme: 'default'
+        });
+      }
+    },
+    openCreateTaskModal() {
+      this.showCreateTaskModal = true;
+      this.$nextTick(() => {
+        this.initializeParametersEditor();
+      });
     },
     getStatusColor(status) {
       if (status === 'succeeded') {
@@ -315,6 +363,11 @@ module.exports = app => app.component('tasks', {
     await this.getTasks();
     this.status = 'loaded';
     this.setDefaultCreateTaskValues();
+  },
+  beforeDestroy() {
+    if (this.parametersEditor) {
+      this.parametersEditor.toTextArea();
+    }
   },
 
   template: template

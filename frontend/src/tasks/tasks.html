@@ -54,7 +54,7 @@
             </div>
             <div class="mb-6">
                 <button
-                  @click="showCreateTaskModal = true"
+                  @click="openCreateTaskModal"
                   class="w-full bg-ultramarine-600 text-white hover:bg-ultramarine-700 font-medium py-2 px-4 rounded-md transition"
                 >
                   Create New Task
@@ -155,7 +155,7 @@
     <!-- Create Task Modal -->
     <modal v-if="showCreateTaskModal" containerClass="!h-[90vh] !w-[90vw]">
         <template #body>
-            <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showCreateTaskModal = false;" role="button" aria-label="Close modal">&times;</div>
+            <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="closeCreateTaskModal" role="button" aria-label="Close modal">&times;</div>
             <div class="space-y-4">
                 <h3 class="text-lg font-semibold text-gray-700 mb-4">Create New Task</h3>
                 
@@ -181,8 +181,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Parameters (JSON):</label>
                     <textarea 
-                        v-model="newTask.parameters" 
-                        rows="4" 
+                        ref="parametersEditor"
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ultramarine-500"
                         placeholder='{"key": "value"}'
                     ></textarea>
