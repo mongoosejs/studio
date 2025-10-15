@@ -69,6 +69,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
   exports.Model = {
+    addField(params) {
+      return client.post('', { action: 'Model.addField', ...params }).then(res => res.data);
+    },
     createChart(params) {
       return client.post('', { action: 'Model.createChart', ...params }).then(res => res.data);
     },
@@ -84,7 +87,7 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
-      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
+      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '?' + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
         method: 'GET',
         headers: {
           Authorization: `${accessToken}`, // Set your authorization token here
@@ -199,6 +202,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
   exports.Model = {
+    addField(params) {
+      return client.post('/Model/addField', params).then(res => res.data);
+    },
     createChart: function(params) {
       return client.post('/Model/createChart', params).then(res => res.data);
     },

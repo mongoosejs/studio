@@ -20,13 +20,16 @@ module.exports = app => app.component('document', {
     invalid: {},
     editting: false,
     virtuals: [],
+    virtualPaths: [],
+    mobileMenuOpen: false,
+    viewMode: 'fields',
     shouldShowConfirmModal: false,
     shouldShowDeleteModal: false,
     shouldShowCloneModal: false
   }),
   async mounted() {
     window.pageState = this;
-    const { doc, schemaPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
+    const { doc, schemaPaths, virtualPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
     window.doc = doc;
     this.document = doc;
     this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
@@ -38,6 +41,7 @@ module.exports = app => app.component('document', {
       }
       return 0;
     }).map(key => schemaPaths[key]);
+    this.virtualPaths = virtualPaths || [];
     this.status = 'loaded';
   },
   computed: {
@@ -49,6 +53,9 @@ module.exports = app => app.component('document', {
         return false;
       }
       return !this.roles.includes('readonly');
+    },
+    canEdit() {
+      return this.canManipulate && this.viewMode === 'fields';
     }
   },
   methods: {
@@ -89,6 +96,32 @@ module.exports = app => app.component('document', {
     },
     showClonedDocument(doc) {
       this.$router.push({ path: `/model/${this.model}/document/${doc._id}` });
+    },
+    async addField(fieldData) {
+      const { doc } = await api.Model.addField({
+        model: this.model,
+        _id: this.document._id,
+        fieldName: fieldData.name,
+        fieldValue: fieldData.value
+      });
+      this.document = doc;
+
+      // Show success message
+      vanillatoast.create({
+        title: 'Field Added!',
+        text: `Field "${fieldData.name}" has been added to the document`,
+        type: 'success',
+        timeout: 3000,
+        positionClass: 'bottomRight'
+      });
+    },
+    updateViewMode(mode) {
+      this.viewMode = mode;
+      // Exit edit mode when switching to JSON view
+      if (mode === 'json' && this.editting) {
+        this.editting = false;
+        this.changes = {};
+      }
     }
   }
 });
