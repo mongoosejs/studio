@@ -16,7 +16,7 @@ module.exports = app => app.component('document-property', {
       isValueExpanded: false // Track if the value is expanded
     };
   },
-  props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid'],
+  props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid', 'highlight'],
   computed: {
     valueAsString() {
       const value = this.getValueForPath(this.path.path);
