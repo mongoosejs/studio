@@ -68,11 +68,11 @@
     </div>
     <div v-else>
       <!-- Show truncated or full value based on needsTruncation and isValueExpanded -->
-      <div v-if="needsTruncation && !isValueExpanded" class="truncated-value-container">
+      <div v-if="needsTruncation && !isValueExpanded" class="relative">
         <div class="text-gray-700 whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>
         <button
           @click="toggleValueExpansion"
-          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -80,11 +80,11 @@
           Show more ({{valueAsString.length}} characters)
         </button>
       </div>
-      <div v-else-if="needsTruncation && isValueExpanded" class="expanded-value-container">
+      <div v-else-if="needsTruncation && isValueExpanded" class="relative">
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
         <button
           @click="toggleValueExpansion"
-          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
         >
           <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>

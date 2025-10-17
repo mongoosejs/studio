@@ -21,18 +21,3 @@
     float: right;
     margin-top: -7px;
   }
-
-  .truncated-value-container,
-  .expanded-value-container {
-    position: relative;
-  }
-
-  .truncated-value-container button,
-  .expanded-value-container button {
-    transition: all 0.2s ease;
-  }
-
-  .truncated-value-container button:hover,
-  .expanded-value-container button:hover {
-    transform: translateX(2px);
-  }
