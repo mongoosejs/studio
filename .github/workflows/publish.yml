@@ -31,4 +31,4 @@ jobs:
         run: node ./build
 
       - name: Dry run publish with provenance
-        run: npm publish --provenance --access public --dry-run
+        run: npm publish --provenance --access public
