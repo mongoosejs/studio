@@ -194,9 +194,11 @@ module.exports = app => app.component('models', {
       }
       const token = match[1];
       const start = cursorPos - token.length;
-      this.searchText = this.searchText.slice(0, start) + suggestion + after;
+      const colonNeeded = !/^\s*:/.test(after);
+      const insertion = suggestion + (colonNeeded ? ':' : '');
+      this.searchText = this.searchText.slice(0, start) + insertion + after;
       this.$nextTick(() => {
-        const pos = start + suggestion.length;
+        const pos = start + suggestion.length + (colonNeeded ? 1 : 0);
         input.setSelectionRange(pos, pos);
       });
       this.autocompleteSuggestions = [];
