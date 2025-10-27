@@ -23,8 +23,11 @@ const GetDocumentsParams = new Archetype({
   searchText: {
     $type: 'string'
   },
-  sort: {
-    $type: Archetype.Any
+  sortKey: {
+    $type: 'string'
+  },
+  sortDirection: {
+    $type: 'number'
   },
   roles: {
     $type: ['string']
@@ -36,7 +39,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
   const { roles } = params;
   await authorize('Model.getDocuments', roles);
 
-  const { model, limit, skip, sort, searchText } = params;
+  const { model, limit, skip, sortKey, sortDirection, searchText } = params;
 
   const Model = db.models[model];
   if (Model == null) {
@@ -46,8 +49,14 @@ module.exports = ({ db }) => async function getDocuments(params) {
   const parsedFilter = evaluateFilter(searchText);
   const filter = parsedFilter == null ? {} : parsedFilter;
 
-  const hasSort = typeof sort === 'object' && sort != null && Object.keys(sort).length > 0;
-  const sortObj = hasSort ? { ...sort } : {};
+  const sortObj = {};
+
+  if (typeof sortKey === 'string' && sortKey.trim().length > 0) {
+    if (sortDirection !== 1 && sortDirection !== -1) {
+      throw new Error('Invalid sortDirection. Must be 1 or -1');
+    }
+    sortObj[sortKey.trim()] = sortDirection;
+  }
   if (!sortObj.hasOwnProperty('_id')) {
     sortObj._id = -1;
   }

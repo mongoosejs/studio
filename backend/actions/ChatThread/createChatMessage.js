@@ -55,7 +55,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
     });
   }
 
-  if (options.context) {
+  if (options?.context) {
     llmMessages.unshift({
       role: 'system',
       content: options.context

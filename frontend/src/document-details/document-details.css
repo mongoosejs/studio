@@ -21,3 +21,101 @@
   float: right;
   margin-top: -7px;
 }
+
+/* Add Field Modal Styles */
+.add-field-modal {
+  max-width: 500px;
+  width: 100%;
+}
+
+.add-field-modal .modal-exit {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  z-index: 10;
+}
+
+.add-field-modal .modal-exit:hover {
+  color: #374151;
+}
+
+.add-field-modal form {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.add-field-modal input[type="text"],
+.add-field-modal input[type="email"],
+.add-field-modal input[type="password"],
+.add-field-modal select,
+.add-field-modal textarea {
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.add-field-modal input:focus,
+.add-field-modal select:focus,
+.add-field-modal textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.add-field-modal .border-red-500 {
+  border-color: #ef4444 !important;
+}
+
+.add-field-modal .border-red-500:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* CodeMirror styling in modal */
+.add-field-modal .CodeMirror {
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 14px;
+  height: auto;
+  min-height: 100px;
+}
+
+.add-field-modal .CodeMirror:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.add-field-modal .CodeMirror.CodeMirror-focused {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* JSON View Styles */
+.json-view {
+  width: 100%;
+}
+
+.json-view pre {
+  margin: 0;
+  max-height: 70vh;
+  overflow: auto;
+  line-height: 1.5;
+}
+
+.json-view pre::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.json-view pre::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.json-view pre::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.json-view pre::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

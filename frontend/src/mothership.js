@@ -54,4 +54,8 @@ exports.removeFromWorkspace = function removeFromWorkspace(params) {
   return client.post('/removeFromWorkspace', { workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id, ...params }).then(res => res.data);
 };
 
+exports.updateWorkspaceMember = function updateWorkspaceMember(params) {
+  return client.post('/updateWorkspaceMember', { workspaceId: window.MONGOOSE_STUDIO_CONFIG.workspace._id, ...params }).then(res => res.data);
+};
+
 exports.hasAPIKey = client.hasAPIKey;
