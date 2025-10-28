@@ -252,6 +252,7 @@ module.exports = app => app.component('models', {
       const before = this.searchText.slice(0, cursorPos);
       const after = this.searchText.slice(cursorPos);
       const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
+      const colonNeeded = !/^\s*:/.test(after);
       if (!match) {
         return;
       }
@@ -265,6 +266,10 @@ module.exports = app => app.component('models', {
       }
       if (trailingQuote && !replacement.endsWith(trailingQuote)) {
         replacement = `${replacement}${trailingQuote}`;
+      }
+      // Only insert : if we know the user isn't entering in a nested path
+      if (colonNeeded && (!leadingQuote || trailingQuote)) {
+        replacement = `${replacement}:`;
       }
       this.searchText = this.searchText.slice(0, start) + replacement + after;
       this.$nextTick(() => {
