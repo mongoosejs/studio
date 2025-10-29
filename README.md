@@ -41,6 +41,36 @@ opts.openAIAPIKey = process.env.OPENAI_API_KEY;
 app.use('/studio', await studio('/studio/api', mongoose, opts));
 ```
 
+### Next.js
+
+First, add `withMongooseStudio` to your `next.config.js` file:
+
+```javascript
+import withMongooseStudio from '@mongoosejs/studio/next';
+
+// Mount Mongoose Studio frontend on /studio
+export default withMongooseStudio({
+  // Your Next.js config here
+  reactStrictMode: true,
+});
+```
+
+Then, add `pages/api/studio.js` to your Next.js project to host the Mongoose Studio API:
+
+```javascript
+// Make sure to import the database connection
+import db from '../../src/db';
+import studio from '@mongoosejs/studio/backend/next';
+
+const handler = studio({
+  apiKey: process.env.MONGOOSE_STUDIO_API_KEY, // optional
+  connection: db, // Optional: Connection or Mongoose global. If omitted, will use `import mongoose`
+  connectToDB: async () => { /* connection logic here */ }, // Optional: if you need to call a function to connect to the database put it here
+});
+
+export default handler;
+```
+
 ### Netlify
 
 [Here is a full example of how to add Mongoose Studio to a Netlify repo](https://github.com/mongoosejs/studio.mongoosejs.io/commit/8b02ea367c8a1b7b4bcab290708f57d58f08210b).
