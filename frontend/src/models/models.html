@@ -98,14 +98,14 @@
           </button>
           <span class="isolate inline-flex rounded-md shadow-sm">
             <button
-              @click="outputType = 'table'"
+              @click="setOutputType('table')"
               type="button"
               class="relative inline-flex items-center rounded-none rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
               :class="outputType === 'table' ? 'bg-gray-200' : 'bg-white'">
               <img class="h-5 w-5" src="images/table.svg">
             </button>
             <button
-              @click="outputType = 'json'"
+              @click="setOutputType('json')"
               type="button"
               class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
               :class="outputType === 'json' ? 'bg-gray-200' : 'bg-white'">
