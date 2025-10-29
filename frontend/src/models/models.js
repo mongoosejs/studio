@@ -38,6 +38,7 @@ const QUERY_SELECTORS = [
 appendCSS(require('./models.css'));
 
 const limit = 20;
+const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 
 module.exports = app => app.component('models', {
   template: template,
@@ -80,6 +81,7 @@ module.exports = app => app.component('models', {
   created() {
     this.currentModel = this.model;
     this.buildAutocompleteTrie();
+    this.loadOutputPreference();
   },
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
@@ -106,6 +108,24 @@ module.exports = app => app.component('models', {
           .map(path => path?.path)
           .filter(path => typeof path === 'string' && path.length > 0);
         this.autocompleteTrie.bulkInsert(paths, 10);
+      }
+    },
+    loadOutputPreference() {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const storedPreference = window.localStorage.getItem(OUTPUT_TYPE_STORAGE_KEY);
+      if (storedPreference === 'json' || storedPreference === 'table') {
+        this.outputType = storedPreference;
+      }
+    },
+    setOutputType(type) {
+      if (type !== 'json' && type !== 'table') {
+        return;
+      }
+      this.outputType = type;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(OUTPUT_TYPE_STORAGE_KEY, type);
       }
     },
     buildDocumentFetchParams(options = {}) {
