@@ -1,40 +1,241 @@
 'use strict';
 
-const api = require('../api');
 const template = require('./list-json.html');
 
-const vanillatoast = require('vanillatoasts');
-
 require('../appendCSS')(require('./list-json.css'));
+
+const JsonNodeTemplate = `
+  <div class="json-node">
+    <div class="json-line" :style="indentStyle">
+      <button
+        v-if="hasChildren"
+        type="button"
+        class="json-toggle"
+        @click.stop="handleToggle"
+      >
+        {{ isCollapsedNode ? '+' : '-' }}
+      </button>
+      <span v-else class="json-toggle json-toggle--placeholder"></span>
+      <template v-if="hasKey">
+        <span class="json-key">"{{ nodeKey }}"</span><span>: </span>
+      </template>
+      <template v-if="isComplex">
+        <template v-if="hasChildren">
+          <span>{{ openingBracket }}</span>
+          <span v-if="isCollapsedNode" class="json-ellipsis">…</span>
+          <span v-if="isCollapsedNode">{{ closingBracket }}{{ comma }}</span>
+        </template>
+        <template v-else>
+          <span>{{ openingBracket }}{{ closingBracket }}{{ comma }}</span>
+        </template>
+      </template>
+      <template v-else>
+        <span :class="['json-value', valueClass]">{{ formattedValue }}{{ comma }}</span>
+      </template>
+    </div>
+    <template v-if="isComplex && hasChildren && !isCollapsedNode">
+      <json-node
+        v-for="child in children"
+        :key="child.path"
+        :node-key="child.displayKey"
+        :value="child.value"
+        :level="level + 1"
+        :is-last="child.isLast"
+        :path="child.path"
+        :toggle-collapse="toggleCollapse"
+        :is-collapsed="isCollapsed"
+        :create-child-path="createChildPath"
+        :indent-size="indentSize"
+      ></json-node>
+      <div class="json-line json-line--closing" :style="indentStyle">
+        <span class="json-toggle json-toggle--placeholder"></span>
+        <span>{{ closingBracket }}{{ comma }}</span>
+      </div>
+    </template>
+  </div>
+`;
 
 module.exports = app => app.component('list-json', {
   template: template,
   props: ['value'],
-  computed: {
-    shortenValue() {
-      return JSON.stringify(this.value, null, 4);
+  data() {
+    return {
+      collapsedMap: {},
+      indentSize: 16
+    };
+  },
+  watch: {
+    value: {
+      handler() {
+        this.resetCollapse();
+      }
     }
+  },
+  created() {
+    this.resetCollapse();
   },
   methods: {
-    copyText(value) {
-      const storage = document.createElement('textarea');
-      storage.value = JSON.stringify(value);
-      const elem = this.$refs.JSONCode;
-      elem.appendChild(storage);
-      storage.select();
-      storage.setSelectionRange(0, 99999);
-      document.execCommand('copy');
-      elem.removeChild(storage);
-      vanillatoast.create({
-        title: 'Text copied!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+    resetCollapse() {
+      this.collapsedMap = {};
+    },
+    toggleCollapse(path) {
+      const current = !!this.collapsedMap[path];
+      this.collapsedMap = Object.assign({}, this.collapsedMap, { [path]: !current });
+    },
+    isPathCollapsed(path) {
+      return !!this.collapsedMap[path];
+    },
+    createChildPath(parentPath, childKey, isArray) {
+      if (parentPath == null || parentPath === '') {
+        return isArray ? `[${childKey}]` : `${childKey}`;
+      }
+      if (parentPath === 'root') {
+        return isArray ? `root[${childKey}]` : `root.${childKey}`;
+      }
+      if (isArray) {
+        return `${parentPath}[${childKey}]`;
+      }
+      return `${parentPath}.${childKey}`;
     }
   },
-  mounted: function() {
-    Prism.highlightElement(this.$refs.JSONCode);
+  components: {
+    JsonNode: {
+      name: 'JsonNode',
+      template: JsonNodeTemplate,
+      props: {
+        nodeKey: {
+          type: [String, Number],
+          default: null
+        },
+        value: {
+          required: true
+        },
+        level: {
+          type: Number,
+          required: true
+        },
+        isLast: {
+          type: Boolean,
+          default: false
+        },
+        path: {
+          type: String,
+          required: true
+        },
+        toggleCollapse: {
+          type: Function,
+          required: true
+        },
+        isCollapsed: {
+          type: Function,
+          required: true
+        },
+        createChildPath: {
+          type: Function,
+          required: true
+        },
+        indentSize: {
+          type: Number,
+          required: true
+        }
+      },
+      computed: {
+        hasKey() {
+          return this.nodeKey !== null && this.nodeKey !== undefined;
+        },
+        isArray() {
+          return Array.isArray(this.value);
+        },
+        isObject() {
+          if (this.value === null || this.isArray) {
+            return false;
+          }
+          return Object.prototype.toString.call(this.value) === '[object Object]';
+        },
+        isComplex() {
+          return this.isArray || this.isObject;
+        },
+        children() {
+          if (!this.isComplex) {
+            return [];
+          }
+          if (this.isArray) {
+            return this.value.map((childValue, index) => ({
+              displayKey: null,
+              value: childValue,
+              isLast: index === this.value.length - 1,
+              path: this.createChildPath(this.path, index, true)
+            }));
+          }
+          const keys = Object.keys(this.value);
+          return keys.map((key, index) => ({
+            displayKey: key,
+            value: this.value[key],
+            isLast: index === keys.length - 1,
+            path: this.createChildPath(this.path, key, false)
+          }));
+        },
+        hasChildren() {
+          return this.children.length > 0;
+        },
+        openingBracket() {
+          return this.isArray ? '[' : '{';
+        },
+        closingBracket() {
+          return this.isArray ? ']' : '}';
+        },
+        isCollapsedNode() {
+          return this.isCollapsed(this.path);
+        },
+        formattedValue() {
+          if (typeof this.value === 'bigint') {
+            return `${this.value.toString()}n`;
+          }
+          const stringified = JSON.stringify(this.value);
+          if (stringified === undefined) {
+            if (typeof this.value === 'symbol') {
+              return this.value.toString();
+            }
+            return String(this.value);
+          }
+          return stringified;
+        },
+        valueClass() {
+          if (this.value === null) {
+            return 'json-value-null';
+          }
+          const type = typeof this.value;
+          if (type === 'string') {
+            return 'json-value-string';
+          }
+          if (type === 'number') {
+            return 'json-value-number';
+          }
+          if (type === 'boolean') {
+            return 'json-value-boolean';
+          }
+          if (type === 'bigint') {
+            return 'json-value-number';
+          }
+          if (type === 'undefined') {
+            return 'json-value-undefined';
+          }
+          return 'json-value-default';
+        },
+        comma() {
+          return this.isLast ? '' : ',';
+        },
+        indentStyle() {
+          return {
+            paddingLeft: `${this.level * this.indentSize}px`
+          };
+        }
+      },
+      methods: {
+        handleToggle() {
+          this.toggleCollapse(this.path);
+        }
+      }
+    }
   }
 });

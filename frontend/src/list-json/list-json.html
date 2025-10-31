@@ -1,4 +1,15 @@
 <div class="list-json tooltip">
-  <pre><code ref="JSONCode" class="language-javascript">{{shortenValue}}</code></pre>
+  <div class="json-tree">
+    <json-node
+      :node-key="null"
+      :value="value"
+      :level="0"
+      :is-last="true"
+      path="root"
+      :toggle-collapse="toggleCollapse"
+      :is-collapsed="isPathCollapsed"
+      :create-child-path="createChildPath"
+      :indent-size="indentSize"
+    ></json-node>
+  </div>
 </div>
-  

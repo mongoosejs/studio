@@ -1,3 +1,78 @@
 .list-json {
   width: 100%;
+  font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #1f2933;
+}
+
+.json-tree {
+  width: 100%;
+}
+
+.json-line {
+  display: flex;
+  align-items: baseline;
+  white-space: pre;
+}
+
+.json-toggle {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 4px;
+  border: none;
+  background: none;
+  color: #4b5563;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.json-toggle:hover {
+  color: #1f2937;
+}
+
+.json-toggle--placeholder {
+  visibility: hidden;
+  cursor: default;
+}
+
+.json-key {
+  color: #2563eb;
+}
+
+.json-value {
+  color: #334155;
+}
+
+.json-value-string {
+  color: #047857;
+}
+
+.json-value-number {
+  color: #b45309;
+}
+
+.json-value-boolean {
+  color: #7c3aed;
+}
+
+.json-value-null {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.json-value-undefined {
+  color: #6b7280;
+}
+
+.json-ellipsis {
+  margin: 0 4px;
+}
+
+.json-line--closing {
+  /* Ensures closing brackets align without additional spacing tweaks */
 }
