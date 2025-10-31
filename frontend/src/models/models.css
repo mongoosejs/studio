@@ -136,3 +136,12 @@ td {
   justify-content: space-around;
   align-items: center;
 }
+
+.models .documents .json-document {
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+}
+
+.models .documents .json-document:last-child {
+  margin-bottom: 0;
+}

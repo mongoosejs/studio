@@ -140,7 +140,13 @@
         </tbody>
       </table>
       <div v-if="outputType === 'json'">
-        <div v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
+        <div
+          v-for="document in documents"
+          @click="handleDocumentClick(document, $event)"
+          :key="document._id"
+          class="json-document"
+          :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
+        >
           <list-json :value="filterDocument(document)">
           </list-json>
         </div>

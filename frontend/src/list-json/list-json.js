@@ -8,7 +8,7 @@ const JsonNodeTemplate = `
   <div class="json-node">
     <div class="json-line" :style="indentStyle">
       <button
-        v-if="hasChildren"
+        v-if="showToggle"
         type="button"
         class="json-toggle"
         @click.stop="handleToggle"
@@ -79,11 +79,17 @@ module.exports = app => app.component('list-json', {
       this.collapsedMap = {};
     },
     toggleCollapse(path) {
-      const current = !!this.collapsedMap[path];
+      const current = this.isPathCollapsed(path);
       this.collapsedMap = Object.assign({}, this.collapsedMap, { [path]: !current });
     },
     isPathCollapsed(path) {
-      return !!this.collapsedMap[path];
+      if (path === 'root') {
+        return false;
+      }
+      if (Object.prototype.hasOwnProperty.call(this.collapsedMap, path)) {
+        return this.collapsedMap[path];
+      }
+      return true;
     },
     createChildPath(parentPath, childKey, isArray) {
       if (parentPath == null || parentPath === '') {
@@ -143,6 +149,9 @@ module.exports = app => app.component('list-json', {
         hasKey() {
           return this.nodeKey !== null && this.nodeKey !== undefined;
         },
+        isRoot() {
+          return this.path === 'root';
+        },
         isArray() {
           return Array.isArray(this.value);
         },
@@ -177,6 +186,9 @@ module.exports = app => app.component('list-json', {
         },
         hasChildren() {
           return this.children.length > 0;
+        },
+        showToggle() {
+          return this.hasChildren && !this.isRoot;
         },
         openingBracket() {
           return this.isArray ? '[' : '{';
@@ -233,7 +245,9 @@ module.exports = app => app.component('list-json', {
       },
       methods: {
         handleToggle() {
-          this.toggleCollapse(this.path);
+          if (!this.isRoot) {
+            this.toggleCollapse(this.path);
+          }
         }
       }
     }
