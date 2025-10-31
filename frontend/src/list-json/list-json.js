@@ -2,27 +2,25 @@
 
 const template = require('./list-json.html');
 
-require('../appendCSS')(require('./list-json.css'));
-
 const JsonNodeTemplate = `
-  <div class="json-node">
-    <div class="json-line" :style="indentStyle">
+  <div>
+    <div class="flex items-baseline whitespace-pre" :style="indentStyle">
       <button
         v-if="showToggle"
         type="button"
-        class="json-toggle"
+        class="w-4 h-4 mr-1 inline-flex items-center justify-center leading-none text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400 cursor-pointer"
         @click.stop="handleToggle"
       >
         {{ isCollapsedNode ? '+' : '-' }}
       </button>
-      <span v-else class="json-toggle json-toggle--placeholder"></span>
+      <span v-else class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
       <template v-if="hasKey">
-        <span class="json-key">"{{ nodeKey }}"</span><span>: </span>
+        <span class="text-blue-600">"{{ nodeKey }}"</span><span>: </span>
       </template>
       <template v-if="isComplex">
         <template v-if="hasChildren">
           <span>{{ openingBracket }}</span>
-          <span v-if="isCollapsedNode" class="json-ellipsis">…</span>
+          <span v-if="isCollapsedNode" class="mx-1">…</span>
           <span v-if="isCollapsedNode">{{ closingBracket }}{{ comma }}</span>
         </template>
         <template v-else>
@@ -30,7 +28,7 @@ const JsonNodeTemplate = `
         </template>
       </template>
       <template v-else>
-        <span :class="['json-value', valueClass]">{{ formattedValue }}{{ comma }}</span>
+        <span :class="valueClasses">{{ formattedValue }}{{ comma }}</span>
       </template>
     </div>
     <template v-if="isComplex && hasChildren && !isCollapsedNode">
@@ -47,8 +45,8 @@ const JsonNodeTemplate = `
         :create-child-path="createChildPath"
         :indent-size="indentSize"
       ></json-node>
-      <div class="json-line json-line--closing" :style="indentStyle">
-        <span class="json-toggle json-toggle--placeholder"></span>
+      <div class="flex items-baseline whitespace-pre" :style="indentStyle">
+        <span class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
         <span>{{ closingBracket }}{{ comma }}</span>
       </div>
     </template>
@@ -212,27 +210,30 @@ module.exports = app => app.component('list-json', {
           }
           return stringified;
         },
-        valueClass() {
+        valueClasses() {
+          const classes = ['text-slate-700'];
           if (this.value === null) {
-            return 'json-value-null';
+            classes.push('text-gray-500', 'italic');
+            return classes;
           }
           const type = typeof this.value;
           if (type === 'string') {
-            return 'json-value-string';
+            classes.push('text-emerald-600');
+            return classes;
           }
-          if (type === 'number') {
-            return 'json-value-number';
+          if (type === 'number' || type === 'bigint') {
+            classes.push('text-amber-600');
+            return classes;
           }
           if (type === 'boolean') {
-            return 'json-value-boolean';
-          }
-          if (type === 'bigint') {
-            return 'json-value-number';
+            classes.push('text-violet-600');
+            return classes;
           }
           if (type === 'undefined') {
-            return 'json-value-undefined';
+            classes.push('text-gray-500');
+            return classes;
           }
-          return 'json-value-default';
+          return classes;
         },
         comma() {
           return this.isLast ? '' : ',';

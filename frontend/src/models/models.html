@@ -139,13 +139,15 @@
           </tr>
         </tbody>
       </table>
-      <div v-if="outputType === 'json'">
+      <div v-if="outputType === 'json'" class="flex flex-col space-y-6">
         <div
           v-for="document in documents"
           @click="handleDocumentClick(document, $event)"
           :key="document._id"
-          class="json-document"
-          :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
+          :class="[
+            'pb-3 transition-colors',
+            selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:bg-slate-100'
+          ]"
         >
           <list-json :value="filterDocument(document)">
           </list-json>
