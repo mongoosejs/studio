@@ -53,6 +53,16 @@ module.exports = app => app.component('document-property', {
       }
       return 'detail-default';
     },
+    getEditComponentProps(path) {
+      if (!path || path.instance !== 'Embedded') {
+        return {};
+      }
+
+      return {
+        schemaPath: path,
+        schemaPaths: this.schemaPaths
+      };
+    },
     getEditComponentForPath(path) {
       if (path.instance == 'Date') {
         return 'edit-date';

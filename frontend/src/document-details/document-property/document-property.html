@@ -61,6 +61,7 @@
         :is="getEditComponentForPath(path)"
         :value="getEditValueForPath(path)"
         :format="dateType"
+        v-bind="getEditComponentProps(path)"
         @input="changes[path.path] = $event; delete invalid[path.path];"
         @error="invalid[path.path] = $event;"
         >
