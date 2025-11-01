@@ -1,4 +1,18 @@
-<div class="list-json tooltip">
-  <pre><code ref="JSONCode" class="language-javascript">{{shortenValue}}</code></pre>
+<div class="tooltip w-full font-mono text-sm py-3 text-slate-800">
+  <div class="w-full">
+    <json-node
+      :node-key="null"
+      :value="value"
+      :level="0"
+      :is-last="true"
+      path="root"
+      :toggle-collapse="toggleCollapse"
+      :is-collapsed="isPathCollapsed"
+      :create-child-path="createChildPath"
+      :indent-size="indentSize"
+      :max-top-level-fields="maxTopLevelFields"
+      :top-level-expanded="topLevelExpanded"
+      :expand-top-level="expandTopLevel"
+    ></json-node>
+  </div>
 </div>
-  
