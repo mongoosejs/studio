@@ -44,7 +44,26 @@ const JsonNodeTemplate = `
         :is-collapsed="isCollapsed"
         :create-child-path="createChildPath"
         :indent-size="indentSize"
+        :max-top-level-fields="maxTopLevelFields"
+        :top-level-expanded="topLevelExpanded"
+        :expand-top-level="expandTopLevel"
       ></json-node>
+      <div
+        v-if="hasHiddenRootChildren"
+        class="flex items-baseline whitespace-pre"
+        :style="indentStyle"
+      >
+        <span class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400"
+          :title="hiddenChildrenTooltip"
+          @click.stop="handleExpandTopLevel"
+        >
+          <span aria-hidden="true">…</span>
+          <span class="sr-only">{{ hiddenChildrenLabel }}</span>
+        </button>
+      </div>
       <div class="flex items-baseline whitespace-pre" :style="indentStyle">
         <span class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
         <span>{{ closingBracket }}{{ comma }}</span>
@@ -59,7 +78,9 @@ module.exports = app => app.component('list-json', {
   data() {
     return {
       collapsedMap: {},
-      indentSize: 16
+      indentSize: 16,
+      maxTopLevelFields: 15,
+      topLevelExpanded: false
     };
   },
   watch: {
@@ -75,6 +96,7 @@ module.exports = app => app.component('list-json', {
   methods: {
     resetCollapse() {
       this.collapsedMap = {};
+      this.topLevelExpanded = false;
     },
     toggleCollapse(path) {
       const current = this.isPathCollapsed(path);
@@ -100,6 +122,9 @@ module.exports = app => app.component('list-json', {
         return `${parentPath}[${childKey}]`;
       }
       return `${parentPath}.${childKey}`;
+    },
+    expandTopLevel() {
+      this.topLevelExpanded = true;
     }
   },
   components: {
@@ -141,6 +166,18 @@ module.exports = app => app.component('list-json', {
         indentSize: {
           type: Number,
           required: true
+        },
+        maxTopLevelFields: {
+          type: Number,
+          default: null
+        },
+        topLevelExpanded: {
+          type: Boolean,
+          default: false
+        },
+        expandTopLevel: {
+          type: Function,
+          default: null
         }
       },
       computed: {
@@ -175,15 +212,41 @@ module.exports = app => app.component('list-json', {
             }));
           }
           const keys = Object.keys(this.value);
-          return keys.map((key, index) => ({
+          const visibleKeys = this.visibleObjectKeys(keys);
+          const hasHidden = this.hasHiddenRootChildren;
+          return visibleKeys.map((key, index) => ({
             displayKey: key,
             value: this.value[key],
-            isLast: index === keys.length - 1,
+            isLast: !hasHidden && index === visibleKeys.length - 1,
             path: this.createChildPath(this.path, key, false)
           }));
         },
         hasChildren() {
           return this.children.length > 0;
+        },
+        totalObjectChildCount() {
+          if (!this.isObject) {
+            return 0;
+          }
+          return Object.keys(this.value).length;
+        },
+        hasHiddenRootChildren() {
+          if (!this.isRoot || !this.isObject) {
+            return false;
+          }
+          if (this.topLevelExpanded) {
+            return false;
+          }
+          if (typeof this.maxTopLevelFields !== 'number') {
+            return false;
+          }
+          return this.totalObjectChildCount > this.maxTopLevelFields;
+        },
+        hiddenRootChildrenCount() {
+          if (!this.hasHiddenRootChildren) {
+            return 0;
+          }
+          return this.totalObjectChildCount - this.maxTopLevelFields;
         },
         showToggle() {
           return this.hasChildren && !this.isRoot;
@@ -242,12 +305,40 @@ module.exports = app => app.component('list-json', {
           return {
             paddingLeft: `${this.level * this.indentSize}px`
           };
+        },
+        hiddenChildrenLabel() {
+          if (!this.hasHiddenRootChildren) {
+            return '';
+          }
+          const count = this.hiddenRootChildrenCount;
+          const suffix = count === 1 ? 'field' : 'fields';
+          return `${count} more ${suffix}`;
+        },
+        hiddenChildrenTooltip() {
+          return this.hiddenChildrenLabel;
         }
       },
       methods: {
+        visibleObjectKeys(keys) {
+          if (!this.isRoot || this.topLevelExpanded) {
+            return keys;
+          }
+          if (typeof this.maxTopLevelFields !== 'number') {
+            return keys;
+          }
+          if (keys.length <= this.maxTopLevelFields) {
+            return keys;
+          }
+          return keys.slice(0, this.maxTopLevelFields);
+        },
         handleToggle() {
           if (!this.isRoot) {
             this.toggleCollapse(this.path);
+          }
+        },
+        handleExpandTopLevel() {
+          if (this.isRoot && typeof this.expandTopLevel === 'function') {
+            this.expandTopLevel();
           }
         }
       }
