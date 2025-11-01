@@ -145,13 +145,13 @@
           :key="document._id"
           @click="handleDocumentContainerClick(document, $event)"
           :class="[
-            'group relative pb-3 transition-colors',
+            'group relative transition-colors',
             selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:bg-slate-100'
           ]"
         >
           <button
             type="button"
-            class="absolute top-2 right-2 inline-flex items-center rounded bg-ultramarine-600 px-2 py-1 text-xs font-semibold text-white shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-ultramarine-600 px-2 py-1 text-xs font-semibold text-white shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
             @click.stop="openDocument(document)"
           >
             Open this Document

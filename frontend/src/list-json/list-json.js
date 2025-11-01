@@ -13,7 +13,7 @@ const JsonNodeTemplate = `
       >
         {{ isCollapsedNode ? '+' : '-' }}
       </button>
-      <span v-else class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
+      <span v-else class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible flex-shrink-0"></span>
       <template v-if="hasKey">
         <span class="text-blue-600">"{{ nodeKey }}"</span><span>: </span>
       </template>
@@ -28,7 +28,26 @@ const JsonNodeTemplate = `
         </template>
       </template>
       <template v-else>
-        <span :class="valueClasses">{{ formattedValue }}{{ comma }}</span>
+        <!--
+          If value is a string and overflows its container (i.e. goes over one line), show an ellipsis.
+          This is done via CSS ellipsis strategy.
+        -->
+        <span
+          :class="valueClasses"
+          :style="typeof value === 'string'
+            ? {
+                display: 'inline-block',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                verticalAlign: 'bottom'
+              }
+            : {}"
+          :title="typeof value === 'string' && $el && $el.scrollWidth > $el.clientWidth ? value : undefined"
+        >
+          {{ formattedValue }}{{ comma }}
+        </span>
       </template>
     </div>
     <template v-if="isComplex && hasChildren && !isCollapsedNode">
@@ -56,12 +75,11 @@ const JsonNodeTemplate = `
         <span class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
         <button
           type="button"
-          class="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400"
+          class="text-xs inline-flex items-center gap-1 ml-4 text-slate-500 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400"
           :title="hiddenChildrenTooltip"
           @click.stop="handleExpandTopLevel"
         >
-          <span aria-hidden="true">…</span>
-          <span class="sr-only">{{ hiddenChildrenLabel }}</span>
+          <span aria-hidden="true">{{hiddenChildrenLabel}}…</span>
         </button>
       </div>
       <div class="flex items-baseline whitespace-pre" :style="indentStyle">
