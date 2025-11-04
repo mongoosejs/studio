@@ -31,8 +31,8 @@ module.exports = ({ db }) => async function updateDocument(params) {
     throw new Error(`Model ${model} not found`);
   }
 
-  let setFields = {};
-  let unsetFields = {};
+  const setFields = {};
+  const unsetFields = {};
   
   if (Object.keys(update).length > 0) {
     Object.entries(update).forEach(([key, value]) => {
