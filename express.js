@@ -5,7 +5,7 @@ const express = require('express');
 const frontend = require('./frontend');
 const { toRoute, objectRouter } = require('extrovert');
 
-module.exports = async function(apiUrl, conn, options) {
+module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
 
   const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
@@ -77,7 +77,6 @@ module.exports = async function(apiUrl, conn, options) {
     objectRouter(backend, toRoute)
   );
 
-  console.log('Workspace', workspace);
   const { config } = await frontend(apiUrl, false, options, workspace);
   router.get('/config.js', function (req, res) {
     res.setHeader('Content-Type', 'application/javascript');
@@ -85,6 +84,8 @@ module.exports = async function(apiUrl, conn, options) {
   });
 
   router.use(express.static(`${__dirname}/frontend/public`));
+
+  console.log(`✔️  Mongoose Studio connected to workspace "${workspace.name}"`);
 
   return router;
 }

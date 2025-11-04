@@ -48,7 +48,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
       if (err) {
         process.nextTick(() => { throw new Error('Error compiling bundle: ' + err.stack); });
       }
-      console.log('Webpack compiled successfully');
+      console.log('[MONGOOSE STUDIO] Webpack compiled successfully');
     });
 
     const childProcess = exec('npm run tailwind:watch');
@@ -63,7 +63,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
           process.nextTick(() => { throw new Error('Error compiling bundle: ' + err.stack); });
         }
         resolve();
-        console.log('Webpack compiled successfully');
+        console.log('[MONGOOSE STUDIO] Webpack compiled successfully');
       });
     });
   }
