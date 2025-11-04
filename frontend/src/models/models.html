@@ -28,6 +28,9 @@
           </ul>
         </li>
       </ul>
+      <div v-if="models.length === 0 && status === 'loaded'" class="p-2 bg-red-100">
+        No models found
+      </div>
     </nav>
   </aside>
   <div class="documents" ref="documentsList">
@@ -116,7 +119,13 @@
       </div>
     </div>
     <div class="documents-container relative">
-      <table v-if="outputType === 'table'">
+      <div v-if="error">
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative m-4 rounded-md" role="alert">
+          <span class="block font-bold">Error</span>
+          <span class="block">{{ error }}</span>
+        </div>
+      </div>
+      <table v-else-if="outputType === 'table'">
         <thead>
           <th v-for="path in filteredPaths" @click="clickFilter(path.path)" class="cursor-pointer">
             {{path.path}}
@@ -139,7 +148,7 @@
           </tr>
         </tbody>
       </table>
-      <div v-if="outputType === 'json'" class="flex flex-col space-y-6">
+      <div v-else-if="outputType === 'json'" class="flex flex-col space-y-6">
         <div
           v-for="document in documents"
           :key="document._id"

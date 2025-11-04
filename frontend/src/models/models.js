@@ -76,7 +76,8 @@ module.exports = app => app.component('models', {
     interval: null,
     outputType: 'table', // json, table
     hideSidebar: null,
-    lastSelectedIndex: null
+    lastSelectedIndex: null,
+    error: null
   }),
   created() {
     this.currentModel = this.model;
@@ -92,9 +93,17 @@ module.exports = app => app.component('models', {
     document.addEventListener('scroll', this.onScroll, true);
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
-    this.models = await api.Model.listModels().then(res => res.models);
+    const { models, readyState } = await api.Model.listModels();
+    this.models = models;
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
+    }
+    if (this.models.length === 0) {
+      this.status = 'loaded';
+      this.numDocuments = 0;
+      if (readyState === 0) {
+        this.error = 'No models found and Mongoose is not connected. Check our documentation for more information.';
+      }
     }
 
     await this.initSearchFromUrl();
