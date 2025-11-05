@@ -147,11 +147,22 @@ module.exports = app => app.component('chat-message-script', {
       this.$router.push('/dashboard/' + dashboard._id);
     },
     async copyOutput() {
-      let output = this.message.executionResult.output;
+      const executionResult = this.message.executionResult || {};
+      let output = executionResult.output;
       if (output != null && typeof output === 'object') {
         output = JSON.stringify(output, null, 2);
       }
-      await navigator.clipboard.writeText(output);
+
+      const logs = executionResult.logs;
+      const parts = [];
+      if (output != null) {
+        parts.push(output);
+      }
+      if (logs) {
+        parts.push(logs);
+      }
+
+      await navigator.clipboard.writeText(parts.join('\n\n'));
       vanillatoasts.create({
         title: 'Code output copied!',
         type: 'success',
@@ -180,7 +191,7 @@ module.exports = app => app.component('chat-message-script', {
     this.$nextTick(() => {
       document.body.addEventListener('click', this.handleBodyClick);
     });
-    if (this.message.executionResult?.output) {
+    if (this.message.executionResult?.output || this.message.executionResult?.logs) {
       this.activeTab = 'output';
     }
   },
