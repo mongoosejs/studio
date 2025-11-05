@@ -21,7 +21,7 @@ module.exports = app => app.component('chat-message-script', {
       dashboardEditor: null,
       isEditing: false,
       codeEditor: null,
-      editedScript: this.script
+      editedScript: null
     };
   },
   computed: {
