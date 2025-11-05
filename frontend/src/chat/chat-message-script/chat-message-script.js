@@ -91,7 +91,7 @@ module.exports = app => app.component('chat-message-script', {
 
       const logs = executionResult.logs;
       const parts = [];
-      if (output) {
+      if (output != null) {
         parts.push(output);
       }
       if (logs) {
