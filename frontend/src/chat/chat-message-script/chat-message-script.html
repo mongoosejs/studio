@@ -29,9 +29,18 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
         </svg>
       </button>
+      <button
+        v-if="activeTab === 'code' && !isEditing"
+        class="px-2 py-1 mr-1 text-xs bg-gray-500 text-white border-none rounded cursor-pointer hover:bg-gray-600 transition-colors flex items-center"
+        @click.stop="startEditing">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM4 13.5V16h2.5l7.086-7.086-2.828-2.828L4 13.5z" />
+        </svg>
+      </button>
       <async-button
+        v-if="!isEditing"
         class="px-2 py-1 text-xs bg-green-500 text-white border-none rounded cursor-pointer hover:bg-green-600 transition-colors disabled:bg-gray-400"
-        @click="executeScript(message, script)">
+        @click="executeScript">
         Execute
       </async-button>
       <div class="relative ml-1" ref="dropdown">
@@ -60,7 +69,26 @@
     </div>
   </div>
 
-  <pre class="p-3 whitespace-pre-wrap max-h-[50vh] max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] overflow-y-auto" v-show="activeTab === 'code'"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
+  <div class="p-3 max-h-[50vh] max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] overflow-y-auto" v-show="activeTab === 'code'">
+    <div v-if="isEditing" class="flex flex-col space-y-2">
+      <div class="border border-gray-200">
+        <textarea ref="scriptEditor" class="w-full h-[45vh]" @input="handleScriptInput"></textarea>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button
+          class="px-2 py-1 text-xs bg-gray-300 text-gray-800 border-none rounded cursor-pointer hover:bg-gray-400 transition-colors"
+          @click.stop="cancelEditing">
+          Cancel
+        </button>
+        <async-button
+          class="px-2 py-1 text-xs bg-green-500 text-white border-none rounded cursor-pointer hover:bg-green-600 transition-colors disabled:bg-gray-400"
+          @click="executeScript">
+          Execute
+        </async-button>
+      </div>
+    </div>
+    <pre v-else class="whitespace-pre-wrap"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
+  </div>
 
   <div class="p-3 whitespace-pre-wrap max-h-[50vh] overflow-y-auto bg-white border-t max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] relative" v-show="activeTab === 'output'">
     <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" />
