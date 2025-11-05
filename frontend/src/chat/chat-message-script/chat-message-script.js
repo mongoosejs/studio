@@ -90,15 +90,10 @@ module.exports = app => app.component('chat-message-script', {
         }
         this.destroyCodeMirror();
         this.codeEditor = CodeMirror.fromTextArea(this.$refs.scriptEditor, {
-          mode: this.language || 'javascript',
+          mode: 'javascript',
           lineNumbers: true,
-          viewportMargin: Infinity
+          smartIndent: false
         });
-        this.codeEditor.setValue(this.editedScript);
-        this.codeEditor.on('change', () => {
-          this.editedScript = this.codeEditor.getValue();
-        });
-        this.codeEditor.refresh();
       });
     },
     cancelEditing() {
