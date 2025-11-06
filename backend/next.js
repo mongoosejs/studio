@@ -1,10 +1,9 @@
 'use strict';
 
 const Backend = require('./');
-const { toNetlifyFunction } = require('extrovert');
 
-module.exports = function next() {
-  const backend = Backend();
+module.exports = function next(conn, options) {
+  const backend = Backend(conn, options?.studioConnection, options);
 
   return function wrappedNextJSFunction(req, res) {
     const params = { ...req.query, ...req.body, ...req.params };
