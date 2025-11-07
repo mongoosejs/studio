@@ -85,7 +85,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
 
   router.use(express.static(`${__dirname}/frontend/public`));
 
-  console.log(`✔️  Mongoose Studio connected to workspace "${workspace.name}"`);
+  console.log(`✔️  Mongoose Studio connected to workspace "${workspace?.name}"`);
 
   return router;
 }
