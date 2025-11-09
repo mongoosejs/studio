@@ -13,8 +13,16 @@ module.exports = app => app.component('document-property', {
     return {
       dateType: 'picker', // picker, iso
       isCollapsed: false, // Start uncollapsed by default
-      isValueExpanded: false // Track if the value is expanded
+      isValueExpanded: false, // Track if the value is expanded
+      copyButtonLabel: 'Copy',
+      copyResetTimeoutId: null
     };
+  },
+  beforeDestroy() {
+    if (this.copyResetTimeoutId) {
+      clearTimeout(this.copyResetTimeoutId);
+      this.copyResetTimeoutId = null;
+    }
   },
   props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid', 'highlight'],
   computed: {
@@ -92,6 +100,53 @@ module.exports = app => app.component('document-property', {
     },
     toggleValueExpansion() {
       this.isValueExpanded = !this.isValueExpanded;
+    },
+    setCopyFeedback() {
+      this.copyButtonLabel = 'Copied';
+      if (this.copyResetTimeoutId) {
+        clearTimeout(this.copyResetTimeoutId);
+      }
+      this.copyResetTimeoutId = setTimeout(() => {
+        this.copyButtonLabel = 'Copy';
+        this.copyResetTimeoutId = null;
+      }, 5000);
+    },
+    copyPropertyValue() {
+      const textToCopy = this.valueAsString;
+      if (textToCopy == null) {
+        return;
+      }
+
+      const fallbackCopy = () => {
+        if (typeof document === 'undefined') {
+          return;
+        }
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.setAttribute('readonly', '');
+        textArea.style.position = 'absolute';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+        this.setCopyFeedback();
+      };
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy)
+          .then(() => {
+            this.setCopyFeedback();
+          })
+          .catch(() => {
+            fallbackCopy();
+          });
+      } else {
+        fallbackCopy();
+      }
     }
   }
 });

@@ -19,6 +19,18 @@
       <span class="ml-2 text-sm text-gray-500">({{(path.instance || 'unknown').toLowerCase()}})</span>
     </div>
     <div class="flex items-center gap-2">
+      <button
+        type="button"
+        class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded-md border border-transparent hover:border-gray-300 bg-white"
+        @click.stop.prevent="copyPropertyValue"
+        title="Copy value"
+        aria-label="Copy property value"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8m-8 4h5m-7-9a2 2 0 012-2h7a2 2 0 012 2v10a2 2 0 01-2 2H8l-4-4V7a2 2 0 012-2z" />
+        </svg>
+        {{copyButtonLabel}}
+      </button>
       <router-link
         v-if="path.ref && getValueForPath(path.path)"
         :to="`/model/${path.ref}/document/${getValueForPath(path.path)}`"
