@@ -92,6 +92,36 @@ module.exports = app => app.component('document-property', {
     },
     toggleValueExpansion() {
       this.isValueExpanded = !this.isValueExpanded;
+    },
+    copyPropertyValue() {
+      const textToCopy = this.valueAsString;
+      if (textToCopy == null) {
+        return;
+      }
+
+      const fallbackCopy = () => {
+        if (typeof document === 'undefined') {
+          return;
+        }
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.setAttribute('readonly', '');
+        textArea.style.position = 'absolute';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      };
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).catch(fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
     }
   }
 });
