@@ -13,8 +13,16 @@ module.exports = app => app.component('document-property', {
     return {
       dateType: 'picker', // picker, iso
       isCollapsed: false, // Start uncollapsed by default
-      isValueExpanded: false // Track if the value is expanded
+      isValueExpanded: false, // Track if the value is expanded
+      copyButtonLabel: 'Copy',
+      copyResetTimeoutId: null
     };
+  },
+  beforeDestroy() {
+    if (this.copyResetTimeoutId) {
+      clearTimeout(this.copyResetTimeoutId);
+      this.copyResetTimeoutId = null;
+    }
   },
   props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid', 'highlight'],
   computed: {
@@ -93,6 +101,16 @@ module.exports = app => app.component('document-property', {
     toggleValueExpansion() {
       this.isValueExpanded = !this.isValueExpanded;
     },
+    setCopyFeedback() {
+      this.copyButtonLabel = 'Copied';
+      if (this.copyResetTimeoutId) {
+        clearTimeout(this.copyResetTimeoutId);
+      }
+      this.copyResetTimeoutId = setTimeout(() => {
+        this.copyButtonLabel = 'Copy';
+        this.copyResetTimeoutId = null;
+      }, 5000);
+    },
     copyPropertyValue() {
       const textToCopy = this.valueAsString;
       if (textToCopy == null) {
@@ -115,10 +133,17 @@ module.exports = app => app.component('document-property', {
         } finally {
           document.body.removeChild(textArea);
         }
+        this.setCopyFeedback();
       };
 
       if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(textToCopy).catch(fallbackCopy);
+        navigator.clipboard.writeText(textToCopy)
+          .then(() => {
+            this.setCopyFeedback();
+          })
+          .catch(() => {
+            fallbackCopy();
+          });
       } else {
         fallbackCopy();
       }
