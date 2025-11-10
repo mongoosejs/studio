@@ -4,7 +4,6 @@ const template = require('./edit-string.html');
 
 const OTHER_OPTION = '__other';
 const NULL_OPTION = '__null';
-const UNDEFINED_OPTION = '__undefined';
 
 function normalizeEnumValues(enumValues) {
   if (!Array.isArray(enumValues)) {
@@ -25,11 +24,8 @@ function normalizeEnumValues(enumValues) {
 }
 
 function getInitialSelection(value, normalizedEnumValues) {
-  if (value === null) {
+  if (value == null) {
     return NULL_OPTION;
-  }
-  if (typeof value === 'undefined') {
-    return UNDEFINED_OPTION;
   }
   if (value != null && normalizedEnumValues.indexOf(value) !== -1) {
     return value;
@@ -40,7 +36,7 @@ function getInitialSelection(value, normalizedEnumValues) {
   if (value != null && value !== '') {
     return OTHER_OPTION;
   }
-  return UNDEFINED_OPTION;
+  return NULL_OPTION;
 }
 
 module.exports = app => app.component('edit-string', {
@@ -131,11 +127,6 @@ module.exports = app => app.component('edit-string', {
       if (selected === NULL_OPTION) {
         this.otherValue = '';
         this.$emit('input', null);
-        return;
-      }
-      if (selected === UNDEFINED_OPTION) {
-        this.otherValue = '';
-        this.$emit('input', undefined);
         return;
       }
       if (selected === OTHER_OPTION) {
