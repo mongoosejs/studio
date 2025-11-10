@@ -87,9 +87,8 @@ module.exports = app => app.component('document-property', {
     getEditComponentProps(path) {
       const props = {};
       if (path.instance === 'String') {
-        const enumValues = this.getEnumValues(path);
-        if (enumValues.length > 0) {
-          props.enumValues = enumValues;
+        if (path.enum?.length > 0) {
+          props.enumValues = path.enum;
         }
       }
       return props;
@@ -115,18 +114,6 @@ module.exports = app => app.component('document-property', {
     },
     toggleValueExpansion() {
       this.isValueExpanded = !this.isValueExpanded;
-    },
-    getEnumValues(path) {
-      if (!path) {
-        return [];
-      }
-      if (Array.isArray(path.enumValues) && path.enumValues.length > 0) {
-        return path.enumValues;
-      }
-      if (path.options && Array.isArray(path.options.enum) && path.options.enum.length > 0) {
-        return path.options.enum;
-      }
-      return [];
     },
     setCopyFeedback() {
       this.copyButtonLabel = 'Copied';

@@ -77,7 +77,8 @@ module.exports = ({ db }) => async function getDocuments(params) {
       instance: Model.schema.paths[path].instance,
       path,
       ref: Model.schema.paths[path].options?.ref,
-      required: Model.schema.paths[path].options?.required
+      required: Model.schema.paths[path].options?.required,
+      enum: Model.schema.paths[path].options?.enum
     };
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
