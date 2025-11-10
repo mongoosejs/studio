@@ -27,16 +27,14 @@ function getInitialSelection(value, normalizedEnumValues) {
   if (value == null) {
     return NULL_OPTION;
   }
-  if (value != null && normalizedEnumValues.indexOf(value) !== -1) {
+  if (normalizedEnumValues.indexOf(value) !== -1) {
     return value;
   }
   if (typeof value === 'string' && value === '') {
     return OTHER_OPTION;
   }
-  if (value != null && value !== '') {
-    return OTHER_OPTION;
-  }
-  return NULL_OPTION;
+  // For any other non-null, non-enum, non-empty string value, return OTHER_OPTION
+  return OTHER_OPTION;
 }
 
 module.exports = app => app.component('edit-string', {
