@@ -1,3 +1,5 @@
+/* global clearTimeout setTimeout */
+
 'use strict';
 
 const mpath = require('mpath');
@@ -62,6 +64,9 @@ module.exports = app => app.component('document-property', {
       return 'detail-default';
     },
     getEditComponentForPath(path) {
+      if (path.instance === 'String') {
+        return 'edit-string';
+      }
       if (path.instance == 'Date') {
         return 'edit-date';
       }
@@ -78,6 +83,15 @@ module.exports = app => app.component('document-property', {
         return 'edit-boolean';
       }
       return 'edit-default';
+    },
+    getEditComponentProps(path) {
+      const props = {};
+      if (path.instance === 'String') {
+        if (path.enum?.length > 0) {
+          props.enumValues = path.enum;
+        }
+      }
+      return props;
     },
     getValueForPath(path) {
       if (this.document == null) {
