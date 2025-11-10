@@ -1,3 +1,5 @@
+/* global clearTimeout setTimeout */
+
 'use strict';
 
 const mpath = require('mpath');
@@ -62,6 +64,9 @@ module.exports = app => app.component('document-property', {
       return 'detail-default';
     },
     getEditComponentForPath(path) {
+      if (path.instance === 'String') {
+        return 'edit-string';
+      }
       if (path.instance == 'Date') {
         return 'edit-date';
       }
@@ -78,6 +83,16 @@ module.exports = app => app.component('document-property', {
         return 'edit-boolean';
       }
       return 'edit-default';
+    },
+    getEditComponentProps(path) {
+      const props = {};
+      if (path.instance === 'String') {
+        const enumValues = this.getEnumValues(path);
+        if (enumValues.length > 0) {
+          props.enumValues = enumValues;
+        }
+      }
+      return props;
     },
     getValueForPath(path) {
       if (this.document == null) {
@@ -100,6 +115,18 @@ module.exports = app => app.component('document-property', {
     },
     toggleValueExpansion() {
       this.isValueExpanded = !this.isValueExpanded;
+    },
+    getEnumValues(path) {
+      if (!path) {
+        return [];
+      }
+      if (Array.isArray(path.enumValues) && path.enumValues.length > 0) {
+        return path.enumValues;
+      }
+      if (path.options && Array.isArray(path.options.enum) && path.options.enum.length > 0) {
+        return path.options.enum;
+      }
+      return [];
     },
     setCopyFeedback() {
       this.copyButtonLabel = 'Copied';
