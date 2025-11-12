@@ -62,11 +62,14 @@ Then, add `pages/api/studio.js` to your Next.js project to host the Mongoose Stu
 import db from '../../src/db';
 import studio from '@mongoosejs/studio/backend/next';
 
-const handler = studio({
-  apiKey: process.env.MONGOOSE_STUDIO_API_KEY, // optional
-  connection: db, // Optional: Connection or Mongoose global. If omitted, will use `import mongoose`
-  connectToDB: async () => { /* connection logic here */ }, // Optional: if you need to call a function to connect to the database put it here
-});
+const handler = studio(
+  db, // Mongoose connection or Mongoose global. Or null to use `import mongoose`.
+  {
+    apiKey: process.env.MONGOOSE_STUDIO_API_KEY, // optional
+    connection: db, // Optional: Connection or Mongoose global. If omitted, will use `import mongoose`
+    connectToDB: async () => { /* connection logic here */ }, // Optional: if you need to call a function to connect to the database put it here
+  }
+);
 
 export default handler;
 ```
