@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const frontend = require('./frontend');
 const path = require('path');
 
 module.exports = withMongooseStudio;
@@ -14,6 +15,15 @@ module.exports = withMongooseStudio;
  */
 function withMongooseStudio(nextConfig = {}) {
   const studioPath = normalizeBasePath(nextConfig.studioPath || '/studio');
+
+  try {
+    copyStudioFrontend(studioPath);
+    frontend('/api/studio', true)
+      .then(() => console.log(`✅ Mongoose Studio: copied frontend+config to public${studioPath}`))
+      .catch(err => console.error(`❌ Mongoose Studio: failed to copy frontend`, err));
+  } catch (err) {
+    console.error('❌ Mongoose Studio: failed to copy frontend', err);
+  }
 
   return {
     ...nextConfig,
@@ -32,24 +42,7 @@ function withMongooseStudio(nextConfig = {}) {
       };
 
       return [...userRedirects, studioRedirect];
-    },
-
-    webpack(config, { isServer }) {
-       if (isServer) {
-         try {
-           copyStudioFrontend(studioPath);
-           console.log(`✅ Mongoose Studio: copied frontend to public${studioPath}`);
-         } catch (err) {
-           console.error('❌ Mongoose Studio: failed to copy frontend', err);
-         }
-       }
-
-       // Preserve user’s webpack config
-       if (typeof nextConfig.webpack === 'function') {
-         return nextConfig.webpack(config, { isServer });
-       }
-       return config;
-    },
+    }
   };
 }
 
