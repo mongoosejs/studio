@@ -44,6 +44,25 @@ module.exports = app => app.component('dashboard', {
       } finally {
         this.status = 'loaded';
       }
+    },
+    shouldEvaluateDashboard() {
+      if (this.dashboardResults.length === 0) {
+        return true;
+      }
+
+      const finishedEvaluatingAt = this.dashboardResults[0].finishedEvaluatingAt;
+      if (!finishedEvaluatingAt) {
+        return true;
+      }
+
+      const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
+      const finishedAt = new Date(finishedEvaluatingAt).getTime();
+
+      if (Number.isNaN(finishedAt)) {
+        return true;
+      }
+
+      return finishedAt < sixHoursAgo;
     }
   },
   computed: {
@@ -62,6 +81,10 @@ module.exports = app => app.component('dashboard', {
     this.title = this.dashboard.title;
     this.description = this.dashboard.description ?? '';
     this.dashboardResults = dashboardResults;
+    if (this.shouldEvaluateDashboard()) {
+      await this.evaluateDashboard();
+      return;
+    }
     this.status = 'loaded';
   }
 });
