@@ -34,10 +34,10 @@ const JsonNodeTemplate = `
         -->
         <span
           v-if="shouldShowReferenceLink"
-          class="tooltip inline-flex items-baseline"
+          class="inline-flex items-baseline gap-2 group"
         >
           <span
-            :class="valueClasses"
+            :class="[...valueClasses, 'underline', 'decoration-dotted', 'underline-offset-2']"
             :style="typeof value === 'string'
               ? {
                   display: 'inline-block',
@@ -52,12 +52,13 @@ const JsonNodeTemplate = `
           >
             {{ formattedValue }}{{ comma }}
           </span>
-          <div
-            class="tooltiptext"
-            style="display:flex; width: 100%; justify-content: space-around; align-items: center; min-width: 180px;"
+          <a
+            href="#"
+            class="text-sm text-sky-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+            @click.stop.prevent="goToReference(value)"
           >
-            <div class="tooltiptextchild" @click.stop="goToReference(value)">View Document</div>
-          </div>
+            View Document
+          </a>
         </span>
         <span
           v-else
