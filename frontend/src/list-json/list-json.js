@@ -33,6 +33,34 @@ const JsonNodeTemplate = `
           This is done via CSS ellipsis strategy.
         -->
         <span
+          v-if="shouldShowReferenceLink"
+          class="tooltip inline-flex items-baseline"
+        >
+          <span
+            :class="valueClasses"
+            :style="typeof value === 'string'
+              ? {
+                  display: 'inline-block',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  verticalAlign: 'bottom'
+                }
+              : {}"
+            :title="typeof value === 'string' && $el && $el.scrollWidth > $el.clientWidth ? value : undefined"
+          >
+            {{ formattedValue }}{{ comma }}
+          </span>
+          <div
+            class="tooltiptext"
+            style="display:flex; width: 100%; justify-content: space-around; align-items: center; min-width: 180px;"
+          >
+            <div class="tooltiptextchild" @click.stop="goToReference(value)">View Document</div>
+          </div>
+        </span>
+        <span
+          v-else
           :class="valueClasses"
           :style="typeof value === 'string'
             ? {
@@ -66,6 +94,7 @@ const JsonNodeTemplate = `
         :max-top-level-fields="maxTopLevelFields"
         :top-level-expanded="topLevelExpanded"
         :expand-top-level="expandTopLevel"
+        :references="references"
       ></json-node>
       <div
         v-if="hasHiddenRootChildren"
@@ -92,7 +121,15 @@ const JsonNodeTemplate = `
 
 module.exports = app => app.component('list-json', {
   template: template,
-  props: ['value'],
+  props: {
+    value: {
+      required: true
+    },
+    references: {
+      type: Object,
+      default: () => ({})
+    }
+  },
   data() {
     return {
       collapsedMap: {},
@@ -196,6 +233,10 @@ module.exports = app => app.component('list-json', {
         expandTopLevel: {
           type: Function,
           default: null
+        },
+        references: {
+          type: Object,
+          default: () => ({})
         }
       },
       computed: {
@@ -334,6 +375,24 @@ module.exports = app => app.component('list-json', {
         },
         hiddenChildrenTooltip() {
           return this.hiddenChildrenLabel;
+        },
+        normalizedPath() {
+          if (typeof this.path !== 'string') {
+            return '';
+          }
+          return this.path
+            .replace(/^root\.?/, '')
+            .replace(/\[\d+\]/g, '')
+            .replace(/^\./, '');
+        },
+        referenceModel() {
+          if (!this.normalizedPath || !this.references) {
+            return null;
+          }
+          return this.references[this.normalizedPath] || null;
+        },
+        shouldShowReferenceLink() {
+          return Boolean(this.referenceModel) && typeof this.value === 'string';
         }
       },
       methods: {
@@ -358,6 +417,12 @@ module.exports = app => app.component('list-json', {
           if (this.isRoot && typeof this.expandTopLevel === 'function') {
             this.expandTopLevel();
           }
+        },
+        goToReference(id) {
+          if (!this.referenceModel) {
+            return;
+          }
+          this.$router.push({ path: `/model/${this.referenceModel}/document/${id}` });
         }
       }
     }

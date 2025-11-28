@@ -108,6 +108,17 @@ module.exports = app => app.component('models', {
 
     await this.initSearchFromUrl();
   },
+  computed: {
+    referenceMap() {
+      const map = {};
+      for (const path of this.filteredPaths) {
+        if (path?.ref) {
+          map[path.path] = path.ref;
+        }
+      }
+      return map;
+    }
+  },
   methods: {
     buildAutocompleteTrie() {
       this.autocompleteTrie = new Trie();
@@ -338,9 +349,10 @@ module.exports = app => app.component('models', {
     },
     filterDocument(doc) {
       const filteredDoc = {};
-      console.log(doc, this.filteredPaths);
       for (let i = 0; i < this.filteredPaths.length; i++) {
-        filteredDoc[this.filteredPaths[i].path] = doc[this.filteredPaths[i].path];
+        const path = this.filteredPaths[i].path;
+        const value = mpath.get(path, doc);
+        mpath.set(path, value, filteredDoc);
       }
       return filteredDoc;
     },
