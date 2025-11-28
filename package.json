@@ -32,7 +32,7 @@
     "eslint": "9.30.0",
     "express": "4.x",
     "mocha": "10.2.0",
-    "mongoose": "8.x"
+    "mongoose": "9.x"
   },
   "scripts": {
     "lint": "eslint .",
