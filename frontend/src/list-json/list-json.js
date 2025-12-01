@@ -2,97 +2,19 @@
 
 const template = require('./list-json.html');
 
-const JsonNodeTemplate = `
-  <div>
-    <div class="flex items-baseline whitespace-pre" :style="indentStyle">
-      <button
-        v-if="showToggle"
-        type="button"
-        class="w-4 h-4 mr-1 inline-flex items-center justify-center leading-none text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400 cursor-pointer"
-        @click.stop="handleToggle"
-      >
-        {{ isCollapsedNode ? '+' : '-' }}
-      </button>
-      <span v-else class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible flex-shrink-0"></span>
-      <template v-if="hasKey">
-        <span class="text-blue-600">"{{ nodeKey }}"</span><span>: </span>
-      </template>
-      <template v-if="isComplex">
-        <template v-if="hasChildren">
-          <span>{{ openingBracket }}</span>
-          <span v-if="isCollapsedNode" class="mx-1">…</span>
-          <span v-if="isCollapsedNode">{{ closingBracket }}{{ comma }}</span>
-        </template>
-        <template v-else>
-          <span>{{ openingBracket }}{{ closingBracket }}{{ comma }}</span>
-        </template>
-      </template>
-      <template v-else>
-        <!--
-          If value is a string and overflows its container (i.e. goes over one line), show an ellipsis.
-          This is done via CSS ellipsis strategy.
-        -->
-        <span
-          :class="valueClasses"
-          :style="typeof value === 'string'
-            ? {
-                display: 'inline-block',
-                maxWidth: '100%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                verticalAlign: 'bottom'
-              }
-            : {}"
-          :title="typeof value === 'string' && $el && $el.scrollWidth > $el.clientWidth ? value : undefined"
-        >
-          {{ formattedValue }}{{ comma }}
-        </span>
-      </template>
-    </div>
-    <template v-if="isComplex && hasChildren && !isCollapsedNode">
-      <json-node
-        v-for="child in children"
-        :key="child.path"
-        :node-key="child.displayKey"
-        :value="child.value"
-        :level="level + 1"
-        :is-last="child.isLast"
-        :path="child.path"
-        :toggle-collapse="toggleCollapse"
-        :is-collapsed="isCollapsed"
-        :create-child-path="createChildPath"
-        :indent-size="indentSize"
-        :max-top-level-fields="maxTopLevelFields"
-        :top-level-expanded="topLevelExpanded"
-        :expand-top-level="expandTopLevel"
-      ></json-node>
-      <div
-        v-if="hasHiddenRootChildren"
-        class="flex items-baseline whitespace-pre"
-        :style="indentStyle"
-      >
-        <span class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
-        <button
-          type="button"
-          class="text-xs inline-flex items-center gap-1 ml-4 text-slate-500 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400"
-          :title="hiddenChildrenTooltip"
-          @click.stop="handleExpandTopLevel"
-        >
-          <span aria-hidden="true">{{hiddenChildrenLabel}}…</span>
-        </button>
-      </div>
-      <div class="flex items-baseline whitespace-pre" :style="indentStyle">
-        <span class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
-        <span>{{ closingBracket }}{{ comma }}</span>
-      </div>
-    </template>
-  </div>
-`;
+const JsonNodeTemplate = require('./json-node.html');
 
 module.exports = app => app.component('list-json', {
   template: template,
-  props: ['value'],
+  props: {
+    value: {
+      required: true
+    },
+    references: {
+      type: Object,
+      default: () => ({})
+    }
+  },
   data() {
     return {
       collapsedMap: {},
@@ -196,6 +118,10 @@ module.exports = app => app.component('list-json', {
         expandTopLevel: {
           type: Function,
           default: null
+        },
+        references: {
+          type: Object,
+          default: () => ({})
         }
       },
       computed: {
@@ -334,6 +260,24 @@ module.exports = app => app.component('list-json', {
         },
         hiddenChildrenTooltip() {
           return this.hiddenChildrenLabel;
+        },
+        normalizedPath() {
+          if (typeof this.path !== 'string') {
+            return '';
+          }
+          return this.path
+            .replace(/^root\.?/, '')
+            .replace(/\[\d+\]/g, '')
+            .replace(/^\./, '');
+        },
+        referenceModel() {
+          if (!this.normalizedPath || !this.references) {
+            return null;
+          }
+          return this.references[this.normalizedPath] || null;
+        },
+        shouldShowReferenceLink() {
+          return Boolean(this.referenceModel) && typeof this.value === 'string';
         }
       },
       methods: {
@@ -358,6 +302,12 @@ module.exports = app => app.component('list-json', {
           if (this.isRoot && typeof this.expandTopLevel === 'function') {
             this.expandTopLevel();
           }
+        },
+        goToReference(id) {
+          if (!this.referenceModel) {
+            return;
+          }
+          this.$router.push({ path: `/model/${this.referenceModel}/document/${id}` });
         }
       }
     }
