@@ -1,5 +1,189 @@
 <div class="edit-array">
-  <textarea
-    ref="arrayEditor"
-    class="w-full border border-gray-300 p-1 h-[300px]"></textarea>
+  <button
+    @click="openAddModal"
+    class="array-add-button">
+    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    Add
+  </button>
+
+  <div v-if="!arrayValue || arrayValue.length === 0" class="text-gray-400 text-xs py-2 text-center">
+    Empty array
+  </div>
+  
+  <div v-else class="array-items">
+    <!-- Form view for arrays of objects -->
+    <div
+      v-if="isArrayOfObjects"
+      v-for="(item, index) in arrayValue"
+      :key="index"
+      class="array-item array-item-form">
+      <div class="array-item-header">
+        <span class="array-item-index">{{ index }}</span>
+        <button
+          @click="removeItem(index)"
+          class="array-item-remove"
+          title="Remove item">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="array-item-form-fields">
+        <div
+          v-for="key in getItemKeys(index)"
+          :key="key"
+          class="array-form-field">
+          <label class="array-form-label">{{ key }}</label>
+          <div class="array-form-input-wrapper">
+            <input
+              type="text"
+              :value="getFieldValue(item, key)"
+              @input="updateObjectField(index, key, $event.target.value)"
+              class="array-form-input"
+              :placeholder="getFieldPlaceholder(item, key)"
+            />
+            <button
+              v-if="!isCommonKey(key)"
+              @click="removeObjectKey(index, key)"
+              class="array-form-remove-key"
+              title="Remove key">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div v-if="!addingKey[index]" class="array-form-add-key">
+          <button
+            @click="startAddingKey(index)"
+            class="array-add-key-button">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Add key
+          </button>
+        </div>
+        <div v-else class="array-form-add-key-input">
+          <input
+            type="text"
+            v-model="newKeyNames[index]"
+            @keyup.enter="addKeyToItem(index)"
+            @keyup.esc="cancelAddingKey(index)"
+            @blur="addKeyToItem(index)"
+            class="array-form-input"
+            placeholder="Key name"
+            :ref="`newKeyInput-${index}`"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Simple input view for primitive arrays -->
+    <div
+      v-else
+      v-for="(item, index) in arrayValue"
+      :key="index"
+      class="array-item array-item-simple">
+      <div class="array-item-header">
+        <span class="array-item-index">{{ index }}</span>
+        <button
+          @click="removeItem(index)"
+          class="array-item-remove"
+          title="Remove item">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <input
+        :type="getInputType(item)"
+        :value="item != null ? item : ''"
+        @input="updatePrimitiveItem(index, $event.target.value)"
+        class="array-simple-input"
+        :placeholder="getInputPlaceholder(item)"
+      />
+    </div>
+  </div>
+
+  <!-- Add Item Modal -->
+  <modal v-if="showAddModal" containerClass="max-w-2xl">
+    <template #body>
+      <div class="modal-exit" @click="closeAddModal">&times;</div>
+      <div class="p-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Add Array Item</h3>
+        
+        <!-- Form view for arrays of objects -->
+        <div v-if="isArrayOfObjects" class="add-item-form">
+          <div
+            v-for="key in getAllModalKeys()"
+            :key="key"
+            class="array-form-field">
+            <label class="array-form-label">{{ key }}</label>
+            <div class="array-form-input-wrapper">
+              <input
+                type="text"
+                v-model="newItemFields[key]"
+                class="array-form-input"
+                placeholder="null"
+              />
+              <button
+                v-if="!objectKeys.includes(key)"
+                @click="removeModalKey(key)"
+                class="array-form-remove-key"
+                title="Remove key">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div v-if="!addingModalKey" class="array-form-add-key">
+            <button
+              @click="startAddingModalKey"
+              class="array-add-key-button">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Add key
+            </button>
+          </div>
+          <div v-else class="array-form-add-key-input">
+            <input
+              type="text"
+              v-model="newModalKeyName"
+              @keyup.enter="addModalKey"
+              @keyup.esc="cancelAddingModalKey"
+              @blur="addModalKey"
+              class="array-form-input"
+              placeholder="Key name"
+              ref="newModalKeyInput"
+            />
+          </div>
+        </div>
+        
+        <!-- CodeMirror for complex/mixed arrays -->
+        <textarea
+          v-else
+          ref="addItemEditor"
+          class="w-full border border-gray-300 p-2 font-mono"
+          :style="{ minHeight: '200px' }">
+        </textarea>
+        
+        <div class="mt-4 flex justify-end gap-2">
+          <button
+            @click="closeAddModal"
+            class="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
+            Cancel
+          </button>
+          <button
+            @click="addItem"
+            class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
+            Add Item
+          </button>
+        </div>
+      </div>
+    </template>
+  </modal>
 </div>
