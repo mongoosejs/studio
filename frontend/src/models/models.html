@@ -39,7 +39,7 @@
         <div class="flex flex-row items-center w-full gap-2">
           <document-search
             ref="documentSearch"
-            v-model="searchText"
+            :value="searchText"
             :schema-paths="schemaPaths"
             @search="search"
           >

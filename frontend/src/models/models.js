@@ -210,7 +210,8 @@ module.exports = app => app.component('models', {
       }
       await this.loadMoreDocuments();
     },
-    async search() {
+    async search(searchText) {
+      this.searchText = searchText;
       const hasSearch = typeof this.searchText === 'string' && this.searchText.trim().length > 0;
       if (hasSearch) {
         this.query.search = this.searchText;
