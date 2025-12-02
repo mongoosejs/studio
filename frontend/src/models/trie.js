@@ -5,6 +5,7 @@ class TrieNode {
     this.children = Object.create(null);
     this.isEnd = false;
     this.freq = 0;
+    this.roles = new Set(); // semantic roles like 'fieldName', 'operator'
   }
 }
 
@@ -13,7 +14,7 @@ class Trie {
     this.root = new TrieNode();
   }
 
-  insert(word, freq = 1) {
+  insert(word, freq = 1, role = null) {
     if (!word) {
       return;
     }
@@ -26,27 +27,25 @@ class Trie {
     }
     node.isEnd = true;
     node.freq += freq;
-  }
-
-  bulkInsert(words, freq = 1) {
-    if (!Array.isArray(words)) {
-      return;
-    }
-    for (const word of words) {
-      this.insert(word, freq);
+    if (role) {
+      node.roles.add(role);
     }
   }
 
-  collect(node, prefix, out) {
-    if (node.isEnd) {
+  bulkInsert(words, freq = 1, role = null) {
+    for (const word of words) this.insert(word, freq, role);
+  }
+
+  collect(node, prefix, out, role) {
+    if (node.isEnd && (role == null || node.roles.has(role))) {
       out.push([prefix, node.freq]);
     }
     for (const [ch, child] of Object.entries(node.children)) {
-      this.collect(child, prefix + ch, out);
+      this.collect(child, prefix + ch, out, role);
     }
   }
 
-  suggest(prefix, limit = 10) {
+  suggest(prefix, limit = 10, role = null) {
     let node = this.root;
     for (const ch of prefix) {
       if (!node.children[ch]) {
@@ -55,19 +54,19 @@ class Trie {
       node = node.children[ch];
     }
     const results = [];
-    this.collect(node, prefix, results);
+    this.collect(node, prefix, results, role);
     results.sort((a, b) => b[1] - a[1]);
     return results.slice(0, limit).map(([word]) => word);
   }
 
-  fuzzySuggest(prefix, limit = 10) {
+  fuzzySuggest(prefix, limit = 10, role = null) {
     const results = new Set();
 
     const dfs = (node, path, edits) => {
       if (edits > 1) {
         return;
       }
-      if (node.isEnd && Math.abs(path.length - prefix.length) <= 1) {
+      if (node.isEnd && Math.abs(path.length - prefix.length) <= 1 && (role == null || node.roles.has(role))) {
         const dist = levenshtein(prefix, path);
         if (dist <= 1) {
           results.add(path);
@@ -75,6 +74,9 @@ class Trie {
       }
       for (const [ch, child] of Object.entries(node.children)) {
         const nextEdits = ch === prefix[path.length] ? edits : edits + 1;
+        if (role != null && !child.roles.has(role)) {
+          continue;
+        }
         dfs(child, path + ch, nextEdits);
       }
     };
@@ -83,15 +85,15 @@ class Trie {
     return Array.from(results).slice(0, limit);
   }
 
-  getSuggestions(prefix, limit = 10) {
+  getSuggestions(prefix, limit = 10, role = null) {
     if (!prefix) {
       return [];
     }
-    const exact = this.suggest(prefix, limit);
+    const exact = this.suggest(prefix, limit, role);
     if (exact.length >= limit) {
       return exact;
     }
-    const fuzzy = this.fuzzySuggest(prefix, limit - exact.length);
+    const fuzzy = this.fuzzySuggest(prefix, limit - exact.length, role);
     return [...exact, ...fuzzy];
   }
 }
