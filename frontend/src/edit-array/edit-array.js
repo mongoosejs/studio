@@ -22,11 +22,7 @@ module.exports = app => app.component('edit-array', {
       showAddModal: false,
       addItemEditor: null,
       newItemFields: {},
-      addingKey: {},
-      newKeyNames: {},
-      addingModalKey: false,
-      newModalKeyName: '',
-      modalExtraKeys: []
+      insertIndex: null
     };
   },
   computed: {
@@ -62,50 +58,6 @@ module.exports = app => app.component('edit-array', {
         return [];
       }
       return Object.keys(item);
-    },
-    isCommonKey(key) {
-      // A key is "common" if it exists in all objects
-      if (!this.isArrayOfObjects || this.arrayValue.length === 0) {
-        return false;
-      }
-      return this.arrayValue.every(item => 
-        item != null && typeof item === 'object' && !Array.isArray(item) && key in item
-      );
-    },
-    startAddingKey(index) {
-      this.addingKey[index] = true;
-      this.newKeyNames[index] = '';
-      this.$nextTick(() => {
-        const refKey = `newKeyInput-${index}`;
-        const inputRef = this.$refs[refKey];
-        const input = Array.isArray(inputRef) ? inputRef[0] : inputRef;
-        if (input) {
-          input.focus();
-        }
-      });
-    },
-    cancelAddingKey(index) {
-      this.addingKey[index] = false;
-      this.newKeyNames[index] = '';
-    },
-    addKeyToItem(index) {
-      const keyName = (this.newKeyNames[index] || '').trim();
-      if (keyName && keyName.length > 0) {
-        if (!this.arrayValue[index]) {
-          this.arrayValue[index] = {};
-        }
-        if (!(keyName in this.arrayValue[index])) {
-          this.arrayValue[index][keyName] = null;
-          this.emitUpdate();
-        }
-      }
-      this.cancelAddingKey(index);
-    },
-    removeObjectKey(index, key) {
-      if (this.arrayValue[index] && typeof this.arrayValue[index] === 'object') {
-        delete this.arrayValue[index][key];
-        this.emitUpdate();
-      }
     },
     initializeArray() {
       if (this.value == null) {
@@ -222,49 +174,35 @@ module.exports = app => app.component('edit-array', {
       this.arrayValue.splice(index, 1);
       this.emitUpdate();
     },
-    getAllModalKeys() {
-      return [...this.objectKeys, ...this.modalExtraKeys];
-    },
-    startAddingModalKey() {
-      this.addingModalKey = true;
-      this.newModalKeyName = '';
-      this.$nextTick(() => {
-        const inputRef = this.$refs.newModalKeyInput;
-        const input = Array.isArray(inputRef) ? inputRef[0] : inputRef;
-        if (input) {
-          input.focus();
-        }
-      });
-    },
-    cancelAddingModalKey() {
-      this.addingModalKey = false;
-      this.newModalKeyName = '';
-    },
-    addModalKey() {
-      const keyName = (this.newModalKeyName || '').trim();
-      if (keyName && keyName.length > 0 && !this.getAllModalKeys().includes(keyName)) {
-        this.modalExtraKeys.push(keyName);
-        this.newItemFields[keyName] = '';
-        this.emitUpdate();
+    validateInsertIndex() {
+      if (this.insertIndex < 0) {
+        this.insertIndex = 0;
       }
-      this.cancelAddingModalKey();
+      if (this.insertIndex !== null && !Number.isInteger(this.insertIndex)) {
+        this.insertIndex = Math.floor(this.insertIndex);
+      }
     },
-    removeModalKey(key) {
-      this.modalExtraKeys = this.modalExtraKeys.filter(k => k !== key);
-      delete this.newItemFields[key];
+    copyItem(index) {
+      const item = this.arrayValue[index];
+      if (item == null) {
+        return;
+      }
+      const copiedItem = JSON.parse(JSON.stringify(item));
+      this.arrayValue.splice(index + 1, 0, copiedItem);
+      this.emitUpdate();
     },
     openAddModal() {
       // Initialize form fields for objects
-      if (this.isArrayOfObjects) {
+      if (this.isArrayOfObjects && this.objectKeys.length > 0) {
         this.newItemFields = {};
         // Pre-populate with all keys from existing objects
-        if (this.objectKeys.length > 0) {
-          this.objectKeys.forEach(key => {
-            this.newItemFields[key] = '';
-          });
-        }
-        this.modalExtraKeys = [];
+        this.objectKeys.forEach(key => {
+          this.newItemFields[key] = '';
+        });
       }
+      
+      // Set default insert index to end of array
+      this.insertIndex = this.arrayValue ? this.arrayValue.length : 0;
       
       this.showAddModal = true;
       this.$nextTick(() => {
@@ -289,19 +227,29 @@ module.exports = app => app.component('edit-array', {
         this.addItemEditor = null;
       }
       this.newItemFields = {};
-      this.modalExtraKeys = [];
-      this.addingModalKey = false;
-      this.newModalKeyName = '';
+      this.insertIndex = null;
       this.showAddModal = false;
     },
     addItem() {
       try {
+        // Validate and set insert index
+        let insertAt = this.insertIndex;
+        if (insertAt === null || insertAt === undefined) {
+          insertAt = this.arrayValue ? this.arrayValue.length : 0;
+        }
+        if (insertAt < 0) {
+          insertAt = 0;
+        }
+        if (!Number.isInteger(insertAt)) {
+          insertAt = Math.floor(insertAt);
+        }
+        
         let parsed;
         
-        if (this.isArrayOfObjects && this.getAllModalKeys().length > 0) {
+        if (this.isArrayOfObjects && this.objectKeys.length > 0) {
           // Build object from form fields
           parsed = {};
-          this.getAllModalKeys().forEach(key => {
+          this.objectKeys.forEach(key => {
             const value = this.newItemFields[key] || '';
             if (value.trim() === '') {
               parsed[key] = null;
@@ -332,7 +280,8 @@ module.exports = app => app.component('edit-array', {
           parsed = null;
         }
         
-        this.arrayValue.push(parsed);
+        // Insert at the specified index (will shift existing items up)
+        this.arrayValue.splice(insertAt, 0, parsed);
         this.emitUpdate();
         this.closeAddModal();
       } catch (err) {
@@ -350,6 +299,11 @@ module.exports = app => app.component('edit-array', {
   mounted() {
     this.initializeArray();
   },
+  beforeDestroy() {
+    if (this.addItemEditor) {
+      this.addItemEditor.toTextArea();
+    }
+  },
   watch: {
     value: {
       handler(newValue, oldValue) {
@@ -358,11 +312,6 @@ module.exports = app => app.component('edit-array', {
       },
       deep: true,
       immediate: true
-    }
-  },
-  beforeDestroy() {
-    if (this.addItemEditor) {
-      this.addItemEditor.toTextArea();
     }
   },
   emits: ['input', 'error']

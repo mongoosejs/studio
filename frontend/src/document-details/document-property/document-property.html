@@ -81,7 +81,43 @@
     </div>
     <div v-else>
       <!-- Show truncated or full value based on needsTruncation and isValueExpanded -->
-      <div v-if="needsTruncation && !isValueExpanded" class="relative">
+      <!-- Special handling for truncated arrays -->
+      <div v-if="isArray && shouldShowTruncated" class="array-truncated-view">
+        <div class="array-items">
+          <div
+            v-for="(item, index) in truncatedArrayItems"
+            :key="index"
+            class="array-item">
+            <div class="array-item-index-label">{{ index }}</div>
+            <div v-if="isObjectItem(item)" class="array-item-fields">
+              <div
+                v-for="key in getItemKeys(item)"
+                :key="key"
+                class="array-item-field">
+                <span class="array-item-field-label">{{ key }}:</span>
+                <span class="array-item-field-value">{{ formatItemValue(item, key) }}</span>
+              </div>
+            </div>
+            <div v-else class="array-item-value">{{ formatArrayItem(item) }}</div>
+          </div>
+          <div class="array-item array-item-summary">
+            <div class="array-item-value text-gray-500 italic">
+              ... and {{ remainingArrayCount }} more item{{ remainingArrayCount !== 1 ? 's' : '' }}
+            </div>
+          </div>
+        </div>
+        <button
+          @click="toggleValueExpansion"
+          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+          Show all {{ arrayValue.length }} items
+        </button>
+      </div>
+      <!-- Non-array truncated view -->
+      <div v-else-if="shouldShowTruncated && !isArray" class="relative">
         <div class="text-gray-700 whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>
         <button
           @click="toggleValueExpansion"
@@ -93,6 +129,7 @@
           Show more ({{valueAsString.length}} characters)
         </button>
       </div>
+      <!-- Expanded view -->
       <div v-else-if="needsTruncation && isValueExpanded" class="relative">
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
         <button
@@ -105,6 +142,7 @@
           Show less
         </button>
       </div>
+      <!-- Full view (no truncation needed) -->
       <div v-else>
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
       </div>
