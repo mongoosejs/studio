@@ -1,3 +1,24 @@
 <div class="detail-array">
-  <pre><code ref="code" class="language-javascript" v-text="displayValue"></code></pre>
+  <div v-if="!arrayValue || arrayValue.length === 0" class="text-gray-400 text-xs py-2 text-center">
+    Empty array
+  </div>
+  
+  <div v-else class="array-items">
+    <div
+      v-for="(item, index) in arrayValue"
+      :key="index"
+      class="array-item">
+      <div class="array-item-index-label">{{ index }}</div>
+      <div v-if="isObjectItem(item)" class="array-item-fields">
+        <div
+          v-for="key in getItemKeys(item)"
+          :key="key"
+          class="array-item-field">
+          <span class="array-item-field-label">{{ key }}:</span>
+          <span class="array-item-field-value">{{ formatItemValue(item, key) }}</span>
+        </div>
+      </div>
+      <div v-else class="array-item-value">{{ formatValue(item) }}</div>
+    </div>
+  </div>
 </div>

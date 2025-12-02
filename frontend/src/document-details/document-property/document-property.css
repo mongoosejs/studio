@@ -21,3 +21,104 @@
     float: right;
     margin-top: -7px;
   }
+
+  /* Truncated array view styling (similar to edit-array) */
+  .array-truncated-view {
+    width: 100%;
+  }
+
+  .array-truncated-view .array-items {
+    margin-top: 8px;
+  }
+
+  .array-truncated-view .array-item {
+    margin-bottom: 6px;
+    padding: 10px 12px 10px 16px;
+    background: transparent;
+    border: none;
+    border-left: 3px solid #3b82f6;
+    border-radius: 0;
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .array-truncated-view .array-item-index-label {
+    position: absolute;
+    left: -8px;
+    top: 10px;
+    width: 20px;
+    height: 20px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: monospace;
+    z-index: 1;
+  }
+
+  .array-truncated-view .array-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .array-truncated-view .array-item:hover {
+    background: #f8fafc;
+    border-left-color: #2563eb;
+  }
+
+  .array-truncated-view .array-item:hover .array-item-index-label {
+    background: #2563eb;
+  }
+
+
+  .array-truncated-view .array-item-value {
+    font-size: 12px;
+    padding: 5px 8px;
+    font-family: monospace;
+    color: #1f2937;
+    word-break: break-word;
+    white-space: pre-wrap;
+    margin-top: 4px;
+  }
+
+  .array-truncated-view .array-item-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 0 8px;
+  }
+
+  .array-truncated-view .array-item-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    font-family: monospace;
+  }
+
+  .array-truncated-view .array-item-field-label {
+    font-weight: 600;
+    color: #4b5563;
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+
+  .array-truncated-view .array-item-field-value {
+    color: #1f2937;
+    word-break: break-word;
+    white-space: pre-wrap;
+    flex: 1;
+  }
+
+  .array-truncated-view .array-item-summary {
+    opacity: 0.7;
+  }
+
+  .array-truncated-view .array-item-summary:hover {
+    opacity: 1;
+  }
