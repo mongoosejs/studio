@@ -127,6 +127,11 @@ module.exports = app => app.component('models', {
         const paths = this.schemaPaths
           .map(path => path?.path)
           .filter(path => typeof path === 'string' && path.length > 0);
+        for (const path of this.schemaPaths) {
+          if (path.schema) {
+            paths.push(...Object.keys(path.schema).map(subpath => `${path.path}.${subpath}`));
+          }
+        }
         this.autocompleteTrie.bulkInsert(paths, 10, 'fieldName');
       }
     },

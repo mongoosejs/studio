@@ -96,6 +96,33 @@ class Trie {
     const fuzzy = this.fuzzySuggest(prefix, limit - exact.length, role);
     return [...exact, ...fuzzy];
   }
+
+  toString() {
+    const lines = [];
+    function dfs(node, prefix, depth) {
+      let line = '  '.repeat(depth);
+      if (prefix.length > 0) {
+        line += prefix[prefix.length - 1];
+      } else {
+        line += '(root)';
+      }
+      if (node.isEnd) {
+        line += ' *';
+      }
+      if (node.roles.size > 0) {
+        line += ' [' + Array.from(node.roles).join(',') + ']';
+      }
+      if (node.freq > 0) {
+        line += ` {freq:${node.freq}}`;
+      }
+      lines.push(line);
+      for (const ch of Object.keys(node.children).sort()) {
+        dfs(node.children[ch], prefix + ch, depth + 1);
+      }
+    }
+    dfs(this.root, '', 0);
+    return lines.join('\n');
+  }
 }
 
 function levenshtein(a, b) {
