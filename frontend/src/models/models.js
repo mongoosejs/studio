@@ -240,7 +240,6 @@ module.exports = app => app.component('models', {
 
         const colonMatch = before.match(/:\s*([^,\}\]]*)$/);
         const role = colonMatch ? 'operator' : 'fieldName';
-        console.log('Suggest', role);
 
         if (this.autocompleteTrie) {
           const primarySuggestions = this.autocompleteTrie.getSuggestions(term, 10, role);
