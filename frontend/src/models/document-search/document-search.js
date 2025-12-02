@@ -42,22 +42,18 @@ module.exports = app => app.component('document-search', {
       default: () => []
     }
   },
-  data: () => ({
-    autocompleteSuggestions: [],
-    autocompleteIndex: 0,
-    autocompleteTrie: null
-  }),
-  computed: {
-    searchText: {
-      get() {
-        return this.value || '';
-      },
-      set(val) {
-        this.$emit('input', val);
-      }
-    }
+  data() {
+    return {
+      autocompleteSuggestions: [],
+      autocompleteIndex: 0,
+      autocompleteTrie: null,
+      searchText: this.value || ''
+    };
   },
   watch: {
+    value(val) {
+      this.searchText = val || '';
+    },
     schemaPaths: {
       handler() {
         this.buildAutocompleteTrie();
@@ -70,7 +66,8 @@ module.exports = app => app.component('document-search', {
   },
   methods: {
     emitSearch() {
-      this.$emit('search');
+      this.$emit('input', this.searchText);
+      this.$emit('search', this.searchText);
     },
     buildAutocompleteTrie() {
       this.autocompleteTrie = new Trie();
