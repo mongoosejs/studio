@@ -97,6 +97,29 @@ module.exports = app => app.component('edit-array', {
       }
       return typeof value;
     },
+    isObjectIdField(key) {
+      if (!this.isArrayOfObjects) {
+        return false;
+      }
+      // Check if this key typically contains ObjectIds
+      let objectIdCount = 0;
+      let totalCount = 0;
+      for (const item of this.arrayValue) {
+        if (item != null && typeof item === 'object' && !Array.isArray(item)) {
+          if (key in item && item[key] != null) {
+            totalCount++;
+            // Check if value is an ObjectId instance
+            if (item[key].constructor && item[key].constructor.name === 'ObjectId') {
+              objectIdCount++;
+            } else if (BSON.ObjectId.isValid && BSON.ObjectId.isValid(item[key])) {
+              objectIdCount++;
+            }
+          }
+        }
+      }
+      // If more than half of the values for this key are ObjectIds, consider it an ObjectId field
+      return totalCount > 0 && objectIdCount > totalCount / 2;
+    },
     updateObjectField(index, key, value) {
       if (!this.arrayValue[index]) {
         this.arrayValue[index] = {};
@@ -112,6 +135,18 @@ module.exports = app => app.component('edit-array', {
         parsedValue = true;
       } else if (value.trim() === 'false') {
         parsedValue = false;
+      } else if (this.isObjectIdField(key)) {
+        // If this is an ObjectId field, try to create ObjectId
+        try {
+          if (BSON.ObjectId.isValid(value.trim())) {
+            parsedValue = new ObjectId(value.trim());
+          } else {
+            // Keep as string if not valid ObjectId
+            parsedValue = value;
+          }
+        } catch {
+          parsedValue = value;
+        }
       } else if (!isNaN(value) && value.trim() !== '') {
         // Try number
         parsedValue = Number(value);
@@ -259,6 +294,18 @@ module.exports = app => app.component('edit-array', {
               parsed[key] = true;
             } else if (value.trim() === 'false') {
               parsed[key] = false;
+            } else if (this.isObjectIdField(key)) {
+              // If this is an ObjectId field, try to create ObjectId
+              try {
+                if (BSON.ObjectId.isValid(value.trim())) {
+                  parsed[key] = new ObjectId(value.trim());
+                } else {
+                  // Keep as string if not valid ObjectId
+                  parsed[key] = value;
+                }
+              } catch {
+                parsed[key] = value;
+              }
             } else if (!isNaN(value) && value.trim() !== '') {
               parsed[key] = Number(value);
             } else {
@@ -278,6 +325,16 @@ module.exports = app => app.component('edit-array', {
           }
         } else {
           parsed = null;
+        }
+        
+        // Handle inserting beyond array length
+        const currentLength = this.arrayValue ? this.arrayValue.length : 0;
+        if (insertAt > currentLength) {
+          // Pad array with null values up to the insert index
+          const paddingNeeded = insertAt - currentLength;
+          for (let i = 0; i < paddingNeeded; i++) {
+            this.arrayValue.push(null);
+          }
         }
         
         // Insert at the specified index (will shift existing items up)
