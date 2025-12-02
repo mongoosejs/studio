@@ -74,9 +74,6 @@ class Trie {
       }
       for (const [ch, child] of Object.entries(node.children)) {
         const nextEdits = ch === prefix[path.length] ? edits : edits + 1;
-        if (role != null && !child.roles.has(role)) {
-          continue;
-        }
         dfs(child, path + ch, nextEdits);
       }
     };
