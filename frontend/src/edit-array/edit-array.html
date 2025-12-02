@@ -17,7 +17,6 @@
     <div
       v-if="isArrayOfObjects"
       v-for="(item, index) in arrayValue"
-      :key="index"
       class="array-item array-item-form">
       <div class="array-item-header">
         <div class="array-item-header-actions">
@@ -118,6 +117,18 @@
         
         <!-- Form view for arrays of objects -->
         <div v-if="isArrayOfObjects && objectKeys.length > 0" class="add-item-form">
+          <!-- Button to auto-generate ObjectIds -->
+          <div v-if="hasObjectIdFields" class="mb-3">
+            <button
+              @click="generateObjectIds"
+              type="button"
+              class="px-3 py-1.5 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              Generate ObjectIds
+            </button>
+          </div>
           <div
             v-for="key in objectKeys"
             :key="key"

@@ -130,6 +130,10 @@ module.exports = app => app.component('document-property', {
           props.enumValues = path.enum;
         }
       }
+      if (path.instance === 'Array') {
+        props.path = path;
+        props.schemaPaths = this.schemaPaths;
+      }
       return props;
     },
     getValueForPath(path) {

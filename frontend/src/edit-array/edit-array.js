@@ -10,19 +10,25 @@ const ObjectId = new Proxy(BSON.ObjectId, {
   }
 });
 
+function isObjectId(v) {
+  return (
+    v instanceof BSON.ObjectId || (v && typeof v === 'object' && v._bsontype === 'ObjectId')
+  );
+}
+
 const appendCSS = require('../appendCSS');
 appendCSS(require('./edit-array.css'));
 
 module.exports = app => app.component('edit-array', {
   template: template,
-  props: ['value'],
+  props: ['value', 'path', 'schemaPaths'],
   data() {
     return {
       arrayValue: [],
       showAddModal: false,
       addItemEditor: null,
       newItemFields: {},
-      insertIndex: null
+      insertIndex: 0
     };
   },
   computed: {
@@ -49,6 +55,29 @@ module.exports = app => app.component('edit-array', {
         }
       }
       return Array.from(keys);
+    },
+    hasObjectIdFields() {
+      if (!this.isArrayOfObjects || !this.path || !this.schemaPaths) {
+        return false;
+      }
+      
+      // Get keys from the array items
+      const keys = this.objectKeys;
+      if (!keys || keys.length === 0) {
+        return false;
+      }
+      
+      // Check if any key matches an ObjectId field in schemaPaths
+      return keys.some(key => {
+        let schemaPath;
+        if (Array.isArray(this.schemaPaths)) {
+          schemaPath = this.schemaPaths.find(x => x && x.path === key);
+        } else {
+          schemaPath = this.schemaPaths[key];
+        }
+        // Check if the instance is ObjectId or has a ref (which indicates ObjectId reference)
+        return schemaPath && (schemaPath.instance === 'ObjectId' || schemaPath.ref);
+      });
     }
   },
   methods: {
@@ -76,6 +105,10 @@ module.exports = app => app.component('edit-array', {
       if (value === null || value === undefined) {
         return '';
       }
+      // Handle ObjectIds specially
+      if (isObjectId(value)) {
+        return value.toString();
+      }
       if (typeof value === 'object' && !Array.isArray(value)) {
         return JSON.stringify(value, null, 2);
       }
@@ -98,65 +131,80 @@ module.exports = app => app.component('edit-array', {
       return typeof value;
     },
     isObjectIdField(key) {
-      if (!this.isArrayOfObjects) {
+      if (!this.isArrayOfObjects || key == null || !this.path || !this.schemaPaths) {
         return false;
       }
-      // Check if this key typically contains ObjectIds
-      let objectIdCount = 0;
-      let totalCount = 0;
-      for (const item of this.arrayValue) {
-        if (item != null && typeof item === 'object' && !Array.isArray(item)) {
-          if (key in item && item[key] != null) {
-            totalCount++;
-            // Check if value is an ObjectId instance
-            if (item[key].constructor && item[key].constructor.name === 'ObjectId') {
-              objectIdCount++;
-            } else if (BSON.ObjectId.isValid && BSON.ObjectId.isValid(item[key])) {
-              objectIdCount++;
-            }
-          }
-        }
+      const keyStr = String(key);
+      // Construct the nested path: e.g., "items.userId" for array field "items" and key "userId"
+      const nestedPath = `${this.path.path}.${keyStr}`;
+      
+      // schemaPaths might be an object (keyed by path) or an array
+      let schemaPath;
+      if (Array.isArray(this.schemaPaths)) {
+        schemaPath = this.schemaPaths.find(sp => sp && sp.path === nestedPath);
+      } else {
+        schemaPath = this.schemaPaths[nestedPath];
       }
-      // If more than half of the values for this key are ObjectIds, consider it an ObjectId field
-      return totalCount > 0 && objectIdCount > totalCount / 2;
+      
+      // Check if the schema indicates this field is an ObjectId
+      if (schemaPath && schemaPath.instance === 'ObjectId') {
+        return true;
+      }
+      // Also check if it has a ref (which would be an ObjectId reference)
+      if (schemaPath && schemaPath.ref) {
+        return true;
+      }
+      return false;
     },
     updateObjectField(index, key, value) {
       if (!this.arrayValue[index]) {
         this.arrayValue[index] = {};
       }
       
+      // Ensure value is a string for processing
+      if (value == null) {
+        value = '';
+      }
+      const valueStr = String(value);
+      const trimmed = valueStr.trim();
+      
       // Try to parse as JSON if it looks like JSON, otherwise treat as string
-      let parsedValue = value;
-      if (value.trim() === '') {
+      let parsedValue;
+      
+      if (trimmed === '') {
         parsedValue = null;
-      } else if (value.trim() === 'null') {
+      } else if (trimmed === 'null') {
         parsedValue = null;
-      } else if (value.trim() === 'true') {
+      } else if (trimmed === 'true') {
         parsedValue = true;
-      } else if (value.trim() === 'false') {
+      } else if (trimmed === 'false') {
         parsedValue = false;
       } else if (this.isObjectIdField(key)) {
         // If this is an ObjectId field, try to create ObjectId
         try {
-          if (BSON.ObjectId.isValid(value.trim())) {
-            parsedValue = new ObjectId(value.trim());
+          if (BSON.ObjectId.isValid && BSON.ObjectId.isValid(trimmed)) {
+            parsedValue = new ObjectId(trimmed);
           } else {
             // Keep as string if not valid ObjectId
-            parsedValue = value;
+            parsedValue = valueStr;
           }
-        } catch {
-          parsedValue = value;
+        } catch (err) {
+          // Keep as string if ObjectId creation fails
+          parsedValue = valueStr;
         }
-      } else if (!isNaN(value) && value.trim() !== '') {
-        // Try number
-        parsedValue = Number(value);
       } else {
-        // Try JSON parse
-        try {
-          parsedValue = JSON.parse(value);
-        } catch {
-          // Keep as string
-          parsedValue = value;
+        // Try number first (but not if it looks like JSON)
+        const numValue = Number(trimmed);
+        if (trimmed !== '' && !isNaN(numValue) && isFinite(numValue) && !trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+          parsedValue = numValue;
+        } else {
+          // Try JSON parse
+          try {
+            parsedValue = JSON.parse(trimmed);
+          } catch {
+            // Keep as string
+            parsedValue = valueStr;
+          }
         }
       }
       
@@ -229,15 +277,19 @@ module.exports = app => app.component('edit-array', {
     openAddModal() {
       // Initialize form fields for objects
       if (this.isArrayOfObjects && this.objectKeys.length > 0) {
-        this.newItemFields = {};
-        // Pre-populate with all keys from existing objects
+        // Initialize all fields as empty
+        const fields = {};
         this.objectKeys.forEach(key => {
-          this.newItemFields[key] = '';
+          fields[key] = '';
         });
+        // Assign the new object to trigger reactivity
+        this.newItemFields = Object.assign({}, fields);
+      } else {
+        this.newItemFields = {};
       }
       
-      // Set default insert index to end of array
-      this.insertIndex = this.arrayValue ? this.arrayValue.length : 0;
+      // Set default insert index to 0
+      this.insertIndex = 0;
       
       this.showAddModal = true;
       this.$nextTick(() => {
@@ -265,19 +317,50 @@ module.exports = app => app.component('edit-array', {
       this.insertIndex = null;
       this.showAddModal = false;
     },
+    generateObjectIds() {
+      if (!this.isArrayOfObjects || !this.path || !this.schemaPaths) {
+        return;
+      }
+      
+      // Get keys from the array items
+      const keys = this.objectKeys;
+      if (!keys || keys.length === 0) {
+        return;
+      }
+      
+      // Generate ObjectIds for all ObjectId fields
+      const updatedFields = { ...this.newItemFields };
+      keys.forEach(key => {
+        // Check if this key is an ObjectId field in schemaPaths
+        let schemaPath;
+        if (Array.isArray(this.schemaPaths)) {
+          schemaPath = this.schemaPaths.find(x => x && x.path === key);
+        } else {
+          schemaPath = this.schemaPaths[key];
+        }
+        
+        // If it's an ObjectId field, generate an ObjectId
+        if (schemaPath && (schemaPath.instance === 'ObjectId' || schemaPath.ref)) {
+          updatedFields[key] = new ObjectId().toString();
+        }
+      });
+      
+      // Update all fields at once to ensure reactivity
+      this.newItemFields = updatedFields;
+    },
     addItem() {
       try {
-        // Validate and set insert index
-        let insertAt = this.insertIndex;
-        if (insertAt === null || insertAt === undefined) {
-          insertAt = this.arrayValue ? this.arrayValue.length : 0;
+        // Ensure arrayValue is initialized
+        if (!this.arrayValue || !Array.isArray(this.arrayValue)) {
+          this.initializeArray();
         }
-        if (insertAt < 0) {
+        
+        // Get insert index (defaults to 0 from input)
+        let insertAt = this.insertIndex != null ? Number(this.insertIndex) : this.arrayValue.length;
+        if (isNaN(insertAt) || insertAt < 0) {
           insertAt = 0;
         }
-        if (!Number.isInteger(insertAt)) {
-          insertAt = Math.floor(insertAt);
-        }
+        insertAt = Math.floor(insertAt);
         
         let parsed;
         
@@ -286,33 +369,43 @@ module.exports = app => app.component('edit-array', {
           parsed = {};
           this.objectKeys.forEach(key => {
             const value = this.newItemFields[key] || '';
-            if (value.trim() === '') {
+            const valueStr = String(value);
+            const trimmed = valueStr.trim();
+            
+            if (trimmed === '') {
               parsed[key] = null;
-            } else if (value.trim() === 'null') {
+            } else if (trimmed === 'null') {
               parsed[key] = null;
-            } else if (value.trim() === 'true') {
+            } else if (trimmed === 'true') {
               parsed[key] = true;
-            } else if (value.trim() === 'false') {
+            } else if (trimmed === 'false') {
               parsed[key] = false;
             } else if (this.isObjectIdField(key)) {
               // If this is an ObjectId field, try to create ObjectId
               try {
-                if (BSON.ObjectId.isValid(value.trim())) {
-                  parsed[key] = new ObjectId(value.trim());
+                if (BSON.ObjectId.isValid && BSON.ObjectId.isValid(trimmed)) {
+                  parsed[key] = new ObjectId(trimmed);
                 } else {
                   // Keep as string if not valid ObjectId
-                  parsed[key] = value;
+                  parsed[key] = valueStr;
                 }
-              } catch {
-                parsed[key] = value;
+              } catch (err) {
+                // Keep as string if ObjectId creation fails
+                parsed[key] = valueStr;
               }
-            } else if (!isNaN(value) && value.trim() !== '') {
-              parsed[key] = Number(value);
             } else {
-              try {
-                parsed[key] = JSON.parse(value);
-              } catch {
-                parsed[key] = value;
+              // Try number first (but not if it looks like JSON)
+              const numValue = Number(trimmed);
+              if (trimmed !== '' && !isNaN(numValue) && isFinite(numValue) && !trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+                parsed[key] = numValue;
+              } else {
+                // Try JSON parse
+                try {
+                  parsed[key] = JSON.parse(trimmed);
+                } catch {
+                  // Keep as string
+                  parsed[key] = valueStr;
+                }
               }
             }
           });
@@ -328,7 +421,7 @@ module.exports = app => app.component('edit-array', {
         }
         
         // Handle inserting beyond array length
-        const currentLength = this.arrayValue ? this.arrayValue.length : 0;
+        const currentLength = this.arrayValue.length;
         if (insertAt > currentLength) {
           // Pad array with null values up to the insert index
           const paddingNeeded = insertAt - currentLength;
