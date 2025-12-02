@@ -122,12 +122,17 @@ module.exports = app => app.component('models', {
   methods: {
     buildAutocompleteTrie() {
       this.autocompleteTrie = new Trie();
-      this.autocompleteTrie.bulkInsert(QUERY_SELECTORS, 5);
+      this.autocompleteTrie.bulkInsert(QUERY_SELECTORS, 5, 'operator');
       if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
         const paths = this.schemaPaths
           .map(path => path?.path)
           .filter(path => typeof path === 'string' && path.length > 0);
-        this.autocompleteTrie.bulkInsert(paths, 10);
+        for (const path of this.schemaPaths) {
+          if (path.schema) {
+            paths.push(...Object.keys(path.schema).map(subpath => `${path.path}.${subpath}`));
+          }
+        }
+        this.autocompleteTrie.bulkInsert(paths, 10, 'fieldName');
       }
     },
     loadOutputPreference() {
@@ -232,8 +237,12 @@ module.exports = app => app.component('models', {
           this.autocompleteSuggestions = [];
           return;
         }
+
+        const colonMatch = before.match(/:\s*([^,\}\]]*)$/);
+        const role = colonMatch ? 'operator' : 'fieldName';
+
         if (this.autocompleteTrie) {
-          const primarySuggestions = this.autocompleteTrie.getSuggestions(term, 10);
+          const primarySuggestions = this.autocompleteTrie.getSuggestions(term, 10, role);
           const suggestionsSet = new Set(primarySuggestions);
           if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
             for (const schemaPath of this.schemaPaths) {
