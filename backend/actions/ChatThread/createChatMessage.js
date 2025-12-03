@@ -79,7 +79,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   const modelDescriptions = getModelDescriptions(db);
   const system = systemPrompt + '\n\n' + modelDescriptions + (options?.context ? '\n\n' + options.context : '');
 
-  // Create the chat message and get OpenAI response in parallel
+  // Create the chat message and get LLM response in parallel
   const chatMessages = await Promise.all([
     ChatMessage.create({
       chatThreadId,
