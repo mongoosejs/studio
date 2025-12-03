@@ -33,7 +33,7 @@ module.exports = async function callLLM(messages, system, options) {
     headers,
     body: JSON.stringify({
       messages,
-      model
+      model: options?.model
     })
   }).then(response => {
     if (!response.ok) {
