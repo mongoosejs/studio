@@ -62,7 +62,7 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
         role: 'user',
         content: [{
           type: 'text',
-          text: '`Summarize the following chat thread into a concise, helpful title (≤ 6 words).\n\n`' +
+          text: 'Summarize the following chat thread into a concise, helpful title (≤ 6 words).\n\n' +
             `${threadText}\n\n` +
             'Return only the title.'
         }]
