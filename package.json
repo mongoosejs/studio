@@ -9,6 +9,9 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@ai-sdk/openai": "2.x",
+    "@ai-sdk/anthropic": "2.x",
+    "ai": "5.x",
     "archetype": "0.13.1",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
