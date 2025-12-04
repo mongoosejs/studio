@@ -2,7 +2,7 @@
 
 const api = require('../api');
 
-const { BSON, EJSON } = require('bson');
+const { BSON, EJSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
   apply(target, thisArg, argumentsList) {

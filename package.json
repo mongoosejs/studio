@@ -24,8 +24,6 @@
     "webpack": "5.x"
   },
   "peerDependencies": {
-    "bson": "^5.5.1 || 6.x",
-    "express": "4.x",
     "mongoose": "7.x || 8.x || ^9.0.0-0"
   },
   "devDependencies": {
