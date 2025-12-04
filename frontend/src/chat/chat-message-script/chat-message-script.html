@@ -106,6 +106,10 @@
       <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showDetailModal = false;">&times;</div>
       <div class="h-full overflow-auto">
         <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" :responsive="true" />
+        <dashboard-map
+          v-else-if="message.executionResult?.output?.$featureCollection"
+          :value="message.executionResult?.output"
+          height="80vh" />
         <pre v-else class="whitespace-pre-wrap">{{ message.executionResult?.output || 'No output' }}</pre>
       </div>
     </template>
