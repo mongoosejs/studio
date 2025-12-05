@@ -24,7 +24,7 @@
     "webpack": "5.x"
   },
   "peerDependencies": {
-    "mongoose": "7.x || 8.x || ^9.0.0-0"
+    "mongoose": "7.x || 8.x || ^9.0.0"
   },
   "devDependencies": {
     "@masteringjs/eslint-config": "0.1.1",

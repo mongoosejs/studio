@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
+const streamLLM = require('../../integrations/streamLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
 const mongoose = require('mongoose');
 
@@ -21,7 +22,7 @@ const CreateChatMessageParams = new Archetype({
   }
 }).compile('CreateChatMessageParams');
 
-module.exports = ({ db, studioConnection, options }) => async function createChatMessage(params) {
+module.exports = ({ db, studioConnection, options }) => async function* createChatMessage(params) {
   const { chatThreadId, initiatedById, content, script, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
@@ -76,27 +77,42 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   const modelDescriptions = getModelDescriptions(db);
   const system = systemPrompt + '\n\n' + modelDescriptions + (options?.context ? '\n\n' + options.context : '');
 
-  // Create the chat message and get LLM response in parallel
-  const chatMessages = await Promise.all([
-    ChatMessage.create({
-      chatThreadId,
-      role: 'user',
-      content,
-      script,
-      executionResult: null
-    }),
-    callLLM(llmMessages, system, options).then(res => {
-      const content = res.text;
-      return ChatMessage.create({
-        chatThreadId,
-        role: 'assistant',
-        content
-      });
-    })
-  ]);
+  const userChatMessage = await ChatMessage.create({
+    chatThreadId,
+    role: 'user',
+    content,
+    script,
+    executionResult: null
+  });
 
-  await summarizePromise;
-  return { chatMessages, chatThread };
+  yield { chatMessage: userChatMessage };
+
+  const assistantChatMessage = new ChatMessage({
+    chatThreadId,
+    role: 'assistant',
+    content: '',
+    script: null,
+    executionResult: null
+  });
+  const textStream = streamLLM(llmMessages, system, options);
+  let count = 0;
+  for await (const textPart of textStream) {
+    assistantChatMessage.content += textPart;
+    // Only save every 10th chunk for performance
+    if (count++ % 10 === 0) {
+      await assistantChatMessage.save();
+    }
+    yield { textPart };
+  }
+
+  await assistantChatMessage.save();
+  yield { chatMessage: assistantChatMessage };
+
+  const updatedChatThread = await summarizePromise;
+  if (updatedChatThread != null) {
+    yield { chatThread: updatedChatThread };
+  }
+  return {};
 };
 
 const systemPrompt = `

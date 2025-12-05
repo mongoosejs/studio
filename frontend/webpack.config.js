@@ -8,7 +8,7 @@ module.exports = {
     app: `${__dirname}/src/index.js`
   },
   target: 'web',
-  devtool: false,
+  devtool: 'source-map',
   optimization: {
     minimize: false
   },

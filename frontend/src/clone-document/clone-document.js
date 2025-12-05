@@ -2,7 +2,7 @@
 
 const api = require('../api');
 
-const { BSON, EJSON } = require('bson');
+const { BSON, EJSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
   apply(target, thisArg, argumentsList) {
@@ -46,7 +46,7 @@ module.exports = app => app.component('clone-document', {
   },
   mounted: function() {
     const pathsToClone = this.schemaPaths.map(x => x.path);
-    
+
     // Create a filtered version of the document data
     const filteredDoc = {};
     pathsToClone.forEach(path => {

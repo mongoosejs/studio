@@ -61,6 +61,13 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     shareChatThread(params) {
       return client.post('', { action: 'ChatThread.shareChatThread', ...params }).then(res => res.data);
+    },
+    streamChatMessage: async function* streamChatMessage(params) {
+      // Don't stream on Next.js or Netlify for now.
+      const data = await client.post('', { action: 'ChatThread.createChatMessage', ...params }).then(res => res.data);
+      yield { chatMessage: data.chatMessages[0] };
+      yield { chatMessage: data.chatMessages[1] };
+      yield { chatThread: data.chatThread };
     }
   };
   exports.ChatMessage = {
@@ -177,6 +184,55 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     shareChatThread: function shareChatThread(params) {
       return client.post('/ChatThread/shareChatThread', params).then(res => res.data);
+    },
+    streamChatMessage: async function* streamChatMessage(params) {
+      const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
+      const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/ChatThread/streamChatMessage?' + new URLSearchParams(params).toString();
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `${accessToken}`,
+          Accept: 'text/event-stream'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let eventEnd;
+        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
+          const eventStr = buffer.slice(0, eventEnd);
+          buffer = buffer.slice(eventEnd + 2);
+
+          // Parse SSE event
+          const lines = eventStr.split('\n');
+          let data = '';
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              data += line.slice(5).trim();
+            }
+          }
+          if (data) {
+            try {
+              yield JSON.parse(data);
+            } catch (err) {
+              // If not JSON, yield as string
+              yield data;
+            }
+          }
+        }
+      }
     }
   };
   exports.ChatMessage = {
