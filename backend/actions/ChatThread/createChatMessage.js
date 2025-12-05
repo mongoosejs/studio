@@ -51,7 +51,8 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   if (chatThread.title == null) {
     const threadText = messages
       .filter(m => m.role === 'user' || m.role === 'assistant')
-      .map(m => `${m.role.toUpperCase()}: ${m.content[0].text}`)
+      .concat([{ role: 'user', content }])
+      .map(m => `${m.role.toUpperCase()}: ${m.content}`)
       .join('\n')
       .slice(0, 5000);
     summarizePromise = callLLM(
