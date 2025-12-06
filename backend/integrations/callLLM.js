@@ -1,22 +1,44 @@
 'use strict';
 
 const { createAnthropic } = require('@ai-sdk/anthropic');
+const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
 const { generateText } = require('ai');
 
 module.exports = async function callLLM(messages, system, options) {
   let provider = null;
   let model = null;
-  if (options?.openAIAPIKey && options?.anthropicAPIKey) {
-    throw new Error('Cannot set both OpenAI and Anthropic API keys');
-  }
+  const providers = [];
 
   if (options?.openAIAPIKey) {
-    provider = createOpenAI({ apiKey: options.openAIAPIKey });
-    model = options?.model ?? 'gpt-4o-mini';
-  } else if (options?.anthropicAPIKey) {
-    provider = createAnthropic({ apiKey: options.anthropicAPIKey });
-    model = options?.model ?? 'claude-haiku-4-5-20251001';
+    providers.push({
+      provider: createOpenAI({ apiKey: options.openAIAPIKey }),
+      model: options?.model ?? 'gpt-4o-mini'
+    });
+  }
+
+  if (options?.anthropicAPIKey) {
+    providers.push({
+      provider: createAnthropic({ apiKey: options.anthropicAPIKey }),
+      model: options?.model ?? 'claude-haiku-4-5-20251001'
+    });
+  }
+
+  if (options?.googleGeminiAPIKey) {
+    providers.push({
+      provider: createGoogleGenerativeAI({ apiKey: options.googleGeminiAPIKey }),
+      model: options?.model ?? 'gemini-2.5-flash'
+    });
+  }
+
+  if (providers.length > 1) {
+    throw new Error('Cannot set multiple LLM API keys');
+  }
+
+  if (providers.length > 0) {
+    const selected = providers[0];
+    provider = selected.provider;
+    model = selected.model;
   }
 
   if (provider) {

@@ -9,6 +9,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@ai-sdk/google": "2.x",
     "@ai-sdk/openai": "2.x",
     "@ai-sdk/anthropic": "2.x",
     "ai": "5.x",
