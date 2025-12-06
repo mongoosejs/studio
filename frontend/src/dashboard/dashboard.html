@@ -23,6 +23,17 @@
           <svg class="inline h-[1.25em] mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="m670-140 160-100-160-100v200ZM240-600h480v-80H240v80ZM720-40q-83 0-141.5-58.5T520-240q0-83 58.5-141.5T720-440q83 0 141.5 58.5T920-240q0 83-58.5 141.5T720-40ZM120-80v-680q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v267q-19-9-39-15t-41-9v-243H200v562h243q5 31 15.5 59T486-86l-6 6-60-60-60 60-60-60-60 60-60-60-60 60Zm120-200h203q3-21 9-41t15-39H240v80Zm0-160h284q38-37 88.5-58.5T720-520H240v80Zm-40 242v-562 562Z"/></svg>
           Evaluate
         </async-button>
+        <async-button
+          @click="startChatWithDashboard"
+          type="button"
+          :disabled="startingChat"
+          class="flex items-center rounded-md bg-gray-700 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 disabled:cursor-not-allowed disabled:bg-gray-500"
+        >
+          <svg class="inline h-[1.25em] mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01m-8 4h8m-9 5 10-3.333L7 12.333 3 14l.667-4.333L9 7l4-3 4.333 2.667L21 11l-3 3.667V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1z" />
+          </svg>
+          Start Chat
+        </async-button>
       </div>
     </div>
     <div v-if="!showEditor" class="mt-4 mb-4">

@@ -14,6 +14,7 @@ module.exports = app => app.component('chat-message-script', {
       activeTab: 'code',
       showDetailModal: false,
       showCreateDashboardModal: false,
+      showOverwriteDashboardModal: false,
       showDropdown: false,
       newDashboardTitle: '',
       dashboardCode: '',
@@ -21,7 +22,14 @@ module.exports = app => app.component('chat-message-script', {
       dashboardEditor: null,
       isEditing: false,
       codeEditor: null,
-      editedScript: null
+      editedScript: null,
+      dashboards: [],
+      overwriteDashboardId: '',
+      overwriteDashboardCode: '',
+      overwriteDashboardEditor: null,
+      overwriteTitle: '',
+      overwriteDescription: '',
+      overwriteError: null
     };
   },
   computed: {
@@ -58,7 +66,7 @@ module.exports = app => app.component('chat-message-script', {
     openCreateDashboardModal() {
       this.newDashboardTitle = '';
       this.dashboardCode = this.script;
-      this.createErrors = [];
+      this.createError = null;
       this.showCreateDashboardModal = true;
       this.$nextTick(() => {
         if (this.dashboardEditor) {
@@ -71,6 +79,38 @@ module.exports = app => app.component('chat-message-script', {
         });
         this.dashboardEditor.on('change', () => {
           this.dashboardCode = this.dashboardEditor.getValue();
+        });
+      });
+    },
+    async openOverwriteDashboardModal() {
+      this.overwriteDashboardId = '';
+      this.overwriteDashboardCode = this.script;
+      this.overwriteTitle = '';
+      this.overwriteDescription = '';
+      this.overwriteError = null;
+
+      if (this.overwriteDashboardEditor) {
+        this.overwriteDashboardEditor.toTextArea();
+        this.overwriteDashboardEditor = null;
+      }
+
+      if (this.dashboards.length === 0) {
+        const { dashboards } = await api.Dashboard.getDashboards();
+        this.dashboards = dashboards;
+      }
+
+      this.showOverwriteDashboardModal = true;
+      this.$nextTick(() => {
+        if (this.overwriteDashboardEditor) {
+          this.overwriteDashboardEditor.toTextArea();
+        }
+        this.$refs.overwriteDashboardCodeEditor.value = this.overwriteDashboardCode;
+        this.overwriteDashboardEditor = CodeMirror.fromTextArea(this.$refs.overwriteDashboardCodeEditor, {
+          mode: 'javascript',
+          lineNumbers: true
+        });
+        this.overwriteDashboardEditor.on('change', () => {
+          this.overwriteDashboardCode = this.overwriteDashboardEditor.getValue();
         });
       });
     },
@@ -146,6 +186,40 @@ module.exports = app => app.component('chat-message-script', {
       this.showCreateDashboardModal = false;
       this.$router.push('/dashboard/' + dashboard._id);
     },
+    async overwriteDashboardFromScript() {
+      if (!this.overwriteDashboardId) {
+        this.overwriteError = 'Please select a dashboard to overwrite.';
+        return;
+      }
+
+      this.overwriteDashboardCode = this.overwriteDashboardEditor?.getValue?.() || this.script;
+
+      const params = {
+        dashboardId: this.overwriteDashboardId,
+        code: this.overwriteDashboardCode
+      };
+
+      if (this.overwriteTitle) {
+        params.title = this.overwriteTitle;
+      }
+
+      if (this.overwriteDescription) {
+        params.description = this.overwriteDescription;
+      }
+
+      const { doc } = await api.Dashboard.updateDashboard(params).catch(err => {
+        if (err.response?.data?.message) {
+          const message = err.response.data.message.split(': ').slice(1).join(': ');
+          this.overwriteError = message;
+          throw new Error(err.response?.data?.message);
+        }
+        throw err;
+      });
+
+      this.overwriteError = null;
+      this.showOverwriteDashboardModal = false;
+      this.$router.push('/dashboard/' + doc._id);
+    },
     async copyOutput() {
       const executionResult = this.message.executionResult || {};
       let output = executionResult.output;
@@ -177,6 +251,12 @@ module.exports = app => app.component('chat-message-script', {
       if (!val && this.dashboardEditor) {
         this.dashboardEditor.toTextArea();
         this.dashboardEditor = null;
+      }
+    },
+    showOverwriteDashboardModal(val) {
+      if (!val && this.overwriteDashboardEditor) {
+        this.overwriteDashboardEditor.toTextArea();
+        this.overwriteDashboardEditor = null;
       }
     },
     script(newScript) {
