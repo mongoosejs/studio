@@ -16,7 +16,8 @@ module.exports = app => app.component('dashboard', {
       dashboard: null,
       dashboardResults: [],
       errorMessage: null,
-      showDetailModal: false
+      showDetailModal: false,
+      startingChat: false
     };
   },
   methods: {
@@ -63,6 +64,34 @@ module.exports = app => app.component('dashboard', {
       }
 
       return finishedAt < sixHoursAgo;
+    },
+    async startChatWithDashboard() {
+      if (this.startingChat) {
+        return;
+      }
+
+      this.startingChat = true;
+      try {
+        const description = this.description?.trim();
+        const parts = [
+          'I want to edit this dashboard. Please help me update it based on follow-up instructions.',
+          `Title: ${this.title || 'Untitled Dashboard'}`
+        ];
+
+        if (description) {
+          parts.push(`Description: ${description}`);
+        }
+
+        parts.push('Here is the current dashboard code:', '```javascript', this.code, '```');
+
+        const content = parts.join('\n\n');
+
+        const { chatThread } = await api.ChatThread.createChatThread();
+        await api.ChatThread.createChatMessage({ chatThreadId: chatThread._id, content });
+        this.$router.push('/chat/' + chatThread._id);
+      } finally {
+        this.startingChat = false;
+      }
     }
   },
   computed: {
