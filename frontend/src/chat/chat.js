@@ -80,6 +80,8 @@ module.exports = app => app.component('chat', {
                 }
               });
             }
+          } else if (event.message) {
+            throw new Error(event.message);
           }
         }
 

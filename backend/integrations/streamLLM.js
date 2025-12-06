@@ -27,7 +27,7 @@ module.exports = async function* streamLLM(messages, system, options) {
   if (options?.googleGeminiAPIKey) {
     providers.push({
       provider: createGoogleGenerativeAI({ apiKey: options.googleGeminiAPIKey }),
-      model: options?.model ?? 'gemini-1.5-flash'
+      model: options?.model ?? 'gemini-2.5-flash'
     });
   }
 
@@ -42,13 +42,20 @@ module.exports = async function* streamLLM(messages, system, options) {
   }
 
   if (provider) {
+    let error = null;
     const { textStream } = streamText({
       model: provider(model),
       system,
-      messages
+      messages,
+      onError(err) {
+        error = err.error;
+      }
     });
     for await (const chunk of textStream) {
       yield chunk;
+    }
+    if (error) {
+      throw error;
     }
     return;
   }

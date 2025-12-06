@@ -27,7 +27,7 @@ module.exports = async function callLLM(messages, system, options) {
   if (options?.googleGeminiAPIKey) {
     providers.push({
       provider: createGoogleGenerativeAI({ apiKey: options.googleGeminiAPIKey }),
-      model: options?.model ?? 'gemini-1.5-flash'
+      model: options?.model ?? 'gemini-2.5-flash'
     });
   }
 

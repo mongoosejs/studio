@@ -225,9 +225,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
           }
           if (data) {
             try {
-              yield JSON.parse(data);
+              const res = JSON.parse(data);
+              yield res;
             } catch (err) {
-              // If not JSON, yield as string
               yield data;
             }
           }
