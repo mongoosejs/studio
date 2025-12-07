@@ -18,11 +18,15 @@ const CreateChatThreadParams = new Archetype({
   initialMessage: {
     $type: 'string',
     $required: false
+  },
+  dashboardId: {
+    $type: mongoose.Types.ObjectId,
+    $required: false
   }
 }).compile('CreateChatThreadParams');
 
 module.exports = ({ studioConnection }) => async function createChatThread(params) {
-  const { initiatedById, roles, $workspaceId, initialMessage } = new CreateChatThreadParams(params);
+  const { initiatedById, roles, $workspaceId, initialMessage, dashboardId } = new CreateChatThreadParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -34,6 +38,9 @@ module.exports = ({ studioConnection }) => async function createChatThread(param
   }
   if ($workspaceId && !initiatedById) {
     throw new Error('initiatedById is required when creating a chat thread in a workspace');
+  }
+  if (dashboardId) {
+    doc.dashboardId = dashboardId;
   }
   const chatThread = await ChatThread.create(doc);
 

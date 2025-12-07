@@ -105,7 +105,10 @@ module.exports = app => app.component('dashboard', {
 
         const initialMessage = parts.join('\n\n');
 
-        const { chatThread } = await api.ChatThread.createChatThread({ initialMessage });
+        const { chatThread } = await api.ChatThread.createChatThread({
+          initialMessage,
+          dashboardId: this.dashboard?._id
+        });
         this.$router.push('/chat/' + chatThread._id);
       } finally {
         this.startingChat = false;

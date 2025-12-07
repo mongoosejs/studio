@@ -60,8 +60,9 @@
             Create Dashboard
           </button>
           <button
+            v-if="canOverwriteDashboard"
             class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
-            @click="openOverwriteDashboardModal(); showDropdown = false">
+            @click="openOverwriteDashboardConfirmation(); showDropdown = false">
             Overwrite Dashboard
           </button>
           <button
@@ -161,52 +162,33 @@
       </div>
     </template>
   </modal>
-  <modal v-if="showOverwriteDashboardModal">
+  <modal v-if="showOverwriteDashboardConfirmationModal">
     <template #body>
-      <div class="modal-exit" @click="showOverwriteDashboardModal = false">&times;</div>
+      <div class="modal-exit" @click="showOverwriteDashboardConfirmationModal = false">&times;</div>
       <div>
         <div class="mt-4 text-gray-900 font-semibold">Overwrite Dashboard</div>
-        <div class="mt-4">
-          <label class="block text-sm font-medium leading-6 text-gray-900">Select Dashboard</label>
-          <div class="mt-2">
-            <select
-              v-model="overwriteDashboardId"
-              class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-600 focus:ring-teal-600 text-sm">
-              <option value="" disabled>Select a dashboard</option>
-              <option v-for="dashboard in dashboards" :key="dashboard._id" :value="dashboard._id">
-                {{ dashboard.title || 'Untitled Dashboard' }}
-              </option>
-            </select>
-          </div>
+        <p class="mt-2 text-sm text-gray-700">
+          This will replace the linked dashboard's code with the script below.
+        </p>
+        <p class="mt-1 text-xs text-gray-600 break-all" v-if="targetDashboardId">
+          Dashboard ID: {{ targetDashboardId }}
+        </p>
+        <div class="my-4 border border-gray-200 bg-gray-50 rounded">
+          <pre class="p-2 h-[300px] overflow-auto whitespace-pre-wrap text-xs">{{ overwriteDashboardCode }}</pre>
         </div>
-        <div class="mt-4">
-          <label class="block text-sm font-medium leading-6 text-gray-900">New Title (optional)</label>
-          <input
-            type="text"
-            v-model="overwriteTitle"
-            class="mt-2 outline-none block w-full rounded-md border-gray-300 py-1.5 text-gray-900 shadow-sm focus:border-teal-600 focus:ring-teal-600 sm:text-sm sm:leading-6"
-            placeholder="Dashboard Title">
+        <div class="flex items-center gap-2">
+          <async-button
+            @click="confirmOverwriteDashboard"
+            class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+            Confirm Overwrite
+          </async-button>
+          <button
+            class="px-2.5 py-1.5 rounded-md text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300"
+            @click="showOverwriteDashboardConfirmationModal = false">
+            Cancel
+          </button>
         </div>
-        <div class="mt-4">
-          <label class="block text-sm font-medium leading-6 text-gray-900">New Description (optional)</label>
-          <textarea
-            v-model="overwriteDescription"
-            class="mt-2 outline-none block w-full rounded-md border-gray-300 py-1.5 text-gray-900 shadow-sm focus:border-teal-600 focus:ring-teal-600 sm:text-sm sm:leading-6"
-            rows="3"
-            placeholder="Dashboard description"></textarea>
-        </div>
-        <div class="my-4">
-          <label class="block text-sm font-medium leading-6 text-gray-900">Code</label>
-          <div class="border border-gray-200">
-            <textarea class="p-2 h-[300px] w-full" ref="overwriteDashboardCodeEditor"></textarea>
-          </div>
-        </div>
-        <async-button
-          @click="overwriteDashboardFromScript"
-          class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
-          Overwrite
-        </async-button>
-        <div v-if="overwriteError" class="rounded-md bg-red-50 p-4 mt-1">
+        <div v-if="overwriteError" class="rounded-md bg-red-50 p-4 mt-3">
           <div class="flex">
             <div class="flex-shrink-0">
               <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
