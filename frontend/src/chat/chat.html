@@ -61,7 +61,7 @@
           </div>
         </div>
         <li v-for="message in chatMessages" :key="message._id">
-          <chat-message :message="message"></chat-message>
+          <chat-message :message="message" :target-dashboard-id="currentThread?.dashboardId"></chat-message>
         </li>
       </ul>
     </div>
