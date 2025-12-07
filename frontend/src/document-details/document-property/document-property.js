@@ -39,6 +39,9 @@ module.exports = app => app.component('document-property', {
       return String(value);
     },
     needsTruncation() {
+      if (this.isGeoJSONSchemaPath(this.path)) {
+        return false;
+      }
       // Truncate if value is longer than 200 characters
       return this.valueAsString.length > 200;
     },
@@ -58,6 +61,9 @@ module.exports = app => app.component('document-property', {
   },
   methods: {
     getComponentForPath(schemaPath) {
+      if (this.isGeoJSONSchemaPath(schemaPath)) {
+        return 'detail-geojson';
+      }
       if (schemaPath.instance === 'Array') {
         return 'detail-array';
       }
@@ -161,6 +167,20 @@ module.exports = app => app.component('document-property', {
       } else {
         fallbackCopy();
       }
+    },
+    isGeoJSONSchemaPath(schemaPath) {
+      const subSchema = schemaPath?.schema;
+      if (!subSchema) {
+        return false;
+      }
+
+      const typeSchema = subSchema.type;
+      const coordinatesSchema = subSchema.coordinates;
+
+      const validTypeEnum = Array.isArray(typeSchema?.enum) &&
+        typeSchema.enum.some(value => ['Point', 'Polygon', 'MultiPolygon'].includes(value));
+
+      return Boolean(coordinatesSchema) && validTypeEnum;
     }
   }
 });
