@@ -41,6 +41,23 @@ module.exports = ({ db }) => async function updateDocuments(params) {
       } else if (value === 'undefined') {
         // Use $unset to remove the field for undefined values
         unsetFields[key] = 1;
+      } else if (value === '') {
+        // Handle empty strings - check if field is optional ObjectId or optional field
+        const schemaPath = Model.schema.paths[key];
+        if (schemaPath) {
+          const isObjectId = schemaPath.instance === 'ObjectId';
+          const isRequired = schemaPath.options?.required === true;
+          // If it's an ObjectId field or an optional field, treat empty string as undefined
+          if (isObjectId || !isRequired) {
+            unsetFields[key] = 1;
+          } else {
+            // Required non-ObjectId field with empty string - keep as is (will fail validation)
+            setFields[key] = value;
+          }
+        } else {
+          // Field not in schema (user-added), treat empty string as undefined
+          unsetFields[key] = 1;
+        }
       } else {
         setFields[key] = value;
       }
