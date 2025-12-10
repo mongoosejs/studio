@@ -10,6 +10,10 @@ const chatThreadSchema = new mongoose.Schema({
     type: mongoose.ObjectId,
     ref: 'User'
   },
+  dashboardId: {
+    type: mongoose.ObjectId,
+    ref: 'Dashboard'
+  },
   workspaceId: {
     type: mongoose.ObjectId,
     ref: 'Workspace'

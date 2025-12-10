@@ -7,13 +7,14 @@ const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('chat-message-script', {
   template,
-  props: ['message', 'script', 'language'],
+  props: ['message', 'script', 'language', 'targetDashboardId'],
   emits: ['copyMessage'],
   data() {
     return {
       activeTab: 'code',
       showDetailModal: false,
       showCreateDashboardModal: false,
+      showOverwriteDashboardConfirmationModal: false,
       showDropdown: false,
       newDashboardTitle: '',
       dashboardCode: '',
@@ -21,12 +22,17 @@ module.exports = app => app.component('chat-message-script', {
       dashboardEditor: null,
       isEditing: false,
       codeEditor: null,
-      editedScript: null
+      editedScript: null,
+      overwriteDashboardCode: '',
+      overwriteError: null
     };
   },
   computed: {
     styleForMessage() {
       return this.message.role === 'user' ? 'bg-gray-100' : '';
+    },
+    canOverwriteDashboard() {
+      return !!this.targetDashboardId;
     }
   },
   methods: {
@@ -58,7 +64,7 @@ module.exports = app => app.component('chat-message-script', {
     openCreateDashboardModal() {
       this.newDashboardTitle = '';
       this.dashboardCode = this.script;
-      this.createErrors = [];
+      this.createError = null;
       this.showCreateDashboardModal = true;
       this.$nextTick(() => {
         if (this.dashboardEditor) {
@@ -73,6 +79,14 @@ module.exports = app => app.component('chat-message-script', {
           this.dashboardCode = this.dashboardEditor.getValue();
         });
       });
+    },
+    openOverwriteDashboardConfirmation() {
+      if (!this.canOverwriteDashboard) {
+        return;
+      }
+      this.overwriteDashboardCode = this.codeEditor?.getValue?.() ?? this.script;
+      this.overwriteError = null;
+      this.showOverwriteDashboardConfirmationModal = true;
     },
     toggleDropdown() {
       this.showDropdown = !this.showDropdown;
@@ -145,6 +159,32 @@ module.exports = app => app.component('chat-message-script', {
       this.createError = null;
       this.showCreateDashboardModal = false;
       this.$router.push('/dashboard/' + dashboard._id);
+    },
+    async confirmOverwriteDashboard() {
+      if (!this.canOverwriteDashboard) {
+        this.overwriteError = 'This chat is not linked to a dashboard.';
+        return;
+      }
+
+      this.overwriteDashboardCode = this.codeEditor?.getValue?.() ?? this.script;
+
+      const params = {
+        dashboardId: this.targetDashboardId,
+        code: this.overwriteDashboardCode
+      };
+
+      const { doc } = await api.Dashboard.updateDashboard(params).catch(err => {
+        if (err.response?.data?.message) {
+          const message = err.response.data.message.split(': ').slice(1).join(': ');
+          this.overwriteError = message;
+          throw new Error(err.response?.data?.message);
+        }
+        throw err;
+      });
+
+      this.overwriteError = null;
+      this.showOverwriteDashboardConfirmationModal = false;
+      this.$router.push('/dashboard/' + doc._id);
     },
     async copyOutput() {
       const executionResult = this.message.executionResult || {};

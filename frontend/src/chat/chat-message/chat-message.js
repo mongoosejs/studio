@@ -7,7 +7,7 @@ const template = require('./chat-message.html');
 
 module.exports = app => app.component('chat-message', {
   template: template,
-  props: ['message'],
+  props: ['message', 'targetDashboardId'],
   computed: {
     styleForMessage() {
       return this.message.role === 'user' ? 'p-3 bg-gray-100' : 'py-3 pr-3';
