@@ -457,7 +457,10 @@ module.exports = app => app.component('models', {
       }
     },
     openDocument(document) {
-      this.$router.push('/model/' + this.currentModel + '/document/' + document._id);
+      this.$router.push({
+        path: '/model/' + this.currentModel + '/document/' + document._id,
+        query: this.$route.query
+      });
     },
     async deleteDocuments() {
       const documentIds = this.selectedDocuments.map(x => x._id);
