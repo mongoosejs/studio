@@ -1,7 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
-const { EJSON } = require('mongodb/lib/bson');
+const { EJSON } = require('mongoose').mongo.BSON;
 const authorize = require('../../authorize');
 
 const CreateDocumentParams = new Archetype({
