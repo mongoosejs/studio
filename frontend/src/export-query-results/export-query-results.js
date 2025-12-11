@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./export-query-results.html');
+const vanillatoasts = require('vanillatoasts');
 
 const appendCSS = require('../appendCSS');
 
@@ -30,7 +31,13 @@ module.exports = app => app.component('export-query-results', {
         params.searchText = this.searchText;
       }
       await api.Model.exportQueryResults(params);
-
+      vanillatoasts.create({
+        title: 'Export completed!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
       this.$emit('done');
     }
   }

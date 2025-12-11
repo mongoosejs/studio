@@ -1,6 +1,7 @@
 'use strict';
 
 const api = require('../api');
+const vanillatoasts = require('vanillatoasts');
 
 const { BSON, EJSON } = require('mongodb/lib/bson');
 
@@ -29,19 +30,27 @@ module.exports = app => app.component('create-document', {
   methods: {
     async createDocument() {
       const data = EJSON.serialize(eval(`(${this.editor.getValue()})`));
-      const { doc } = await api.Model.createDocument({ model: this.currentModel, data }).catch(err => {
+      try {
+        const { doc } = await api.Model.createDocument({ model: this.currentModel, data });
+        this.errors.length = 0;
+        vanillatoasts.create({
+          title: 'Document created!',
+          type: 'success',
+          timeout: 3000,
+          icon: 'images/success.png',
+          positionClass: 'bottomRight'
+        });
+        this.$emit('close', doc);
+      } catch (err) {
         if (err.response?.data?.message) {
           console.log(err.response.data);
           const message = err.response.data.message.split(': ').slice(1).join(': ');
           this.errors = message.split(',').map(error => {
             return error.split(': ').slice(1).join(': ').trim();
           });
-          throw new Error(err.response?.data?.message);
         }
         throw err;
-      });
-      this.errors.length = 0;
-      this.$emit('close', doc);
+      }
     }
   },
   mounted: function() {
