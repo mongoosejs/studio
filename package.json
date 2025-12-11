@@ -1,6 +1,6 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.1.6",
+  "version": "0.1.16",
   "description": "A sleek, powerful MongoDB UI with built-in dashboarding and auth, seamlessly integrated with your Express, Vercel, or Netlify app.",
   "homepage": "https://studio.mongoosejs.io/",
   "repository": {
@@ -9,6 +9,10 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@ai-sdk/google": "2.x",
+    "@ai-sdk/openai": "2.x",
+    "@ai-sdk/anthropic": "2.x",
+    "ai": "5.x",
     "archetype": "0.13.1",
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
@@ -21,9 +25,7 @@
     "webpack": "5.x"
   },
   "peerDependencies": {
-    "bson": "^5.5.1 || 6.x",
-    "express": "4.x",
-    "mongoose": "7.x || 8.x || ^9.0.0-0"
+    "mongoose": "7.x || 8.x || ^9.0.0"
   },
   "devDependencies": {
     "@masteringjs/eslint-config": "0.1.1",

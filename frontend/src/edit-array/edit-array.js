@@ -2,6 +2,14 @@
 
 const template = require('./edit-array.html');
 
+const { BSON } = require('mongodb/lib/bson');
+
+const ObjectId = new Proxy(BSON.ObjectId, {
+  apply(target, thisArg, argumentsList) {
+    return new target(...argumentsList);
+  }
+});
+
 const appendCSS = require('../appendCSS');
 appendCSS(require('./edit-array.css'));
 

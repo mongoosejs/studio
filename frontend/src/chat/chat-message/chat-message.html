@@ -8,7 +8,12 @@
         <div v-if="part.type === 'text'" v-html="marked(part.content)">
         </div>
         <div v-else-if="part.type === 'code'">
-          <chat-message-script :message="message" :script="part.content" :language="part.language" @copyMessage="copyMessage"></chat-message-script>
+          <chat-message-script
+            :message="message"
+            :script="part.content"
+            :language="part.language"
+            :target-dashboard-id="targetDashboardId"
+            @copyMessage="copyMessage"></chat-message-script>
         </div>
       </div>
     </div>

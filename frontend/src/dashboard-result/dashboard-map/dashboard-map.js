@@ -5,7 +5,7 @@ const template = require('./dashboard-map.html');
 
 module.exports = app => app.component('dashboard-map', {
   template: template,
-  props: ['value'],
+  props: ['value', 'height'],
   mounted() {
     const fc = this.value.$featureCollection.featureCollection || this.value.$featureCollection;
     const map = L.map(this.$refs.map).setView([0, 0], 1);
@@ -23,6 +23,9 @@ module.exports = app => app.component('dashboard-map', {
     });
   },
   computed: {
+    mapStyle() {
+      return { height: this.height || '300px' };
+    },
     header() {
       if (this.value != null && this.value.$featureCollection.header) {
         return this.value.$featureCollection.header;

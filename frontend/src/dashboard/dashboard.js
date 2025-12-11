@@ -16,7 +16,9 @@ module.exports = app => app.component('dashboard', {
       dashboard: null,
       dashboardResults: [],
       errorMessage: null,
-      showDetailModal: false
+      showDetailModal: false,
+      startingChat: false,
+      showActionsMenu: false
     };
   },
   methods: {
@@ -63,6 +65,55 @@ module.exports = app => app.component('dashboard', {
       }
 
       return finishedAt < sixHoursAgo;
+    },
+    toggleActionsMenu() {
+      this.showActionsMenu = !this.showActionsMenu;
+    },
+    closeActionsMenu() {
+      this.showActionsMenu = false;
+    },
+    handleDocumentClick(ev) {
+      if (!this.showActionsMenu) {
+        return;
+      }
+      const menuEl = this.$refs.actionsMenu;
+      if (!menuEl) {
+        return;
+      }
+      if (!menuEl.contains(ev.target)) {
+        this.closeActionsMenu();
+      }
+    },
+    async startChatWithDashboard() {
+      if (this.startingChat) {
+        return;
+      }
+
+      this.startingChat = true;
+      try {
+        const description = this.description?.trim();
+        const parts = [
+          'I want to edit this dashboard.',
+          `Title: ${this.title || 'Untitled Dashboard'}`
+        ];
+
+        if (description) {
+          parts.push(`Description: ${description}`);
+        }
+
+        parts.push('Here is the current dashboard code:', '```javascript', this.code, '```');
+
+        const initialMessage = parts.join('\n\n');
+
+        const { chatThread } = await api.ChatThread.createChatThread({
+          initialMessage,
+          dashboardId: this.dashboard?._id
+        });
+        this.$router.push('/chat/' + chatThread._id);
+      } finally {
+        this.startingChat = false;
+        this.showActionsMenu = false;
+      }
     }
   },
   computed: {
@@ -71,6 +122,7 @@ module.exports = app => app.component('dashboard', {
     }
   },
   mounted: async function() {
+    document.addEventListener('click', this.handleDocumentClick);
     this.showEditor = this.$route.query.edit;
     const { dashboard, dashboardResults, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: false });
     if (!dashboard) {
@@ -86,5 +138,8 @@ module.exports = app => app.component('dashboard', {
       return;
     }
     this.status = 'loaded';
-  }
+  },
+  beforeDestroy() {
+    document.removeEventListener('click', this.handleDocumentClick);
+  },
 });

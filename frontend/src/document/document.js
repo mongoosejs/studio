@@ -25,10 +25,13 @@ module.exports = app => app.component('document', {
     viewMode: 'fields',
     shouldShowConfirmModal: false,
     shouldShowDeleteModal: false,
-    shouldShowCloneModal: false
+    shouldShowCloneModal: false,
+    previousQuery: null
   }),
   async mounted() {
     window.pageState = this;
+    // Store query parameters from the route (preserved from models page)
+    this.previousQuery = Object.assign({}, this.$route.query);
     const { doc, schemaPaths, virtualPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
     window.doc = doc;
     this.document = doc;
@@ -91,7 +94,10 @@ module.exports = app => app.component('document', {
           timeout: 3000,
           positionClass: 'bottomRight'
         });
-        this.$router.push({ path: `/model/${this.model}` });
+        this.$router.push({
+          path: `/model/${this.model}`,
+          query: this.previousQuery || {}
+        });
       }
     },
     showClonedDocument(doc) {
@@ -122,6 +128,13 @@ module.exports = app => app.component('document', {
         this.editting = false;
         this.changes = {};
       }
+    },
+    goBack() {
+      // Preserve query parameters when going back to models page
+      this.$router.push({
+        path: '/model/' + this.model,
+        query: this.previousQuery || {}
+      });
     }
   }
 });
