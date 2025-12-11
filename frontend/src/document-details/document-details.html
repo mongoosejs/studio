@@ -72,12 +72,12 @@
     <div
       v-for="path in matchedVirtuals"
       :key="path.name"
-      class="border rounded-lg mb-2 transition-all duration-200 ease-in-out border-amber-400 ring-2 ring-amber-200 ring-offset-1"
+      class="border border-gray-200 rounded-lg mb-2 transition-all duration-200 ease-in-out mt-4"
     >
     <!-- Virtual Field Header (Always Visible) -->
     <div
       @click="toggleVirtualField(path.name)"
-      class="p-3 bg-slate-50 hover:bg-slate-100 cursor-pointer flex items-center justify-between border-b border-gray-200"
+      class="p-3 bg-amber-100 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
     >
       <div class="flex items-center">
         <svg
@@ -126,12 +126,12 @@
     <div
       v-for="path in unmatchedVirtuals"
       :key="path.name"
-      class="border rounded-lg mb-2 transition-all duration-200 ease-in-out border-gray-200"
+      class="border border-gray-200 rounded-lg mb-2 transition-all duration-200 ease-in-out"
     >
     <!-- Virtual Field Header (Always Visible) -->
     <div
       @click="toggleVirtualField(path.name)"
-      class="p-3 bg-slate-50 hover:bg-slate-100 cursor-pointer flex items-center justify-between border-b border-gray-200"
+      class="p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
     >
       <div class="flex items-center">
         <svg
