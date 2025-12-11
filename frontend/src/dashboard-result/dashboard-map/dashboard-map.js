@@ -12,7 +12,26 @@ module.exports = app => app.component('dashboard-map', {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-    const layer = L.geoJSON(fc).addTo(map);
+    const defaultModel = this.value?.$featureCollection?.model;
+    const layer = L.geoJSON(fc, {
+      onEachFeature: (feature, layer) => {
+        const properties = feature?.properties || {};
+        const documentId = properties._id || properties.id || feature?.id;
+        const featureModel = properties.model || defaultModel;
+        const documentUrl = properties.documentUrl || (featureModel && documentId ? `#/model/${featureModel}/document/${documentId}` : null);
+
+        if (documentUrl) {
+          const anchor = document.createElement('a');
+          anchor.href = documentUrl;
+          anchor.target = '_blank';
+          anchor.rel = 'noopener noreferrer';
+          anchor.textContent = properties.name || properties.title || properties.label || documentId || 'View document';
+          layer.bindPopup(anchor);
+        } else if (documentId != null) {
+          layer.bindPopup(String(documentId));
+        }
+      }
+    }).addTo(map);
 
     this.$nextTick(() => {
       map.invalidateSize();
