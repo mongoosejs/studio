@@ -52,9 +52,9 @@
 
   <!-- Fields View -->
   <div v-if="viewMode === 'fields'">
-    <!-- Schema Paths -->
+    <!-- Matched Schema Paths (shown first when searching) -->
     <div
-      v-for="path in filteredSchemaPaths"
+      v-for="path in matchedSchemaPaths"
       :key="path.path || path"
       class="value"
     >
@@ -64,20 +64,69 @@
         :schemaPaths="schemaPaths"
         :editting="editting"
         :changes="changes"
-        :highlight="isSchemaPathMatched(path)"
+        :highlight="true"
         :invalid="invalid"></document-property>
     </div>
 
-    <!-- Virtual Fields -->
+    <!-- Matched Virtual Fields (shown after matched schema paths when searching) -->
     <div
-      v-for="path in filteredVirtuals"
+      v-for="path in matchedVirtuals"
       :key="path.name"
-      class="border rounded-lg mb-2 transition-all duration-200 ease-in-out"
-      :class="[
-        isVirtualMatched(path)
-          ? 'border-amber-400 ring-2 ring-amber-200 ring-offset-1'
-          : 'border-gray-200'
-      ]"
+      class="border rounded-lg mb-2 transition-all duration-200 ease-in-out border-amber-400 ring-2 ring-amber-200 ring-offset-1"
+    >
+    <!-- Virtual Field Header (Always Visible) -->
+    <div
+      @click="toggleVirtualField(path.name)"
+      class="p-3 bg-slate-50 hover:bg-slate-100 cursor-pointer flex items-center justify-between border-b border-gray-200"
+    >
+      <div class="flex items-center">
+        <svg
+          :class="isVirtualFieldCollapsed(path.name) ? 'rotate-0' : 'rotate-90'"
+          class="w-4 h-4 text-gray-500 mr-2 transition-transform duration-200"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <span class="font-medium text-gray-900">{{path.name}}</span>
+        <span v-if="path.isVirtual" class="ml-2 text-sm text-purple-600">(virtual - {{getVirtualFieldType(path)}})</span>
+        <span v-else class="ml-2 text-sm text-blue-600">(user-added - {{getVirtualFieldType(path)}})</span>
+      </div>
+    </div>
+
+    <!-- Virtual Field Content (Collapsible) -->
+    <div v-if="!isVirtualFieldCollapsed(path.name)" class="p-3">
+      <div v-if="path.value == null" class="text-sky-800">
+        {{'' + path.value}}
+      </div>
+      <div v-else>
+        {{path.value}}
+      </div>
+    </div>
+    </div>
+
+    <!-- Unmatched Schema Paths (shown after matched items when searching, or all when not searching) -->
+    <div
+      v-for="path in unmatchedSchemaPaths"
+      :key="path.path || path"
+      class="value"
+    >
+      <document-property
+        :path="path"
+        :document="document"
+        :schemaPaths="schemaPaths"
+        :editting="editting"
+        :changes="changes"
+        :highlight="false"
+        :invalid="invalid"></document-property>
+    </div>
+
+    <!-- Unmatched Virtual Fields (shown last) -->
+    <div
+      v-for="path in unmatchedVirtuals"
+      :key="path.name"
+      class="border rounded-lg mb-2 transition-all duration-200 ease-in-out border-gray-200"
     >
     <!-- Virtual Field Header (Always Visible) -->
     <div
