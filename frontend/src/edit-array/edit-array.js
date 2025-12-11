@@ -10,8 +10,6 @@ const ObjectId = new Proxy(BSON.ObjectId, {
   }
 });
 
-const appendCSS = require('../appendCSS');
-appendCSS(require('./edit-array.css'));
 
 module.exports = app => app.component('edit-array', {
   template: template,

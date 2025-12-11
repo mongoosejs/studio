@@ -3,8 +3,6 @@
 const template = require('./detail-array.html');
 const { inspect } = require('node-inspect-extracted');
 
-require('../appendCSS')(require('./detail-array.css'));
-
 module.exports = app => app.component('detail-array', {
   template: template,
   props: ['value'],
