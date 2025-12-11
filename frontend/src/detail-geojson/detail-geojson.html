@@ -1,0 +1,26 @@
+<div class="detail-geojson">
+  <div class="tab-header">
+    <button
+      :class="['tab-button', activeTab === 'raw' ? 'active' : '']"
+      type="button"
+      @click="setActiveTab('raw')"
+    >
+      Raw
+    </button>
+    <button
+      :class="['tab-button', activeTab === 'map' ? 'active' : '']"
+      type="button"
+      @click="setActiveTab('map')"
+    >
+      Map
+    </button>
+  </div>
+
+  <div v-if="activeTab === 'raw'" class="raw-view">
+    <pre class="geojson-pre">{{formattedValue}}</pre>
+  </div>
+  <div v-else class="map-view">
+    <div ref="mapContainer" class="map-container"></div>
+    <div v-if="mapError" class="map-error">{{mapError}}</div>
+  </div>
+</div>
