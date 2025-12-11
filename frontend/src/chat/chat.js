@@ -41,14 +41,47 @@ module.exports = app => app.component('chat', {
           }
         });
 
-        const { chatMessages, chatThread } = await api.ChatThread.createChatMessage({
-          chatThreadId: this.chatThreadId,
-          content
-        });
-        this.chatMessages.push(chatMessages[1]);
-        for (const thread of this.chatThreads) {
-          if (thread._id === chatThread._id) {
-            thread.title = chatThread.title;
+        const params = { chatThreadId: this.chatThreadId, content };
+        let userChatMessage = null;
+        let assistantChatMessage = null;
+        for await (const event of api.ChatThread.streamChatMessage(params)) {
+          if (event.chatMessage) {
+            if (!userChatMessage) {
+              userChatMessage = event.chatMessage;
+            } else {
+              const assistantChatMessageIndex = this.chatMessages.indexOf(assistantChatMessage);
+              assistantChatMessage = event.chatMessage;
+              this.chatMessages[assistantChatMessageIndex] = assistantChatMessage;
+            }
+          } else if (event.chatThread) {
+            for (const thread of this.chatThreads) {
+              if (thread._id === event.chatThread._id) {
+                thread.title = event.chatThread.title;
+              }
+            }
+          } else if (event.textPart) {
+            if (!assistantChatMessage) {
+              assistantChatMessage = {
+                content: event.textPart,
+                role: 'assistant'
+              };
+              this.chatMessages.push(assistantChatMessage);
+              assistantChatMessage = this.chatMessages[this.chatMessages.length - 1];
+              this.$nextTick(() => {
+                if (this.$refs.messagesContainer) {
+                  this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+                }
+              });
+            } else {
+              assistantChatMessage.content += event.textPart;
+              this.$nextTick(() => {
+                if (this.$refs.messagesContainer) {
+                  this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+                }
+              });
+            }
+          } else if (event.message) {
+            throw new Error(event.message);
           }
         }
 

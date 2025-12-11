@@ -56,7 +56,9 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
     // Execute the script in the sandbox
     output = await vm.runInContext(wrappedScript(script), context);
 
+    const updatedContent = updateContentWithScript(chatMessage.content, chatMessage.script, script);
     chatMessage.script = script;
+    chatMessage.content = updatedContent;
     chatMessage.executionResult = { output, logs: logs.join('\n'), error: null };
     await chatMessage.save();
 
@@ -65,10 +67,12 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
     error = err.message;
 
     // Update the chat message with the error
+    const updatedContent = updateContentWithScript(chatMessage.content, chatMessage.script, script);
     await ChatMessage.updateOne(
       { _id: chatMessageId },
       {
         script,
+        content: updatedContent,
         executionResult: {
           output: null,
           logs: logs.join('\n'),
@@ -84,3 +88,39 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
 const wrappedScript = script => `(async () => {
   ${script}
 })()`;
+
+function updateContentWithScript(content, previousScript, newScript) {
+  if (typeof content !== 'string') {
+    return content;
+  }
+
+  const matches = Array.from(content.matchAll(/```(\w*)\n([\s\S]*?)\n```/g));
+  let targetMatch = null;
+
+  if (matches.length > 0) {
+    if (previousScript != null) {
+      const trimmedPrevious = previousScript.trim();
+      targetMatch = matches.find(match => match[2].trim() === trimmedPrevious) || null;
+    }
+
+    if (targetMatch == null) {
+      targetMatch = matches[0];
+    }
+  }
+
+  if (targetMatch != null) {
+    const language = targetMatch[1];
+    const fenceStart = language ? '```' + language : '```';
+    const replacement = fenceStart + '\n' + newScript + '\n```';
+    return (
+      content.slice(0, targetMatch.index) +
+      replacement +
+      content.slice(targetMatch.index + targetMatch[0].length)
+    );
+  }
+
+  const trimmedContent = content.trimEnd();
+  const prefix = trimmedContent.length > 0 ? trimmedContent + '\n\n' : '';
+
+  return prefix + '```\n' + newScript + '\n```';
+}

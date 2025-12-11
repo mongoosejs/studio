@@ -29,9 +29,18 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
         </svg>
       </button>
+      <button
+        v-if="activeTab === 'code' && !isEditing"
+        class="px-2 py-1 mr-1 text-xs bg-gray-500 text-white border-none rounded cursor-pointer hover:bg-gray-600 transition-colors flex items-center"
+        @click.stop="startEditing">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM4 13.5V16h2.5l7.086-7.086-2.828-2.828L4 13.5z" />
+        </svg>
+      </button>
       <async-button
+        v-if="!isEditing"
         class="px-2 py-1 text-xs bg-green-500 text-white border-none rounded cursor-pointer hover:bg-green-600 transition-colors disabled:bg-gray-400"
-        @click="executeScript(message, script)">
+        @click="executeScript">
         Execute
       </async-button>
       <div class="relative ml-1" ref="dropdown">
@@ -51,6 +60,12 @@
             Create Dashboard
           </button>
           <button
+            v-if="canOverwriteDashboard"
+            class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+            @click="openOverwriteDashboardConfirmation(); showDropdown = false">
+            Overwrite Dashboard
+          </button>
+          <button
             class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
             @click="$emit('copyMessage'); showDropdown = false">
             Copy Full Message
@@ -60,12 +75,36 @@
     </div>
   </div>
 
-  <pre class="p-3 whitespace-pre-wrap max-h-[50vh] max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] overflow-y-auto" v-show="activeTab === 'code'"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
+  <div class="p-3 max-h-[50vh] max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] overflow-y-auto" v-show="activeTab === 'code'">
+    <div v-if="isEditing" class="flex flex-col space-y-2">
+      <div class="border border-gray-200">
+        <textarea ref="scriptEditor" class="w-full h-[45vh]" @input="handleScriptInput"></textarea>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button
+          class="px-2 py-1 text-xs bg-gray-300 text-gray-800 border-none rounded cursor-pointer hover:bg-gray-400 transition-colors"
+          @click.stop="cancelEditing">
+          Cancel
+        </button>
+        <async-button
+          class="px-2 py-1 text-xs bg-green-500 text-white border-none rounded cursor-pointer hover:bg-green-600 transition-colors disabled:bg-gray-400"
+          @click="executeScript">
+          Execute
+        </async-button>
+      </div>
+    </div>
+    <pre v-else class="whitespace-pre-wrap"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
+  </div>
 
   <div class="p-3 whitespace-pre-wrap max-h-[50vh] overflow-y-auto bg-white border-t max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] relative" v-show="activeTab === 'output'">
     <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" />
     <dashboard-map v-else-if="message.executionResult?.output?.$featureCollection" :value="message.executionResult?.output" />
     <pre v-else>{{ message.executionResult?.output || 'No output' }}</pre>
+
+    <div v-if="message.executionResult?.logs?.length" class="mt-3 pt-3 border-t border-gray-200">
+      <div class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Console</div>
+      <pre class="mt-1 bg-gray-100 text-gray-900 p-3 rounded whitespace-pre-wrap overflow-x-auto max-h-[280px]">{{ message.executionResult.logs }}</pre>
+    </div>
   </div>
 
   <modal ref="outputModal" v-if="showDetailModal" containerClass="!h-[90vh] !w-[90vw]">
@@ -73,6 +112,10 @@
       <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showDetailModal = false;">&times;</div>
       <div class="h-full overflow-auto">
         <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" :responsive="true" />
+        <dashboard-map
+          v-else-if="message.executionResult?.output?.$featureCollection"
+          :value="message.executionResult?.output"
+          height="80vh" />
         <pre v-else class="whitespace-pre-wrap">{{ message.executionResult?.output || 'No output' }}</pre>
       </div>
     </template>
@@ -101,7 +144,7 @@
           class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
           Submit
         </async-button>
-        <div v-if="createErrors.length > 0" class="rounded-md bg-red-50 p-4 mt-1">
+        <div v-if="createError" class="rounded-md bg-red-50 p-4 mt-1">
           <div class="flex">
             <div class="flex-shrink-0">
               <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -112,6 +155,50 @@
               <h3 class="text-sm font-medium text-red-800">Error</h3>
               <div class="mt-2 text-sm text-red-700">
                 {{createError}}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </modal>
+  <modal v-if="showOverwriteDashboardConfirmationModal">
+    <template #body>
+      <div class="modal-exit" @click="showOverwriteDashboardConfirmationModal = false">&times;</div>
+      <div>
+        <div class="mt-4 text-gray-900 font-semibold">Overwrite Dashboard</div>
+        <p class="mt-2 text-sm text-gray-700">
+          This will replace the linked dashboard's code with the script below.
+        </p>
+        <p class="mt-1 text-xs text-gray-600 break-all" v-if="targetDashboardId">
+          Dashboard ID: {{ targetDashboardId }}
+        </p>
+        <div class="my-4 border border-gray-200 bg-gray-50 rounded">
+          <pre class="p-2 h-[300px] overflow-auto whitespace-pre-wrap text-xs">{{ overwriteDashboardCode }}</pre>
+        </div>
+        <div class="flex items-center gap-2">
+          <async-button
+            @click="confirmOverwriteDashboard"
+            class="rounded-md bg-teal-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+            Confirm Overwrite
+          </async-button>
+          <button
+            class="px-2.5 py-1.5 rounded-md text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300"
+            @click="showOverwriteDashboardConfirmationModal = false">
+            Cancel
+          </button>
+        </div>
+        <div v-if="overwriteError" class="rounded-md bg-red-50 p-4 mt-3">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-red-800">Error</h3>
+              <div class="mt-2 text-sm text-red-700">
+                {{overwriteError}}
               </div>
             </div>
           </div>

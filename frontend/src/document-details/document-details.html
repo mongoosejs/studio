@@ -1,6 +1,6 @@
 <div class="document-details">
   <!-- View Toggle and Search/Filter Bar -->
-  <div class="mb-4 mt-4">
+  <div class="sticky top-[60px] z-40 bg-white p-4 border-b border-gray-200 shadow-sm">
 
     <!-- Search and Filter Bar (only show in fields view) -->
     <div v-if="viewMode === 'fields'" class="flex md:gap-3">
@@ -21,10 +21,10 @@
       </div>
 
       <!-- Data Type Filter -->
-      <div class="relative">
+      <div class="relative hidden md:block">
         <select
           v-model="selectedType"
-          class="hidden md:block px-4 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px] appearance-none"
+          class="px-4 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px] appearance-none"
         >
           <option value="">All Types</option>
           <option v-for="type in availableTypes" :key="type" :value="type">
@@ -41,12 +41,11 @@
       <!-- Add Field Button -->
       <button
         @click="openAddFieldModal"
-        class="hidden md:block px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center gap-2"
+        class="hidden md:flex px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 items-center gap-2"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
-        Add Field
+        </svg> Add Field
       </button>
     </div>
   </div>
@@ -54,18 +53,32 @@
   <!-- Fields View -->
   <div v-if="viewMode === 'fields'">
     <!-- Schema Paths -->
-    <div v-for="path in filteredSchemaPaths" :key="path" class="value">
+    <div
+      v-for="path in filteredSchemaPaths"
+      :key="path.path || path"
+      class="value"
+    >
       <document-property
         :path="path"
         :document="document"
         :schemaPaths="schemaPaths"
         :editting="editting"
         :changes="changes"
+        :highlight="isSchemaPathMatched(path)"
         :invalid="invalid"></document-property>
     </div>
 
     <!-- Virtual Fields -->
-    <div v-for="path in filteredVirtuals" class="border border-gray-200 rounded-lg mb-2">
+    <div
+      v-for="path in filteredVirtuals"
+      :key="path.name"
+      class="border rounded-lg mb-2 transition-all duration-200 ease-in-out"
+      :class="[
+        isVirtualMatched(path)
+          ? 'border-amber-400 ring-2 ring-amber-200 ring-offset-1'
+          : 'border-gray-200'
+      ]"
+    >
     <!-- Virtual Field Header (Always Visible) -->
     <div
       @click="toggleVirtualField(path.name)"
@@ -99,7 +112,7 @@
   </div>
 
     <!-- No Results Message -->
-    <div v-if="searchQuery && filteredSchemaPaths.length === 0 && filteredVirtuals.length === 0" class="text-center py-8 text-gray-500">
+    <div v-if="searchQuery.trim() && !hasSearchMatches" class="text-center py-8 text-gray-500">
       <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.709M15 6.291A7.962 7.962 0 0012 5c-2.34 0-4.29 1.009-5.824 2.709"></path>
       </svg>

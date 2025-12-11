@@ -115,38 +115,39 @@ module.exports = app => app.component('document-details', {
     shouldUseDatePicker() {
       return this.fieldData.type === 'Date';
     },
-    filteredSchemaPaths() {
+    typeFilteredSchemaPaths() {
       let paths = this.schemaPaths || [];
 
-      // Filter by search query
-      if (this.searchQuery.trim()) {
-        const query = this.searchQuery.toLowerCase();
-        paths = paths.filter(path =>
-          path.path.toLowerCase().includes(query)
-        );
-      }
-
-      // Filter by data type
       if (this.selectedType) {
-        paths = paths.filter(path =>
-          path.instance === this.selectedType
-        );
+        paths = paths.filter(path => path.instance === this.selectedType);
       }
 
       return paths;
     },
-    filteredVirtuals() {
-      let virtuals = this.virtuals;
+    filteredSchemaPaths() {
+      const paths = this.typeFilteredSchemaPaths.slice();
 
-      // Filter by search query
-      if (this.searchQuery.trim()) {
-        const query = this.searchQuery.toLowerCase();
-        virtuals = virtuals.filter(virtual =>
-          virtual.name.toLowerCase().includes(query)
-        );
+      if (!this.searchQuery.trim()) {
+        return paths;
       }
 
-      // Filter by data type
+      const query = this.searchQuery.toLowerCase();
+      const matches = [];
+      const nonMatches = [];
+
+      paths.forEach(path => {
+        if (path.path.toLowerCase().includes(query)) {
+          matches.push(path);
+        } else {
+          nonMatches.push(path);
+        }
+      });
+
+      return matches.concat(nonMatches);
+    },
+    typeFilteredVirtuals() {
+      let virtuals = this.virtuals;
+
       if (this.selectedType) {
         virtuals = virtuals.filter(virtual => {
           const virtualType = this.getVirtualFieldType(virtual);
@@ -155,6 +156,58 @@ module.exports = app => app.component('document-details', {
       }
 
       return virtuals;
+    },
+    filteredVirtuals() {
+      const virtuals = this.typeFilteredVirtuals.slice();
+
+      if (!this.searchQuery.trim()) {
+        return virtuals;
+      }
+
+      const query = this.searchQuery.toLowerCase();
+      const matches = [];
+      const nonMatches = [];
+
+      virtuals.forEach(virtual => {
+        if (virtual.name.toLowerCase().includes(query)) {
+          matches.push(virtual);
+        } else {
+          nonMatches.push(virtual);
+        }
+      });
+
+      return matches.concat(nonMatches);
+    },
+    schemaSearchMatchSet() {
+      if (!this.searchQuery.trim()) {
+        return new Set();
+      }
+
+      const query = this.searchQuery.toLowerCase();
+      return new Set(
+        this.typeFilteredSchemaPaths
+          .filter(path => path.path.toLowerCase().includes(query))
+          .map(path => path.path)
+      );
+    },
+    virtualSearchMatchSet() {
+      if (!this.searchQuery.trim()) {
+        return new Set();
+      }
+
+      const query = this.searchQuery.toLowerCase();
+      return new Set(
+        this.typeFilteredVirtuals
+          .filter(virtual => virtual.name.toLowerCase().includes(query))
+          .map(virtual => virtual.name)
+      );
+    },
+    hasSearchMatches() {
+      if (!this.searchQuery.trim()) {
+        return true;
+      }
+
+      return this.schemaSearchMatchSet.size > 0 || this.virtualSearchMatchSet.size > 0;
     },
     formattedJson() {
       if (!this.document) {
@@ -170,6 +223,20 @@ module.exports = app => app.component('document-details', {
       } else {
         this.collapsedVirtuals.add(fieldName);
       }
+    },
+    isSchemaPathMatched(path) {
+      if (!path) {
+        return false;
+      }
+
+      return this.schemaSearchMatchSet.has(path.path);
+    },
+    isVirtualMatched(virtual) {
+      if (!virtual) {
+        return false;
+      }
+
+      return this.virtualSearchMatchSet.has(virtual.name);
     },
     isVirtualFieldCollapsed(fieldName) {
       return this.collapsedVirtuals.has(fieldName);

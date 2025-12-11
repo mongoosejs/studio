@@ -42,7 +42,18 @@
       <a
       :href="hasTaskVisualizer"
       class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
-      :class="taskView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Tasks</a>
+      :class="taskView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">
+      Tasks
+      </a>
+      <a
+        href="https://studio.mongoosejs.io/docs"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 border-transparent"
+      >
+        Docs
+        <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>
+      </a>
 
       <div class="h-full flex items-center" v-if="!user && hasAPIKey">
         <button

@@ -9,19 +9,28 @@ module.exports = app => app.component('async-button', {
   inheritAttrs: false,
   methods: {
     async handleClick(ev) {
-      if (this.status === 'in_progress') {
-        return;
-      }
+      if (this.status === 'in_progress') return;
+
+      const btn = this.$el;
+      const prevWidth = btn.offsetWidth;
+      const prevHeight = btn.offsetHeight;
+      btn.style.width = `${prevWidth}px`;
+      btn.style.height = `${prevHeight}px`;
+
       this.status = 'in_progress';
 
       try {
-        await this.$attrs.onClick(ev);
+        if (typeof this.$attrs.onClick === 'function') {
+          await this.$attrs.onClick(ev);
+        }
+        this.status = 'success';
       } catch (err) {
-        this.status = 'error';
+        this.status = 'init';
         throw err;
+      } finally {
+        btn.style.width = null;
+        btn.style.height = null;
       }
-
-      this.status = 'success';
     }
   },
   computed: {

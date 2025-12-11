@@ -28,18 +28,22 @@
           </ul>
         </li>
       </ul>
+      <div v-if="models.length === 0 && status === 'loaded'" class="p-2 bg-red-100">
+        No models found
+      </div>
     </nav>
   </aside>
   <div class="documents" ref="documentsList">
     <div class="relative h-[42px] z-10">
       <div class="documents-menu">
         <div class="flex flex-row items-center w-full gap-2">
-          <form @submit.prevent="search" class="relative flex-grow m-0">
-            <input ref="searchInput" class="w-full font-mono rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none" type="text" placeholder="Filter" v-model="searchText" @click="initFilter" @input="updateAutocomplete" @keydown="handleKeyDown" />
-            <ul v-if="autocompleteSuggestions.length" class="absolute z-[9999] bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto shadow">
-              <li v-for="(suggestion, index) in autocompleteSuggestions" :key="suggestion" class="px-2 py-1 cursor-pointer" :class="{ 'bg-ultramarine-100': index === autocompleteIndex }" @mousedown.prevent="applySuggestion(index)">{{ suggestion }}</li>
-            </ul>
-          </form>
+          <document-search
+            ref="documentSearch"
+            :value="searchText"
+            :schema-paths="schemaPaths"
+            @search="search"
+          >
+          </document-search>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
             <span v-else-if="typeof numDocuments === 'number'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
@@ -98,14 +102,14 @@
           </button>
           <span class="isolate inline-flex rounded-md shadow-sm">
             <button
-              @click="outputType = 'table'"
+              @click="setOutputType('table')"
               type="button"
               class="relative inline-flex items-center rounded-none rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
               :class="outputType === 'table' ? 'bg-gray-200' : 'bg-white'">
               <img class="h-5 w-5" src="images/table.svg">
             </button>
             <button
-              @click="outputType = 'json'"
+              @click="setOutputType('json')"
               type="button"
               class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
               :class="outputType === 'json' ? 'bg-gray-200' : 'bg-white'">
@@ -116,9 +120,15 @@
       </div>
     </div>
     <div class="documents-container relative">
-      <table v-if="outputType === 'table'">
+      <div v-if="error">
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 relative m-4 rounded-md" role="alert">
+          <span class="block font-bold">Error</span>
+          <span class="block">{{ error }}</span>
+        </div>
+      </div>
+      <table v-else-if="outputType === 'table'">
         <thead>
-          <th v-for="path in filteredPaths" @click="clickFilter(path.path)" class="cursor-pointer">
+          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="cursor-pointer">
             {{path.path}}
             <span class="path-type">
               ({{(path.instance || 'unknown')}})
@@ -139,9 +149,24 @@
           </tr>
         </tbody>
       </table>
-      <div v-if="outputType === 'json'">
-        <div v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
-          <list-json :value="filterDocument(document)">
+      <div v-else-if="outputType === 'json'" class="flex flex-col space-y-6">
+        <div
+          v-for="document in documents"
+          :key="document._id"
+          @click="handleDocumentContainerClick(document, $event)"
+          :class="[
+            'group relative transition-colors',
+            selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:bg-slate-100'
+          ]"
+        >
+          <button
+            type="button"
+            class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-ultramarine-600 px-2 py-1 text-xs font-semibold text-white shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            @click.stop="openDocument(document)"
+          >
+            Open this Document
+          </button>
+          <list-json :value="filterDocument(document)" :references="referenceMap">
           </list-json>
         </div>
       </div>

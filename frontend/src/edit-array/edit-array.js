@@ -2,7 +2,7 @@
 
 const template = require('./edit-array.html');
 
-const { BSON } = require('bson');
+const { BSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
   apply(target, thisArg, argumentsList) {

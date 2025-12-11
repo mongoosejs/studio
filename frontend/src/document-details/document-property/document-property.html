@@ -1,15 +1,16 @@
 <div class="border border-gray-200 rounded-lg mb-2">
   <!-- Collapsible Header -->
-  <div 
+  <div
     @click="toggleCollapse"
-    class="p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200"
+    class="p-3 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
+    :class="{ 'bg-amber-100': highlight, 'bg-gray-50': !highlight }"
   >
-    <div class="flex items-center">
-      <svg 
+    <div class="flex items-center" >
+      <svg
         :class="isCollapsed ? 'rotate-0' : 'rotate-90'"
         class="w-4 h-4 text-gray-500 mr-2 transition-transform duration-200"
-        fill="none" 
-        stroke="currentColor" 
+        fill="none"
+        stroke="currentColor"
         viewBox="0 0 24 24"
       >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -18,6 +19,18 @@
       <span class="ml-2 text-sm text-gray-500">({{(path.instance || 'unknown').toLowerCase()}})</span>
     </div>
     <div class="flex items-center gap-2">
+      <button
+        type="button"
+        class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded-md border border-transparent hover:border-gray-300 bg-white"
+        @click.stop.prevent="copyPropertyValue"
+        title="Copy value"
+        aria-label="Copy property value"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8m-8 4h5m-7-9a2 2 0 012-2h7a2 2 0 012 2v10a2 2 0 01-2 2H8l-4-4V7a2 2 0 012-2z" />
+        </svg>
+        {{copyButtonLabel}}
+      </button>
       <router-link
         v-if="path.ref && getValueForPath(path.path)"
         :to="`/model/${path.ref}/document/${getValueForPath(path.path)}`"
@@ -27,7 +40,7 @@
       </router-link>
     </div>
   </div>
-  
+
   <!-- Collapsible Content -->
   <div v-if="!isCollapsed" class="p-3">
     <!-- Date Type Selector (when editing dates) -->
@@ -53,13 +66,14 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Field Content -->
     <div v-if="editting && path.path !== '_id'">
       <component
         :is="getEditComponentForPath(path)"
         :value="getEditValueForPath(path)"
         :format="dateType"
+        v-bind="getEditComponentProps(path)"
         @input="changes[path.path] = $event; delete invalid[path.path];"
         @error="invalid[path.path] = $event;"
         >
@@ -67,11 +81,11 @@
     </div>
     <div v-else>
       <!-- Show truncated or full value based on needsTruncation and isValueExpanded -->
-      <div v-if="needsTruncation && !isValueExpanded" class="truncated-value-container">
+      <div v-if="needsTruncation && !isValueExpanded" class="relative">
         <div class="text-gray-700 whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>
-        <button 
+        <button
           @click="toggleValueExpansion"
-          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -79,11 +93,11 @@
           Show more ({{valueAsString.length}} characters)
         </button>
       </div>
-      <div v-else-if="needsTruncation && isValueExpanded" class="expanded-value-container">
+      <div v-else-if="needsTruncation && isValueExpanded" class="relative">
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
-        <button 
+        <button
           @click="toggleValueExpansion"
-          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
         >
           <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>

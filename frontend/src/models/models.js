@@ -5,39 +5,10 @@ const template = require('./models.html');
 const mpath = require('mpath');
 
 const appendCSS = require('../appendCSS');
-const { Trie } = require('./trie');
-
-const QUERY_SELECTORS = [
-  '$eq',
-  '$ne',
-  '$gt',
-  '$gte',
-  '$lt',
-  '$lte',
-  '$in',
-  '$nin',
-  '$exists',
-  '$regex',
-  '$options',
-  '$text',
-  '$search',
-  '$and',
-  '$or',
-  '$nor',
-  '$not',
-  '$elemMatch',
-  '$size',
-  '$all',
-  '$type',
-  '$expr',
-  '$jsonSchema',
-  '$mod'
-];
-
-
 appendCSS(require('./models.css'));
 
 const limit = 20;
+const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 
 module.exports = app => app.component('models', {
   template: template,
@@ -59,9 +30,6 @@ module.exports = app => app.component('models', {
     selectMultiple: false,
     selectedDocuments: [],
     searchText: '',
-    autocompleteSuggestions: [],
-    autocompleteIndex: 0,
-    autocompleteTrie: null,
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
@@ -75,11 +43,12 @@ module.exports = app => app.component('models', {
     interval: null,
     outputType: 'table', // json, table
     hideSidebar: null,
-    lastSelectedIndex: null
+    lastSelectedIndex: null,
+    error: null
   }),
   created() {
     this.currentModel = this.model;
-    this.buildAutocompleteTrie();
+    this.loadOutputPreference();
   },
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
@@ -90,22 +59,49 @@ module.exports = app => app.component('models', {
     document.addEventListener('scroll', this.onScroll, true);
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
-    this.models = await api.Model.listModels().then(res => res.models);
+    const { models, readyState } = await api.Model.listModels();
+    this.models = models;
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
+    }
+    if (this.models.length === 0) {
+      this.status = 'loaded';
+      this.numDocuments = 0;
+      if (readyState === 0) {
+        this.error = 'No models found and Mongoose is not connected. Check our documentation for more information.';
+      }
     }
 
     await this.initSearchFromUrl();
   },
+  computed: {
+    referenceMap() {
+      const map = {};
+      for (const path of this.filteredPaths) {
+        if (path?.ref) {
+          map[path.path] = path.ref;
+        }
+      }
+      return map;
+    }
+  },
   methods: {
-    buildAutocompleteTrie() {
-      this.autocompleteTrie = new Trie();
-      this.autocompleteTrie.bulkInsert(QUERY_SELECTORS, 5);
-      if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
-        const paths = this.schemaPaths
-          .map(path => path?.path)
-          .filter(path => typeof path === 'string' && path.length > 0);
-        this.autocompleteTrie.bulkInsert(paths, 10);
+    loadOutputPreference() {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const storedPreference = window.localStorage.getItem(OUTPUT_TYPE_STORAGE_KEY);
+      if (storedPreference === 'json' || storedPreference === 'table') {
+        this.outputType = storedPreference;
+      }
+    },
+    setOutputType(type) {
+      if (type !== 'json' && type !== 'table') {
+        return;
+      }
+      this.outputType = type;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(OUTPUT_TYPE_STORAGE_KEY, type);
       }
     },
     buildDocumentFetchParams(options = {}) {
@@ -165,136 +161,6 @@ module.exports = app => app.component('models', {
       const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
       this.mongoDBIndexes = mongoDBIndexes;
     },
-    initFilter(ev) {
-      if (!this.searchText) {
-        this.searchText = '{}';
-        this.$nextTick(() => {
-          ev.target.setSelectionRange(1, 1);
-        });
-      }
-    },
-    updateAutocomplete() {
-      const input = this.$refs.searchInput;
-      const cursorPos = input ? input.selectionStart : 0;
-      const before = this.searchText.slice(0, cursorPos);
-      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
-      if (match && match[1]) {
-        const token = match[1];
-        const leadingQuoteMatch = token.match(/^["']/);
-        const trailingQuoteMatch = token.length > 1 && /["']$/.test(token)
-          ? token[token.length - 1]
-          : '';
-        const term = token
-          .replace(/^["']/, '')
-          .replace(trailingQuoteMatch ? new RegExp(`[${trailingQuoteMatch}]$`) : '', '')
-          .trim();
-        if (!term) {
-          this.autocompleteSuggestions = [];
-          return;
-        }
-        if (this.autocompleteTrie) {
-          const primarySuggestions = this.autocompleteTrie.getSuggestions(term, 10);
-          const suggestionsSet = new Set(primarySuggestions);
-          if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
-            for (const schemaPath of this.schemaPaths) {
-              const path = schemaPath?.path;
-              if (
-                typeof path === 'string' &&
-                path.startsWith(`${term}.`) &&
-                !suggestionsSet.has(path)
-              ) {
-                suggestionsSet.add(path);
-                if (suggestionsSet.size >= 10) {
-                  break;
-                }
-              }
-            }
-          }
-          let suggestions = Array.from(suggestionsSet);
-          if (leadingQuoteMatch) {
-            const leadingQuote = leadingQuoteMatch[0];
-            suggestions = suggestions.map(suggestion => `${leadingQuote}${suggestion}`);
-          }
-          if (trailingQuoteMatch) {
-            suggestions = suggestions.map(suggestion =>
-              suggestion.endsWith(trailingQuoteMatch) ? suggestion : `${suggestion}${trailingQuoteMatch}`
-            );
-          }
-          this.autocompleteSuggestions = suggestions;
-          this.autocompleteIndex = 0;
-          return;
-        }
-      }
-      this.autocompleteSuggestions = [];
-    },
-    handleKeyDown(ev) {
-      if (this.autocompleteSuggestions.length === 0) {
-        return;
-      }
-      if (ev.key === 'Tab' || ev.key === 'Enter') {
-        ev.preventDefault();
-        this.applySuggestion(this.autocompleteIndex);
-      } else if (ev.key === 'ArrowDown') {
-        ev.preventDefault();
-        this.autocompleteIndex = (this.autocompleteIndex + 1) % this.autocompleteSuggestions.length;
-      } else if (ev.key === 'ArrowUp') {
-        ev.preventDefault();
-        this.autocompleteIndex = (this.autocompleteIndex + this.autocompleteSuggestions.length - 1) % this.autocompleteSuggestions.length;
-      }
-    },
-    applySuggestion(index) {
-      const suggestion = this.autocompleteSuggestions[index];
-      if (!suggestion) {
-        return;
-      }
-      const input = this.$refs.searchInput;
-      const cursorPos = input.selectionStart;
-      const before = this.searchText.slice(0, cursorPos);
-      const after = this.searchText.slice(cursorPos);
-      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
-      if (!match) {
-        return;
-      }
-      const token = match[1];
-      const start = cursorPos - token.length;
-      let replacement = suggestion;
-      const leadingQuote = token.startsWith('"') || token.startsWith('\'') ? token[0] : '';
-      const trailingQuote = token.length > 1 && (token.endsWith('"') || token.endsWith('\'')) ? token[token.length - 1] : '';
-      if (leadingQuote && !replacement.startsWith(leadingQuote)) {
-        replacement = `${leadingQuote}${replacement}`;
-      }
-      if (trailingQuote && !replacement.endsWith(trailingQuote)) {
-        replacement = `${replacement}${trailingQuote}`;
-      }
-      this.searchText = this.searchText.slice(0, start) + replacement + after;
-      this.$nextTick(() => {
-        const pos = start + replacement.length;
-        input.setSelectionRange(pos, pos);
-      });
-      this.autocompleteSuggestions = [];
-    },
-    clickFilter(path) {
-      if (this.searchText) {
-        if (this.searchText.endsWith('}')) {
-          this.searchText = this.searchText.slice(0, -1) + `, ${path}:  }`;
-        } else {
-          this.searchText += `, ${path}:  }`;
-        }
-
-      } else {
-        // If this.searchText is empty or undefined, initialize it with a new object
-        this.searchText = `{ ${path}:  }`;
-      }
-
-
-      this.$nextTick(() => {
-        const input = this.$refs.searchInput;
-        const cursorIndex = this.searchText.lastIndexOf(':') + 2; // Move cursor after ": "
-
-        input.focus();
-        input.setSelectionRange(cursorIndex, cursorIndex);
-      });
-    },
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
       await this.getDocuments();
@@ -304,9 +170,10 @@ module.exports = app => app.component('models', {
     },
     filterDocument(doc) {
       const filteredDoc = {};
-      console.log(doc, this.filteredPaths);
       for (let i = 0; i < this.filteredPaths.length; i++) {
-        filteredDoc[this.filteredPaths[i].path] = doc[this.filteredPaths[i].path];
+        const path = this.filteredPaths[i].path;
+        const value = mpath.get(path, doc);
+        mpath.set(path, value, filteredDoc);
       }
       return filteredDoc;
     },
@@ -343,7 +210,8 @@ module.exports = app => app.component('models', {
       }
       await this.loadMoreDocuments();
     },
-    async search() {
+    async search(searchText) {
+      this.searchText = searchText;
       const hasSearch = typeof this.searchText === 'string' && this.searchText.trim().length > 0;
       if (hasSearch) {
         this.query.search = this.searchText;
@@ -357,6 +225,11 @@ module.exports = app => app.component('models', {
       this.status = 'loading';
       await this.loadMoreDocuments();
       this.status = 'loaded';
+    },
+    addPathFilter(path) {
+      if (this.$refs.documentSearch?.addPathFilter) {
+        this.$refs.documentSearch.addPathFilter(path);
+      }
     },
     async openIndexModal() {
       this.shouldShowIndexModal = true;
@@ -377,7 +250,6 @@ module.exports = app => app.component('models', {
       // Clear previous data
       this.documents = [];
       this.schemaPaths = [];
-      this.buildAutocompleteTrie();
       this.numDocuments = null;
       this.loadedAllDocs = false;
       this.lastSelectedIndex = null;
@@ -405,7 +277,6 @@ module.exports = app => app.component('models', {
           }
           this.filteredPaths = [...this.schemaPaths];
           this.selectedPaths = [...this.schemaPaths];
-          this.buildAutocompleteTrie();
           schemaPathsReceived = true;
         }
         if (event.numDocs !== undefined) {
@@ -542,40 +413,54 @@ module.exports = app => app.component('models', {
     },
     handleDocumentClick(document, event) {
       if (this.selectMultiple) {
-        const documentIndex = this.documents.findIndex(doc => doc._id.toString() == document._id.toString());
-        if (event?.shiftKey && this.selectedDocuments.length > 0) {
-          const anchorIndex = this.lastSelectedIndex;
-          if (anchorIndex != null && anchorIndex !== -1 && documentIndex !== -1) {
-            const start = Math.min(anchorIndex, documentIndex);
-            const end = Math.max(anchorIndex, documentIndex);
-            const selectedDocumentIds = new Set(this.selectedDocuments.map(doc => doc._id.toString()));
-            for (let i = start; i <= end; i++) {
-              const docInRange = this.documents[i];
-              const existsInRange = selectedDocumentIds.has(docInRange._id.toString());
-              if (!existsInRange) {
-                this.selectedDocuments.push(docInRange);
-              }
+        this.handleDocumentSelection(document, event);
+      } else {
+        this.openDocument(document);
+      }
+    },
+    handleDocumentContainerClick(document, event) {
+      if (this.selectMultiple) {
+        this.handleDocumentSelection(document, event);
+      }
+    },
+    handleDocumentSelection(document, event) {
+      const documentIndex = this.documents.findIndex(doc => doc._id.toString() == document._id.toString());
+      if (event?.shiftKey && this.selectedDocuments.length > 0) {
+        const anchorIndex = this.lastSelectedIndex;
+        if (anchorIndex != null && anchorIndex !== -1 && documentIndex !== -1) {
+          const start = Math.min(anchorIndex, documentIndex);
+          const end = Math.max(anchorIndex, documentIndex);
+          const selectedDocumentIds = new Set(this.selectedDocuments.map(doc => doc._id.toString()));
+          for (let i = start; i <= end; i++) {
+            const docInRange = this.documents[i];
+            const existsInRange = selectedDocumentIds.has(docInRange._id.toString());
+            if (!existsInRange) {
+              this.selectedDocuments.push(docInRange);
             }
-            this.lastSelectedIndex = documentIndex;
-            return;
           }
-        }
-        const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
-        if (index !== -1) {
-          this.selectedDocuments.splice(index, 1);
-          if (this.selectedDocuments.length === 0) {
-            this.lastSelectedIndex = null;
-          } else {
-            const lastDoc = this.selectedDocuments[this.selectedDocuments.length - 1];
-            this.lastSelectedIndex = this.documents.findIndex(doc => doc._id.toString() == lastDoc._id.toString());
-          }
-        } else {
-          this.selectedDocuments.push(document);
           this.lastSelectedIndex = documentIndex;
+          return;
+        }
+      }
+      const index = this.selectedDocuments.findIndex(x => x._id.toString() == document._id.toString());
+      if (index !== -1) {
+        this.selectedDocuments.splice(index, 1);
+        if (this.selectedDocuments.length === 0) {
+          this.lastSelectedIndex = null;
+        } else {
+          const lastDoc = this.selectedDocuments[this.selectedDocuments.length - 1];
+          this.lastSelectedIndex = this.documents.findIndex(doc => doc._id.toString() == lastDoc._id.toString());
         }
       } else {
-        this.$router.push('/model/' + this.currentModel + '/document/' + document._id);
+        this.selectedDocuments.push(document);
+        this.lastSelectedIndex = documentIndex;
       }
+    },
+    openDocument(document) {
+      this.$router.push({
+        path: '/model/' + this.currentModel + '/document/' + document._id,
+        query: this.$route.query
+      });
     },
     async deleteDocuments() {
       const documentIds = this.selectedDocuments.map(x => x._id);
