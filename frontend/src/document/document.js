@@ -3,7 +3,7 @@
 const api = require('../api');
 const mpath = require('mpath');
 const template = require('./document.html');
-const vanillatoast = require('vanillatoasts');
+const vanillatoasts = require('vanillatoasts');
 
 const appendCSS = require('../appendCSS');
 
@@ -32,20 +32,24 @@ module.exports = app => app.component('document', {
     window.pageState = this;
     // Store query parameters from the route (preserved from models page)
     this.previousQuery = Object.assign({}, this.$route.query);
-    const { doc, schemaPaths, virtualPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
-    window.doc = doc;
-    this.document = doc;
-    this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
-      if (k1 === '_id' && k2 !== '_id') {
-        return -1;
-      }
-      if (k1 !== '_id' && k2 === '_id') {
-        return 1;
-      }
-      return 0;
-    }).map(key => schemaPaths[key]);
-    this.virtualPaths = virtualPaths || [];
-    this.status = 'loaded';
+    try {
+      const { doc, schemaPaths, virtualPaths } = await api.Model.getDocument({ model: this.model, documentId: this.documentId });
+      window.doc = doc;
+      this.document = doc;
+      this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+        if (k1 === '_id' && k2 !== '_id') {
+          return -1;
+        }
+        if (k1 !== '_id' && k2 === '_id') {
+          return 1;
+        }
+        return 0;
+      }).map(key => schemaPaths[key]);
+      this.virtualPaths = virtualPaths || [];
+      this.status = 'loaded';
+    } catch (err) {
+      this.status = 'loaded';
+    }
   },
   computed: {
     canManipulate() {
@@ -79,6 +83,13 @@ module.exports = app => app.component('document', {
       this.changes = {};
       this.editting = false;
       this.shouldShowConfirmModal = false;
+      vanillatoasts.create({
+        title: 'Document saved!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     },
     async remove() {
       const { doc } = await api.Model.deleteDocument({
@@ -88,10 +99,11 @@ module.exports = app => app.component('document', {
       if (doc.acknowledged) {
         this.editting = false;
         this.document = {};
-        vanillatoast.create({
-          title: 'Document Deleted!',
+        vanillatoasts.create({
+          title: 'Document deleted!',
           type: 'success',
           timeout: 3000,
+          icon: 'images/success.png',
           positionClass: 'bottomRight'
         });
         this.$router.push({
@@ -112,12 +124,12 @@ module.exports = app => app.component('document', {
       });
       this.document = doc;
 
-      // Show success message
-      vanillatoast.create({
-        title: 'Field Added!',
+      vanillatoasts.create({
+        title: 'Field added!',
         text: `Field "${fieldData.name}" has been added to the document`,
         type: 'success',
         timeout: 3000,
+        icon: 'images/success.png',
         positionClass: 'bottomRight'
       });
     },

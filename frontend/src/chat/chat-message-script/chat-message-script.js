@@ -56,6 +56,13 @@ module.exports = app => app.component('chat-message-script', {
         this.highlightCode();
       }
       this.activeTab = 'output';
+      vanillatoasts.create({
+        title: 'Script executed successfully!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
       return chatMessage;
     },
     openDetailModal() {
@@ -157,6 +164,13 @@ module.exports = app => app.component('chat-message-script', {
         throw err;
       });
       this.createError = null;
+      vanillatoasts.create({
+        title: 'Dashboard created!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
       this.showCreateDashboardModal = false;
       this.$router.push('/dashboard/' + dashboard._id);
     },
@@ -183,6 +197,13 @@ module.exports = app => app.component('chat-message-script', {
       });
 
       this.overwriteError = null;
+      vanillatoasts.create({
+        title: 'Dashboard updated!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
       this.showOverwriteDashboardConfirmationModal = false;
       this.$router.push('/dashboard/' + doc._id);
     },
