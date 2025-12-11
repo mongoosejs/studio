@@ -145,6 +145,20 @@ module.exports = app => app.component('document-details', {
 
       return matches.concat(nonMatches);
     },
+    matchedSchemaPaths() {
+      if (!this.searchQuery.trim()) {
+        return [];
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.typeFilteredSchemaPaths.filter(path => path.path.toLowerCase().includes(query));
+    },
+    unmatchedSchemaPaths() {
+      if (!this.searchQuery.trim()) {
+        return this.typeFilteredSchemaPaths;
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.typeFilteredSchemaPaths.filter(path => !path.path.toLowerCase().includes(query));
+    },
     typeFilteredVirtuals() {
       let virtuals = this.virtuals;
 
@@ -177,6 +191,20 @@ module.exports = app => app.component('document-details', {
       });
 
       return matches.concat(nonMatches);
+    },
+    matchedVirtuals() {
+      if (!this.searchQuery.trim()) {
+        return [];
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.typeFilteredVirtuals.filter(virtual => virtual.name.toLowerCase().includes(query));
+    },
+    unmatchedVirtuals() {
+      if (!this.searchQuery.trim()) {
+        return this.typeFilteredVirtuals;
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.typeFilteredVirtuals.filter(virtual => !virtual.name.toLowerCase().includes(query));
     },
     schemaSearchMatchSet() {
       if (!this.searchQuery.trim()) {
