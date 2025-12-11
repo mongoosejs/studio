@@ -39,15 +39,18 @@ module.exports = app => app.component('document-property', {
       }
       return String(value);
     },
-    isArray() {
+    _arrayValueData() {
       const value = this.getValueForPath(this.path.path);
-      return Array.isArray(value);
+      return {
+        value: Array.isArray(value) ? value : [],
+        isArray: Array.isArray(value)
+      };
+    },
+    isArray() {
+      return this._arrayValueData.isArray;
     },
     arrayValue() {
-      if (this.isArray) {
-        return this.getValueForPath(this.path.path);
-      }
-      return [];
+      return this._arrayValueData.value;
     },
     needsTruncation() {
       // For arrays, check if it has more than 3 items (regardless of expansion state)
@@ -59,10 +62,6 @@ module.exports = app => app.component('document-property', {
       return this.valueAsString.length > 200;
     },
     shouldShowTruncated() {
-      // For arrays, show truncated view if needs truncation and not expanded
-      if (this.isArray) {
-        return this.needsTruncation && !this.isValueExpanded;
-      }
       // For other types, show truncated if needs truncation and not expanded
       return this.needsTruncation && !this.isValueExpanded;
     },
@@ -157,34 +156,6 @@ module.exports = app => app.component('document-property', {
     },
     toggleValueExpansion() {
       this.isValueExpanded = !this.isValueExpanded;
-    },
-    formatArrayItem(item) {
-      if (item == null) {
-        return 'null';
-      }
-      if (typeof item === 'object') {
-        return inspect(item, { maxArrayLength: 50 });
-      }
-      return String(item);
-    },
-    isObjectItem(item) {
-      return item != null && typeof item === 'object' && !Array.isArray(item) && item.constructor === Object;
-    },
-    getItemKeys(item) {
-      if (!this.isObjectItem(item)) {
-        return [];
-      }
-      return Object.keys(item);
-    },
-    formatItemValue(item, key) {
-      const value = item[key];
-      if (value === null || value === undefined) {
-        return 'null';
-      }
-      if (typeof value === 'object') {
-        return inspect(value, { maxArrayLength: 50 });
-      }
-      return String(value);
     },
     setCopyFeedback() {
       this.copyButtonLabel = 'Copied';
