@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const chatMessageSchema = require('./db/chatMessageSchema');
 const chatThreadSchema = require('./db/chatThreadSchema');
 const dashboardSchema = require('./db/dashboardSchema');
+const sleuthSchema = require('./db/sleuthSchema');
 
 module.exports = function backend(db, studioConnection, options) {
   db = db || mongoose.connection;
@@ -15,6 +16,7 @@ module.exports = function backend(db, studioConnection, options) {
   const Dashboard = studioConnection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
   const ChatThread = studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
+  const Sleuth = studioConnection.model('__Studio_Sleuth', sleuthSchema, 'studio__sleuths');
 
   const actions = applySpec(Actions, { db, studioConnection, options });
   return actions;
