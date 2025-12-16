@@ -237,6 +237,16 @@ module.exports = app => app.component('models', {
       this.mongoDBIndexes = mongoDBIndexes;
       this.schemaIndexes = schemaIndexes;
     },
+    isTTLIndex(index) {
+      return index != null && index.expireAfterSeconds != null;
+    },
+    formatTTL(expireAfterSeconds) {
+      if (typeof expireAfterSeconds !== 'number') {
+        return '';
+      }
+
+      return `${expireAfterSeconds} seconds`;
+    },
     checkIndexLocation(indexName) {
       if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
         return 'text-gray-500';
