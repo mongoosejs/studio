@@ -47,7 +47,7 @@ module.exports = app => app.component('document', {
       }).map(key => schemaPaths[key]);
       this.virtualPaths = virtualPaths || [];
       this.status = 'loaded';
-    } catch (err) {
+    } finally {
       this.status = 'loaded';
     }
   },
