@@ -3,6 +3,7 @@
 'use strict';
 
 const mpath = require('mpath');
+const { inspect } = require('node-inspect-extracted');
 const template = require('./document-property.html');
 
 const appendCSS = require('../../appendCSS');
@@ -38,9 +39,31 @@ module.exports = app => app.component('document-property', {
       }
       return String(value);
     },
+    _arrayValueData() {
+      const value = this.getValueForPath(this.path.path);
+      return {
+        value: Array.isArray(value) ? value : [],
+        isArray: Array.isArray(value)
+      };
+    },
+    isArray() {
+      return this._arrayValueData.isArray;
+    },
+    arrayValue() {
+      return this._arrayValueData.value;
+    },
     needsTruncation() {
-      // Truncate if value is longer than 200 characters
+      // For arrays, check if it has more than 3 items (regardless of expansion state)
+      if (this.isArray) {
+        const arr = this.arrayValue;
+        return arr && arr.length > 3;
+      }
+      // For other types, truncate if value is longer than 200 characters
       return this.valueAsString.length > 200;
+    },
+    shouldShowTruncated() {
+      // For other types, show truncated if needs truncation and not expanded
+      return this.needsTruncation && !this.isValueExpanded;
     },
     displayValue() {
       if (!this.needsTruncation || this.isValueExpanded) {
@@ -51,9 +74,24 @@ module.exports = app => app.component('document-property', {
     },
     truncatedString() {
       if (this.needsTruncation && !this.isValueExpanded) {
-        return this.valueAsString.substring(0, 200) + '...';
+        // Arrays are handled in template, so this is for non-arrays
+        if (!this.isArray) {
+          return this.valueAsString.substring(0, 200) + '...';
+        }
       }
       return this.valueAsString;
+    },
+    truncatedArrayItems() {
+      if (this.isArray && this.needsTruncation && !this.isValueExpanded) {
+        return this.arrayValue.slice(0, 2);
+      }
+      return [];
+    },
+    remainingArrayCount() {
+      if (this.isArray && this.needsTruncation && !this.isValueExpanded) {
+        return this.arrayValue.length - 2;
+      }
+      return 0;
     }
   },
   methods: {
@@ -93,6 +131,10 @@ module.exports = app => app.component('document-property', {
         if (path.enum?.length > 0) {
           props.enumValues = path.enum;
         }
+      }
+      if (path.instance === 'Array') {
+        props.path = path;
+        props.schemaPaths = this.schemaPaths;
       }
       return props;
     },

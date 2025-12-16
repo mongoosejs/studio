@@ -141,5 +141,5 @@ module.exports = app => app.component('dashboard', {
   },
   beforeDestroy() {
     document.removeEventListener('click', this.handleDocumentClick);
-  },
+  }
 });
