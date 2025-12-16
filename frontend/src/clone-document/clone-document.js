@@ -1,7 +1,6 @@
 'use strict';
 
 const api = require('../api');
-const vanillatoasts = require('vanillatoasts');
 
 const { BSON, EJSON } = require('mongodb/lib/bson');
 
@@ -33,13 +32,7 @@ module.exports = app => app.component('clone-document', {
       try {
         const { doc } = await api.Model.createDocument({ model: this.currentModel, data });
         this.errors.length = 0;
-        vanillatoasts.create({
-          title: 'Document cloned!',
-          type: 'success',
-          timeout: 3000,
-          icon: 'images/success.png',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.success('Document cloned!');
         this.$emit('close', doc);
       } catch (err) {
         if (err.response?.data?.message) {

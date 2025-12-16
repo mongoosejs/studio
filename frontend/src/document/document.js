@@ -3,7 +3,6 @@
 const api = require('../api');
 const mpath = require('mpath');
 const template = require('./document.html');
-const vanillatoasts = require('vanillatoasts');
 
 const appendCSS = require('../appendCSS');
 
@@ -83,13 +82,7 @@ module.exports = app => app.component('document', {
       this.changes = {};
       this.editting = false;
       this.shouldShowConfirmModal = false;
-      vanillatoasts.create({
-        title: 'Document saved!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Document saved!');
     },
     async remove() {
       const { doc } = await api.Model.deleteDocument({
@@ -99,13 +92,7 @@ module.exports = app => app.component('document', {
       if (doc.acknowledged) {
         this.editting = false;
         this.document = {};
-        vanillatoasts.create({
-          title: 'Document deleted!',
-          type: 'success',
-          timeout: 3000,
-          icon: 'images/success.png',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.success('Document deleted!');
         this.$router.push({
           path: `/model/${this.model}`,
           query: this.previousQuery || {}
@@ -124,14 +111,7 @@ module.exports = app => app.component('document', {
       });
       this.document = doc;
 
-      vanillatoasts.create({
-        title: 'Field added!',
-        text: `Field "${fieldData.name}" has been added to the document`,
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success(`Field added! Field "${fieldData.name}" has been added to the document`);
     },
     updateViewMode(mode) {
       this.viewMode = mode;

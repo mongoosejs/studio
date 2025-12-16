@@ -3,7 +3,6 @@
 const api = require('../api');
 const template = require('./models.html');
 const mpath = require('mpath');
-const vanillatoasts = require('vanillatoasts');
 
 const appendCSS = require('../appendCSS');
 appendCSS(require('./models.css'));
@@ -72,7 +71,7 @@ module.exports = app => app.component('models', {
         this.error = 'No models found and Mongoose is not connected. Check our documentation for more information.';
       }
     }
-
+  
     await this.initSearchFromUrl();
   },
   computed: {
@@ -161,13 +160,7 @@ module.exports = app => app.component('models', {
     async dropIndex(name) {
       const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
       this.mongoDBIndexes = mongoDBIndexes;
-      vanillatoasts.create({
-        title: 'Index dropped!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Index dropped!');
     },
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
@@ -450,13 +443,7 @@ module.exports = app => app.component('models', {
         this.documents[index] = res.doc;
       }
       this.edittingDoc = null;
-      vanillatoasts.create({
-        title: 'Document updated!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Document updated!');
     },
     handleDocumentClick(document, event) {
       if (this.selectMultiple) {
@@ -520,13 +507,7 @@ module.exports = app => app.component('models', {
       this.lastSelectedIndex = null;
       this.shouldShowDeleteMultipleModal = false;
       this.selectMultiple = false;
-      vanillatoasts.create({
-        title: 'Documents deleted!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Documents deleted!');
     },
     async updateDocuments() {
       await this.getDocuments();

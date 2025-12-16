@@ -2,7 +2,6 @@
 
 const api = require('../api');
 const template = require('./list-subdocument.html');
-const vanillatoast = require('vanillatoasts');
 
 require('../appendCSS')(require('./list-subdocument.css'));
 
@@ -24,13 +23,7 @@ module.exports = app => app.component('list-subdocument', {
       storage.setSelectionRange(0, 99999);
       document.execCommand('copy');
       elem.removeChild(storage);
-      vanillatoast.create({
-        title: 'Text copied!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Text copied!');
     }
   },
   mounted: function() {
