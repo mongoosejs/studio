@@ -34,13 +34,28 @@ module.exports = ({ db }) => async function getDocument(params) {
     orFail();
   const schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
+    const schemaType = Model.schema.paths[path];
     schemaPaths[path] = {
-      instance: Model.schema.paths[path].instance,
+      instance: schemaType.instance,
       path,
-      ref: Model.schema.paths[path].options?.ref,
-      required: Model.schema.paths[path].options?.required,
-      enum: Model.schema.paths[path].options?.enum
+      ref: schemaType.options?.ref,
+      required: schemaType.options?.required,
+      enum: schemaType.options?.enum
     };
+
+    if (schemaType.schema) {
+      schemaPaths[path].schema = {};
+      for (const subpath of Object.keys(schemaType.schema.paths)) {
+        const subSchemaType = schemaType.schema.paths[subpath];
+        schemaPaths[path].schema[subpath] = {
+          instance: subSchemaType.instance,
+          path: subpath,
+          ref: subSchemaType.options?.ref,
+          required: subSchemaType.options?.required,
+          enum: subSchemaType.options?.enum
+        };
+      }
+    }
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
 

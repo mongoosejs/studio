@@ -1,0 +1,63 @@
+.detail-geojson {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.detail-geojson .tab-header {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.detail-geojson .tab-button {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.detail-geojson .tab-button:hover {
+  background: #eef2ff;
+}
+
+.detail-geojson .tab-button.active {
+  color: #1d4ed8;
+  background: #e0e7ff;
+}
+
+.detail-geojson .raw-view {
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.detail-geojson .geojson-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  margin: 0;
+  color: #111827;
+}
+
+.detail-geojson .map-view {
+  position: relative;
+}
+
+.detail-geojson .map-container {
+  height: 320px;
+  width: 100%;
+}
+
+.detail-geojson .map-error {
+  padding: 0.75rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border-top: 1px solid #fee2e2;
+  font-size: 0.875rem;
+}
