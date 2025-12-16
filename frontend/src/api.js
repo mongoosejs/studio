@@ -21,7 +21,7 @@ client.interceptors.request.use(req => {
 client.interceptors.response.use(
   res => res,
   err => {
-    if (typeof err.response.data === 'string') {
+    if (typeof err?.response?.data === 'string') {
       throw new Error(`Error in ${err.config?.method} ${err.config?.url}: ${err.response.data}`);
     }
     throw err;

@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./dashboards.html');
+const vanillatoasts = require('vanillatoasts');
 
 
 module.exports = app => app.component('dashboards', {
@@ -21,6 +22,13 @@ module.exports = app => app.component('dashboards', {
       const removedDashboard = this.dashboards.findIndex(x => x._id.toString() === dashboard._id.toString());
       this.dashboards.splice(removedDashboard, 1);
       this.showDeleteDashboardModal = null;
+      vanillatoasts.create({
+        title: 'Dashboard deleted!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     },
     insertNewDashboard(dashboard) {
       this.dashboards.push(dashboard);
