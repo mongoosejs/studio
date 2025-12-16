@@ -46,8 +46,11 @@ function getItemKeys(item) {
  */
 function formatItemValue(item, key) {
   const value = item[key];
-  if (value === null || value === undefined) {
+  if (value === null) {
     return 'null';
+  }
+  if (value === undefined) {
+    return 'undefined';
   }
   if (typeof value === 'object') {
     return inspect(value, { maxArrayLength: 50 });
