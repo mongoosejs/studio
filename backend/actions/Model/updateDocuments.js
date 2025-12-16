@@ -41,6 +41,9 @@ module.exports = ({ db }) => async function updateDocuments(params) {
       } else if (value === 'undefined') {
         // Use $unset to remove the field for undefined values
         unsetFields[key] = 1;
+      } else if (value === '') {
+        // Treat empty strings as undefined - unset the field
+        unsetFields[key] = 1;
       } else {
         setFields[key] = value;
       }
