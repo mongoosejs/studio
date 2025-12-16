@@ -117,6 +117,9 @@ module.exports = app => app.component('document-property', {
       if (path.instance === 'Embedded') {
         return 'edit-subdocument';
       }
+      if (path.instance === 'Mixed') {
+        return 'edit-subdocument';
+      }
       if (path.instance === 'Boolean') {
         return 'edit-boolean';
       }
