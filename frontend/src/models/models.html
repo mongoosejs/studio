@@ -194,11 +194,10 @@
         <div class="grow shrink text-left flex justify-between items-center" v-if="index.name != '_id_'">
           <div>
             <div class="font-bold flex items-center gap-2">
-              <span>{{ index.name }}</span>
-              <span v-if="isTTLIndex(index)" class="rounded-full bg-ultramarine-100 px-2 py-0.5 text-xs font-semibold text-ultramarine-700">TTL</span>
-            </div>
-            <div v-if="isTTLIndex(index)" class="text-sm text-gray-600">
-              Expires after {{ formatTTL(index.expireAfterSeconds) }}
+              <div>{{ index.name }}</div>
+              <div v-if="isTTLIndex(index)" class="rounded-full bg-ultramarine-100 px-2 py-0.5 text-xs font-semibold text-ultramarine-700">
+                TTL: {{ formatTTL(index.expireAfterSeconds) }}
+              </div>
             </div>
             <div class="text-sm font-mono">{{ JSON.stringify(index.key) }}</div>
           </div>

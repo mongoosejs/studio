@@ -245,7 +245,29 @@ module.exports = app => app.component('models', {
         return '';
       }
 
-      return `${expireAfterSeconds} seconds`;
+      let remaining = expireAfterSeconds;
+      const days = Math.floor(remaining / (24 * 60 * 60));
+      remaining = remaining % (24 * 60 * 60);
+      const hours = Math.floor(remaining / (60 * 60));
+      remaining = remaining % (60 * 60);
+      const minutes = Math.floor(remaining / 60);
+      const seconds = remaining % 60;
+
+      const parts = [];
+      if (days > 0) {
+        parts.push(`${days} day${days === 1 ? '' : 's'}`);
+      }
+      if (hours > 0) {
+        parts.push(`${hours} hour${hours === 1 ? '' : 's'}`);
+      }
+      if (minutes > 0) {
+        parts.push(`${minutes} minute${minutes === 1 ? '' : 's'}`);
+      }
+      if (seconds > 0 || parts.length === 0) {
+        parts.push(`${seconds} second${seconds === 1 ? '' : 's'}`);
+      }
+
+      return parts.join(', ');
     },
     checkIndexLocation(indexName) {
       if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
