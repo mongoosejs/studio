@@ -21,6 +21,7 @@ const app = Vue.createApp({
   template: '<app-component />'
 });
 
+// https://github.com/Maronato/vue-toastification/tree/main?tab=readme-ov-file#toast-types
 app.use(Toast, { position: 'bottom-right', timeout: 3000 });
 
 // Create a global toast instance for convenience (must be after app.use)
