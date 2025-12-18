@@ -25,16 +25,23 @@ module.exports = ({ db }) => async function getCollectionInfo(params) {
 
   const [collectionOptions, stats] = await Promise.all([
     Model.collection.options(),
-    Model.collection.stats()
+    Model.aggregate([
+      {
+        $collStats: {
+          storageStats: {},
+          count: {}
+        }
+      }
+    ]).then(res => res[0] ?? {})
   ]);
 
   return {
     info: {
-      capped: !!collectionOptions?.capped,
-      size: stats?.size,
-      totalIndexSize: stats?.totalIndexSize,
-      indexCount: stats?.nindexes,
-      documentCount: stats?.count,
+      capped: !!stats.storageStats?.capped,
+      size: stats.storageStats?.size,
+      totalIndexSize: stats.storageStats?.totalIndexSize,
+      indexCount: stats.storageStats?.nindexes,
+      documentCount: stats.storageStats?.count,
       hasCollation: !!collectionOptions?.collation,
       collation: collectionOptions?.collation || null
     }
