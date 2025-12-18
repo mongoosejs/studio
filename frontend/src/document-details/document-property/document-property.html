@@ -2,8 +2,8 @@
   <!-- Collapsible Header -->
   <div
     @click="toggleCollapse"
-    class="p-3 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
-    :class="{ 'bg-amber-100': highlight, 'bg-gray-50': !highlight }"
+    class="p-3 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
+    :class="{ 'bg-amber-100 hover:bg-amber-200': highlight, 'bg-gray-50 hover:bg-gray-100': !highlight }"
   >
     <div class="flex items-center" >
       <svg
@@ -81,7 +81,43 @@
     </div>
     <div v-else>
       <!-- Show truncated or full value based on needsTruncation and isValueExpanded -->
-      <div v-if="needsTruncation && !isValueExpanded" class="relative">
+      <!-- Special handling for truncated arrays -->
+      <div v-if="isArray && shouldShowTruncated" class="w-full">
+        <div class="mt-2">
+          <div
+            v-for="(item, index) in truncatedArrayItems"
+            :key="index"
+            class="mb-1.5 py-2.5 px-3 pl-4 bg-transparent border-l-[3px] border-l-blue-500 rounded-none transition-all duration-200 cursor-pointer relative hover:bg-slate-50 hover:border-l-blue-600">
+            <div class="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-semibold font-mono z-10 hover:bg-blue-600">{{ index }}</div>
+            <div v-if="arrayUtils.isObjectItem(item)" class="flex flex-col gap-1 mt-1 px-2">
+              <div
+                v-for="key in arrayUtils.getItemKeys(item)"
+                :key="key"
+                class="flex items-start gap-2 text-xs font-mono">
+                <span class="font-semibold text-gray-600 flex-shrink-0 min-w-[80px]">{{ key }}:</span>
+                <span class="text-gray-800 break-words whitespace-pre-wrap flex-1">{{ arrayUtils.formatItemValue(item, key) }}</span>
+              </div>
+            </div>
+            <div v-else class="text-xs py-1.5 px-2 font-mono text-gray-800 break-words whitespace-pre-wrap mt-1">{{ arrayUtils.formatValue(item) }}</div>
+          </div>
+          <div class="mb-1.5 py-2.5 px-3 pl-4 bg-transparent border-none border-l-[3px] border-l-blue-500 rounded-none transition-all duration-200 cursor-pointer relative opacity-70 hover:opacity-100">
+            <div class="text-xs py-1.5 px-2 font-mono text-gray-500 italic break-words whitespace-pre-wrap mt-1">
+              ... and {{ remainingArrayCount }} more item{{ remainingArrayCount !== 1 ? 's' : '' }}
+            </div>
+          </div>
+        </div>
+        <button
+          @click="toggleValueExpansion"
+          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+          Show all {{ arrayValue.length }} items
+        </button>
+      </div>
+      <!-- Non-array truncated view -->
+      <div v-else-if="shouldShowTruncated && !isArray" class="relative">
         <div class="text-gray-700 whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>
         <button
           @click="toggleValueExpansion"
@@ -93,6 +129,7 @@
           Show more ({{valueAsString.length}} characters)
         </button>
       </div>
+      <!-- Expanded view -->
       <div v-else-if="needsTruncation && isValueExpanded" class="relative">
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
         <button
@@ -105,6 +142,7 @@
           Show less
         </button>
       </div>
+      <!-- Full view (no truncation needed) -->
       <div v-else>
         <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
       </div>

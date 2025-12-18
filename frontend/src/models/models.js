@@ -3,6 +3,7 @@
 const api = require('../api');
 const template = require('./models.html');
 const mpath = require('mpath');
+const vanillatoasts = require('vanillatoasts');
 
 const appendCSS = require('../appendCSS');
 appendCSS(require('./models.css'));
@@ -34,6 +35,7 @@ module.exports = app => app.component('models', {
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
     shouldShowIndexModal: false,
+    shouldShowCollectionInfoModal: false,
     shouldShowUpdateMultipleModal: false,
     shouldShowDeleteMultipleModal: false,
     shouldExport: {},
@@ -44,7 +46,9 @@ module.exports = app => app.component('models', {
     outputType: 'table', // json, table
     hideSidebar: null,
     lastSelectedIndex: null,
-    error: null
+    error: null,
+    showActionsMenu: false,
+    collectionInfo: null
   }),
   created() {
     this.currentModel = this.model;
@@ -53,12 +57,23 @@ module.exports = app => app.component('models', {
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
+    document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
   },
   async mounted() {
     this.onScroll = () => this.checkIfScrolledToBottom();
     document.addEventListener('scroll', this.onScroll, true);
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
+    this.onOutsideActionsMenuClick = event => {
+      if (!this.showActionsMenu) {
+        return;
+      }
+      const actionsMenu = this.$refs.actionsMenuContainer;
+      if (actionsMenu && !actionsMenu.contains(event.target)) {
+        this.closeActionsMenu();
+      }
+    };
+    document.addEventListener('click', this.onOutsideActionsMenuClick, true);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     if (this.currentModel == null && this.models.length > 0) {
@@ -160,6 +175,13 @@ module.exports = app => app.component('models', {
     async dropIndex(name) {
       const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
       this.mongoDBIndexes = mongoDBIndexes;
+      vanillatoasts.create({
+        title: 'Index dropped!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     },
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
@@ -232,10 +254,85 @@ module.exports = app => app.component('models', {
       }
     },
     async openIndexModal() {
+      this.closeActionsMenu();
       this.shouldShowIndexModal = true;
       const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel });
       this.mongoDBIndexes = mongoDBIndexes;
       this.schemaIndexes = schemaIndexes;
+    },
+    toggleActionsMenu() {
+      this.showActionsMenu = !this.showActionsMenu;
+    },
+    closeActionsMenu() {
+      this.showActionsMenu = false;
+    },
+    async openCollectionInfo() {
+      this.closeActionsMenu();
+      this.shouldShowCollectionInfoModal = true;
+      this.collectionInfo = null;
+      const { info } = await api.Model.getCollectionInfo({ model: this.currentModel });
+      this.collectionInfo = info;
+    },
+    isTTLIndex(index) {
+      return index != null && index.expireAfterSeconds != null;
+    },
+    formatTTL(expireAfterSeconds) {
+      if (typeof expireAfterSeconds !== 'number') {
+        return '';
+      }
+
+      let remaining = expireAfterSeconds;
+      const days = Math.floor(remaining / (24 * 60 * 60));
+      remaining = remaining % (24 * 60 * 60);
+      const hours = Math.floor(remaining / (60 * 60));
+      remaining = remaining % (60 * 60);
+      const minutes = Math.floor(remaining / 60);
+      const seconds = remaining % 60;
+
+      const parts = [];
+      if (days > 0) {
+        parts.push(`${days} day${days === 1 ? '' : 's'}`);
+      }
+      if (hours > 0) {
+        parts.push(`${hours} hour${hours === 1 ? '' : 's'}`);
+      }
+      if (minutes > 0) {
+        parts.push(`${minutes} minute${minutes === 1 ? '' : 's'}`);
+      }
+      if (seconds > 0 || parts.length === 0) {
+        parts.push(`${seconds} second${seconds === 1 ? '' : 's'}`);
+      }
+
+      return parts.join(', ');
+    },
+    formatCollectionSize(size) {
+      if (typeof size !== 'number') {
+        return 'Unknown';
+      }
+
+      const KB = 1024;
+      const MB = KB * 1024;
+      const GB = MB * 1024;
+      const TB = GB * 1024;
+
+      if (size >= TB) {
+        return `${(size / TB).toFixed(3)} TB`;
+      } else if (size >= GB) {
+        return `${(size / GB).toFixed(3)} GB`;
+      } else if (size >= MB) {
+        return `${(size / MB).toFixed(3)} MB`;
+      } else if (size >= KB) {
+        return `${(size / KB).toFixed(3)} KB`;
+      } else {
+        return `${size.toLocaleString()} bytes`;
+      }
+    },
+    formatNumber(value) {
+      if (typeof value !== 'number') {
+        return 'Unknown';
+      }
+
+      return value.toLocaleString();
     },
     checkIndexLocation(indexName) {
       if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
@@ -410,6 +507,13 @@ module.exports = app => app.component('models', {
         this.documents[index] = res.doc;
       }
       this.edittingDoc = null;
+      vanillatoasts.create({
+        title: 'Document updated!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     },
     handleDocumentClick(document, event) {
       if (this.selectMultiple) {
@@ -473,6 +577,13 @@ module.exports = app => app.component('models', {
       this.lastSelectedIndex = null;
       this.shouldShowDeleteMultipleModal = false;
       this.selectMultiple = false;
+      vanillatoasts.create({
+        title: 'Documents deleted!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     },
     async updateDocuments() {
       await this.getDocuments();

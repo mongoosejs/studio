@@ -21,7 +21,7 @@ client.interceptors.request.use(req => {
 client.interceptors.response.use(
   res => res,
   err => {
-    if (typeof err.response.data === 'string') {
+    if (typeof err?.response?.data === 'string') {
       throw new Error(`Error in ${err.config?.method} ${err.config?.url}: ${err.response.data}`);
     }
     throw err;
@@ -139,6 +139,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       for (const doc of data.docs) {
         yield { document: doc };
       }
+    },
+    getCollectionInfo: function getCollectionInfo(params) {
+      return client.post('', { action: 'Model.getCollectionInfo', ...params }).then(res => res.data);
     },
     getIndexes: function getIndexes(params) {
       return client.post('', { action: 'Model.getIndexes', ...params }).then(res => res.data);
@@ -353,6 +356,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
           }
         }
       }
+    },
+    getCollectionInfo: function getCollectionInfo(params) {
+      return client.post('/Model/getCollectionInfo', params).then(res => res.data);
     },
     getIndexes: function getIndexes(params) {
       return client.post('/Model/getIndexes', params).then(res => res.data);

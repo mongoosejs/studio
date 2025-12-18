@@ -2,6 +2,7 @@
 
 const api = require('../api');
 const template = require('./dashboard.html');
+const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('dashboard', {
   template: template,
@@ -109,6 +110,13 @@ module.exports = app => app.component('dashboard', {
           initialMessage,
           dashboardId: this.dashboard?._id
         });
+        vanillatoasts.create({
+          title: 'Chat thread created!',
+          type: 'success',
+          timeout: 3000,
+          icon: 'images/success.png',
+          positionClass: 'bottomRight'
+        });
         this.$router.push('/chat/' + chatThread._id);
       } finally {
         this.startingChat = false;
@@ -141,5 +149,5 @@ module.exports = app => app.component('dashboard', {
   },
   beforeDestroy() {
     document.removeEventListener('click', this.handleDocumentClick);
-  },
+  }
 });

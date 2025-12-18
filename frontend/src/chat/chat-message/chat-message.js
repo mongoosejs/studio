@@ -62,6 +62,13 @@ module.exports = app => app.component('chat-message', {
       });
       message.executionResult = chatMessage.executionResult;
       console.log(message);
+      vanillatoasts.create({
+        title: 'Script executed successfully!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
     },
     async copyMessage() {
       const parts = this.contentSplitByScripts;

@@ -2,6 +2,7 @@
 
 const api = require('../../api');
 const template = require('./edit-dashboard.html');
+const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('edit-dashboard', {
   template: template,
@@ -31,6 +32,13 @@ module.exports = app => app.component('edit-dashboard', {
         });
         this.$emit('update', { doc });
         this.editor.setValue(doc.code);
+        vanillatoasts.create({
+          title: 'Dashboard updated!',
+          type: 'success',
+          timeout: 3000,
+          icon: 'images/success.png',
+          positionClass: 'bottomRight'
+        });
         this.closeEditor();
       } catch (err) {
         this.$emit('update', { error: { message: err.message } });

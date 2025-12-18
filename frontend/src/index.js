@@ -9,6 +9,7 @@ console.log(`Mongoose Studio Version ${version}`);
 
 const api = require('./api');
 const format = require('./format');
+const arrayUtils = require('./array-utils');
 const mothership = require('./mothership');
 const { routes } = require('./routes');
 const vanillatoasts = require('vanillatoasts');
@@ -149,7 +150,7 @@ router.beforeEach((to, from, next) => {
   }
 });
 
-app.config.globalProperties = { format };
+app.config.globalProperties = { format, arrayUtils };
 app.use(router);
 
 app.mount('#content');

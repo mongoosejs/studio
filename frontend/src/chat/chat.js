@@ -28,6 +28,13 @@ module.exports = app => app.component('chat', {
           this.chatThreads.unshift(chatThread);
           this.chatThreadId = chatThread._id;
           this.chatMessages = [];
+          vanillatoasts.create({
+            title: 'Chat thread created!',
+            type: 'success',
+            timeout: 3000,
+            icon: 'images/success.png',
+            positionClass: 'bottomRight'
+          });
         }
 
         this.chatMessages.push({
@@ -121,6 +128,13 @@ module.exports = app => app.component('chat', {
     },
     async createNewThread() {
       const { chatThread } = await api.ChatThread.createChatThread();
+      vanillatoasts.create({
+        title: 'Chat thread created!',
+        type: 'success',
+        timeout: 3000,
+        icon: 'images/success.png',
+        positionClass: 'bottomRight'
+      });
       this.$router.push('/chat/' + chatThread._id);
     },
     async toggleShareThread() {
@@ -135,6 +149,14 @@ module.exports = app => app.component('chat', {
         if (idx !== -1) {
           this.chatThreads.splice(idx, 1, chatThread);
         }
+
+        vanillatoasts.create({
+          title: 'Chat thread shared!',
+          type: 'success',
+          timeout: 3000,
+          icon: 'images/success.png',
+          positionClass: 'bottomRight'
+        });
 
         // Copy current URL to clipboard and show a toast
         const url = window.location.href;

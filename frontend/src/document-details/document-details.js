@@ -145,6 +145,20 @@ module.exports = app => app.component('document-details', {
 
       return matches.concat(nonMatches);
     },
+    matchedSchemaPaths() {
+      if (!this.searchQuery.trim()) {
+        return [];
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.typeFilteredSchemaPaths.filter(path => path.path.toLowerCase().includes(query));
+    },
+    unmatchedSchemaPaths() {
+      if (!this.searchQuery.trim()) {
+        return this.typeFilteredSchemaPaths;
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.typeFilteredSchemaPaths.filter(path => !path.path.toLowerCase().includes(query));
+    },
     typeFilteredVirtuals() {
       let virtuals = this.virtuals;
 
@@ -177,6 +191,20 @@ module.exports = app => app.component('document-details', {
       });
 
       return matches.concat(nonMatches);
+    },
+    matchedVirtuals() {
+      if (!this.searchQuery.trim()) {
+        return [];
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.typeFilteredVirtuals.filter(virtual => virtual.name.toLowerCase().includes(query));
+    },
+    unmatchedVirtuals() {
+      if (!this.searchQuery.trim()) {
+        return this.typeFilteredVirtuals;
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.typeFilteredVirtuals.filter(virtual => !virtual.name.toLowerCase().includes(query));
     },
     schemaSearchMatchSet() {
       if (!this.searchQuery.trim()) {
@@ -338,7 +366,7 @@ module.exports = app => app.component('document-details', {
 
       try {
         const fieldData = {
-          name: this.getTransformedFieldName(),
+          name: this.fieldData.name,
           type: this.fieldData.type,
           value: this.parseFieldValue(this.fieldData.value, this.fieldData.type)
         };
@@ -383,18 +411,6 @@ module.exports = app => app.component('document-details', {
         this.fieldValueEditor.toTextArea();
         this.fieldValueEditor = null;
       }
-    },
-    toSnakeCase(str) {
-      return str
-        .trim()
-        .replace(/\s+/g, '_') // Replace spaces with underscores
-        .replace(/[^a-zA-Z0-9_$]/g, '') // Remove invalid characters
-        .replace(/^[0-9]/, '_$&') // Prefix numbers with underscore
-        .toLowerCase();
-    },
-    getTransformedFieldName() {
-      if (!this.fieldData.name) return '';
-      return this.toSnakeCase(this.fieldData.name.trim());
     },
     getVirtualFieldType(virtual) {
       const value = virtual.value;
