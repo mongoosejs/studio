@@ -132,6 +132,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
         yield { document: doc };
       }
     },
+    getCollectionInfo: function getCollectionInfo(params) {
+      return client.post('', { action: 'Model.getCollectionInfo', ...params }).then(res => res.data);
+    },
     getIndexes: function getIndexes(params) {
       return client.post('', { action: 'Model.getIndexes', ...params }).then(res => res.data);
     },
@@ -337,6 +340,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
           }
         }
       }
+    },
+    getCollectionInfo: function getCollectionInfo(params) {
+      return client.post('/Model/getCollectionInfo', params).then(res => res.data);
     },
     getIndexes: function getIndexes(params) {
       return client.post('/Model/getIndexes', params).then(res => res.data);

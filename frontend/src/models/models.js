@@ -34,6 +34,7 @@ module.exports = app => app.component('models', {
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
     shouldShowIndexModal: false,
+    shouldShowCollectionInfoModal: false,
     shouldShowUpdateMultipleModal: false,
     shouldShowDeleteMultipleModal: false,
     shouldExport: {},
@@ -44,7 +45,9 @@ module.exports = app => app.component('models', {
     outputType: 'table', // json, table
     hideSidebar: null,
     lastSelectedIndex: null,
-    error: null
+    error: null,
+    showActionsMenu: false,
+    collectionInfo: null
   }),
   created() {
     this.currentModel = this.model;
@@ -232,10 +235,24 @@ module.exports = app => app.component('models', {
       }
     },
     async openIndexModal() {
+      this.closeActionsMenu();
       this.shouldShowIndexModal = true;
       const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel });
       this.mongoDBIndexes = mongoDBIndexes;
       this.schemaIndexes = schemaIndexes;
+    },
+    toggleActionsMenu() {
+      this.showActionsMenu = !this.showActionsMenu;
+    },
+    closeActionsMenu() {
+      this.showActionsMenu = false;
+    },
+    async openCollectionInfo() {
+      this.closeActionsMenu();
+      this.shouldShowCollectionInfoModal = true;
+      this.collectionInfo = null;
+      const { info } = await api.Model.getCollectionInfo({ model: this.currentModel });
+      this.collectionInfo = info;
     },
     isTTLIndex(index) {
       return index != null && index.expireAfterSeconds != null;
@@ -268,6 +285,20 @@ module.exports = app => app.component('models', {
       }
 
       return parts.join(', ');
+    },
+    formatCollectionSize(size) {
+      if (typeof size !== 'number') {
+        return 'Unknown';
+      }
+
+      return `${size.toLocaleString()} bytes`;
+    },
+    formatNumber(value) {
+      if (typeof value !== 'number') {
+        return 'Unknown';
+      }
+
+      return value.toLocaleString();
     },
     checkIndexLocation(indexName) {
       if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
