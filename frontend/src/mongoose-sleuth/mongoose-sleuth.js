@@ -3,7 +3,6 @@
 const api = require('../api');
 const template = require('./mongoose-sleuth.html');
 const mpath = require('mpath');
-const vanillatoasts = require('vanillatoasts');
 
 const limit = 20;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:mongoose-sleuth-output-type';
@@ -74,14 +73,7 @@ module.exports = app => app.component('mongoose-sleuth', {
         await this.loadCaseReport(caseReportId);
       } catch (err) {
         console.error('Error loading case report', err);
-        vanillatoasts.create({
-          title: 'Error loading case report',
-          text: err?.message || 'Unknown error',
-          type: 'error',
-          timeout: 5000,
-          icon: 'images/failure.jpg',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.error(`Error loading case report: ${err?.message || 'Unknown error'}`);
       }
     }
   },
@@ -119,14 +111,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
 
       if (!Array.isArray(this.selectedDocuments) || this.selectedDocuments.length === 0) {
-        vanillatoasts.create({
-          title: 'No documents selected',
-          text: 'Select one or more documents in Step 1 before moving to Investigating.',
-          type: 'warning',
-          timeout: 3000,
-          icon: 'images/failure.jpg',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.warning('No documents selected. Select one or more documents in Step 1 before moving to Investigating.');
         return;
       }
       this.activeStep = 'investigating';
@@ -419,13 +404,7 @@ module.exports = app => app.component('mongoose-sleuth', {
     },
     async saveCaseReport() {
       if (!this.caseReportName || this.caseReportName.trim().length === 0) {
-        vanillatoasts.create({
-          title: 'Case report name is required',
-          type: 'warning',
-          timeout: 3000,
-          icon: 'images/failure.jpg',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.warning('Case report name is required');
         return;
       }
 
@@ -442,14 +421,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       });
 
       if (documentsPayload.length === 0) {
-        vanillatoasts.create({
-          title: 'Select at least one document',
-          text: 'Choose one or more documents before creating a case report.',
-          type: 'warning',
-          timeout: 3000,
-          icon: 'images/failure.jpg',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.warning('Select at least one document. Choose one or more documents before creating a case report.');
         return;
       }
 
@@ -466,23 +438,10 @@ module.exports = app => app.component('mongoose-sleuth', {
           : [];
         // Move to Step 2 automatically
         this.activeStep = 'investigating';
-        vanillatoasts.create({
-          title: 'Case report created!',
-          type: 'success',
-          timeout: 3000,
-          icon: 'images/success.png',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.success('Case report created!');
       } catch (error) {
         console.error('Error saving case report', error);
-        vanillatoasts.create({
-          title: 'Error saving case report',
-          text: error?.message || 'Unknown error',
-          type: 'error',
-          timeout: 5000,
-          icon: 'images/failure.jpg',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.error(error?.message || 'Error saving case report');
       }
     }
   }
