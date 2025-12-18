@@ -366,7 +366,7 @@ module.exports = app => app.component('document-details', {
 
       try {
         const fieldData = {
-          name: this.getTransformedFieldName(),
+          name: this.fieldData.name,
           type: this.fieldData.type,
           value: this.parseFieldValue(this.fieldData.value, this.fieldData.type)
         };
@@ -411,18 +411,6 @@ module.exports = app => app.component('document-details', {
         this.fieldValueEditor.toTextArea();
         this.fieldValueEditor = null;
       }
-    },
-    toSnakeCase(str) {
-      return str
-        .trim()
-        .replace(/\s+/g, '_') // Replace spaces with underscores
-        .replace(/[^a-zA-Z0-9_$]/g, '') // Remove invalid characters
-        .replace(/^[0-9]/, '_$&') // Prefix numbers with underscore
-        .toLowerCase();
-    },
-    getTransformedFieldName() {
-      if (!this.fieldData.name) return '';
-      return this.toSnakeCase(this.fieldData.name.trim());
     },
     getVirtualFieldType(virtual) {
       const value = virtual.value;

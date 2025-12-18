@@ -9,6 +9,7 @@ exports.exportQueryResults = require('./exportQueryResults');
 exports.getDocument = require('./getDocument');
 exports.getDocuments = require('./getDocuments');
 exports.getDocumentsStream = require('./getDocumentsStream');
+exports.getCollectionInfo = require('./getCollectionInfo');
 exports.getIndexes = require('./getIndexes');
 exports.listModels = require('./listModels');
 exports.updateDocument = require('./updateDocument');

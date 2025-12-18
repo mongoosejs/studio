@@ -34,6 +34,7 @@ module.exports = app => app.component('models', {
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
     shouldShowIndexModal: false,
+    shouldShowCollectionInfoModal: false,
     shouldShowUpdateMultipleModal: false,
     shouldShowDeleteMultipleModal: false,
     shouldExport: {},
@@ -44,7 +45,9 @@ module.exports = app => app.component('models', {
     outputType: 'table', // json, table
     hideSidebar: null,
     lastSelectedIndex: null,
-    error: null
+    error: null,
+    showActionsMenu: false,
+    collectionInfo: null
   }),
   created() {
     this.currentModel = this.model;
@@ -53,12 +56,23 @@ module.exports = app => app.component('models', {
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
+    document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
   },
   async mounted() {
     this.onScroll = () => this.checkIfScrolledToBottom();
     document.addEventListener('scroll', this.onScroll, true);
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
+    this.onOutsideActionsMenuClick = event => {
+      if (!this.showActionsMenu) {
+        return;
+      }
+      const actionsMenu = this.$refs.actionsMenuContainer;
+      if (actionsMenu && !actionsMenu.contains(event.target)) {
+        this.closeActionsMenu();
+      }
+    };
+    document.addEventListener('click', this.onOutsideActionsMenuClick, true);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     if (this.currentModel == null && this.models.length > 0) {
@@ -233,10 +247,24 @@ module.exports = app => app.component('models', {
       }
     },
     async openIndexModal() {
+      this.closeActionsMenu();
       this.shouldShowIndexModal = true;
       const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel });
       this.mongoDBIndexes = mongoDBIndexes;
       this.schemaIndexes = schemaIndexes;
+    },
+    toggleActionsMenu() {
+      this.showActionsMenu = !this.showActionsMenu;
+    },
+    closeActionsMenu() {
+      this.showActionsMenu = false;
+    },
+    async openCollectionInfo() {
+      this.closeActionsMenu();
+      this.shouldShowCollectionInfoModal = true;
+      this.collectionInfo = null;
+      const { info } = await api.Model.getCollectionInfo({ model: this.currentModel });
+      this.collectionInfo = info;
     },
     isTTLIndex(index) {
       return index != null && index.expireAfterSeconds != null;
@@ -269,6 +297,35 @@ module.exports = app => app.component('models', {
       }
 
       return parts.join(', ');
+    },
+    formatCollectionSize(size) {
+      if (typeof size !== 'number') {
+        return 'Unknown';
+      }
+
+      const KB = 1024;
+      const MB = KB * 1024;
+      const GB = MB * 1024;
+      const TB = GB * 1024;
+
+      if (size >= TB) {
+        return `${(size / TB).toFixed(3)} TB`;
+      } else if (size >= GB) {
+        return `${(size / GB).toFixed(3)} GB`;
+      } else if (size >= MB) {
+        return `${(size / MB).toFixed(3)} MB`;
+      } else if (size >= KB) {
+        return `${(size / KB).toFixed(3)} KB`;
+      } else {
+        return `${size.toLocaleString()} bytes`;
+      }
+    },
+    formatNumber(value) {
+      if (typeof value !== 'number') {
+        return 'Unknown';
+      }
+
+      return value.toLocaleString();
     },
     checkIndexLocation(indexName) {
       if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
