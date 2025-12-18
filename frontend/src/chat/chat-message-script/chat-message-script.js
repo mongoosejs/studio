@@ -3,7 +3,6 @@
 
 const api = require('../../api');
 const template = require('./chat-message-script.html');
-const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('chat-message-script', {
   template,
@@ -56,13 +55,7 @@ module.exports = app => app.component('chat-message-script', {
         this.highlightCode();
       }
       this.activeTab = 'output';
-      vanillatoasts.create({
-        title: 'Script executed successfully!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Script executed successfully!');
       return chatMessage;
     },
     openDetailModal() {
@@ -164,13 +157,7 @@ module.exports = app => app.component('chat-message-script', {
         throw err;
       });
       this.createError = null;
-      vanillatoasts.create({
-        title: 'Dashboard created!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Dashboard created!');
       this.showCreateDashboardModal = false;
       this.$router.push('/dashboard/' + dashboard._id);
     },
@@ -197,13 +184,7 @@ module.exports = app => app.component('chat-message-script', {
       });
 
       this.overwriteError = null;
-      vanillatoasts.create({
-        title: 'Dashboard updated!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Dashboard updated!');
       this.showOverwriteDashboardConfirmationModal = false;
       this.$router.push('/dashboard/' + doc._id);
     },
@@ -224,13 +205,7 @@ module.exports = app => app.component('chat-message-script', {
       }
 
       await navigator.clipboard.writeText(parts.join('\n\n'));
-      vanillatoasts.create({
-        title: 'Code output copied!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Code output copied!');
     }
   },
   watch: {
