@@ -60,6 +60,7 @@
             type="checkbox"
             class="mt-1 h-4 w-4 rounded border-gray-300 text-ultramarine-600 focus:ring-ultramarine-500 flex-shrink-0"
             :checked="sleuthContext.isInInvestigation(doc)"
+            @click.stop
             @change.stop="sleuthContext.toggleInvestigationSelection(doc)"
           />
           <div class="flex-1 min-w-0">
