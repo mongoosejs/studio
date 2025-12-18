@@ -1,7 +1,6 @@
 'use strict';
 
 const api = require('../api');
-const vanillatoasts = require('vanillatoasts');
 
 const template = require('./create-dashboard.html');
 
@@ -29,13 +28,7 @@ module.exports = app => app.component('create-dashboard', {
         throw err;
       });
       this.errors.length = 0;
-      vanillatoasts.create({
-        title: 'Dashboard created!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Dashboard created!');
       this.$emit('close', dashboard);
     }
   },

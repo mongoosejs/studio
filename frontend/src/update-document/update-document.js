@@ -1,7 +1,6 @@
 'use strict';
 
 const api = require('../api');
-const vanillatoasts = require('vanillatoasts');
 
 const { BSON, EJSON } = require('mongodb/lib/bson');
 
@@ -40,13 +39,7 @@ module.exports = app => app.component('update-document', {
         this.$emit('update');
         this.$emit('close');
         this.$nextTick(() => {
-          vanillatoasts.create({
-            title: this.multiple ? 'Documents updated!' : 'Document updated!',
-            type: 'success',
-            timeout: 3000,
-            icon: 'images/success.png',
-            positionClass: 'bottomRight'
-          });
+          this.$toast.success(this.multiple ? 'Documents updated!' : 'Document updated!');
         });
       } catch (err) {
         if (err.response?.data?.message) {

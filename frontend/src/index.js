@@ -12,11 +12,20 @@ const format = require('./format');
 const arrayUtils = require('./array-utils');
 const mothership = require('./mothership');
 const { routes } = require('./routes');
-const vanillatoasts = require('vanillatoasts');
+const Toast = require('vue-toastification').default;
+const { useToast } = require('vue-toastification');
+const appendCSS = require('./appendCSS');
+appendCSS(require('vue-toastification/dist/index.css'));
 
 const app = Vue.createApp({
   template: '<app-component />'
 });
+
+// https://github.com/Maronato/vue-toastification/tree/main?tab=readme-ov-file#toast-types
+app.use(Toast, { position: 'bottom-right', timeout: 3000 });
+
+// Create a global toast instance for convenience (must be after app.use)
+const toast = useToast();
 
 // Import all components
 const requireComponents = require.context(
@@ -56,11 +65,8 @@ app.component('app-component', {
   </div>
   `,
   errorCaptured(err) {
-    vanillatoasts.create({
-      title: `Error: ${err?.response?.data?.message || err.message}`,
-      icon: 'images/failure.jpg',
-      timeout: 10000,
-      positionClass: 'bottomRight'
+    this.$toast.error(`Error: ${err?.response?.data?.message || err.message}`, {
+      timeout: 10000
     });
   },
   computed: {
@@ -150,7 +156,7 @@ router.beforeEach((to, from, next) => {
   }
 });
 
-app.config.globalProperties = { format, arrayUtils };
+app.config.globalProperties = { format, arrayUtils, $toast: toast };
 app.use(router);
 
 app.mount('#content');

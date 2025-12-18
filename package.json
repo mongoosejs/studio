@@ -9,9 +9,9 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@ai-sdk/anthropic": "2.x",
     "@ai-sdk/google": "2.x",
     "@ai-sdk/openai": "2.x",
-    "@ai-sdk/anthropic": "2.x",
     "ai": "5.x",
     "archetype": "0.13.1",
     "csv-stringify": "6.3.0",
@@ -20,8 +20,8 @@
     "marked": "15.0.12",
     "node-inspect-extracted": "3.x",
     "tailwindcss": "3.4.0",
-    "vanillatoasts": "^1.6.0",
     "vue": "3.x",
+    "vue-toastification": "^2.0.0-rc.5",
     "webpack": "5.x"
   },
   "peerDependencies": {
