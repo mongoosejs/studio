@@ -12,6 +12,22 @@ const sleuthSchema = new mongoose.Schema({
         $required: true,
         default: 'created',
         enum: ['created', 'in_progress', 'cancelled', 'resolved', 'archived']
+    },
+    documents: [{
+        document: {
+            type: mongoose.Schema.Types.ObjectId,
+            refPath: 'documentModel'
+        },
+        documentModel: {
+            type: String,
+            required: true
+        },
+        notes: {
+            type: String
+        }
+    }],
+    summary: {
+        type: String
     }
 }, {
     timestamps: true

@@ -2,3 +2,4 @@
 
 exports.createCaseReport = require('./createCaseReport');
 exports.getCaseReports = require('./getCaseReports');
+exports.getCaseReport = require('./getCaseReport');

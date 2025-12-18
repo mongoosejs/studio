@@ -3,6 +3,7 @@
 const api = require('../api');
 const template = require('./mongoose-sleuth.html');
 const mpath = require('mpath');
+const vanillatoasts = require('vanillatoasts');
 
 const limit = 20;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:mongoose-sleuth-output-type';
@@ -10,6 +11,11 @@ const OUTPUT_TYPE_STORAGE_KEY = 'studio:mongoose-sleuth-output-type';
 module.exports = app => app.component('mongoose-sleuth', {
   template: template,
   props: [],
+  provide() {
+    return {
+      sleuthContext: this
+    };
+  },
   data: () => ({
     models: [],
     currentModel: null,
@@ -28,20 +34,24 @@ module.exports = app => app.component('mongoose-sleuth', {
     selectedDocuments: [],
     error: null,
     shouldShowCaseReportModal: false,
-    caseReportName: ''
+    caseReportName: '',
+    currentCaseReportId: null,
+    activeStep: 'aggregating',
+    investigationSelections: [],
+    documentNotes: {}
   }),
   created() {
     this.loadOutputPreference();
   },
   beforeDestroy() {
-    const container = this.$refs.documentsList?.querySelector('.documents-container');
+    const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
     if (container) {
       container.removeEventListener('scroll', this.onScroll, true);
     }
   },
   async mounted() {
     this.onScroll = () => this.checkIfScrolledToBottom();
-    const container = this.$refs.documentsList?.querySelector('.documents-container');
+    const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
     if (container) {
       container.addEventListener('scroll', this.onScroll, true);
     }
@@ -55,11 +65,30 @@ module.exports = app => app.component('mongoose-sleuth', {
     } else {
       this.status = 'loaded';
     }
+
+    // If opened with an existing case report, load it and go to Step 2
+    const caseReportId = this.$route?.query?.caseReportId;
+    if (caseReportId) {
+      this.currentCaseReportId = caseReportId;
+      try {
+        await this.loadCaseReport(caseReportId);
+      } catch (err) {
+        console.error('Error loading case report', err);
+        vanillatoasts.create({
+          title: 'Error loading case report',
+          text: err?.message || 'Unknown error',
+          type: 'error',
+          timeout: 5000,
+          icon: 'images/failure.jpg',
+          positionClass: 'bottomRight'
+        });
+      }
+    }
   },
   updated() {
     // Re-attach scroll listener when documents container is updated
     this.$nextTick(() => {
-      const container = this.$refs.documentsList?.querySelector('.documents-container');
+      const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
       if (container) {
         container.removeEventListener('scroll', this.onScroll, true);
         container.addEventListener('scroll', this.onScroll, true);
@@ -78,6 +107,30 @@ module.exports = app => app.component('mongoose-sleuth', {
     }
   },
   methods: {
+    goToAggregating() {
+      this.activeStep = 'aggregating';
+    },
+    goToInvestigating() {
+      // If there are already documents in the investigation set (e.g., from an existing case report),
+      // allow moving to Step 2 without enforcing Step 1 selection.
+      if (Array.isArray(this.investigationSelections) && this.investigationSelections.length > 0) {
+        this.activeStep = 'investigating';
+        return;
+      }
+
+      if (!Array.isArray(this.selectedDocuments) || this.selectedDocuments.length === 0) {
+        vanillatoasts.create({
+          title: 'No documents selected',
+          text: 'Select one or more documents in Step 1 before moving to Investigating.',
+          type: 'warning',
+          timeout: 3000,
+          icon: 'images/failure.jpg',
+          positionClass: 'bottomRight'
+        });
+        return;
+      }
+      this.activeStep = 'investigating';
+    },
     loadOutputPreference() {
       if (typeof window === 'undefined' || !window.localStorage) {
         return;
@@ -138,12 +191,45 @@ module.exports = app => app.component('mongoose-sleuth', {
       this.status = 'loaded';
       // Attach scroll listener after documents are loaded
       this.$nextTick(() => {
-        const container = this.$refs.documentsList?.querySelector('.documents-container');
+        const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
         if (container) {
           container.removeEventListener('scroll', this.onScroll, true);
           container.addEventListener('scroll', this.onScroll, true);
         }
       });
+    },
+    getDocumentKey(doc) {
+      if (!doc || !doc._id || !doc.model) {
+        return '';
+      }
+      return `${String(doc.model)}:${String(doc._id)}`;
+    },
+    isInInvestigation(doc) {
+      const key = this.getDocumentKey(doc);
+      return this.investigationSelections.some(d => this.getDocumentKey(d) === key);
+    },
+    toggleInvestigationSelection(doc) {
+      const key = this.getDocumentKey(doc);
+      const idx = this.investigationSelections.findIndex(d => this.getDocumentKey(d) === key);
+      if (idx !== -1) {
+        this.investigationSelections.splice(idx, 1);
+      } else {
+        this.investigationSelections.push(doc);
+      }
+    },
+    getDocumentNote(doc) {
+      const key = this.getDocumentKey(doc);
+      if (!key) {
+        return '';
+      }
+      return this.documentNotes[key] || '';
+    },
+    setDocumentNote(doc, value) {
+      const key = this.getDocumentKey(doc);
+      if (!key) {
+        return;
+      }
+      this.documentNotes[key] = value;
     },
     async search(searchText) {
       this.searchText = searchText;
@@ -154,8 +240,9 @@ module.exports = app => app.component('mongoose-sleuth', {
       this.status = 'loaded';
     },
     addPathFilter(path) {
-      if (this.$refs.documentSearch?.addPathFilter) {
-        this.$refs.documentSearch.addPathFilter(path);
+      const aggregating = this.$refs.aggregating;
+      if (aggregating?.$refs?.documentSearch?.addPathFilter) {
+        aggregating.$refs.documentSearch.addPathFilter(path);
       }
     },
     async getDocuments() {
@@ -202,6 +289,51 @@ module.exports = app => app.component('mongoose-sleuth', {
         this.loadedAllDocs = true;
       }
     },
+    async loadCaseReport(caseReportId) {
+      const { caseReport } = await api.Sleuth.getCaseReport({ caseReportId });
+      if (!caseReport || !Array.isArray(caseReport.documents)) {
+        return;
+      }
+
+      const loadedDocs = [];
+      for (const entry of caseReport.documents) {
+        if (!entry || !entry.document || !entry.documentModel) {
+          continue;
+        }
+        try {
+          const { doc } = await api.Model.getDocument({
+            model: entry.documentModel,
+            documentId: entry.document
+          });
+          if (!doc) {
+            continue;
+          }
+          const merged = {
+            ...doc,
+            model: entry.documentModel
+          };
+          loadedDocs.push(merged);
+
+          // Restore note if present
+          if (typeof entry.notes === 'string' && entry.notes.trim().length > 0) {
+            const key = this.getDocumentKey(merged);
+            if (key) {
+              this.documentNotes[key] = entry.notes.trim();
+            }
+          }
+        } catch (err) {
+          console.error('Error loading document for case report', entry, err);
+        }
+      }
+
+      if (loadedDocs.length > 0) {
+        this.selectedDocuments = loadedDocs;
+        // By default, investigate all documents in the case report
+        this.investigationSelections = loadedDocs.slice();
+        // Open directly to Step 2 when a case report already has documents
+        this.activeStep = 'investigating';
+      }
+    },
     async loadMoreDocuments() {
       let docsCount = 0;
       let numDocsReceived = false;
@@ -231,7 +363,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       if (this.status === 'loading' || this.loadedAllDocs || !this.currentModel) {
         return;
       }
-      const container = this.$refs.documentsList?.querySelector('.documents-container');
+      const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
       if (container && container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
         this.status = 'loading';
         await this.loadMoreDocuments();
@@ -273,10 +405,10 @@ module.exports = app => app.component('mongoose-sleuth', {
     },
     handleDocumentSelection(document, event) {
       const documentWithModel = { ...document, model: this.currentModel };
-      const index = this.selectedDocuments.findIndex(x => 
+      const index = this.selectedDocuments.findIndex(x =>
         x._id.toString() === document._id.toString() && x.model === this.currentModel
       );
-      
+
       if (index !== -1) {
         // Deselect
         this.selectedDocuments.splice(index, 1);
@@ -287,18 +419,70 @@ module.exports = app => app.component('mongoose-sleuth', {
     },
     async saveCaseReport() {
       if (!this.caseReportName || this.caseReportName.trim().length === 0) {
+        vanillatoasts.create({
+          title: 'Case report name is required',
+          type: 'warning',
+          timeout: 3000,
+          icon: 'images/failure.jpg',
+          positionClass: 'bottomRight'
+        });
+        return;
+      }
+
+      const documentsPayload = this.selectedDocuments.map(doc => {
+        const base = {
+          document: doc._id,
+          documentModel: doc.model
+        };
+        const note = this.getDocumentNote(doc);
+        if (typeof note === 'string' && note.trim().length > 0) {
+          base.notes = note.trim();
+        }
+        return base;
+      });
+
+      if (documentsPayload.length === 0) {
+        vanillatoasts.create({
+          title: 'Select at least one document',
+          text: 'Choose one or more documents before creating a case report.',
+          type: 'warning',
+          timeout: 3000,
+          icon: 'images/failure.jpg',
+          positionClass: 'bottomRight'
+        });
         return;
       }
 
       try {
-        await api.Sleuth.createCaseReport({ name: this.caseReportName.trim() });
+        await api.Sleuth.createCaseReport({
+          name: this.caseReportName.trim(),
+          documents: documentsPayload
+        });
         this.shouldShowCaseReportModal = false;
         this.caseReportName = '';
-        // Show success message (you might want to use a toast notification here)
-        alert('Case report saved successfully!');
+        // Pre-populate investigation step with all currently selected documents
+        this.investigationSelections = Array.isArray(this.selectedDocuments)
+          ? this.selectedDocuments.slice()
+          : [];
+        // Move to Step 2 automatically
+        this.activeStep = 'investigating';
+        vanillatoasts.create({
+          title: 'Case report created!',
+          type: 'success',
+          timeout: 3000,
+          icon: 'images/success.png',
+          positionClass: 'bottomRight'
+        });
       } catch (error) {
         console.error('Error saving case report', error);
-        alert('Error saving case report: ' + (error.message || 'Unknown error'));
+        vanillatoasts.create({
+          title: 'Error saving case report',
+          text: error?.message || 'Unknown error',
+          type: 'error',
+          timeout: 5000,
+          icon: 'images/failure.jpg',
+          positionClass: 'bottomRight'
+        });
       }
     }
   }

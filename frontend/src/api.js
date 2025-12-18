@@ -81,6 +81,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getCaseReports(params) {
       return client.post('', { action: 'Sleuth.getCaseReports', ...params }).then(res => res.data);
+    },
+    getCaseReport(params) {
+      return client.post('', { action: 'Sleuth.getCaseReport', ...params }).then(res => res.data);
     }
   };
   exports.Model = {
@@ -257,6 +260,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getCaseReports: function getCaseReports(params) {
       return client.post('/Sleuth/getCaseReports', params).then(res => res.data);
+    },
+    getCaseReport: function getCaseReport(params) {
+      return client.post('/Sleuth/getCaseReport', params).then(res => res.data);
     }
   };
   exports.Model = {
