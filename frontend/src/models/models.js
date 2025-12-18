@@ -56,12 +56,23 @@ module.exports = app => app.component('models', {
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
+    document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
   },
   async mounted() {
     this.onScroll = () => this.checkIfScrolledToBottom();
     document.addEventListener('scroll', this.onScroll, true);
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
+    this.onOutsideActionsMenuClick = event => {
+      if (!this.showActionsMenu) {
+        return;
+      }
+      const actionsMenu = this.$refs.actionsMenuContainer;
+      if (actionsMenu && !actionsMenu.contains(event.target)) {
+        this.closeActionsMenu();
+      }
+    };
+    document.addEventListener('click', this.onOutsideActionsMenuClick, true);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     if (this.currentModel == null && this.models.length > 0) {
