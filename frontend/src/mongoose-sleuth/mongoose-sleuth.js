@@ -99,21 +99,51 @@ module.exports = app => app.component('mongoose-sleuth', {
     }
   },
   methods: {
-    goToAggregating() {
+    async goToAggregating() {
+      // If we're coming from Step 2 and have an existing case report,
+      // persist current notes/document state before going back.
+      if (this.activeStep === 'investigating' && this.currentCaseReportId) {
+        await this.saveInvestigationProgress();
+      }
       this.activeStep = 'aggregating';
     },
-    goToInvestigating() {
-      // If there are already documents in the investigation set (e.g., from an existing case report),
-      // allow moving to Step 2 without enforcing Step 1 selection.
-      if (Array.isArray(this.investigationSelections) && this.investigationSelections.length > 0) {
-        this.activeStep = 'investigating';
-        return;
-      }
-
-      if (!Array.isArray(this.selectedDocuments) || this.selectedDocuments.length === 0) {
+    buildDocumentsPayload() {
+      return this.selectedDocuments.map(doc => {
+        const base = {
+          document: doc._id,
+          documentModel: doc.model
+        };
+        const note = this.getDocumentNote(doc);
+        base.notes = note.trim();
+        return base;
+      });
+    },
+    async goToInvestigating() {
+      if (this.selectedDocuments.length === 0) {
         this.$toast.warning('No documents selected. Select one or more documents in Step 1 before moving to Investigating.');
         return;
       }
+
+      // Keep investigation selections in sync with current step 1 selections
+      this.investigationSelections = this.selectedDocuments.slice();
+
+      // If we're editing an existing case report, persist the new document selection
+      if (this.currentCaseReportId) {
+        const documentsPayload = this.buildDocumentsPayload();
+
+        try {
+          await api.Sleuth.updateCaseReport({
+            caseReportId: this.currentCaseReportId,
+            documents: documentsPayload
+          });
+          this.$toast.success('Case report updated');
+        } catch (err) {
+          console.error('Error updating case report', err);
+          this.$toast.error(err?.message || 'Error updating case report');
+          return;
+        }
+      }
+
       this.activeStep = 'investigating';
     },
     loadOutputPreference() {
@@ -408,17 +438,7 @@ module.exports = app => app.component('mongoose-sleuth', {
         return;
       }
 
-      const documentsPayload = this.selectedDocuments.map(doc => {
-        const base = {
-          document: doc._id,
-          documentModel: doc.model
-        };
-        const note = this.getDocumentNote(doc);
-        if (typeof note === 'string' && note.trim().length > 0) {
-          base.notes = note.trim();
-        }
-        return base;
-      });
+      const documentsPayload = this.buildDocumentsPayload();
 
       if (documentsPayload.length === 0) {
         this.$toast.warning('Select at least one document. Choose one or more documents before creating a case report.');
@@ -426,10 +446,13 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
 
       try {
-        await api.Sleuth.createCaseReport({
+        const { caseReport } = await api.Sleuth.createCaseReport({
           name: this.caseReportName.trim(),
           documents: documentsPayload
         });
+        if (caseReport && caseReport._id) {
+          this.currentCaseReportId = caseReport._id;
+        }
         this.shouldShowCaseReportModal = false;
         this.caseReportName = '';
         // Pre-populate investigation step with all currently selected documents
@@ -442,6 +465,25 @@ module.exports = app => app.component('mongoose-sleuth', {
       } catch (error) {
         console.error('Error saving case report', error);
         this.$toast.error(error?.message || 'Error saving case report');
+      }
+    },
+    async saveInvestigationProgress() {
+      if (!this.currentCaseReportId) {
+        this.$toast.error('No case report to save yet.');
+        return;
+      }
+
+      const documentsPayload = this.buildDocumentsPayload();
+
+      try {
+        await api.Sleuth.updateCaseReport({
+          caseReportId: this.currentCaseReportId,
+          documents: documentsPayload
+        });
+        this.$toast.success('Progress saved');
+      } catch (err) {
+        console.error('Error saving progress', err);
+        this.$toast.error(err?.message || 'Error saving progress');
       }
     }
   }

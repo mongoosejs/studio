@@ -30,6 +30,13 @@
           <span class="text-gray-500">Step 3: Summarize</span>
         </div>
       </div>
+      <async-button
+        type="button"
+        class="inline-flex items-center rounded bg-ultramarine-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+        @click="sleuthContext.saveInvestigationProgress()"
+      >
+        Save Progress
+      </async-button>
     </div>
     <div v-if="sleuthContext.selectedDocuments.length > 0" class="mt-2 text-sm text-gray-600">
       {{ sleuthContext.selectedDocuments.length }}

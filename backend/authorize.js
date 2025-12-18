@@ -23,7 +23,12 @@ const actionsToRequiredRoles = {
   'Model.getDocumentsStream': ['owner', 'admin', 'member', 'readonly'],
   'Model.getIndexes': ['owner', 'admin', 'member', 'readonly'],
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
-  'Model.updateDocuments': ['owner', 'admin', 'member']
+  'Model.updateDocuments': ['owner', 'admin', 'member'],
+  // Sleuth / Mongoose Sleuth (Bug Hunt) actions
+  'Sleuth.createCaseReport': ['owner', 'admin', 'member'],
+  'Sleuth.getCaseReports': ['owner', 'admin', 'member', 'readonly'],
+  'Sleuth.getCaseReport': ['owner', 'admin', 'member', 'readonly'],
+  'Sleuth.updateCaseReport': ['owner', 'admin', 'member']
 };
 
 module.exports = function authorize(action, roles) {
