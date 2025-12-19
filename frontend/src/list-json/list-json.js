@@ -277,7 +277,31 @@ module.exports = app => app.component('list-json', {
           return this.references[this.normalizedPath] || null;
         },
         shouldShowReferenceLink() {
-          return Boolean(this.referenceModel) && typeof this.value === 'string';
+          return this.referenceId != null;
+        },
+        referenceId() {
+          if (!this.referenceModel) {
+            return null;
+          }
+          if (this.value == null) {
+            return null;
+          }
+          const type = typeof this.value;
+          if (type === 'string' || type === 'number' || type === 'bigint') {
+            return String(this.value);
+          }
+          if (type === 'object') {
+            if (this.value._id != null) {
+              return String(this.value._id);
+            }
+            if (typeof this.value.toString === 'function') {
+              const stringified = this.value.toString();
+              if (typeof stringified === 'string' && stringified !== '[object Object]') {
+                return stringified;
+              }
+            }
+          }
+          return null;
         }
       },
       methods: {
@@ -303,8 +327,9 @@ module.exports = app => app.component('list-json', {
             this.expandTopLevel();
           }
         },
-        goToReference(id) {
-          if (!this.referenceModel) {
+        goToReference() {
+          const id = this.referenceId;
+          if (!this.referenceModel || id == null) {
             return;
           }
           this.$router.push({ path: `/model/${this.referenceModel}/document/${id}` });
