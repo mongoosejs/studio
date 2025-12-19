@@ -593,6 +593,11 @@ module.exports = app => app.component('models', {
       } else {
         this.selectMultiple = true;
       }
+    },
+    goToMongooseSleuth() {
+      this.$router.push({
+        path: '/mongoose-sleuth'
+      });
     }
   }
 });

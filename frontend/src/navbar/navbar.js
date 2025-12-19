@@ -41,6 +41,9 @@ module.exports = app => app.component('navbar', {
     chatView() {
       return ['chat index', 'chat'].includes(this.$route.name);
     },
+    caseReportsView() {
+      return this.$route.name === 'case-reports';
+    },
     routeName() {
       return this.$route.name;
     },

@@ -2,14 +2,14 @@
 
 // Role-based access control configuration
 const roleAccess = {
-  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat'],
-  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat'],
-  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat'],
-  readonly: ['root', 'model', 'document', 'chat'],
+  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'mongoose-sleuth', 'case-reports'],
+  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'mongoose-sleuth', 'case-reports'],
+  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat', 'mongoose-sleuth', 'case-reports'],
+  readonly: ['root', 'model', 'document', 'chat', 'mongoose-sleuth', 'case-reports'],
   dashboards: ['dashboards', 'dashboard']
 };
 
-const allowedRoutesForLocalDev = ['document', 'root', 'chat'];
+const allowedRoutesForLocalDev = ['document', 'root', 'chat', 'mongoose-sleuth', 'case-reports'];
 
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {
@@ -40,6 +40,22 @@ module.exports = {
       path: '/model/:model/document/:documentId',
       name: 'document',
       component: 'document',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/mongoose-sleuth',
+      name: 'mongoose-sleuth',
+      component: 'mongoose-sleuth',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/case-reports',
+      name: 'case-reports',
+      component: 'case-reports',
       meta: {
         authorized: true
       }
