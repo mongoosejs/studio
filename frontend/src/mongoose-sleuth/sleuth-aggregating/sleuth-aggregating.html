@@ -63,7 +63,14 @@
               Step 2: Investigating
             </button>
             <span class="text-gray-400">•</span>
-            <span class="text-gray-500">Step 3: Summarize</span>
+            <button
+              type="button"
+              class="font-semibold focus:outline-none"
+              :class="sleuthContext.activeStep === 'summarize' ? 'text-ultramarine-600' : 'text-gray-500 hover:text-ultramarine-600'"
+              @click="sleuthContext.goToSummarize()"
+            >
+              Step 3: Summarize
+            </button>
           </div>
         </div>
         <button
@@ -161,9 +168,6 @@
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                          <div class="text-xs text-gray-500 mb-2 font-mono pr-6">
-                            ID: {{ doc._id }}
-                          </div>
                           <div class="text-xs overflow-x-auto">
                             <list-json :value="doc" :references="sleuthContext.referenceMap"></list-json>
                           </div>
@@ -314,8 +318,8 @@
           </div>
         </div>
 
-        <div v-else-if="sleuthContext.status === 'loading'" class="loader">
-          <img src="images/loader.gif" />
+        <div v-else-if="sleuthContext.status === 'loading'" class="flex items-center justify-center h-full">
+          <mongoose-loading></mongoose-loading>
         </div>
         <div
           v-else-if="sleuthContext.status === 'loaded' && sleuthContext.documents.length === 0"

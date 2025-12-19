@@ -39,7 +39,14 @@ module.exports = app => app.component('mongoose-sleuth', {
     investigationSelections: [],
     documentNotes: {},
     showSelectedDocuments: false,
-    expandedModels: {}
+    expandedModels: {},
+    shouldShowFieldModal: false,
+    selectedPaths: {},
+    filteredPathsByModel: {},
+    expandedFieldModels: {},
+    summary: '',
+    aiSummary: '',
+    savingSummary: false
   }),
   created() {
     this.loadOutputPreference();
@@ -384,8 +391,17 @@ module.exports = app => app.component('mongoose-sleuth', {
         this.selectedDocuments = loadedDocs;
         // By default, investigate all documents in the case report
         this.investigationSelections = loadedDocs.slice();
+        // Restore summary if present
+        if (typeof caseReport.summary === 'string') {
+          this.summary = caseReport.summary;
+        }
+        // Restore AI summary if present
+        if (typeof caseReport.AISummary === 'string') {
+          this.aiSummary = caseReport.AISummary;
+        }
         // Open directly to Step 2 when a case report already has documents
-        this.activeStep = 'investigating';
+        // If summary exists, go to Step 3
+        this.activeStep = caseReport.summary ? 'summarize' : 'investigating';
       }
     },
     async loadMoreDocuments() {
@@ -425,13 +441,145 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     },
     filterDocument(doc) {
+      if (!doc || !doc.model) {
+        return doc;
+      }
+      const model = doc.model;
+      const filteredPaths = this.filteredPathsByModel[model];
+      if (!filteredPaths || filteredPaths.length === 0) {
+        return doc;
+      }
       const filteredDoc = {};
-      for (let i = 0; i < this.filteredPaths.length; i++) {
-        const path = this.filteredPaths[i].path;
+      for (let i = 0; i < filteredPaths.length; i++) {
+        const path = filteredPaths[i].path;
         const value = mpath.get(path, doc);
         mpath.set(path, value, filteredDoc);
       }
       return filteredDoc;
+    },
+    getSchemaPathsByModel() {
+      // Collect schema paths grouped by model
+      const pathsByModel = {};
+      for (const doc of this.selectedDocuments) {
+        if (!doc || typeof doc !== 'object' || !doc.model) {
+          continue;
+        }
+        const model = doc.model;
+        if (!pathsByModel[model]) {
+          pathsByModel[model] = new Map();
+        }
+        const pathMap = pathsByModel[model];
+        const collectPaths = (obj, prefix = '') => {
+          for (const key in obj) {
+            if (key === '__v' || key === '_id') {
+              continue;
+            }
+            const fullPath = prefix ? `${prefix}.${key}` : key;
+            if (obj[key] != null && typeof obj[key] === 'object' && !Array.isArray(obj[key]) && !(obj[key] instanceof Date) && !(obj[key].constructor && obj[key].constructor.name === 'ObjectId')) {
+              collectPaths(obj[key], fullPath);
+            } else {
+              if (!pathMap.has(fullPath)) {
+                pathMap.set(fullPath, {
+                  path: fullPath,
+                  instance: Array.isArray(obj[key]) ? 'Array' : typeof obj[key] === 'string' ? 'String' : typeof obj[key] === 'number' ? 'Number' : typeof obj[key] === 'boolean' ? 'Boolean' : 'Mixed'
+                });
+              }
+            }
+          }
+        };
+        collectPaths(doc);
+        // Always include _id for each model
+        if (!pathMap.has('_id')) {
+          pathMap.set('_id', { path: '_id', instance: 'ObjectId' });
+        }
+      }
+      // Convert Maps to sorted arrays
+      const result = {};
+      for (const model in pathsByModel) {
+        const pathMap = pathsByModel[model];
+        result[model] = Array.from(pathMap.values()).sort((a, b) => {
+          if (a.path === '_id' && b.path !== '_id') return -1;
+          if (a.path !== '_id' && b.path === '_id') return 1;
+          return a.path.localeCompare(b.path);
+        });
+      }
+      return result;
+    },
+    openFieldSelection() {
+      if (this.selectedDocuments.length === 0) {
+        this.$toast.warning('No documents selected. Select documents in Step 1 first.');
+        return;
+      }
+      const pathsByModel = this.getSchemaPathsByModel();
+      // Initialize selectedPaths per model
+      this.selectedPaths = {};
+      // Initialize expandedFieldModels - expand first model by default
+      this.expandedFieldModels = {};
+      const modelNames = Object.keys(pathsByModel);
+      if (modelNames.length > 0) {
+        this.expandedFieldModels[modelNames[0]] = true;
+      }
+      for (const model in pathsByModel) {
+        if (this.filteredPathsByModel[model] && this.filteredPathsByModel[model].length > 0) {
+          this.selectedPaths[model] = [...this.filteredPathsByModel[model]];
+        } else {
+          this.selectedPaths[model] = pathsByModel[model].length > 0 ? [{ path: '_id' }] : [];
+        }
+      }
+      this.shouldShowFieldModal = true;
+    },
+    toggleFieldModelExpansion(model) {
+      this.expandedFieldModels[model] = !this.expandedFieldModels[model];
+    },
+    isFieldModelExpanded(model) {
+      return !!this.expandedFieldModels[model];
+    },
+    addOrRemove(model, path) {
+      if (!this.selectedPaths[model]) {
+        this.selectedPaths[model] = [];
+      }
+      const index = this.selectedPaths[model].findIndex(p => p.path === path.path);
+      if (index !== -1) {
+        this.selectedPaths[model].splice(index, 1);
+      } else {
+        this.selectedPaths[model].push(path);
+      }
+    },
+    isSelected(model, path) {
+      if (!this.selectedPaths[model]) {
+        return false;
+      }
+      const pathStr = typeof path === 'string' ? path : path.path;
+      return this.selectedPaths[model].find(p => p.path === pathStr);
+    },
+    selectAll(model) {
+      const pathsByModel = this.getSchemaPathsByModel();
+      if (pathsByModel[model]) {
+        this.selectedPaths[model] = [...pathsByModel[model]];
+      }
+    },
+    deselectAll(model) {
+      this.selectedPaths[model] = [];
+    },
+    filterDocuments() {
+      this.filteredPathsByModel = {};
+      for (const model in this.selectedPaths) {
+        if (this.selectedPaths[model] && this.selectedPaths[model].length > 0) {
+          this.filteredPathsByModel[model] = [...this.selectedPaths[model]];
+        } else {
+          this.filteredPathsByModel[model] = [];
+        }
+      }
+      this.shouldShowFieldModal = false;
+    },
+    resetDocuments() {
+      this.filteredPathsByModel = {};
+      const pathsByModel = this.getSchemaPathsByModel();
+      this.selectedPaths = {};
+      for (const model in pathsByModel) {
+        this.selectedPaths[model] = pathsByModel[model].length > 0 ? [...pathsByModel[model]] : [];
+      }
+      this.shouldShowFieldModal = false;
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
@@ -542,6 +690,41 @@ module.exports = app => app.component('mongoose-sleuth', {
       } catch (err) {
         console.error('Error saving progress', err);
         this.$toast.error(err?.message || 'Error saving progress');
+      }
+    },
+    async goToSummarize() {
+      // Save investigation progress before moving to Step 3
+      if (this.currentCaseReportId) {
+        await this.saveInvestigationProgress();
+      }
+      this.activeStep = 'summarize';
+    },
+    async saveSummary() {
+      if (!this.currentCaseReportId) {
+        this.$toast.error('No case report to save yet.');
+        return;
+      }
+
+      const documentsPayload = this.buildDocumentsPayload();
+
+      this.savingSummary = true;
+      try {
+        const { caseReport, aiSummary } = await api.Sleuth.updateCaseReport({
+          caseReportId: this.currentCaseReportId,
+          documents: documentsPayload,
+          summary: this.summary || ''
+        });
+        if (aiSummary) {
+          this.aiSummary = aiSummary;
+          this.$toast.success('Summary saved and AI summary generated');
+        } else {
+          this.$toast.success('Summary saved');
+        }
+      } catch (err) {
+        console.error('Error saving summary', err);
+        this.$toast.error(err?.message || 'Error saving summary');
+      } finally {
+        this.savingSummary = false;
       }
     }
   }

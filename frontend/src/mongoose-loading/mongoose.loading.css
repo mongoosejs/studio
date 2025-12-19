@@ -1,0 +1,273 @@
+.wheel-and-mongoose {
+    --dur: 1s;
+    position: relative;
+    width: 12em;
+    height: 12em;
+    font-size: 14px;
+  }
+  
+  .wheel,
+  .mongoose,
+  .mongoose div,
+  .spoke {
+    position: absolute;
+  }
+  
+  .wheel,
+  .spoke {
+    border-radius: 50%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .wheel {
+    background: radial-gradient(100% 100% at center,hsla(0,0%,60%,0) 47.8%,hsl(0,0%,60%) 48%);
+    z-index: 2;
+  }
+  
+  .mongoose {
+    animation: mongoose var(--dur) ease-in-out infinite;
+    top: 50%;
+    left: calc(50% - 3.5em);
+    width: 8em;
+    height: 3.5em;
+    transform: rotate(4deg) translate(-0.8em,1.85em);
+    transform-origin: 50% 0;
+    z-index: 1;
+  }
+  
+  .mongoose__head {
+    animation: mongooseHead var(--dur) ease-in-out infinite;
+    background: hsl(25,30%,45%);
+    border-radius: 60% 40% 0 100% / 50% 30% 30% 50%;
+    box-shadow: 0 -0.25em 0 hsl(25,30%,55%) inset,
+          0.75em -1.55em 0 hsl(25,30%,60%) inset;
+    top: 0;
+    left: -2.5em;
+    width: 3.25em;
+    height: 2.25em;
+    transform-origin: 100% 50%;
+  }
+  
+  .mongoose__ear {
+    animation: mongooseEar var(--dur) ease-in-out infinite;
+    background: hsl(25,25%,40%);
+    border-radius: 50%;
+    box-shadow: -0.15em 0 hsl(25,30%,45%) inset;
+    top: 0.1em;
+    right: -0.2em;
+    width: 0.6em;
+    height: 0.6em;
+    transform-origin: 50% 75%;
+  }
+  
+  .mongoose__eye {
+    animation: mongooseEye var(--dur) linear infinite;
+    background-color: hsl(0,0%,0%);
+    border-radius: 50%;
+    top: 0.5em;
+    left: 1.5em;
+    width: 0.45em;
+    height: 0.45em;
+  }
+  
+  .mongoose__nose {
+    background: hsl(25,20%,35%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    top: 0.9em;
+    left: -0.1em;
+    width: 0.3em;
+    height: 0.3em;
+  }
+  
+  .mongoose__body {
+    animation: mongooseBody var(--dur) ease-in-out infinite;
+    background: hsl(25,30%,50%);
+    border-radius: 40% 30% 40% 30% / 20% 50% 30% 30%;
+    box-shadow: 0.1em 0.75em 0 hsl(25,30%,40%) inset,
+          0.15em -0.5em 0 hsl(25,30%,55%) inset;
+    top: 0.3em;
+    left: 2.2em;
+    width: 5em;
+    height: 2.5em;
+    transform-origin: 15% 50%;
+    transform-style: preserve-3d;
+  }
+  
+  .mongoose__limb--fr,
+  .mongoose__limb--fl {
+    clip-path: polygon(0 0,100% 0,70% 80%,60% 100%,0% 100%,40% 80%);
+    top: 1.8em;
+    left: 0.6em;
+    width: 0.9em;
+    height: 1.6em;
+    transform-origin: 50% 0;
+  }
+  
+  .mongoose__limb--fr {
+    animation: mongooseFRLimb var(--dur) linear infinite;
+    background: linear-gradient(hsl(25,30%,45%) 80%,hsl(25,20%,35%) 80%);
+    transform: rotate(15deg) translateZ(-1px);
+  }
+  
+  .mongoose__limb--fl {
+    animation: mongooseFLLimb var(--dur) linear infinite;
+    background: linear-gradient(hsl(25,30%,50%) 80%,hsl(25,20%,40%) 80%);
+    transform: rotate(15deg);
+  }
+  
+  .mongoose__limb--br,
+  .mongoose__limb--bl {
+    border-radius: 0.75em 0.75em 0 0;
+    clip-path: polygon(0 0,100% 0,100% 30%,70% 90%,70% 100%,30% 100%,40% 90%,0% 30%);
+    top: 1em;
+    left: 3.2em;
+    width: 1.4em;
+    height: 2.6em;
+    transform-origin: 50% 30%;
+  }
+  
+  .mongoose__limb--br {
+    animation: mongooseBRLimb var(--dur) linear infinite;
+    background: linear-gradient(hsl(25,30%,45%) 90%,hsl(25,20%,35%) 90%);
+    transform: rotate(-25deg) translateZ(-1px);
+  }
+  
+  .mongoose__limb--bl {
+    animation: mongooseBLLimb var(--dur) linear infinite;
+    background: linear-gradient(hsl(25,30%,50%) 90%,hsl(25,20%,40%) 90%);
+    transform: rotate(-25deg);
+  }
+  
+  .mongoose__tail {
+    animation: mongooseTail var(--dur) linear infinite;
+    background: hsl(25,30%,45%);
+    border-radius: 0.3em 50% 50% 0.3em;
+    box-shadow: 0 -0.2em 0 hsl(25,20%,35%) inset;
+    top: 1.2em;
+    right: -0.8em;
+    width: 1.8em;
+    height: 0.4em;
+    transform: rotate(25deg) translateZ(-1px);
+    transform-origin: 0.3em 0.2em;
+    z-index: -1;
+  }
+  
+  .spoke {
+    animation: spoke var(--dur) linear infinite;
+    background: radial-gradient(100% 100% at center,hsl(0,0%,60%) 4.8%,hsla(0,0%,60%,0) 5%),
+          linear-gradient(hsla(0,0%,55%,0) 46.9%,hsl(0,0%,65%) 47% 52.9%,hsla(0,0%,65%,0) 53%) 50% 50% / 99% 99% no-repeat;
+  }
+  
+  /* Animations */
+  @keyframes mongoose {
+    from, to {
+      transform: rotate(4deg) translate(-0.8em,1.85em);
+    }
+
+    50% {
+      transform: rotate(0) translate(-0.8em,1.85em);
+    }
+  }
+  
+  @keyframes mongooseHead {
+    from, 25%, 50%, 75%, to {
+      transform: rotate(0);
+    }
+
+    12.5%, 37.5%, 62.5%, 87.5% {
+      transform: rotate(8deg);
+    }
+  }
+  
+  @keyframes mongooseEye {
+    from, 90%, to {
+      transform: scaleY(1);
+    }
+
+    95% {
+      transform: scaleY(0);
+    }
+  }
+  
+  @keyframes mongooseEar {
+    from, 25%, 50%, 75%, to {
+      transform: rotate(0);
+    }
+
+    12.5%, 37.5%, 62.5%, 87.5% {
+      transform: rotate(10deg);
+    }
+  }
+  
+  @keyframes mongooseBody {
+    from, 25%, 50%, 75%, to {
+      transform: rotate(0);
+    }
+
+    12.5%, 37.5%, 62.5%, 87.5% {
+      transform: rotate(-2deg);
+    }
+  }
+  
+  @keyframes mongooseFRLimb {
+    from, 25%, 50%, 75%, to {
+      transform: rotate(50deg) translateZ(-1px);
+    }
+
+    12.5%, 37.5%, 62.5%, 87.5% {
+      transform: rotate(-30deg) translateZ(-1px);
+    }
+  }
+  
+  @keyframes mongooseFLLimb {
+    from, 25%, 50%, 75%, to {
+      transform: rotate(-30deg);
+    }
+
+    12.5%, 37.5%, 62.5%, 87.5% {
+      transform: rotate(50deg);
+    }
+  }
+  
+  @keyframes mongooseBRLimb {
+    from, 25%, 50%, 75%, to {
+      transform: rotate(-60deg) translateZ(-1px);
+    }
+
+    12.5%, 37.5%, 62.5%, 87.5% {
+      transform: rotate(20deg) translateZ(-1px);
+    }
+  }
+  
+  @keyframes mongooseBLLimb {
+    from, 25%, 50%, 75%, to {
+      transform: rotate(20deg);
+    }
+
+    12.5%, 37.5%, 62.5%, 87.5% {
+      transform: rotate(-60deg);
+    }
+  }
+  
+  @keyframes mongooseTail {
+    from, 25%, 50%, 75%, to {
+      transform: rotate(25deg) translateZ(-1px);
+    }
+
+    12.5%, 37.5%, 62.5%, 87.5% {
+      transform: rotate(8deg) translateZ(-1px);
+    }
+  }
+  
+  @keyframes spoke {
+    from {
+      transform: rotate(0);
+    }
+  
+    to {
+      transform: rotate(-1turn);
+    }
+  }

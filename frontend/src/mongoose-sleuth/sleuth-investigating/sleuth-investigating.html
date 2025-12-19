@@ -27,16 +27,41 @@
             Step 2: Investigating
           </button>
           <span class="text-gray-400">•</span>
-          <span class="text-gray-500">Step 3: Summarize</span>
+          <button
+            type="button"
+            class="font-semibold focus:outline-none"
+            :class="sleuthContext.activeStep === 'summarize'
+              ? 'text-ultramarine-600'
+              : 'text-gray-500 hover:text-ultramarine-600'"
+            @click="sleuthContext.goToSummarize()"
+          >
+            Step 3: Summarize
+          </button>
         </div>
       </div>
-      <async-button
-        type="button"
-        class="inline-flex items-center rounded bg-ultramarine-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
-        @click="sleuthContext.saveInvestigationProgress()"
-      >
-        Save Progress
-      </async-button>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          @click="sleuthContext.openFieldSelection()"
+          class="inline-flex items-center rounded bg-ultramarine-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+        >
+          Fields
+        </button>
+        <async-button
+          type="button"
+          class="inline-flex items-center rounded bg-ultramarine-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+          @click="sleuthContext.saveInvestigationProgress()"
+        >
+          Save Progress
+        </async-button>
+        <button
+          type="button"
+          @click="sleuthContext.goToSummarize()"
+          class="inline-flex items-center rounded bg-ultramarine-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+        >
+          Summarize
+        </button>
+      </div>
     </div>
     <div v-if="sleuthContext.selectedDocuments.length > 0" class="mt-2 text-sm text-gray-600">
       {{ sleuthContext.selectedDocuments.length }}
@@ -124,7 +149,7 @@
 
           <!-- Full document view so user can read all fields -->
           <div class="border border-gray-100 rounded bg-gray-50 px-2 py-1 max-h-60 overflow-auto text-xs">
-            <list-json :value="doc"></list-json>
+            <list-json :value="sleuthContext.filterDocument(doc)" :references="sleuthContext.referenceMap"></list-json>
           </div>
 
           <div class="pt-1">
@@ -148,4 +173,85 @@
       </div>
     </div>
   </div>
+
+  <!-- Field Selection Modal -->
+  <modal v-if="sleuthContext.shouldShowFieldModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="sleuthContext.shouldShowFieldModal = false; sleuthContext.selectedPaths = {};">&times;</div>
+      <div class="text-xl font-bold mb-4">Select Fields to Display</div>
+      <div class="max-h-96 overflow-y-auto mb-4">
+        <template v-for="(paths, model) in sleuthContext.getSchemaPathsByModel()" :key="model">
+          <div class="mb-2 border border-gray-200 rounded-md">
+            <div
+              @click="sleuthContext.toggleFieldModelExpansion(model)"
+              class="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors"
+            >
+              <div class="flex items-center gap-2">
+                <svg
+                  class="w-4 h-4 transition-transform flex-shrink-0"
+                  :class="sleuthContext.isFieldModelExpanded(model) ? 'rotate-90' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <h3 class="text-sm font-semibold text-gray-900">{{ model }}</h3>
+                <span class="text-xs text-gray-500">({{ paths.length }} fields)</span>
+              </div>
+              <div class="flex gap-2" @click.stop>
+                <button
+                  type="button"
+                  @click="sleuthContext.selectAll(model)"
+                  class="text-xs text-ultramarine-600 hover:text-ultramarine-800"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  @click="sleuthContext.deselectAll(model)"
+                  class="text-xs text-red-600 hover:text-red-800"
+                >
+                  Deselect All
+                </button>
+              </div>
+            </div>
+            <div v-if="sleuthContext.isFieldModelExpanded(model)" class="px-3 pb-3 pt-1 border-t border-gray-200">
+              <div v-for="(path, index) in paths" :key="index" class="w-full flex items-center mb-2">
+                <input
+                  class="mt-0 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-600 accent-sky-600"
+                  type="checkbox"
+                  :id="'sleuth-path-' + model + '-' + index"
+                  @change="sleuthContext.addOrRemove(model, path)"
+                  :checked="sleuthContext.isSelected(model, path)"
+                />
+                <div class="ml-2 text-gray-700 grow shrink text-left">
+                  <label :for="'sleuth-path-' + model + '-' + index" class="cursor-pointer">
+                    {{ path.path }}
+                    <span class="text-gray-500 text-xs">({{ path.instance || 'unknown' }})</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          @click="sleuthContext.filterDocuments()"
+          class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+        >
+          Filter Selection
+        </button>
+        <button
+          type="button"
+          @click="sleuthContext.resetDocuments()"
+          class="rounded-md bg-gray-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+        >
+          Cancel
+        </button>
+      </div>
+    </template>
+  </modal>
 </div>

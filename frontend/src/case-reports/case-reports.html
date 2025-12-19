@@ -58,6 +58,7 @@
             <thead>
               <tr>
                 <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 lg:pl-8">Name</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Created</th>
                 <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8">
                 </th>
@@ -66,15 +67,40 @@
             <tbody class="divide-y divide-gray-200 bg-white">
               <tr v-for="caseReport in caseReports" :key="caseReport._id">
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">{{caseReport.name}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                  <span :class="getStatusClass(caseReport.status)" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium">
+                    {{ formatStatus(caseReport.status) }}
+                  </span>
+                </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                   {{ formatDate(caseReport.createdAt) }}
                 </td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
-                  <router-link
-                    :to="'/mongoose-sleuth?caseReportId=' + caseReport._id"
-                    class="text-ultramarine-600 hover:text-ultramarine-900">
-                    Open
-                  </router-link>
+                  <div class="flex items-center justify-end gap-2">
+                    <button
+                      v-if="caseReport.status === 'in_progress'"
+                      @click="openCancelConfirm(caseReport._id)"
+                      type="button"
+                      class="rounded-md bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 shadow-sm ring-1 ring-inset ring-red-200 hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                      title="Cancel case report"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      v-if="caseReport.status === 'resolved'"
+                      @click="openArchiveConfirm(caseReport._id)"
+                      type="button"
+                      class="rounded-md bg-gray-50 px-2.5 py-1.5 text-xs font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-200 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+                      title="Archive case report"
+                    >
+                      Archive
+                    </button>
+                    <router-link
+                      :to="'/mongoose-sleuth?caseReportId=' + caseReport._id"
+                      class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
+                      Open
+                    </router-link>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -83,4 +109,30 @@
       </div>
     </div>
   </div>
+
+  <modal v-if="showConfirmModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="closeConfirmModal">&times;</div>
+      <div class="text-xl font-bold mb-4">Confirm Action</div>
+      <div class="mb-6">
+        <p class="text-gray-700">{{ confirmMessage }}</p>
+      </div>
+      <div class="flex gap-4 justify-end">
+        <button
+          @click="closeConfirmModal"
+          type="button"
+          class="rounded bg-gray-400 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500"
+        >
+          No, Keep It
+        </button>
+        <button
+          @click="executeConfirmAction"
+          type="button"
+          :class="['rounded px-4 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2', confirmButtonClass]"
+        >
+          {{ confirmButtonText }}
+        </button>
+      </div>
+    </template>
+  </modal>
 </div>
