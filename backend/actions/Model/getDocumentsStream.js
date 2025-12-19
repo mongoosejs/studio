@@ -67,7 +67,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
     schemaPaths[path] = {
       instance: schemaType.instance,
       path,
-      ref: schemaType.options?.ref,
+      ref: schemaType.options?.ref ?? schemaType.caster?.options?.ref,
       required: schemaType.options?.required,
       enum: schemaType.options?.enum
     };
@@ -77,7 +77,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
         schemaPaths[path].schema[subpath] = {
           instance: schemaType.schema.paths[subpath].instance,
           path: subpath,
-          ref: schemaType.schema.paths[subpath].options?.ref,
+          ref: schemaType.schema.paths[subpath].options?.ref ?? schemaType.schema.paths[subpath].caster?.options?.ref,
           required: schemaType.schema.paths[subpath].options?.required,
           enum: schemaType.schema.paths[subpath].options?.enum
         };
