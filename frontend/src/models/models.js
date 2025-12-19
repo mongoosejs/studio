@@ -266,6 +266,19 @@ module.exports = app => app.component('models', {
       const { info } = await api.Model.getCollectionInfo({ model: this.currentModel });
       this.collectionInfo = info;
     },
+    async findOldestDocument() {
+      this.closeActionsMenu();
+      const { docs } = await api.Model.getDocuments({
+        model: this.currentModel,
+        limit: 1,
+        sortKey: '_id',
+        sortDirection: 1
+      });
+      if (!Array.isArray(docs) || docs.length === 0) {
+        throw new Error('No documents found');
+      }
+      this.openDocument(docs[0]);
+    },
     isTTLIndex(index) {
       return index != null && index.expireAfterSeconds != null;
     },
