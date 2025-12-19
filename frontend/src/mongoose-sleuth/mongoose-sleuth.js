@@ -37,7 +37,9 @@ module.exports = app => app.component('mongoose-sleuth', {
     currentCaseReportId: null,
     activeStep: 'aggregating',
     investigationSelections: [],
-    documentNotes: {}
+    documentNotes: {},
+    showSelectedDocuments: false,
+    expandedModels: {}
   }),
   created() {
     this.loadOutputPreference();
@@ -96,6 +98,23 @@ module.exports = app => app.component('mongoose-sleuth', {
         }
       }
       return map;
+    },
+    selectedDocumentsByModel() {
+      const grouped = {};
+      for (const doc of this.selectedDocuments) {
+        if (!doc || !doc.model) {
+          continue;
+        }
+        if (!grouped[doc.model]) {
+          grouped[doc.model] = [];
+        }
+        grouped[doc.model].push(doc);
+      }
+      // Convert to array of { model, documents } for easier iteration
+      return Object.keys(grouped).map(model => ({
+        model,
+        documents: grouped[model]
+      }));
     }
   },
   methods: {
@@ -218,6 +237,26 @@ module.exports = app => app.component('mongoose-sleuth', {
         return '';
       }
       return `${String(doc.model)}:${String(doc._id)}`;
+    },
+    getDocumentPreview(doc) {
+      if (!doc || typeof doc !== 'object') {
+        return '';
+      }
+      // Try common fields that might be useful for identification
+      const previewFields = ['name', 'title', 'email', 'username', 'label', 'description'];
+      for (const field of previewFields) {
+        if (doc[field] != null) {
+          const value = doc[field];
+          if (typeof value === 'string' && value.trim().length > 0) {
+            return value.trim();
+          }
+          if (typeof value === 'number' || typeof value === 'boolean') {
+            return String(value);
+          }
+        }
+      }
+      // If no preview field found, return empty string
+      return '';
     },
     isInInvestigation(doc) {
       const key = this.getDocumentKey(doc);
@@ -431,6 +470,25 @@ module.exports = app => app.component('mongoose-sleuth', {
         // Select
         this.selectedDocuments.push(documentWithModel);
       }
+    },
+    removeSelectedDocument(doc) {
+      const key = this.getDocumentKey(doc);
+      if (!key) {
+        return;
+      }
+      const index = this.selectedDocuments.findIndex(x => this.getDocumentKey(x) === key);
+      if (index !== -1) {
+        this.selectedDocuments.splice(index, 1);
+      }
+    },
+    toggleModelExpansion(model) {
+      if (!model) {
+        return;
+      }
+      this.expandedModels[model] = !this.expandedModels[model];
+    },
+    isModelExpanded(model) {
+      return !!this.expandedModels[model];
     },
     async saveCaseReport() {
       if (!this.caseReportName || this.caseReportName.trim().length === 0) {

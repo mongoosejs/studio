@@ -83,21 +83,99 @@
           Continue to Step 2
         </button>
       </div>
-      <div v-if="sleuthContext.selectedDocuments.length > 0" class="mt-2 text-sm text-gray-600">
-        {{ sleuthContext.selectedDocuments.length }}
-        {{ sleuthContext.selectedDocuments.length === 1 ? 'document' : 'documents' }} selected
-      </div>
-      <div
-        v-if="sleuthContext.selectedDocuments.length > 0"
-        class="mt-1 flex flex-wrap gap-1 max-h-16 overflow-y-auto"
-      >
-        <span
-          v-for="doc in sleuthContext.selectedDocuments"
-          :key="sleuthContext.getDocumentKey(doc)"
-          class="inline-flex items-center rounded-full border border-ultramarine-100 bg-ultramarine-50 px-2 py-0.5 text-xs text-ultramarine-700"
+      <div v-if="sleuthContext.selectedDocuments.length > 0" class="mt-2">
+        <button
+          type="button"
+          @click="sleuthContext.showSelectedDocuments = !sleuthContext.showSelectedDocuments"
+          class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
         >
-          {{ doc.model }} – {{ doc._id }}
-        </span>
+          <svg
+            class="w-4 h-4 transition-transform"
+            :class="sleuthContext.showSelectedDocuments ? 'rotate-90' : ''"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          <span>
+            {{ sleuthContext.selectedDocuments.length }}
+            {{ sleuthContext.selectedDocuments.length === 1 ? 'document' : 'documents' }} selected
+          </span>
+        </button>
+        <div
+          v-if="sleuthContext.showSelectedDocuments"
+          class="mt-2 border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden"
+        >
+          <div class="max-h-96 overflow-y-auto">
+            <div class="min-w-full">
+              <div class="bg-gray-50 sticky top-0 z-30 border-b border-gray-200">
+                <div class="grid grid-cols-2 gap-4 px-3 py-2">
+                  <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">Model</div>
+                  <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">Documents</div>
+                </div>
+              </div>
+              <div class="divide-y divide-gray-200">
+                <template v-for="group in sleuthContext.selectedDocumentsByModel" :key="group.model">
+                  <div>
+                    <div
+                      @click="sleuthContext.toggleModelExpansion(group.model)"
+                      :class="[
+                        'grid grid-cols-2 gap-4 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors bg-white',
+                        sleuthContext.isModelExpanded(group.model) ? 'sticky top-[33px] z-20 border-b border-gray-200 shadow-sm' : ''
+                      ]"
+                    >
+                      <div class="flex items-center gap-2 text-sm font-medium text-gray-900">
+                        <svg
+                          class="w-4 h-4 transition-transform flex-shrink-0"
+                          :class="sleuthContext.isModelExpanded(group.model) ? 'rotate-90' : ''"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                        <span class="truncate">{{ group.model }}</span>
+                      </div>
+                      <div class="flex items-center text-sm text-gray-600">
+                        {{ group.documents.length }} {{ group.documents.length === 1 ? 'document' : 'documents' }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="sleuthContext.isModelExpanded(group.model)"
+                      class="bg-gray-50 border-t border-gray-200"
+                    >
+                      <div class="px-3 py-3 space-y-3">
+                        <div
+                          v-for="doc in group.documents"
+                          :key="sleuthContext.getDocumentKey(doc)"
+                          class="border border-gray-200 rounded-md bg-white p-3 relative"
+                        >
+                          <button
+                            type="button"
+                            @click.stop="sleuthContext.removeSelectedDocument(doc)"
+                            class="absolute top-2 right-2 text-red-600 hover:text-red-900 focus:outline-none z-0"
+                            title="Remove from selection"
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                          <div class="text-xs text-gray-500 mb-2 font-mono pr-6">
+                            ID: {{ doc._id }}
+                          </div>
+                          <div class="text-xs overflow-x-auto">
+                            <list-json :value="doc" :references="sleuthContext.referenceMap"></list-json>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
