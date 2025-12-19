@@ -275,33 +275,16 @@ module.exports = app => app.component('models', {
     },
     async findOldestDocument() {
       this.closeActionsMenu();
-      try {
-        const { docs } = await api.Model.getDocuments({
-          model: this.currentModel,
-          limit: 1,
-          sortKey: '_id',
-          sortDirection: 1
-        });
-        if (!Array.isArray(docs) || docs.length === 0) {
-          vanillatoasts.create({
-            title: 'No documents found',
-            type: 'warning',
-            timeout: 3000,
-            positionClass: 'bottomRight'
-          });
-          return;
-        }
-        this.openDocument(docs[0]);
-      } catch (err) {
-        vanillatoasts.create({
-          title: 'Unable to find oldest document',
-          text: err.message,
-          type: 'error',
-          timeout: 5000,
-          icon: 'images/failure.jpg',
-          positionClass: 'bottomRight'
-        });
+      const { docs } = await api.Model.getDocuments({
+        model: this.currentModel,
+        limit: 1,
+        sortKey: '_id',
+        sortDirection: 1
+      });
+      if (!Array.isArray(docs) || docs.length === 0) {
+        throw new Error('No documents found');
       }
+      this.openDocument(docs[0]);
     },
     isTTLIndex(index) {
       return index != null && index.expireAfterSeconds != null;
