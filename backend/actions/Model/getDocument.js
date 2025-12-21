@@ -37,7 +37,9 @@ module.exports = ({ db }) => async function getDocument(params) {
     schemaPaths[path] = {
       instance: Model.schema.paths[path].instance,
       path,
-      ref: Model.schema.paths[path].options?.ref ?? Model.schema.paths[path].caster?.options?.ref,
+      ref: Model.schema.paths[path].options?.ref ??
+        Model.schema.paths[path].embeddedSchemaType?.options?.ref ??
+        Model.schema.paths[path].caster?.options?.ref,
       required: Model.schema.paths[path].options?.required,
       enum: Model.schema.paths[path].options?.enum
     };
