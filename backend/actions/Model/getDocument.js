@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const authorize = require('../../authorize');
 
@@ -37,9 +38,7 @@ module.exports = ({ db }) => async function getDocument(params) {
     schemaPaths[path] = {
       instance: Model.schema.paths[path].instance,
       path,
-      ref: Model.schema.paths[path].options?.ref ??
-        Model.schema.paths[path].embeddedSchemaType?.options?.ref ??
-        Model.schema.paths[path].caster?.options?.ref,
+      ref: getRefFromSchemaType(Model.schema.paths[path]),
       required: Model.schema.paths[path].options?.required,
       enum: Model.schema.paths[path].options?.enum
     };
