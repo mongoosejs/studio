@@ -87,7 +87,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
         schemaPaths[path].schema[subpath] = {
           instance: schemaType.schema.paths[subpath].instance,
           path: subpath,
-          ref: schemaType.schema.paths[subpath].options?.ref ?? schemaType.embeddedSchemaType?.options?.ref ?? schemaType.schema.paths[subpath].caster?.options?.ref,
+          ref: schemaType.schema.paths[subpath].options?.ref ?? schemaType.schema.paths[subpath].embeddedSchemaType?.options?.ref ?? schemaType.schema.paths[subpath].caster?.options?.ref,
           required: schemaType.schema.paths[subpath].options?.required,
           enum: schemaType.schema.paths[subpath].options?.enum
         };
