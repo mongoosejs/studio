@@ -85,7 +85,7 @@ module.exports = app => app.component('models', {
         this.error = 'No models found and Mongoose is not connected. Check our documentation for more information.';
       }
     }
-  
+
     await this.initSearchFromUrl();
   },
   computed: {
