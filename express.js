@@ -61,7 +61,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
         .then(res => res.json())
         .then(({ user, roles }) => {
           if (!user || !roles) {
-            throw new Error('Not authorized');
+            return res.status(403).json({ message: 'Not authorized' });
           }
           req._internals = req._internals || {};
           req._internals.authorization = authorization;
@@ -71,7 +71,9 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
 
           next();
         })
-        .catch(err => next(err));
+        .catch(err => {
+          return res.status(500).json({ message: err.message });
+        });
     },
     express.json(),
     objectRouter(backend, toRoute)

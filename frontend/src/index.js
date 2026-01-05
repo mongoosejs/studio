@@ -85,42 +85,63 @@ app.component('app-component', {
       if (hashParams.has('code')) {
         const code = hashParams.get('code');
         const provider = hashParams.get('provider');
+
+        let user;
+        let accessToken;
+        let roles;
         try {
-          const { accessToken, user, roles } = provider === 'github' ? await mothership.github(code) : await mothership.google(code);
+          ({ accessToken, user, roles } = provider === 'github' ? await mothership.github(code) : await mothership.google(code));
           if (roles == null) {
             this.authError = 'You are not authorized to access this workspace';
             this.status = 'loaded';
             return;
           }
-          this.user = user;
-          this.roles = roles;
-          window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
         } catch (err) {
           this.authError = 'An error occurred while logging in. Please try again.';
           this.status = 'loaded';
           return;
-        } finally {
-          setTimeout(() => {
-            this.$router.replace(this.$router.currentRoute.value.path);
-          }, 0);
         }
 
-        const { nodeEnv } = await api.status();
-        this.nodeEnv = nodeEnv;
+        try {
+          const { nodeEnv } = await api.status();
+          this.nodeEnv = nodeEnv;
+        } catch (err) {
+          this.authError = 'Error connecting to Mongoose Studio API: ' + err.response?.data?.message ?? err.message;
+          this.status = 'loaded';
+          return;
+        }
+
+        this.user = user;
+        this.roles = roles;
+        window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
+        setTimeout(() => {
+          this.$router.replace(this.$router.currentRoute.value.path);
+        }, 0);
       } else {
         const token = window.localStorage.getItem('_mongooseStudioAccessToken');
         if (token) {
           const { user, roles } = await mothership.me();
+
+          try {
+            const { nodeEnv } = await api.status();
+            this.nodeEnv = nodeEnv;
+          } catch (err) {
+            this.authError = 'Error connecting to Mongoose Studio API: ' + err.response?.data?.message ?? err.message;
+            this.status = 'loaded';
+            return;
+          }
+
           this.user = user;
           this.roles = roles;
-
-          const { nodeEnv } = await api.status();
-          this.nodeEnv = nodeEnv;
         }
       }
     } else {
-      const { nodeEnv } = await api.status();
-      this.nodeEnv = nodeEnv;
+      try {
+        const { nodeEnv } = await api.status();
+        this.nodeEnv = nodeEnv;
+      } catch (err) {
+        this.authError = 'Error connecting to Mongoose Studio API: ' + err.response?.data?.message ?? err.message;
+      }
     }
 
     this.status = 'loaded';
