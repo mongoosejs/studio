@@ -126,7 +126,7 @@ app.component('app-component', {
             const { nodeEnv } = await api.status();
             this.nodeEnv = nodeEnv;
           } catch (err) {
-            this.authError = 'Error connecting to Mongoose Studio API: ' + err.response?.data?.message ?? err.message;
+            this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
             this.status = 'loaded';
             return;
           }
@@ -140,7 +140,7 @@ app.component('app-component', {
         const { nodeEnv } = await api.status();
         this.nodeEnv = nodeEnv;
       } catch (err) {
-        this.authError = 'Error connecting to Mongoose Studio API: ' + err.response?.data?.message ?? err.message;
+        this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
       }
     }
 
