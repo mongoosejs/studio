@@ -37,6 +37,8 @@ module.exports = app => app.component('document-details', {
         this.initializeFieldValueEditor();
       }
     });
+
+    this.searchQuery = this.getSearchQueryFromRoute();
   },
   beforeDestroy() {
     this.destroyFieldValueEditor();
@@ -53,6 +55,17 @@ module.exports = app => app.component('document-details', {
           this.$nextTick(() => {
             this.initializeFieldValueEditor();
           });
+        }
+      }
+    },
+    searchQuery(newValue) {
+      this.syncSearchQueryToUrl(newValue);
+    },
+    '$route.query.fieldSearch': {
+      handler(newValue) {
+        const nextValue = typeof newValue === 'string' ? newValue : '';
+        if (nextValue !== this.searchQuery) {
+          this.searchQuery = nextValue;
         }
       }
     }
@@ -245,6 +258,35 @@ module.exports = app => app.component('document-details', {
     }
   },
   methods: {
+    getSearchQueryFromRoute() {
+      return this.$route?.query?.fieldSearch || '';
+    },
+    syncSearchQueryToUrl(value) {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      const normalizedValue = typeof value === 'string' ? value : '';
+      const shouldStore = normalizedValue.trim().length > 0;
+      const hash = window.location.hash.replace(/^#?/, '');
+      const [hashPath, hashQueryString = ''] = hash.split('?');
+      const params = new URLSearchParams(hashQueryString);
+      const currentValue = params.get('fieldSearch') || '';
+
+      if (normalizedValue === currentValue || (!shouldStore && !currentValue)) {
+        return;
+      }
+
+      if (shouldStore) {
+        params.set('fieldSearch', normalizedValue);
+      } else {
+        params.delete('fieldSearch');
+      }
+
+      const nextQueryString = params.toString();
+      const nextHash = nextQueryString ? `${hashPath}?${nextQueryString}` : hashPath;
+      window.history.replaceState(window.history.state, '', `#${nextHash}`);
+    },
     toggleVirtualField(fieldName) {
       if (this.collapsedVirtuals.has(fieldName)) {
         this.collapsedVirtuals.delete(fieldName);
