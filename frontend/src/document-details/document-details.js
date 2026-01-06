@@ -38,10 +38,7 @@ module.exports = app => app.component('document-details', {
       }
     });
 
-    const searchFromUrl = this.getSearchQueryFromRoute();
-    if (searchFromUrl) {
-      this.searchQuery = searchFromUrl;
-    }
+    this.searchQuery = this.getSearchQueryFromRoute();
   },
   beforeDestroy() {
     this.destroyFieldValueEditor();
@@ -262,36 +259,33 @@ module.exports = app => app.component('document-details', {
   },
   methods: {
     getSearchQueryFromRoute() {
-      if (!this.$route) {
-        return '';
-      }
-      const queryValue = this.$route.query?.fieldSearch;
-      if (typeof queryValue === 'string') {
-        return queryValue;
-      }
-      return '';
+      return this.$route?.query?.fieldSearch || '';
     },
     syncSearchQueryToUrl(value) {
-      if (!this.$router || !this.$route) {
+      if (typeof window === 'undefined') {
         return;
       }
 
       const normalizedValue = typeof value === 'string' ? value : '';
       const shouldStore = normalizedValue.trim().length > 0;
-      const currentValue = typeof this.$route.query.fieldSearch === 'string' ? this.$route.query.fieldSearch : '';
+      const hash = window.location.hash.replace(/^#?/, '');
+      const [hashPath, hashQueryString = ''] = hash.split('?');
+      const params = new URLSearchParams(hashQueryString);
+      const currentValue = params.get('fieldSearch') || '';
 
       if (normalizedValue === currentValue || (!shouldStore && !currentValue)) {
         return;
       }
 
-      const nextQuery = { ...this.$route.query };
       if (shouldStore) {
-        nextQuery.fieldSearch = normalizedValue;
+        params.set('fieldSearch', normalizedValue);
       } else {
-        delete nextQuery.fieldSearch;
+        params.delete('fieldSearch');
       }
 
-      this.$router.replace({ query: nextQuery }).catch(() => {});
+      const nextQueryString = params.toString();
+      const nextHash = nextQueryString ? `${hashPath}?${nextQueryString}` : hashPath;
+      window.history.replaceState(window.history.state, '', `#${nextHash}`);
     },
     toggleVirtualField(fieldName) {
       if (this.collapsedVirtuals.has(fieldName)) {
