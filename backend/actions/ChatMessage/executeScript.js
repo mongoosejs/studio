@@ -39,7 +39,10 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
 
   // Create a sandbox with the db object
   const logs = [];
-  const sandbox = { db, console: {}, ObjectId: mongoose.Types.ObjectId };
+  if (!db.Types) {
+    db.Types = mongoose.Types;
+  }
+  const sandbox = { db, mongoose, console: {}, ObjectId: mongoose.Types.ObjectId };
 
   // Capture console logs
   sandbox.console.log = function() {
