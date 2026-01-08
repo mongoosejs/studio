@@ -44,7 +44,6 @@
 .models .documents table th {
   position: sticky;
   top: 42px;
-  background-color: white;
   z-index: 1;
 }
 
@@ -60,24 +59,17 @@
 .models .documents table tr {
   color: black;
   border-spacing: 0px 0px;
-  background-color: white;
-  cursor: pointer;
 }
 
-.models .documents table tr:nth-child(even) {
-  background-color: #f5f5f5;
-}
-
-.models .documents table tr:hover {
-  background-color: #a7b9ff;
-}
-
-.models .documents table th,
-td {
+.models .documents table th {
   border-bottom: thin solid rgba(0, 0, 0, 0.12);
   text-align: left;
-  padding: 0 16px;
   height: 48px;
+}
+
+.models .documents table td {
+  border-bottom: thin solid rgba(0, 0, 0, 0.12);
+  text-align: left;
 }
 
 .models textarea {

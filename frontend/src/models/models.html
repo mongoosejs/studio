@@ -159,8 +159,8 @@
         </div>
       </div>
       <table v-else-if="outputType === 'table'">
-        <thead>
-          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="cursor-pointer">
+        <thead class="bg-slate-50">
+          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="cursor-pointer p-3">
             {{path.path}}
             <span class="path-type">
               ({{(path.instance || 'unknown')}})
@@ -170,8 +170,8 @@
           </th>
         </thead>
         <tbody>
-          <tr v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id">
-            <td v-for="schemaPath in filteredPaths" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
+          <tr v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id" class="bg-white hover:bg-slate-50">
+            <td v-for="schemaPath in filteredPaths" class="p-3 cursor-pointer" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
               <component
                 :is="getComponentForPath(schemaPath)"
                 :value="getValueForPath(document, schemaPath.path)"
