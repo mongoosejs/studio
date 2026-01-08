@@ -91,7 +91,6 @@ td {
 
 .models .documents-menu {
   position: fixed;
-  background-color: white;
   z-index: 1;
   padding: 4px;
   display: flex;
@@ -136,4 +135,3 @@ td {
   justify-content: space-around;
   align-items: center;
 }
-
