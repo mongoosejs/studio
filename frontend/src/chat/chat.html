@@ -1,5 +1,8 @@
 <div class="flex" style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
-  <div class="fixed top-[65px] cursor-pointer bg-gray-100 rounded-r-md z-10" @click="hideSidebar = false">
+  <div
+    class="fixed top-[65px] cursor-pointer bg-gray-100 rounded-r-md z-10"
+    @click="hideSidebar = false"
+    v-show="hideSidebar">
     <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" class="w-5" fill="#5f6368"><path d="M360-120v-720h80v720h-80Zm160-160v-400l200 200-200 200Z"/></svg>
   </div>
   <button
@@ -14,9 +17,9 @@
     <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9zm9 2v9H6v-9h12z"/></svg>
   </button>
   <!-- Sidebar: Chat Threads -->
-  <aside class="bg-gray-50 border-r overflow-y-auto overflow-x-hidden h-full transition-all duration-300 ease-in-out z-20 w-0 lg:w-64 fixed lg:relative" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-64' : ''">
+  <aside class="border-r overflow-y-auto overflow-x-hidden h-full transition-all duration-300 ease-in-out z-20 w-0 lg:w-64 fixed lg:relative" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-64' : ''">
     <div class="flex items-center border-b border-gray-100 w-64 overflow-x-hidden">
-      <div class="p-4 font-bold text-lg">Chat Threads</div>
+      <div class="p-1 ml-2 font-bold">Chat Threads</div>
       <button
         @click="hideSidebar = true"
         class="ml-auto mr-2 p-2 rounded hover:bg-gray-200 focus:outline-none"
@@ -36,13 +39,13 @@
     <div v-if="status === 'loaded' && chatThreads.length === 0" class="p-4 text-sm text-gray-700">
       No threads yet
     </div>
-    <ul v-if="status === 'loaded'" class="w-64">
+    <ul v-if="status === 'loaded'" class="w-full">
       <li
         v-for="thread in chatThreads"
         :key="thread._id"
         @click="selectThread(thread._id)"
-        class="p-4 hover:bg-gray-200 cursor-pointer w-64"
-        :class="{ 'bg-gray-300': thread._id === chatThreadId }"
+        class="w-full p-2 hover:bg-ultramarine-100 cursor-pointer text-sm text-gray-700"
+        :class="{ 'bg-ultramarine-200 text-gray-900': thread._id === chatThreadId }"
       >
         {{ thread.title || 'Untitled Thread' }}
       </li>
@@ -50,16 +53,16 @@
   </aside>
 
   <!-- Main Chat Area -->
-  <main class="flex-1 flex flex-col">
+  <main class="flex-1 flex flex-col bg-slate-50">
     <div class="flex-1 overflow-y-auto p-6 space-y-4" ref="messagesContainer">
-      <ul role="list" class="space-y-4">
-        <div v-if="true">
-          <div class="flex items-center justify-center py-3 mb-4">
-            <div class="bg-gray-300 h-px flex-grow max-w-xs"></div>
-            <p class="mx-4 text-sm font-medium text-gray-500">This is the beginning of the message thread</p>
-            <div class="bg-gray-300 h-px flex-grow max-w-xs"></div>
-          </div>
+      <div v-if="chatMessages?.length === 0">
+        <div class="flex items-center w-full h-full justify-center py-3 mb-4">
+          <p class="mx-4 font-bold text-gray-900">
+            Ask Mongoose Studio to analyze your data or generate a script
+          </p>
         </div>
+      </div>
+      <ul role="list" class="space-y-4" v-else>
         <li v-for="message in chatMessages" :key="message._id">
           <chat-message :message="message" :target-dashboard-id="currentThread?.dashboardId"></chat-message>
         </li>
@@ -72,10 +75,10 @@
       <form @submit.prevent="sendMessage" :disabled="sendingMessage" class="flex gap-2 items-end justify-end">
         <textarea
           v-model="newMessage"
-          :placeholder="sendingMessage ? 'Sending...' : 'Ask something...'"
-          class="flex-1 border rounded px-4 py-2 resize-none overflow-y-auto"
+          :placeholder="sendingMessage ? 'Sending...' : 'Ask about your data, generate a query, or build a chart…'"
+          class="flex-1 border rounded px-4 py-2 resize-none overflow-y-auto shadow-sm"
           :disabled="sendingMessage"
-          rows="1"
+          rows="2"
           ref="messageInput"
           @input="adjustTextareaHeight"
           @keydown.enter.exact.prevent="handleEnter"

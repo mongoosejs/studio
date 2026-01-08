@@ -181,5 +181,7 @@ module.exports = app => app.component('chat', {
         });
       });
     }
+
+    this.$refs.messageInput.focus();
   }
 });
