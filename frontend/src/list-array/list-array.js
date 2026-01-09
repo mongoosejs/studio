@@ -17,5 +17,18 @@ module.exports = app => app.component('list-array', {
       }
       return value;
     }
+  },
+  methods: {
+    copyText(value) {
+      const storage = document.createElement('textarea');
+      storage.value = JSON.stringify(value);
+      const elem = this.$el;
+      elem.appendChild(storage);
+      storage.select();
+      storage.setSelectionRange(0, 99999);
+      document.execCommand('copy');
+      elem.removeChild(storage);
+      this.$toast.success('Text copied!');
+    }
   }
 });
