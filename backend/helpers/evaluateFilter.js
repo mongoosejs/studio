@@ -84,5 +84,5 @@ function objectIdRange(start, end) {
   if (end != null) {
     return { $lte: end };
   }
-  throw new Error('Invalid range: must have either start or end');
+  throw new Error('objectIdRange requires at least one parameter (start or end)');
 }
