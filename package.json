@@ -1,7 +1,7 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.1.21",
-  "description": "A sleek, powerful MongoDB UI with built-in dashboarding and auth, seamlessly integrated with your Express, Vercel, or Netlify app.",
+  "version": "0.2.0",
+  "description": "A Mongoose-native MongoDB UI with schema-aware autocomplete, AI-assisted queries, and dashboards that understand your models - not just your data.",
   "homepage": "https://mongoosestudio.app/",
   "repository": {
     "type": "git",
