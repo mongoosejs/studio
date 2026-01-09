@@ -21,6 +21,7 @@ module.exports = app => app.component('document', {
     virtuals: [],
     virtualPaths: [],
     mobileMenuOpen: false,
+    desktopMenuOpen: false,
     viewMode: 'fields',
     shouldShowConfirmModal: false,
     shouldShowDeleteModal: false,
