@@ -1,9 +1,9 @@
-<div class="border border-gray-200 rounded-lg mb-2">
+<div class="border border-gray-200 bg-white rounded-lg mb-2">
   <!-- Collapsible Header -->
   <div
     @click="toggleCollapse"
-    class="p-3 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
-    :class="{ 'bg-amber-100 hover:bg-amber-200': highlight, 'bg-gray-50 hover:bg-gray-100': !highlight }"
+    class="p-1 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
+    :class="{ 'bg-amber-100 hover:bg-amber-200': highlight, 'bg-slate-100 hover:bg-gray-100': !highlight }"
   >
     <div class="flex items-center" >
       <svg
@@ -42,7 +42,7 @@
   </div>
 
   <!-- Collapsible Content -->
-  <div v-if="!isCollapsed" class="p-3">
+  <div v-if="!isCollapsed" class="p-2">
     <!-- Date Type Selector (when editing dates) -->
     <div v-if="editting && path.instance === 'Date'" class="mb-3 flex gap-1.5">
       <div

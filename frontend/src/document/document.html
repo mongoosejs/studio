@@ -1,175 +1,213 @@
-<div class="document px-1 md:px-0">
-  <div class="flex justify-between sticky top-0 z-50 bg-white p-4 border-b border-gray-200 shadow-sm">
-    <div class="flex">
-      <button
-        @click="goBack"
-        class="mr-2 rounded-md bg-gray-400 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600">
-        &lsaquo; Back
-      </button>
-      <button
-        @click="viewMode = 'fields'"
-        :class="viewMode === 'fields'
-          ? 'bg-blue-600 text-white z-10'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
-        class="px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2 border border-gray-300 border-r-0 rounded-l-lg rounded-r-none"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-        </svg>
-        Fields
-      </button>
-      <button
-        @click="viewMode = 'json'"
-        :class="viewMode === 'json'
-          ? 'bg-blue-600 text-white z-10'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
-        class="px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2 border border-gray-300 rounded-r-lg rounded-l-none"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-        </svg>
-        JSON
-      </button>
-    </div>
-
-    <div class="gap-2 hidden md:flex">
-      <button
-        v-if="!editting"
-        @click="editting = true"
-        :disabled="!canEdit"
-        :class="{'cursor-not-allowed opacity-50': !canEdit}"
-        type="button"
-        class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
-        <img src="images/edit.svg" class="inline" /> Edit
-      </button>
-      <button
-        v-if="editting"
-        @click="editting = false"
-        type="button"
-        class="rounded-md bg-slate-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600">
-        &times; Cancel
-      </button>
-      <button
-        v-if="editting"
-        :disabled="!canManipulate"
-        :class="{'cursor-not-allowed opacity-50': !canManipulate}"
-        @click="shouldShowConfirmModal=true;"
-        type="button"
-        class="rounded-md bg-forest-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
-        <img src="images/save.svg" class="inline" /> Save
-      </button>
-      <button
-        @click="shouldShowDeleteModal=true;"
-        :disabled="!canManipulate"
-        :class="{'cursor-not-allowed opacity-50': !canManipulate}"
-        type="button"
-        class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
-        <img src="images/delete.svg" class="inline" /> Delete
-      </button>
-      <button
-        @click="shouldShowCloneModal=true;"
-        :disabled="!canManipulate"
-        :class="{'cursor-not-allowed opacity-50': !canManipulate}"
-        type="button"
-        class="rounded-md bg-pink-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
-        <img src="images/duplicate.svg" class="inline" /> Clone
-      </button>
-    </div>
-    <div class="md:hidden flex items-center">
-      <div class="relative">
+<div class="document px-1 pt-4 md:px-0 bg-slate-50 w-full">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex gap-4 items-center sticky top-0 z-50 bg-white p-4 border-b border-gray-200 shadow-sm">
+      <div class="font-bold overflow-hidden text-ellipsis">{{model}}: {{documentId}}</div>
+      <div class="flex grow">
         <button
-          @click="mobileMenuOpen = !mobileMenuOpen"
-          type="button"
-          class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          aria-expanded="mobileMenuOpen"
-          aria-label="Open menu"
+          @click="viewMode = 'fields'"
+          :class="viewMode === 'fields'
+            ? 'bg-blue-600 text-white z-10'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+          class="px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2 border border-gray-300 border-r-0 rounded-l-lg rounded-r-none"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"></path>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
           </svg>
+          Fields
         </button>
-        <div
-          v-show="mobileMenuOpen"
-          @click.away="mobileMenuOpen = false"
-          class="origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+        <button
+          @click="viewMode = 'json'"
+          :class="viewMode === 'json'
+            ? 'bg-blue-600 text-white z-10'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+          class="px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2 border border-gray-300 rounded-r-lg rounded-l-none"
         >
-          <div class="py-1 flex flex-col">
-            <button
-              v-if="!editting"
-              @click="editting = true; mobileMenuOpen = false"
-              :disabled="!canEdit"
-              :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canEdit ? 'cursor-not-allowed opacity-50' : 'hover:bg-ultramarine-100']"
-              type="button"
-            >
-              <img src="images/edit.svg" class="inline mr-2" /> Edit
-            </button>
-            <button
-              v-if="editting"
-              @click="editting = false; mobileMenuOpen = false"
-              type="button"
-              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-slate-100"
-            >
-              &times; Cancel
-            </button>
-            <button
-              v-if="editting"
-              :disabled="!canManipulate"
-              :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-green-100']"
-              @click="shouldShowConfirmModal=true; mobileMenuOpen = false"
-              type="button"
-            >
-              <img src="images/save.svg" class="inline mr-2" /> Save
-            </button>
-            <button
-              @click="shouldShowDeleteModal=true; mobileMenuOpen = false"
-              :disabled="!canManipulate"
-              :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
-              type="button"
-            >
-              <img src="images/delete.svg" class="inline mr-2" /> Delete
-            </button>
-            <button
-              @click="shouldShowCloneModal=true; mobileMenuOpen = false"
-              :disabled="!canManipulate"
-              :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-pink-100']"
-              type="button"
-            >
-              <img src="images/duplicate.svg" class="inline mr-2" /> Clone
-            </button>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+          </svg>
+          JSON
+        </button>
+      </div>
+
+      <div class="gap-2 hidden md:flex items-center">
+        <button
+          v-if="!editting"
+          @click="editting = true"
+          :disabled="!canEdit"
+          :class="{'cursor-not-allowed opacity-50': !canEdit}"
+          type="button"
+          class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+          <img src="images/edit.svg" class="inline" /> Edit
+        </button>
+        <button
+          v-if="editting"
+          @click="editting = false"
+          type="button"
+          class="rounded-md bg-slate-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600">
+          &times; Cancel
+        </button>
+        <button
+          v-if="editting"
+          :disabled="!canManipulate"
+          :class="{'cursor-not-allowed opacity-50': !canManipulate}"
+          @click="shouldShowConfirmModal=true;"
+          type="button"
+          class="rounded-md bg-forest-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
+          <img src="images/save.svg" class="inline" /> Save
+        </button>
+
+        <!-- 3-dot menu -->
+        <div class="relative">
+          <button
+            @click="desktopMenuOpen = !desktopMenuOpen"
+            type="button"
+            class="inline-flex items-center justify-center rounded-md bg-gray-200 px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            aria-expanded="desktopMenuOpen"
+            aria-label="More options"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="5" r="2"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+              <circle cx="12" cy="19" r="2"></circle>
+            </svg>
+          </button>
+          <div
+            v-show="desktopMenuOpen"
+            @click.away="desktopMenuOpen = false"
+            class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+          >
+            <div class="py-1 flex flex-col">
+              <button
+                @click="addField(); desktopMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100"
+              >
+                Add Field
+              </button>
+              <button
+                @click="shouldShowDeleteModal=true; desktopMenuOpen = false"
+                :disabled="!canManipulate"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
+                type="button"
+              >
+                Delete
+              </button>
+              <button
+                @click="shouldShowCloneModal=true; desktopMenuOpen = false"
+                :disabled="!canManipulate"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-pink-100']"
+                type="button"
+              >
+                Clone
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="md:hidden flex items-center">
+        <div class="relative">
+          <button
+            @click="mobileMenuOpen = !mobileMenuOpen"
+            type="button"
+            class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            aria-expanded="mobileMenuOpen"
+            aria-label="Open menu"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <div
+            v-show="mobileMenuOpen"
+            @click.away="mobileMenuOpen = false"
+            class="origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+          >
+            <div class="py-1 flex flex-col">
+              <button
+                v-if="!editting"
+                @click="editting = true; mobileMenuOpen = false"
+                :disabled="!canEdit"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canEdit ? 'cursor-not-allowed opacity-50' : 'hover:bg-ultramarine-100']"
+                type="button"
+              >
+                Edit
+              </button>
+              <button
+                v-if="editting"
+                @click="editting = false; mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                v-if="editting"
+                :disabled="!canManipulate"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-green-100']"
+                @click="shouldShowConfirmModal=true; mobileMenuOpen = false"
+                type="button"
+              >
+                Save
+              </button>
+              <button
+                @click="addField(); mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100"
+              >
+                Add Field
+              </button>
+              <button
+                @click="shouldShowDeleteModal=true; mobileMenuOpen = false"
+                :disabled="!canManipulate"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
+                type="button"
+              >
+                Delete
+              </button>
+              <button
+                @click="shouldShowCloneModal=true; mobileMenuOpen = false"
+                :disabled="!canManipulate"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-pink-100']"
+                type="button"
+              >
+                Clone
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <div v-if="status === 'loaded'">
-    <document-details
-      :document="document"
-      :schemaPaths="schemaPaths"
-      :virtualPaths="virtualPaths"
-      :editting="editting"
-      :changes="changes"
-      :invalid="invalid"
-      :viewMode="viewMode"
-      @add-field="addField"
-      @view-mode-change="updateViewMode"></document-details>
-    <modal v-if="shouldShowConfirmModal">
-      <template v-slot:body>
-        <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>
-        <confirm-changes @close="shouldShowConfirmModal = false;" @save="save" :value="changes"></confirm-changes>
-      </template>
-    </modal>
-    <modal v-if="shouldShowDeleteModal">
-      <template v-slot:body>
-        <div class="modal-exit" @click="shouldShowDeleteModal = false;">&times;</div>
-        <confirm-delete @close="shouldShowDeleteModal = false;" @remove="remove" :value="document"></confirm-delete>
-      </template>
-    </modal>
-    <modal v-if="shouldShowCloneModal">
-      <template v-slot:body>
-        <div class="modal-exit" @click="shouldShowCloneModal = false;">&times;</div>
-          <clone-document :currentModel="model" :doc="document" :schemaPaths="schemaPaths" @close="showClonedDocument"></clone-document>
-      </template>
-    </modal>
+    <div v-if="status === 'loaded'">
+      <document-details
+        :document="document"
+        :schemaPaths="schemaPaths"
+        :virtualPaths="virtualPaths"
+        :editting="editting"
+        :changes="changes"
+        :invalid="invalid"
+        :viewMode="viewMode"
+        :model="model"
+        @add-field="addField"
+        @view-mode-change="updateViewMode"></document-details>
+      <modal v-if="shouldShowConfirmModal">
+        <template v-slot:body>
+          <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>
+          <confirm-changes @close="shouldShowConfirmModal = false;" @save="save" :value="changes"></confirm-changes>
+        </template>
+      </modal>
+      <modal v-if="shouldShowDeleteModal">
+        <template v-slot:body>
+          <div class="modal-exit" @click="shouldShowDeleteModal = false;">&times;</div>
+          <confirm-delete @close="shouldShowDeleteModal = false;" @remove="remove" :value="document"></confirm-delete>
+        </template>
+      </modal>
+      <modal v-if="shouldShowCloneModal">
+        <template v-slot:body>
+          <div class="modal-exit" @click="shouldShowCloneModal = false;">&times;</div>
+            <clone-document :currentModel="model" :doc="document" :schemaPaths="schemaPaths" @close="showClonedDocument"></clone-document>
+        </template>
+      </modal>
+    </div>
   </div>
 </div>

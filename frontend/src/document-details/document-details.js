@@ -9,7 +9,7 @@ appendCSS(require('./document-details.css'));
 
 module.exports = app => app.component('document-details', {
   template,
-  props: ['document', 'schemaPaths', 'virtualPaths', 'editting', 'changes', 'invalid', 'viewMode'],
+  props: ['document', 'schemaPaths', 'virtualPaths', 'editting', 'changes', 'invalid', 'viewMode', 'model'],
   data() {
     return {
       searchQuery: '',

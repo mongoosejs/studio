@@ -1,0 +1,118 @@
+<div>
+  <div class="flex items-baseline whitespace-pre" :style="indentStyle">
+    <button
+      v-if="showToggle"
+      type="button"
+      class="w-4 h-4 mr-1 inline-flex items-center justify-center leading-none text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400 cursor-pointer"
+      @click.stop="handleToggle"
+    >
+      {{ isCollapsedNode ? '+' : '-' }}
+    </button>
+    <span v-else class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible flex-shrink-0"></span>
+    <template v-if="hasKey">
+      <span class="text-blue-600">"{{ nodeKey }}"</span><span>: </span>
+    </template>
+    <template v-if="isComplex">
+      <template v-if="hasChildren">
+        <span>{{ openingBracket }}</span>
+        <span v-if="isCollapsedNode" class="mx-1">…</span>
+        <span v-if="isCollapsedNode">{{ closingBracket }}{{ comma }}</span>
+      </template>
+      <template v-else>
+        <span>{{ openingBracket }}{{ closingBracket }}{{ comma }}</span>
+      </template>
+    </template>
+    <template v-else>
+      <!--
+        If value is a string and overflows its container (i.e. goes over one line), show an ellipsis.
+        This is done via CSS ellipsis strategy.
+      -->
+      <span
+        v-if="shouldShowReferenceLink"
+        class="inline-flex items-baseline group"
+      >
+        <span
+          :class="[...valueClasses, 'underline', 'decoration-dotted', 'underline-offset-2']"
+          :style="typeof value === 'string'
+            ? {
+                display: 'inline-block',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                verticalAlign: 'bottom'
+              }
+            : {}"
+          :title="typeof value === 'string' && $el && $el.scrollWidth > $el.clientWidth ? value : undefined"
+        >
+          {{ formattedValue }}
+        </span>
+        <span>
+          {{ comma }}
+        </span>
+        <a
+          href="#"
+          class="ml-1 text-sm text-sky-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+          @click.stop.prevent="goToReference()"
+        >
+          View Document
+        </a>
+      </span>
+      <span
+        v-else
+        :class="valueClasses"
+        :style="typeof value === 'string'
+          ? {
+              display: 'inline-block',
+              maxWidth: '100%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              verticalAlign: 'bottom'
+            }
+          : {}"
+        :title="typeof value === 'string' && $el && $el.scrollWidth > $el.clientWidth ? value : undefined"
+      >
+        {{ formattedValue }}{{ comma }}
+      </span>
+    </template>
+  </div>
+  <template v-if="isComplex && hasChildren && !isCollapsedNode">
+    <json-node
+      v-for="child in children"
+      :key="child.path"
+      :node-key="child.displayKey"
+      :value="child.value"
+      :level="level + 1"
+      :is-last="child.isLast"
+      :path="child.path"
+      :toggle-collapse="toggleCollapse"
+      :is-collapsed="isCollapsed"
+      :create-child-path="createChildPath"
+      :indent-size="indentSize"
+      :max-top-level-fields="maxTopLevelFields"
+      :top-level-expanded="topLevelExpanded"
+      :expand-top-level="expandTopLevel"
+      :references="references"
+    ></json-node>
+    <div
+      v-if="hasHiddenRootChildren"
+      class="flex items-baseline whitespace-pre"
+      :style="indentStyle"
+    >
+      <span class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
+      <button
+        type="button"
+        class="text-xs inline-flex items-center gap-1 ml-4 text-slate-500 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400"
+        :title="hiddenChildrenTooltip"
+        @click.stop="handleExpandTopLevel"
+      >
+        <span aria-hidden="true">{{hiddenChildrenLabel}}…</span>
+      </button>
+    </div>
+    <div class="flex items-baseline whitespace-pre" :style="indentStyle">
+      <span class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible"></span>
+      <span>{{ closingBracket }}{{ comma }}</span>
+    </div>
+  </template>
+</div>
