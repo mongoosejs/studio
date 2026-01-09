@@ -29,7 +29,8 @@ module.exports = function evaluateFilter(searchText) {
   const context = vm.createContext({
     ObjectId,
     Date,
-    Math
+    Math,
+    objectIdRange
   });
 
   let result;
@@ -49,3 +50,39 @@ module.exports = function evaluateFilter(searchText) {
 
   throw new Error('Invalid search filter: must evaluate to an object');
 };
+
+function objectIdRange(start, end) {
+  if (start instanceof Date) {
+    start = ObjectId.createFromTime(start.getTime() / 1000);
+  } else if (typeof start === 'string') {
+    if (/^[a-fA-F0-9]{24}$/.test(start)) {
+      start = new ObjectId(start);
+    } else if (!Number.isNaN(new Date(start).valueOf())) {
+      start = ObjectId.createFromTime(new Date(start).getTime() / 1000);
+    } else {
+      throw new Error('Invalid start');
+    }
+  }
+  if (end instanceof Date) {
+    end = ObjectId.createFromTime(end.getTime() / 1000);
+  } else if (typeof end === 'string') {
+    if (/^[a-fA-F0-9]{24}$/.test(end)) {
+      end = new ObjectId(end);
+    } else if (!Number.isNaN(new Date(end).valueOf())) {
+      end = ObjectId.createFromTime(new Date(end).getTime() / 1000);
+    } else {
+      throw new Error('Invalid end');
+    }
+  }
+
+  if (start != null && end != null) {
+    return { $gte: start, $lte: end };
+  }
+  if (start != null) {
+    return { $gte: start };
+  }
+  if (end != null) {
+    return { $lte: end };
+  }
+  throw new Error('Invalid range: must have either start or end');
+}
