@@ -33,6 +33,7 @@ describe('getModelDescriptions', function() {
       result,
       dedent(`
         User (collection: users)
+        Fields:
         - name: String
         - age: Number
         - email: String
@@ -57,6 +58,7 @@ describe('getModelDescriptions', function() {
       result,
       dedent(`
         Book (collection: books)
+        Fields:
         - title: String
         - author: ObjectId (ref: User)
         - _id: ObjectId
@@ -82,9 +84,11 @@ describe('getModelDescriptions', function() {
       result,
       dedent(`
         User (collection: users)
+        Fields:
         - name: String
         - _id: ObjectId
         - __v: Number
+        Virtuals:
         - books: Virtual (ref: Book)
       `)
     );
@@ -117,11 +121,13 @@ describe('getModelDescriptions', function() {
       result,
       dedent(`
         User (collection: users)
+        Fields:
         - name: String
         - _id: ObjectId
         - __v: Number
 
         Book (collection: books)
+        Fields:
         - title: String
         - author: ObjectId (ref: User)
         - _id: ObjectId
@@ -147,6 +153,7 @@ describe('getModelDescriptions', function() {
       result,
       dedent(`
         Book (collection: books)
+        Fields:
         - title: String
         - tags: String[]
         - authors: Subdocument[]
@@ -156,6 +163,42 @@ describe('getModelDescriptions', function() {
           - name: String
         - _id: ObjectId
         - __v: Number
+      `)
+    );
+  });
+
+  it('should include methods and statics with their source code', function() {
+    conn = mongoose.createConnection();
+    const UserSchema = new Schema({ name: String });
+    UserSchema.methods.greet = function(prefix) {
+      return `${prefix} ${this.name}`;
+    };
+    UserSchema.statics.findByName = function(name) {
+      return this.findOne({ name });
+    };
+
+    conn.model('User', UserSchema, 'users');
+
+    const result = getModelDescriptions(conn);
+
+    assert.strictEqual(
+      result,
+      dedent(`
+        User (collection: users)
+        Fields:
+        - name: String
+        - _id: ObjectId
+        - __v: Number
+        Methods:
+        - greet:
+          function(prefix) {
+            return \`\${prefix} \${this.name}\`;
+          }
+        Statics:
+        - findByName:
+          function(name) {
+            return this.findOne({ name });
+          }
       `)
     );
   });
