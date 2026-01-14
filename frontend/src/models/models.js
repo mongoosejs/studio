@@ -16,6 +16,7 @@ module.exports = app => app.component('models', {
   data: () => ({
     models: [],
     currentModel: null,
+    modelDocumentCounts: {},
     documents: [],
     schemaPaths: [],
     filteredPaths: [],
@@ -75,6 +76,7 @@ module.exports = app => app.component('models', {
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
+    this.loadModelCounts();
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
     }
@@ -340,6 +342,25 @@ module.exports = app => app.component('models', {
 
       return value.toLocaleString();
     },
+    formatCompactCount(value) {
+      if (typeof value !== 'number') {
+        return '—';
+      }
+      if (value < 1000) {
+        return `${value}`;
+      }
+      const formatValue = (number, suffix) => {
+        const rounded = (Math.round(number * 10) / 10).toFixed(1).replace(/\\.0$/, '');
+        return `${rounded}${suffix}`;
+      };
+      if (value < 1000000) {
+        return formatValue(value / 1000, 'k');
+      }
+      if (value < 1000000000) {
+        return formatValue(value / 1000000, 'M');
+      }
+      return formatValue(value / 1000000000, 'B');
+    },
     checkIndexLocation(indexName) {
       if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
         return 'text-gray-500';
@@ -592,6 +613,19 @@ module.exports = app => app.component('models', {
         this.lastSelectedIndex = null;
       } else {
         this.selectMultiple = true;
+      }
+    },
+    async loadModelCounts() {
+      if (!Array.isArray(this.models) || this.models.length === 0) {
+        return;
+      }
+      try {
+        const { counts } = await api.Model.getEstimatedDocumentCounts();
+        if (counts && typeof counts === 'object') {
+          this.modelDocumentCounts = counts;
+        }
+      } catch (err) {
+        console.error('Failed to load model document counts', err);
       }
     }
   }

@@ -11,6 +11,7 @@ exports.getDocuments = require('./getDocuments');
 exports.getDocumentsStream = require('./getDocumentsStream');
 exports.getCollectionInfo = require('./getCollectionInfo');
 exports.getIndexes = require('./getIndexes');
+exports.getEstimatedDocumentCounts = require('./getEstimatedDocumentCounts');
 exports.listModels = require('./listModels');
 exports.updateDocument = require('./updateDocument');
 exports.updateDocuments = require('./updateDocuments');
