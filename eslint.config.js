@@ -33,6 +33,7 @@ module.exports = defineConfig([
         CodeMirror: true,
         Chart: true,
         URLSearchParams: true,
+        URL: true,
         fetch: true,
         __dirname: true,
         process: true,
