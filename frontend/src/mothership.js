@@ -20,7 +20,10 @@ client.interceptors.request.use(req => {
 
 function sanitizedReturnUrl() {
   const url = new URL(window.location.href);
-  url.searchParams.delete('code');
+  if (url.hash && url.hash.includes('?')) {
+    const [hashPath, hashSearch] = url.hash.split('?', 2);
+    url.hash = hashPath;
+  }
   return url.toString();
 }
 
