@@ -43,9 +43,6 @@ async function run() {
 
   await app.listen(3002);
   console.log('Listening on port 3002');
-
-  // Ping localhost:7777
- //  pingLocalhost();
 }
 
 function pingLocalhost() {
