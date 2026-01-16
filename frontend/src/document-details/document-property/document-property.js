@@ -3,7 +3,7 @@
 'use strict';
 
 const mpath = require('mpath');
-const { inspect } = require('node-inspect-extracted');
+const deepEqual = require('../../_util/deepEqual');
 const template = require('./document-property.html');
 
 const appendCSS = require('../../appendCSS');
@@ -95,6 +95,22 @@ module.exports = app => app.component('document-property', {
     }
   },
   methods: {
+    handleInputChange(newValue) {
+      const currentValue = this.getValueForPath(this.path.path);
+      console.log('ABB', currentValue, newValue, this.path.path);
+
+      // Only record as a change if the value is actually different
+      if (!deepEqual(currentValue, newValue)) {
+        this.changes[this.path.path] = newValue;
+        console.log('SET  TO', newValue);
+      } else {
+        // If the value is the same as the original, remove it from changes
+        delete this.changes[this.path.path];
+      }
+
+      // Always clear invalid state on input
+      delete this.invalid[this.path.path];
+    },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
         return 'detail-array';
