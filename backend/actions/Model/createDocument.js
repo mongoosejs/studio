@@ -1,8 +1,10 @@
 'use strict';
 
 const Archetype = require('archetype');
+const mongoose = require('mongoose');
 const { EJSON } = require('mongoose').mongo.BSON;
 const authorize = require('../../authorize');
+const callMothership = require('../../integrations/callMothership');
 
 const CreateDocumentParams = new Archetype({
   model: {
@@ -15,12 +17,14 @@ const CreateDocumentParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  $workspaceId: {
+    $type: mongoose.Types.ObjectId,
   }
 }).compile('CreateDocumentParams');
 
-module.exports = ({ db }) => async function CreateDocument(params) {
-  const { model, data, roles } = new CreateDocumentParams(params);
-
+module.exports = ({ db, options }) => async function CreateDocument(params) {
+  const { model, data, roles, $workspaceId } = new CreateDocumentParams(params);
   await authorize('Model.createDocument', roles);
 
   const Model = db.models[model];
@@ -29,26 +33,19 @@ module.exports = ({ db }) => async function CreateDocument(params) {
   }
 
   const doc = await Model.create(EJSON.deserialize(data));
-  console.log('pinging backend');
-  const res = await fetch(`${mothershipUrl}/notifySlack`, {
-    method: 'POST',
-    body: JSON.stringify({ purpose: 'documentCreate', modelName: model, documentId: doc._id }),
-    headers: {
-      'Authorization': `Bearer ${options.apiKey}`,
-      'Content-Type': 'application/json'
-    }
-  })
-    .then(response => {
-      if (response.status < 200 || response.status >= 400) {
-        return response.json().then(data => {
-          throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
-        });
-      }
-      return response;
-    })
-    .then(res => res.json());
-
-    console.log('waht is res', res);
+  
+  try {
+    const res = await callMothership('/notifySlack', {
+      purpose: 'documentCreated',
+      modelName: model,
+      documentId: doc._id,
+      workspaceId: $workspaceId
+    }, options);
+    console.log('what is res', res);
+  } catch (err) {
+    console.error('Error calling mothership:', err);
+    // Continue execution even if mothership call fails
+  }
 
   return { doc };
 };
