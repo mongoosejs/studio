@@ -6,6 +6,8 @@ require('../../frontend')(`/api/studio`, true, {})
   .then(() => {
     execSync(
       `
+      echo "Building Mongoose Studio frontend..."
+      pwd
       mkdir -p ./public
       cp -r ./../../frontend/public/* ./public/
       `
