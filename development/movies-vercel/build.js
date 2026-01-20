@@ -1,11 +1,11 @@
 'use strict';
 
-require('../../../frontend')(`/api/studio`, true, opts)
+require('../../frontend')(`/api/studio`, true, opts)
   .then(() => {
     execSync(
       `
       mkdir -p ./public
-      cp -r ./../../../frontend/public/* ./public/
+      cp -r ./../../frontend/public/* ./public/
       `
     );
     console.log('Built Mongoose Studio frontend');
