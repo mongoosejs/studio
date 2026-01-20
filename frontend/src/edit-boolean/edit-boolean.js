@@ -19,20 +19,12 @@ module.exports = app => app.component('edit-boolean', {
       this.selectedValue = newValue;
     },
     selectedValue(newValue) {
-      // Convert null/undefined to strings for proper backend serialization
-      const emitValue = this.convertValueToString(newValue);
-      this.$emit('input', emitValue);
+      this.$emit('input', newValue);
     }
   },
   methods: {
     selectValue(value) {
       this.selectedValue = value;
-    },
-    convertValueToString(value) {
-      // Convert null/undefined to strings for proper backend serialization
-      if (value === null) return 'null';
-      if (typeof value === 'undefined') return 'undefined';
-      return value;
     }
   }
 });

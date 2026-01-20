@@ -74,10 +74,25 @@ module.exports = app => app.component('document', {
       if (Object.keys(this.invalid).length > 0) {
         throw new Error('Invalid paths: ' + Object.keys(this.invalid).join(', '));
       }
+
+      let update = this.changes;
+      let unset = {};
+      const hasUnsetFields = Object.keys(this.changes)
+        .some(key => this.changes[key] === undefined);
+      if (hasUnsetFields) {
+        unset = Object.keys(this.changes)
+          .filter(key => this.changes[key] === undefined)
+          .reduce((obj, key) => Object.assign(obj, { [key]: 1 }), {});
+        update = Object.keys(this.changes)
+          .filter(key => this.changes[key] !== undefined)
+          .reduce((obj, key) => Object.assign(obj, { [key]: this.changes[key] }), {});
+      }
+
       const { doc } = await api.Model.updateDocument({
         model: this.model,
         _id: this.document._id,
-        update: this.changes
+        update,
+        unset
       });
       this.document = doc;
       this.changes = {};
