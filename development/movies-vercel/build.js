@@ -2,7 +2,9 @@
 
 const { execSync } = require('child_process');
 
-require('../../frontend')(`/api/studio`, true, {})
+const opts = { __build: true };
+
+require('../../frontend')(`/api/studio`, true, opts)
   .then(() => {
     execSync(
       `
@@ -12,7 +14,7 @@ require('../../frontend')(`/api/studio`, true, {})
       cp -r ./../../frontend/public/* ./public/
       `
     );
-    console.log('Built Mongoose Studio frontend');
+    console.log('Built Mongoose Studio frontend', process.cwd());
   })
   .catch(err => {
     console.error('Failed to build Mongoose Studio frontend', err);
