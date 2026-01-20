@@ -1,5 +1,7 @@
 'use strict';
 
+const { execSync } = require('child_process');
+
 require('../../frontend')(`/api/studio`, true, {})
   .then(() => {
     execSync(
