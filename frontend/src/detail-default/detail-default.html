@@ -1,3 +1,25 @@
 <div class="w-full">
-  <pre class="w-full whitespace-pre-wrap break-words font-mono text-sm text-gray-700 m-0">{{displayValue}}</pre>
+  <pre v-if="!isGeoJsonGeometry" class="w-full whitespace-pre-wrap break-words font-mono text-sm text-gray-700 m-0">{{displayValue}}</pre>
+  <div v-if="isGeoJsonGeometry" class="mt-2 flex flex-col gap-2">
+    <pre v-show="!mapVisible" class="w-full whitespace-pre-wrap break-words font-mono text-sm text-gray-700 m-0">{{displayValue}}</pre>
+    <div class="inline-flex w-fit items-center gap-2">
+      <button
+        type="button"
+        class="inline-flex items-center rounded border border-gray-300 px-2 py-1 text-xs font-semibold"
+        :class="mapVisible ? 'bg-white text-gray-700 hover:bg-gray-50' : 'bg-gray-900 text-white'"
+        @click="showText">
+        Text
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center rounded border border-gray-300 px-2 py-1 text-xs font-semibold"
+        :class="mapVisible ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
+        @click="showMap">
+        Map
+      </button>
+    </div>
+    <div v-show="mapVisible" class="border border-gray-200 rounded">
+      <div ref="map" class="h-64 w-full"></div>
+    </div>
+  </div>
 </div>
