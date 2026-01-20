@@ -63,6 +63,5 @@ module.exports = {
   formatValue,
   isObjectItem,
   getItemKeys,
-  formatItemValue,
-  deepEqual
+  formatItemValue
 };

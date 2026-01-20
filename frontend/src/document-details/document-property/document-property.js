@@ -97,12 +97,10 @@ module.exports = app => app.component('document-property', {
   methods: {
     handleInputChange(newValue) {
       const currentValue = this.getValueForPath(this.path.path);
-      console.log('ABB', currentValue, newValue, this.path.path);
 
       // Only record as a change if the value is actually different
       if (!deepEqual(currentValue, newValue)) {
         this.changes[this.path.path] = newValue;
-        console.log('SET  TO', newValue);
       } else {
         // If the value is the same as the original, remove it from changes
         delete this.changes[this.path.path];
