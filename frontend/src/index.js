@@ -44,7 +44,11 @@ requireComponents.keys().forEach((filePath) => {
   // Check if the file name matches the directory name
   if (directoryName === fileName) {
     components[directoryName] = requireComponents(filePath);
-    components[directoryName](app);
+    if (typeof components[directoryName] === 'function') {
+      components[directoryName](app);
+    } else {
+      app.component(directoryName, components[directoryName]);
+    }
   }
 });
 
@@ -116,7 +120,7 @@ app.component('app-component', {
 
         this.user = user;
         this.roles = roles;
-        
+
         setTimeout(() => {
           this.$router.replace(this.$router.currentRoute.value.path);
         }, 0);
