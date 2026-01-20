@@ -1,6 +1,6 @@
 'use strict';
 
-require('../../frontend')(`/api/studio`, true, opts)
+require('../../frontend')(`/api/studio`, true, {})
   .then(() => {
     execSync(
       `
