@@ -13,7 +13,7 @@ describe('dashboard component', function() {
   afterEach(function () {
     sinon.restore();
   });
-  it('handles null dashboardResult', async function () {
+  it('handles missing dashboardResults in API response', async function () {
     const dashboardId = '1'.repeat(24);
     sinon.stub(api.Dashboard, 'getDashboard').callsFake(() => Promise.resolve({
       dashboard: {
