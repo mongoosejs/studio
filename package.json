@@ -17,8 +17,6 @@
     "csv-stringify": "6.3.0",
     "ejson": "^2.2.3",
     "extrovert": "^0.2.0",
-    "jsdom": "^27.4.0",
-    "jsdom-global": "^3.0.2",
     "marked": "15.0.12",
     "node-inspect-extracted": "3.x",
     "tailwindcss": "3.4.0",
@@ -31,7 +29,6 @@
   },
   "devDependencies": {
     "@masteringjs/eslint-config": "0.1.1",
-    "@vue/test-utils": "^2.4.6",
     "axios": "1.2.2",
     "dedent": "^1.6.0",
     "eslint": "9.30.0",
