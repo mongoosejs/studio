@@ -10,6 +10,9 @@ const api = require('../../frontend/src/api');
 const dashboard = require('../../frontend/src/dashboard/dashboard');
 
 describe('dashboard component', function() {
+  afterEach(function () {
+    sinon.restore();
+  });
   it('handles null dashboardResult', async function () {
     const dashboardId = '1'.repeat(24);
     sinon.stub(api.Dashboard, 'getDashboard').callsFake(() => Promise.resolve({
