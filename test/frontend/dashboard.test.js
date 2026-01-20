@@ -10,7 +10,10 @@ const api = require('../../frontend/src/api');
 const dashboard = require('../../frontend/src/dashboard/dashboard');
 
 describe('dashboard component', function() {
-  it('handles null dashboardResult', async function () {
+  afterEach(function () {
+    sinon.restore();
+  });
+  it('handles missing dashboardResults in API response', async function () {
     const dashboardId = '1'.repeat(24);
     sinon.stub(api.Dashboard, 'getDashboard').callsFake(() => Promise.resolve({
       dashboard: {
