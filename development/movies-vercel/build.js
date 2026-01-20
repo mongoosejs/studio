@@ -10,6 +10,7 @@ require('../../frontend')(`/api/studio`, true, opts)
       `
       echo "Building Mongoose Studio frontend..."
       pwd
+      npm run tailwind
       mkdir -p ./public
       cp -r ./../../frontend/public/* ./public/
       `
