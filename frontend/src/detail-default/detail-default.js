@@ -4,12 +4,14 @@
 const template = require('./detail-default.html');
 module.exports = app => app.component('detail-default', {
   template: template,
-  props: ['value', 'viewMode'],
+  props: ['value', 'viewMode', 'onChange'],
   data() {
     return {
       mapVisible: false,
       mapInstance: null,
-      mapLayer: null
+      mapLayer: null,
+      draggableMarker: null,
+      hasUnsavedChanges: false
     };
   },
   computed: {
@@ -38,6 +40,12 @@ module.exports = app => app.component('detail-default', {
         && !Array.isArray(this.value)
         && Object.prototype.hasOwnProperty.call(this.value, 'type')
         && Object.prototype.hasOwnProperty.call(this.value, 'coordinates');
+    },
+    isGeoJsonPoint() {
+      return this.isGeoJsonGeometry && this.value.type === 'Point';
+    },
+    isEditable() {
+      return this.isGeoJsonPoint && typeof this.onChange === 'function';
     }
   },
   watch: {
@@ -59,11 +67,19 @@ module.exports = app => app.component('detail-default', {
             this.ensureMap();
           });
         }
+        // Reset unsaved changes flag when value changes externally (e.g., after save)
+        if (this.hasUnsavedChanges && this.isGeoJsonPoint) {
+          this.hasUnsavedChanges = false;
+        }
       },
       deep: true
     }
   },
   beforeDestroy() {
+    if (this.draggableMarker) {
+      this.draggableMarker.remove();
+      this.draggableMarker = null;
+    }
     if (this.mapInstance) {
       this.mapInstance.remove();
       this.mapInstance = null;
@@ -126,25 +142,78 @@ module.exports = app => app.component('detail-default', {
         return;
       }
       
-      if (this.mapLayer) {
-        this.mapLayer.remove();
-      }
-      
-      const feature = {
-        type: 'Feature',
-        geometry: this.value,
-        properties: {}
-      };
-      
       try {
-        this.mapLayer = L.geoJSON(feature).addTo(this.mapInstance);
-        const bounds = this.mapLayer.getBounds();
-        if (bounds.isValid()) {
-          this.mapInstance.fitBounds(bounds, { maxZoom: 16 });
+        // For Point geometries in edit mode, use a draggable marker
+        if (this.isGeoJsonPoint && this.isEditable) {
+          const [lng, lat] = this.value.coordinates;
+          
+          // If marker exists, update its position instead of recreating
+          if (this.draggableMarker) {
+            const currentLatLng = this.draggableMarker.getLatLng();
+            // Only update if coordinates actually changed (avoid interrupting drag)
+            if (Math.abs(currentLatLng.lat - lat) > 0.0001 || Math.abs(currentLatLng.lng - lng) > 0.0001) {
+              this.draggableMarker.setLatLng([lat, lng]);
+            }
+          } else {
+            // Create new draggable marker
+            this.draggableMarker = L.marker([lat, lng], {
+              draggable: true
+            }).addTo(this.mapInstance);
+            
+            // Add dragend event handler
+            this.draggableMarker.on('dragend', () => {
+              const newLat = this.draggableMarker.getLatLng().lat;
+              const newLng = this.draggableMarker.getLatLng().lng;
+              const newGeometry = {
+                type: 'Point',
+                coordinates: [newLng, newLat]
+              };
+              this.hasUnsavedChanges = true;
+              if (this.onChange) {
+                this.onChange(newGeometry);
+              }
+            });
+            
+            // Center map on marker if it's the first time
+            if (!this.mapInstance.getBounds().isValid()) {
+              this.mapInstance.setView([lat, lng], Math.max(this.mapInstance.getZoom(), 10));
+            }
+          }
+          
+          // Remove any existing non-draggable layer
+          if (this.mapLayer) {
+            this.mapLayer.remove();
+            this.mapLayer = null;
+          }
+        } else {
+          // For other geometries or non-editable mode, use standard GeoJSON layer
+          if (this.draggableMarker) {
+            this.draggableMarker.remove();
+            this.draggableMarker = null;
+          }
+          
+          if (this.mapLayer) {
+            this.mapLayer.remove();
+          }
+          
+          const feature = {
+            type: 'Feature',
+            geometry: this.value,
+            properties: {}
+          };
+          
+          this.mapLayer = L.geoJSON(feature).addTo(this.mapInstance);
+          const bounds = this.mapLayer.getBounds();
+          if (bounds.isValid()) {
+            this.mapInstance.fitBounds(bounds, { maxZoom: 16 });
+          }
         }
       } catch (error) {
         // Silently handle errors
       }
+    },
+    resetUnsavedChanges() {
+      this.hasUnsavedChanges = false;
     }
   }
 });

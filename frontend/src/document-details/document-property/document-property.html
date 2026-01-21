@@ -85,7 +85,18 @@
 
     <!-- Field Content -->
     <div v-if="editting && path.path !== '_id'">
+      <!-- Use detail-default with map editing for GeoJSON geometries -->
       <component
+        v-if="isGeoJsonGeometry"
+        :is="getComponentForPath(path)"
+        :value="getEditValueForPath(path)"
+        :view-mode="detailViewMode"
+        :on-change="handleInputChange"
+        >
+      </component>
+      <!-- Use standard edit components for other types -->
+      <component
+        v-else
         :is="getEditComponentForPath(path)"
         :value="getEditValueForPath(path)"
         :format="dateType"

@@ -107,6 +107,15 @@ module.exports = app => app.component('document-property', {
     isGeoJsonGeometry(newValue) {
       if (!newValue) {
         this.detailViewMode = 'text';
+      } else if (newValue && this.editting) {
+        // Default to map view when editing GeoJSON
+        this.detailViewMode = 'map';
+      }
+    },
+    editting(newValue) {
+      // When entering edit mode for GeoJSON, default to map view
+      if (newValue && this.isGeoJsonGeometry) {
+        this.detailViewMode = 'map';
       }
     }
   },
@@ -194,6 +203,11 @@ module.exports = app => app.component('document-property', {
       if (!this.document) {
         return;
       }
+      // If there are unsaved changes for this path, use the changed value
+      if (Object.prototype.hasOwnProperty.call(this.changes, path)) {
+        return this.changes[path];
+      }
+      // Otherwise, use the document value
       const documentValue = mpath.get(path, this.document);
       return documentValue;
     },
