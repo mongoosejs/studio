@@ -53,7 +53,8 @@ module.exports = app => app.component('detail-default', {
       currentEditedGeometry: null, // Track the current edited geometry state
       deletedCoordinates: [], // Track deleted coordinates for undo: [{index, coordinate, geometry}]
       contextMenu: null, // Custom context menu element
-      contextMenuMarker: null // Marker that triggered context menu
+      contextMenuMarker: null, // Marker that triggered context menu
+      originalGeometry: null // Store the original geometry when editing starts
     };
   },
   computed: {
@@ -96,7 +97,8 @@ module.exports = app => app.component('detail-default', {
       return (this.isGeoJsonPoint || this.isGeoJsonPolygon) && typeof this.onChange === 'function';
     },
     canUndo() {
-      return this.deletedCoordinates.length > 0;
+      // Can undo if there are any changes from the original geometry
+      return this.hasUnsavedChanges && this.originalGeometry != null;
     }
   },
   watch: {
@@ -112,7 +114,7 @@ module.exports = app => app.component('detail-default', {
       immediate: true
     },
     value: {
-      handler() {
+      handler(newValue) {
         if (this.mapVisible) {
           this.$nextTick(() => {
             this.ensureMap();
@@ -124,8 +126,15 @@ module.exports = app => app.component('detail-default', {
           this.currentEditedGeometry = null; // Reset edited geometry when value changes externally
           this.deletedCoordinates = []; // Clear undo history when value changes externally
         }
+        // Store the new value as the original geometry for future edits
+        if (newValue && this.isGeoJsonGeometry) {
+          this.originalGeometry = JSON.parse(JSON.stringify(newValue));
+        } else {
+          this.originalGeometry = null;
+        }
       },
-      deep: true
+      deep: true,
+      immediate: true
     }
   },
   beforeDestroy() {
@@ -1065,82 +1074,33 @@ module.exports = app => app.component('detail-default', {
       }
     },
     undoDelete() {
-      if (this.deletedCoordinates.length === 0) {
+      // Restore the original geometry (undo all changes)
+      if (!this.originalGeometry) {
         return;
       }
       
-      // Get the last deleted coordinate
-      const lastDeleted = this.deletedCoordinates.pop();
+      const restoredGeometry = JSON.parse(JSON.stringify(this.originalGeometry));
       
-      // Handle Point geometry undo
+      // Clear all edited state
+      this.currentEditedGeometry = null;
+      this.deletedCoordinates = [];
+      this.hasUnsavedChanges = false;
+      
+      // Update the map to show the original geometry
       if (this.isGeoJsonPoint) {
-        // Restore the original point geometry
-        this.currentEditedGeometry = lastDeleted.geometry;
-        this.hasUnsavedChanges = true;
-        
-        // Recreate marker and update map
         this.$nextTick(() => {
           this.updateMapLayer();
         });
-        
-        // Notify parent of the change
-        if (this.onChange) {
-          this.onChange(lastDeleted.geometry);
-        }
-        return;
+      } else if (this.isGeoJsonPolygon) {
+        this.updatePolygonLayer(restoredGeometry);
+        this.$nextTick(() => {
+          this.updateMapLayer();
+        });
       }
       
-      // Handle Polygon/MultiPolygon geometry undo
-      // Get current geometry
-      const baseGeometry = this.currentEditedGeometry || this.value;
-      const newCoordinates = JSON.parse(JSON.stringify(baseGeometry.coordinates));
-      
-      // Get the outer ring
-      let outerRing = [];
-      if (this.isMultiPolygon) {
-        outerRing = newCoordinates[0][0] || [];
-      } else {
-        outerRing = newCoordinates[0] || [];
-      }
-      
-      // Check if this is a closed ring
-      const isClosedRing = outerRing.length > 0 && 
-        outerRing[0][0] === outerRing[outerRing.length - 1][0] && 
-        outerRing[0][1] === outerRing[outerRing.length - 1][1];
-      
-      // Restore the coordinate at the original index
-      if (this.isMultiPolygon) {
-        newCoordinates[0][0].splice(lastDeleted.index, 0, lastDeleted.coordinate);
-        // If it was a closed ring, update the closing coordinate
-        if (isClosedRing) {
-          newCoordinates[0][0][newCoordinates[0][0].length - 1] = newCoordinates[0][0][0];
-        }
-      } else {
-        newCoordinates[0].splice(lastDeleted.index, 0, lastDeleted.coordinate);
-        // If it was a closed ring, update the closing coordinate
-        if (isClosedRing) {
-          newCoordinates[0][newCoordinates[0].length - 1] = newCoordinates[0][0];
-        }
-      }
-      
-      const newGeometry = {
-        type: baseGeometry.type,
-        coordinates: newCoordinates
-      };
-      
-      // Store the current edited geometry state
-      this.currentEditedGeometry = newGeometry;
-      this.hasUnsavedChanges = true;
-      
-      // Update the polygon layer and recreate markers
-      this.updatePolygonLayer(newGeometry);
-      this.$nextTick(() => {
-        this.updateMapLayer();
-      });
-      
-      // Notify parent of the change
+      // Notify parent of the change (restore to original)
       if (this.onChange) {
-        this.onChange(newGeometry);
+        this.onChange(restoredGeometry);
       }
     }
   }

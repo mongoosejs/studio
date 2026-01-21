@@ -123,6 +123,7 @@
       <!-- Use detail-default with map editing for GeoJSON geometries -->
       <component
         v-if="isGeoJsonGeometry"
+        ref="detailDefault"
         :is="getComponentForPath(path)"
         :value="getEditValueForPath(path)"
         :view-mode="detailViewMode"
