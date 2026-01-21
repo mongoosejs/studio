@@ -51,7 +51,6 @@ module.exports = app => app.component('detail-default', {
       draggableMarkers: [], // For polygon vertices
       hasUnsavedChanges: false,
       currentEditedGeometry: null, // Track the current edited geometry state
-      deletedCoordinates: [], // Track deleted coordinates for undo: [{index, coordinate, geometry}]
       contextMenu: null, // Custom context menu element
       contextMenuMarker: null, // Marker that triggered context menu
       originalGeometry: null // Store the original geometry when editing starts
@@ -124,7 +123,6 @@ module.exports = app => app.component('detail-default', {
         if (this.hasUnsavedChanges && (this.isGeoJsonPoint || this.isGeoJsonPolygon)) {
           this.hasUnsavedChanges = false;
           this.currentEditedGeometry = null; // Reset edited geometry when value changes externally
-          this.deletedCoordinates = []; // Clear undo history when value changes externally
         }
         // Store the new value as the original geometry for future edits
         if (newValue && this.isGeoJsonGeometry) {
@@ -951,12 +949,6 @@ module.exports = app => app.component('detail-default', {
       return Math.sqrt(dx * dx + dy * dy);
     },
     deletePoint() {
-      // Store deleted point for undo
-      const deletedPoint = {
-        geometry: JSON.parse(JSON.stringify(this.value))
-      };
-      this.deletedCoordinates.push(deletedPoint);
-      
       // Set point to null (or empty coordinates)
       const newGeometry = {
         type: 'Point',
@@ -1012,14 +1004,6 @@ module.exports = app => app.component('detail-default', {
         this.hideContextMenu();
         return; // Can't delete - would make invalid polygon
       }
-      
-      // Store deleted coordinate for undo
-      const deletedCoord = outerRing[index];
-      this.deletedCoordinates.push({
-        index: index,
-        coordinate: deletedCoord,
-        geometry: JSON.parse(JSON.stringify(baseGeometry))
-      });
       
       // Remove the coordinate
       if (this.isMultiPolygon) {
@@ -1083,7 +1067,6 @@ module.exports = app => app.component('detail-default', {
       
       // Clear all edited state
       this.currentEditedGeometry = null;
-      this.deletedCoordinates = [];
       this.hasUnsavedChanges = false;
       
       // Update the map to show the original geometry

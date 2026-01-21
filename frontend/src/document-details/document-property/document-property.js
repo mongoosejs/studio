@@ -20,28 +20,13 @@ module.exports = app => app.component('document-property', {
       detailViewMode: 'text',
       copyButtonLabel: 'Copy',
       copyResetTimeoutId: null,
-      showTooltip: false,
-      canUndoState: false // Track undo state from child component
+      showTooltip: false
     };
-  },
-  mounted() {
-    this.updateCanUndoState();
-    // Set up interval to check undo state (since $refs aren't reactive)
-    this.undoCheckInterval = setInterval(() => {
-      this.updateCanUndoState();
-    }, 100);
-  },
-  updated() {
-    this.updateCanUndoState();
   },
   beforeDestroy() {
     if (this.copyResetTimeoutId) {
       clearTimeout(this.copyResetTimeoutId);
       this.copyResetTimeoutId = null;
-    }
-    if (this.undoCheckInterval) {
-      clearInterval(this.undoCheckInterval);
-      this.undoCheckInterval = null;
     }
   },
   props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid', 'highlight'],
@@ -129,9 +114,6 @@ module.exports = app => app.component('document-property', {
     isMultiPolygon() {
       const value = this.getValueForPath(this.path.path);
       return this.isGeoJsonGeometry && value.type === 'MultiPolygon';
-    },
-    canUndo() {
-      return this.canUndoState;
     }
   },
   watch: {
@@ -267,22 +249,6 @@ module.exports = app => app.component('document-property', {
         left: (rect.right + 8) + 'px',
         top: rect.top + 'px'
       };
-    },
-    updateCanUndoState() {
-      if (this.$refs.detailDefault) {
-        this.canUndoState = this.$refs.detailDefault.canUndo || false;
-      } else {
-        this.canUndoState = false;
-      }
-    },
-    undoDelete() {
-      if (this.$refs.detailDefault && typeof this.$refs.detailDefault.undoDelete === 'function') {
-        this.$refs.detailDefault.undoDelete();
-        // Update state after undo
-        this.$nextTick(() => {
-          this.updateCanUndoState();
-        });
-      }
     },
     copyPropertyValue() {
       const textToCopy = this.valueAsString;
