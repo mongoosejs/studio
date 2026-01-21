@@ -19,7 +19,8 @@ module.exports = app => app.component('document-property', {
       isValueExpanded: false, // Track if the value is expanded
       detailViewMode: 'text',
       copyButtonLabel: 'Copy',
-      copyResetTimeoutId: null
+      copyResetTimeoutId: null,
+      showTooltip: false
     };
   },
   beforeDestroy() {
@@ -101,6 +102,18 @@ module.exports = app => app.component('document-property', {
         && !Array.isArray(value)
         && Object.prototype.hasOwnProperty.call(value, 'type')
         && Object.prototype.hasOwnProperty.call(value, 'coordinates');
+    },
+    isGeoJsonPoint() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && value.type === 'Point';
+    },
+    isGeoJsonPolygon() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && (value.type === 'Polygon' || value.type === 'MultiPolygon');
+    },
+    isMultiPolygon() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && value.type === 'MultiPolygon';
     }
   },
   watch: {
@@ -226,6 +239,16 @@ module.exports = app => app.component('document-property', {
         this.copyButtonLabel = 'Copy';
         this.copyResetTimeoutId = null;
       }, 5000);
+    },
+    getTooltipStyle() {
+      if (!this.$refs.infoIcon || !this.showTooltip) {
+        return {};
+      }
+      const rect = this.$refs.infoIcon.getBoundingClientRect();
+      return {
+        left: (rect.right + 8) + 'px',
+        top: rect.top + 'px'
+      };
     },
     copyPropertyValue() {
       const textToCopy = this.valueAsString;

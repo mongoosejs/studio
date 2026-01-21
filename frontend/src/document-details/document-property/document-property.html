@@ -1,9 +1,10 @@
-<div class="border border-gray-200 bg-white rounded-lg mb-2">
+<div class="border border-gray-200 bg-white rounded-lg mb-2" style="overflow: visible;">
   <!-- Collapsible Header -->
   <div
     @click="toggleCollapse"
     class="p-1 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
     :class="{ 'bg-amber-100 hover:bg-amber-200': highlight, 'bg-slate-100 hover:bg-gray-100': !highlight }"
+    style="overflow: visible; position: relative;"
   >
     <div class="flex items-center" >
       <svg
@@ -17,21 +18,55 @@
       </svg>
       <span class="font-medium text-gray-900">{{path.path}}</span>
       <span class="ml-2 text-sm text-gray-500">({{(path.instance || 'unknown').toLowerCase()}})</span>
-      <div v-if="isGeoJsonGeometry" class="ml-3 inline-flex items-center rounded-full bg-gray-100 p-0.5 text-xs font-semibold">
-        <button
-          type="button"
-          class="rounded-full px-2.5 py-0.5 transition"
-          :class="detailViewMode === 'text' ? 'bg-gray-900 text-white shadow' : 'text-gray-600 hover:text-gray-800'"
-          @click.stop="setDetailViewMode('text')">
-          Text
-        </button>
-        <button
-          type="button"
-          class="rounded-full px-2.5 py-0.5 transition"
-          :class="detailViewMode === 'map' ? 'bg-gray-900 text-white shadow' : 'text-gray-600 hover:text-gray-800'"
-          @click.stop="setDetailViewMode('map')">
-          Map
-        </button>
+      <div v-if="isGeoJsonGeometry" class="ml-3 inline-flex items-center gap-2">
+        <div class="inline-flex items-center rounded-full bg-gray-100 p-0.5 text-xs font-semibold">
+          <button
+            type="button"
+            class="rounded-full px-2.5 py-0.5 transition"
+            :class="detailViewMode === 'text' ? 'bg-blue-600 text-white shadow' : 'text-gray-700 hover:text-gray-900'"
+            :style="detailViewMode === 'text' ? 'color: white !important; background-color: #2563eb !important;' : ''"
+            @click.stop="setDetailViewMode('text')">
+            Text
+          </button>
+          <button
+            type="button"
+            class="rounded-full px-2.5 py-0.5 transition"
+            :class="detailViewMode === 'map' ? 'bg-blue-600 text-white shadow' : 'text-gray-700 hover:text-gray-900'"
+            :style="detailViewMode === 'map' ? 'color: white !important; background-color: #2563eb !important;' : ''"
+            @click.stop="setDetailViewMode('map')">
+            Map
+          </button>
+        </div>
+        <!-- Info icon with tooltip -->
+        <div v-if="editting" class="relative inline-block" style="z-index: 10002;" @mouseenter="showTooltip = true" @mouseleave="showTooltip = false" @click.stop>
+          <svg 
+            ref="infoIcon"
+            class="w-6 h-6 text-gray-400 hover:text-gray-600 cursor-help" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div 
+            v-show="showTooltip"
+            ref="tooltip"
+            class="absolute left-full top-0 ml-2 w-64 p-3 text-white text-xs rounded-lg shadow-xl" 
+            style="z-index: 99999; pointer-events: none; white-space: normal; position: fixed; background-color: #111827;"
+            :style="getTooltipStyle()"
+          >
+            <div class="font-semibold mb-2">Map Controls:</div>
+            <div v-if="isGeoJsonPoint" class="space-y-1">
+              <div>• Drag pin to move location</div>
+            </div>
+            <div v-else-if="isGeoJsonPolygon" class="space-y-1">
+              <div>• Drag vertices to reshape polygon</div>
+              <div v-if="isMultiPolygon">• Click edge to add new vertex</div>
+              <div>• Right-click vertex to delete</div>
+            </div>
+            <div class="absolute top-2 -left-1 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-gray-900"></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="flex items-center gap-2">

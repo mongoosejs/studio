@@ -4,13 +4,38 @@
 const template = require('./detail-default.html');
 const appendCSS = require('../appendCSS');
 
-// Add CSS for polygon vertex markers
+// Add CSS for polygon vertex markers and context menu
 appendCSS(`
   .polygon-vertex-marker {
     pointer-events: auto !important;
   }
   .polygon-vertex-marker > div {
     pointer-events: auto !important;
+  }
+  .leaflet-context-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10000;
+    min-width: 120px;
+    padding: 4px 0;
+  }
+  .leaflet-context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+  }
+  .leaflet-context-menu-item:hover {
+    background-color: #f0f0f0;
+  }
+  .leaflet-context-menu-item.delete {
+    color: #dc3545;
+  }
+  .leaflet-context-menu-item.delete:hover {
+    background-color: #fee;
   }
 `);
 
@@ -25,7 +50,10 @@ module.exports = app => app.component('detail-default', {
       draggableMarker: null,
       draggableMarkers: [], // For polygon vertices
       hasUnsavedChanges: false,
-      currentEditedGeometry: null // Track the current edited geometry state
+      currentEditedGeometry: null, // Track the current edited geometry state
+      deletedCoordinates: [], // Track deleted coordinates for undo: [{index, coordinate, geometry}]
+      contextMenu: null, // Custom context menu element
+      contextMenuMarker: null // Marker that triggered context menu
     };
   },
   computed: {
@@ -66,6 +94,9 @@ module.exports = app => app.component('detail-default', {
     },
     isEditable() {
       return (this.isGeoJsonPoint || this.isGeoJsonPolygon) && typeof this.onChange === 'function';
+    },
+    canUndo() {
+      return this.deletedCoordinates.length > 0;
     }
   },
   watch: {
@@ -91,12 +122,14 @@ module.exports = app => app.component('detail-default', {
         if (this.hasUnsavedChanges && (this.isGeoJsonPoint || this.isGeoJsonPolygon)) {
           this.hasUnsavedChanges = false;
           this.currentEditedGeometry = null; // Reset edited geometry when value changes externally
+          this.deletedCoordinates = []; // Clear undo history when value changes externally
         }
       },
       deep: true
     }
   },
   beforeDestroy() {
+    this.hideContextMenu();
     if (this.draggableMarker) {
       this.draggableMarker.remove();
       this.draggableMarker = null;
@@ -143,6 +176,12 @@ module.exports = app => app.component('detail-default', {
             preferCanvas: false
           }).setView([0, 0], 1);
           
+          // Ensure map container has relative positioning for context menu
+          const mapContainer = this.mapInstance.getContainer();
+          if (mapContainer) {
+            mapContainer.style.position = 'relative';
+          }
+          
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
           }).addTo(this.mapInstance);
@@ -187,6 +226,12 @@ module.exports = app => app.component('detail-default', {
             this.draggableMarker = L.marker([lat, lng], {
               draggable: true
             }).addTo(this.mapInstance);
+            
+            // Add right-click handler to delete point
+            this.draggableMarker.on('contextmenu', (e) => {
+              e.originalEvent.preventDefault();
+              this.deletePoint();
+            });
             
             // Add dragend event handler
             this.draggableMarker.on('dragend', () => {
@@ -246,33 +291,79 @@ module.exports = app => app.component('detail-default', {
               opacity: 0.8,
               fillOpacity: 0.2
             },
-            interactive: false // Make polygon non-interactive so markers can be dragged
+            interactive: this.isMultiPolygon // Only interactive for MultiPolygon (to allow edge clicks)
           }).addTo(this.mapInstance);
           
-          // Ensure polygon layer doesn't interfere with marker interactions
-          // This is the FIRST FIX: Aggressively disable pointer events on polygon
+          // Add click handler to polygon edges to create new vertices (only for MultiPolygon)
+          if (this.isMultiPolygon && this.mapLayer.eachLayer) {
+            this.mapLayer.eachLayer((layer) => {
+              layer.on('click', (e) => {
+                // Only create vertex if clicking on the edge, not on existing markers
+                const clickPoint = e.latlng;
+                const clickContainerPoint = this.mapInstance.latLngToContainerPoint(clickPoint);
+                
+                // Check if clicking near an existing marker (using pixel distance)
+                const isClickingOnMarker = this.draggableMarkers.some(marker => {
+                  if (!marker || !marker._icon) return false;
+                  const markerLatLng = marker.getLatLng();
+                  const markerContainerPoint = this.mapInstance.latLngToContainerPoint(markerLatLng);
+                  
+                  // Calculate pixel distance
+                  const dx = clickContainerPoint.x - markerContainerPoint.x;
+                  const dy = clickContainerPoint.y - markerContainerPoint.y;
+                  const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+                  
+                  // 15 pixel threshold - marker icon is about 12px, so 15px gives some buffer
+                  return pixelDistance < 15;
+                });
+                
+                if (!isClickingOnMarker) {
+                  this.addVertexAtLocation(clickPoint);
+                }
+              });
+            });
+          }
+          
+          // Ensure polygon layer allows edge clicks but doesn't interfere with marker dragging
+          // Only make interactive for MultiPolygon (to allow edge clicks for adding vertices)
           if (this.mapLayer.eachLayer) {
             this.mapLayer.eachLayer((layer) => {
               if (layer.setStyle) {
-                layer.setStyle({ interactive: false });
-              }
-              // Disable pointer events on the SVG path element directly
-              if (layer._path) {
-                layer._path.style.pointerEvents = 'none';
-              }
-              // Also try to disable on renderer if it exists
-              if (layer._renderer && layer._renderer._container) {
-                layer._renderer._container.style.pointerEvents = 'none';
+                if (this.isMultiPolygon) {
+                  // For MultiPolygon: make edges clickable to add vertices
+                  layer.setStyle({ 
+                    interactive: true,
+                    stroke: true,
+                    weight: 4, // Slightly thicker for easier clicking
+                    opacity: 0.8
+                  });
+                  // Make only stroke clickable, not fill
+                  if (layer._path) {
+                    layer._path.style.pointerEvents = 'stroke';
+                  }
+                } else {
+                  // For regular Polygon: keep non-interactive to avoid interfering with markers
+                  layer.setStyle({ interactive: false });
+                  if (layer._path) {
+                    layer._path.style.pointerEvents = 'none';
+                  }
+                }
               }
             });
           }
           
-          // Additional fix: Use setTimeout to ensure DOM is ready, then disable pointer events
+          // Additional fix: Use setTimeout to ensure DOM is ready, then set pointer events
           setTimeout(() => {
             if (this.mapLayer && this.mapLayer.eachLayer) {
               this.mapLayer.eachLayer((layer) => {
                 if (layer._path) {
-                  layer._path.setAttribute('style', layer._path.getAttribute('style') + '; pointer-events: none !important;');
+                  if (this.isMultiPolygon) {
+                    // Ensure only stroke is clickable for MultiPolygon
+                    layer._path.style.pointerEvents = 'stroke';
+                  } else {
+                    // Disable pointer events for regular Polygon
+                    layer._path.style.pointerEvents = 'none';
+                  }
                 }
               });
             }
@@ -371,6 +462,24 @@ module.exports = app => app.component('detail-default', {
                 // Store the actualIndex in closure for this marker
                 const markerActualIndex = actualIndex;
                 const markerIsFirstInClosedRing = isClosedRing && actualIndex === 0;
+                
+                // Add right-click handler to show context menu
+                marker.on('contextmenu', (e) => {
+                  e.originalEvent.preventDefault();
+                  e.originalEvent.stopPropagation();
+                  this.showContextMenu(e.originalEvent, markerActualIndex, marker);
+                  return false;
+                });
+                
+                // Also attach directly to icon element as the event might not bubble to marker
+                if (marker._icon) {
+                  marker._icon.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showContextMenu(e, markerActualIndex, marker);
+                    return false;
+                  }, true); // Use capture phase
+                }
                 
                 marker.on('dragend', () => {
                   const newLat = marker.getLatLng().lat;
@@ -552,14 +661,64 @@ module.exports = app => app.component('detail-default', {
           opacity: 0.8,
           fillOpacity: 0.2
         },
-        interactive: false // Make polygon non-interactive so markers can be dragged
+        interactive: this.isMultiPolygon // Only interactive for MultiPolygon (to allow edge clicks)
       }).addTo(this.mapInstance);
       
-      // Ensure polygon layer doesn't interfere with marker interactions
-      if (this.mapLayer.eachLayer) {
+      // Add click handler to polygon edges to create new vertices (only for MultiPolygon)
+      if (this.isMultiPolygon && this.mapLayer.eachLayer) {
         this.mapLayer.eachLayer((layer) => {
+          // Remove any existing click handlers first
+          layer.off('click');
+          
+          layer.on('click', (e) => {
+            // Only create vertex if clicking on the edge, not on existing markers
+            const clickPoint = e.latlng;
+            const clickContainerPoint = this.mapInstance.latLngToContainerPoint(clickPoint);
+            
+            // Check if clicking near an existing marker (using pixel distance)
+            const isClickingOnMarker = this.draggableMarkers.some(marker => {
+              if (!marker || !marker._icon) return false;
+              const markerLatLng = marker.getLatLng();
+              const markerContainerPoint = this.mapInstance.latLngToContainerPoint(markerLatLng);
+              
+              // Calculate pixel distance
+              const dx = clickContainerPoint.x - markerContainerPoint.x;
+              const dy = clickContainerPoint.y - markerContainerPoint.y;
+              const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+              
+              // 15 pixel threshold - marker icon is about 12px, so 15px gives some buffer
+              return pixelDistance < 15;
+            });
+            
+            if (!isClickingOnMarker) {
+              this.addVertexAtLocation(clickPoint);
+            }
+          });
+          
+          // Style to make edges more clickable
+          if (layer.setStyle) {
+            layer.setStyle({ 
+              interactive: true,
+              stroke: true,
+              weight: 4, // Slightly thicker for easier clicking
+              opacity: 0.8
+            });
+          }
+          
+          // Make only stroke clickable, not fill
+          if (layer._path) {
+            layer._path.style.pointerEvents = 'stroke';
+          }
+        });
+      } else if (!this.isMultiPolygon && this.mapLayer.eachLayer) {
+        // For regular Polygon, ensure it's non-interactive
+        this.mapLayer.eachLayer((layer) => {
+          layer.off('click'); // Remove any click handlers
           if (layer.setStyle) {
             layer.setStyle({ interactive: false });
+          }
+          if (layer._path) {
+            layer._path.style.pointerEvents = 'none';
           }
         });
       }
@@ -575,6 +734,414 @@ module.exports = app => app.component('detail-default', {
     },
     resetUnsavedChanges() {
       this.hasUnsavedChanges = false;
+    },
+    showContextMenu(event, index, marker) {
+      // Hide any existing context menu
+      this.hideContextMenu();
+      
+      // Store the marker for deletion
+      this.contextMenuMarker = { index, marker };
+      
+      // Create context menu if it doesn't exist
+      if (!this.contextMenu) {
+        this.contextMenu = document.createElement('div');
+        this.contextMenu.className = 'leaflet-context-menu';
+        
+        const deleteItem = document.createElement('div');
+        deleteItem.className = 'leaflet-context-menu-item delete';
+        deleteItem.textContent = 'Delete';
+        deleteItem.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this.contextMenuMarker) {
+            this.deleteVertex(this.contextMenuMarker.index, this.contextMenuMarker.marker);
+          }
+          this.hideContextMenu();
+        });
+        
+        this.contextMenu.appendChild(deleteItem);
+        
+        // Append to map container so it's positioned relative to the map
+        if (this.mapInstance && this.mapInstance.getContainer()) {
+          this.mapInstance.getContainer().appendChild(this.contextMenu);
+        } else {
+          document.body.appendChild(this.contextMenu);
+        }
+      }
+      
+      // Get map container position for relative positioning
+      const mapContainer = this.mapInstance ? this.mapInstance.getContainer() : null;
+      let left = event.clientX;
+      let top = event.clientY;
+      
+      if (mapContainer) {
+        const rect = mapContainer.getBoundingClientRect();
+        left = event.clientX - rect.left;
+        top = event.clientY - rect.top;
+        this.contextMenu.style.position = 'absolute';
+      } else {
+        this.contextMenu.style.position = 'fixed';
+      }
+      
+      // Position the context menu at the click location
+      this.contextMenu.style.left = left + 'px';
+      this.contextMenu.style.top = top + 'px';
+      this.contextMenu.style.display = 'block';
+      
+      // Hide context menu when clicking elsewhere
+      const hideMenu = (e) => {
+        if (this.contextMenu && !this.contextMenu.contains(e.target)) {
+          this.hideContextMenu();
+          document.removeEventListener('click', hideMenu);
+          document.removeEventListener('contextmenu', hideMenu);
+        }
+      };
+      
+      // Use setTimeout to avoid immediate hide from the current click
+      setTimeout(() => {
+        document.addEventListener('click', hideMenu);
+        document.addEventListener('contextmenu', hideMenu);
+      }, 10);
+    },
+    hideContextMenu() {
+      if (this.contextMenu) {
+        this.contextMenu.style.display = 'none';
+      }
+      this.contextMenuMarker = null;
+    },
+    addVertexAtLocation(latlng) {
+      // Get current geometry
+      const baseGeometry = this.currentEditedGeometry || this.value;
+      const newCoordinates = JSON.parse(JSON.stringify(baseGeometry.coordinates));
+      
+      // Get the outer ring
+      let outerRing = [];
+      if (this.isMultiPolygon) {
+        outerRing = newCoordinates[0][0] || [];
+      } else {
+        outerRing = newCoordinates[0] || [];
+      }
+      
+      if (outerRing.length === 0) {
+        return;
+      }
+      
+      // Check if this is a closed ring
+      const isClosedRing = outerRing.length > 0 && 
+        outerRing[0][0] === outerRing[outerRing.length - 1][0] && 
+        outerRing[0][1] === outerRing[outerRing.length - 1][1];
+      
+      // Convert latlng to [lng, lat] format
+      const newCoord = [latlng.lng, latlng.lat];
+      
+      // Find the closest edge segment and insert the vertex
+      let closestEdgeIndex = 0;
+      let minDistance = Infinity;
+      
+      // Check each edge segment
+      for (let i = 0; i < outerRing.length - 1; i++) {
+        const p1 = outerRing[i];
+        const p2 = outerRing[i + 1];
+        
+        // Calculate distance from click point to edge segment
+        const distance = this.distanceToLineSegment(
+          [latlng.lng, latlng.lat],
+          [p1[0], p1[1]],
+          [p2[0], p2[1]]
+        );
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestEdgeIndex = i + 1; // Insert after point i
+        }
+      }
+      
+      // For closed rings, also check the edge from last to first
+      if (isClosedRing) {
+        const p1 = outerRing[outerRing.length - 1];
+        const p2 = outerRing[0];
+        const distance = this.distanceToLineSegment(
+          [latlng.lng, latlng.lat],
+          [p1[0], p1[1]],
+          [p2[0], p2[1]]
+        );
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestEdgeIndex = outerRing.length; // Insert at end (before closing coordinate)
+        }
+      }
+      
+      // Insert the new coordinate
+      if (this.isMultiPolygon) {
+        newCoordinates[0][0].splice(closestEdgeIndex, 0, newCoord);
+        // If it was a closed ring, update the closing coordinate
+        if (isClosedRing) {
+          newCoordinates[0][0][newCoordinates[0][0].length - 1] = newCoordinates[0][0][0];
+        }
+      } else {
+        newCoordinates[0].splice(closestEdgeIndex, 0, newCoord);
+        // If it was a closed ring, update the closing coordinate
+        if (isClosedRing) {
+          newCoordinates[0][newCoordinates[0].length - 1] = newCoordinates[0][0];
+        }
+      }
+      
+      const newGeometry = {
+        type: baseGeometry.type,
+        coordinates: newCoordinates
+      };
+      
+      // Store the current edited geometry state
+      this.currentEditedGeometry = newGeometry;
+      this.hasUnsavedChanges = true;
+      
+      // Update the polygon layer and recreate markers
+      this.updatePolygonLayer(newGeometry);
+      this.$nextTick(() => {
+        this.updateMapLayer();
+      });
+      
+      // Notify parent of the change
+      if (this.onChange) {
+        this.onChange(newGeometry);
+      }
+    },
+    distanceToLineSegment(point, lineStart, lineEnd) {
+      // Calculate distance from point to line segment
+      // point, lineStart, lineEnd are [lng, lat] arrays
+      const A = point[0] - lineStart[0];
+      const B = point[1] - lineStart[1];
+      const C = lineEnd[0] - lineStart[0];
+      const D = lineEnd[1] - lineStart[1];
+      
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      let param = -1;
+      
+      if (lenSq !== 0) {
+        param = dot / lenSq;
+      }
+      
+      let xx, yy;
+      
+      if (param < 0) {
+        xx = lineStart[0];
+        yy = lineStart[1];
+      } else if (param > 1) {
+        xx = lineEnd[0];
+        yy = lineEnd[1];
+      } else {
+        xx = lineStart[0] + param * C;
+        yy = lineStart[1] + param * D;
+      }
+      
+      const dx = point[0] - xx;
+      const dy = point[1] - yy;
+      
+      // Use simple Euclidean distance (approximation for small areas)
+      return Math.sqrt(dx * dx + dy * dy);
+    },
+    deletePoint() {
+      // Store deleted point for undo
+      const deletedPoint = {
+        geometry: JSON.parse(JSON.stringify(this.value))
+      };
+      this.deletedCoordinates.push(deletedPoint);
+      
+      // Set point to null (or empty coordinates)
+      const newGeometry = {
+        type: 'Point',
+        coordinates: [0, 0] // Set to default location
+      };
+      
+      // Store the current edited geometry state
+      this.currentEditedGeometry = newGeometry;
+      this.hasUnsavedChanges = true;
+      
+      // Remove marker
+      if (this.draggableMarker) {
+        this.draggableMarker.remove();
+        this.draggableMarker = null;
+      }
+      
+      // Notify parent of the change
+      if (this.onChange) {
+        this.onChange(newGeometry);
+      }
+    },
+    deleteVertex(index, marker) {
+      // Get current geometry
+      const baseGeometry = this.currentEditedGeometry || this.value;
+      const newCoordinates = JSON.parse(JSON.stringify(baseGeometry.coordinates));
+      
+      // Get the outer ring
+      let outerRing = [];
+      if (this.isMultiPolygon) {
+        outerRing = newCoordinates[0][0] || [];
+      } else {
+        outerRing = newCoordinates[0] || [];
+      }
+      
+      // Check if this is a closed ring
+      const isClosedRing = outerRing.length > 0 && 
+        outerRing[0][0] === outerRing[outerRing.length - 1][0] && 
+        outerRing[0][1] === outerRing[outerRing.length - 1][1];
+      
+      // Minimum vertices for a valid polygon (3 for triangle, but GeoJSON requires at least 4 for closed ring)
+      const minVertices = isClosedRing ? 4 : 3;
+      
+      // Don't allow deletion if we'd have too few vertices
+      const currentVertexCount = isClosedRing ? outerRing.length - 1 : outerRing.length;
+      if (currentVertexCount <= minVertices) {
+        const requiredCount = minVertices + 1;
+        const message = isClosedRing 
+          ? `Cannot delete vertex. A polygon requires at least ${requiredCount} vertices (including the closing vertex).`
+          : `Cannot delete vertex. A polygon requires at least ${requiredCount} vertices.`;
+        this.$toast.error(message, {
+          timeout: 5000
+        });
+        this.hideContextMenu();
+        return; // Can't delete - would make invalid polygon
+      }
+      
+      // Store deleted coordinate for undo
+      const deletedCoord = outerRing[index];
+      this.deletedCoordinates.push({
+        index: index,
+        coordinate: deletedCoord,
+        geometry: JSON.parse(JSON.stringify(baseGeometry))
+      });
+      
+      // Remove the coordinate
+      if (this.isMultiPolygon) {
+        newCoordinates[0][0].splice(index, 1);
+        // If it was a closed ring and we removed a coordinate, update the closing coordinate
+        if (isClosedRing && index === 0) {
+          // If we deleted the first coordinate, the new first becomes the closing coordinate
+          newCoordinates[0][0][newCoordinates[0][0].length - 1] = newCoordinates[0][0][0];
+        } else if (isClosedRing && index === outerRing.length - 1) {
+          // If we deleted the closing coordinate, update it to match the first
+          newCoordinates[0][0][newCoordinates[0][0].length - 1] = newCoordinates[0][0][0];
+        }
+      } else {
+        newCoordinates[0].splice(index, 1);
+        // If it was a closed ring and we removed a coordinate, update the closing coordinate
+        if (isClosedRing && index === 0) {
+          // If we deleted the first coordinate, the new first becomes the closing coordinate
+          newCoordinates[0][newCoordinates[0].length - 1] = newCoordinates[0][0];
+        } else if (isClosedRing && index === outerRing.length - 1) {
+          // If we deleted the closing coordinate, update it to match the first
+          newCoordinates[0][newCoordinates[0].length - 1] = newCoordinates[0][0];
+        }
+      }
+      
+      const newGeometry = {
+        type: baseGeometry.type,
+        coordinates: newCoordinates
+      };
+      
+      // Store the current edited geometry state
+      this.currentEditedGeometry = newGeometry;
+      this.hasUnsavedChanges = true;
+      
+      // Remove marker from array
+      const markerIndex = this.draggableMarkers.indexOf(marker);
+      if (markerIndex > -1) {
+        this.draggableMarkers.splice(markerIndex, 1);
+      }
+      if (marker) {
+        marker.remove();
+      }
+      
+      // Update the polygon layer and recreate markers
+      this.updatePolygonLayer(newGeometry);
+      this.$nextTick(() => {
+        this.updateMapLayer();
+      });
+      
+      // Notify parent of the change
+      if (this.onChange) {
+        this.onChange(newGeometry);
+      }
+    },
+    undoDelete() {
+      if (this.deletedCoordinates.length === 0) {
+        return;
+      }
+      
+      // Get the last deleted coordinate
+      const lastDeleted = this.deletedCoordinates.pop();
+      
+      // Handle Point geometry undo
+      if (this.isGeoJsonPoint) {
+        // Restore the original point geometry
+        this.currentEditedGeometry = lastDeleted.geometry;
+        this.hasUnsavedChanges = true;
+        
+        // Recreate marker and update map
+        this.$nextTick(() => {
+          this.updateMapLayer();
+        });
+        
+        // Notify parent of the change
+        if (this.onChange) {
+          this.onChange(lastDeleted.geometry);
+        }
+        return;
+      }
+      
+      // Handle Polygon/MultiPolygon geometry undo
+      // Get current geometry
+      const baseGeometry = this.currentEditedGeometry || this.value;
+      const newCoordinates = JSON.parse(JSON.stringify(baseGeometry.coordinates));
+      
+      // Get the outer ring
+      let outerRing = [];
+      if (this.isMultiPolygon) {
+        outerRing = newCoordinates[0][0] || [];
+      } else {
+        outerRing = newCoordinates[0] || [];
+      }
+      
+      // Check if this is a closed ring
+      const isClosedRing = outerRing.length > 0 && 
+        outerRing[0][0] === outerRing[outerRing.length - 1][0] && 
+        outerRing[0][1] === outerRing[outerRing.length - 1][1];
+      
+      // Restore the coordinate at the original index
+      if (this.isMultiPolygon) {
+        newCoordinates[0][0].splice(lastDeleted.index, 0, lastDeleted.coordinate);
+        // If it was a closed ring, update the closing coordinate
+        if (isClosedRing) {
+          newCoordinates[0][0][newCoordinates[0][0].length - 1] = newCoordinates[0][0][0];
+        }
+      } else {
+        newCoordinates[0].splice(lastDeleted.index, 0, lastDeleted.coordinate);
+        // If it was a closed ring, update the closing coordinate
+        if (isClosedRing) {
+          newCoordinates[0][newCoordinates[0].length - 1] = newCoordinates[0][0];
+        }
+      }
+      
+      const newGeometry = {
+        type: baseGeometry.type,
+        coordinates: newCoordinates
+      };
+      
+      // Store the current edited geometry state
+      this.currentEditedGeometry = newGeometry;
+      this.hasUnsavedChanges = true;
+      
+      // Update the polygon layer and recreate markers
+      this.updatePolygonLayer(newGeometry);
+      this.$nextTick(() => {
+        this.updateMapLayer();
+      });
+      
+      // Notify parent of the change
+      if (this.onChange) {
+        this.onChange(newGeometry);
+      }
     }
   }
 });
