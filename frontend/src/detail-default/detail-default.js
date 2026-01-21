@@ -234,12 +234,6 @@ module.exports = app => app.component('detail-default', {
               draggable: true
             }).addTo(this.mapInstance);
             
-            // Add right-click handler to delete point
-            this.draggableMarker.on('contextmenu', (e) => {
-              e.originalEvent.preventDefault();
-              this.deletePoint();
-            });
-            
             // Add dragend event handler
             this.draggableMarker.on('dragend', () => {
               const newLat = this.draggableMarker.getLatLng().lat;
@@ -739,9 +733,6 @@ module.exports = app => app.component('detail-default', {
         }
       });
     },
-    resetUnsavedChanges() {
-      this.hasUnsavedChanges = false;
-    },
     showContextMenu(event, index, marker) {
       // Hide any existing context menu
       this.hideContextMenu();
@@ -947,28 +938,6 @@ module.exports = app => app.component('detail-default', {
       
       // Use simple Euclidean distance (approximation for small areas)
       return Math.sqrt(dx * dx + dy * dy);
-    },
-    deletePoint() {
-      // Set point to null (or empty coordinates)
-      const newGeometry = {
-        type: 'Point',
-        coordinates: [0, 0] // Set to default location
-      };
-      
-      // Store the current edited geometry state
-      this.currentEditedGeometry = newGeometry;
-      this.hasUnsavedChanges = true;
-      
-      // Remove marker
-      if (this.draggableMarker) {
-        this.draggableMarker.remove();
-        this.draggableMarker = null;
-      }
-      
-      // Notify parent of the change
-      if (this.onChange) {
-        this.onChange(newGeometry);
-      }
     },
     deleteVertex(index, marker) {
       // Get current geometry
