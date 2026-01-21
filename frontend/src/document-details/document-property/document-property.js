@@ -17,6 +17,7 @@ module.exports = app => app.component('document-property', {
       dateType: 'picker', // picker, iso
       isCollapsed: false, // Start uncollapsed by default
       isValueExpanded: false, // Track if the value is expanded
+      detailViewMode: 'text',
       copyButtonLabel: 'Copy',
       copyResetTimeoutId: null
     };
@@ -92,9 +93,37 @@ module.exports = app => app.component('document-property', {
         return this.arrayValue.length - 2;
       }
       return 0;
+    },
+    isGeoJsonGeometry() {
+      const value = this.getValueForPath(this.path.path);
+      return value != null
+        && typeof value === 'object'
+        && !Array.isArray(value)
+        && Object.prototype.hasOwnProperty.call(value, 'type')
+        && Object.prototype.hasOwnProperty.call(value, 'coordinates');
+    }
+  },
+  watch: {
+    isGeoJsonGeometry(newValue) {
+      if (!newValue) {
+        this.detailViewMode = 'text';
+      }
     }
   },
   methods: {
+    setDetailViewMode(mode) {
+      this.detailViewMode = mode;
+      
+      // When switching to map view, expand the container and value so the map is visible
+      if (mode === 'map' && this.isGeoJsonGeometry) {
+        if (this.isCollapsed) {
+          this.isCollapsed = false;
+        }
+        if (this.needsTruncation && !this.isValueExpanded) {
+          this.isValueExpanded = true;
+        }
+      }
+    },
     handleInputChange(newValue) {
       const currentValue = this.getValueForPath(this.path.path);
 
