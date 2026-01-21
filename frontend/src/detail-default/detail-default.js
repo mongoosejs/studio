@@ -4,7 +4,7 @@
 const template = require('./detail-default.html');
 module.exports = app => app.component('detail-default', {
   template: template,
-  props: ['value'],
+  props: ['value', 'viewMode'],
   data() {
     return {
       mapVisible: false,
@@ -41,6 +41,17 @@ module.exports = app => app.component('detail-default', {
     }
   },
   watch: {
+    viewMode: {
+      handler(newValue) {
+        this.mapVisible = newValue === 'map';
+        if (this.mapVisible) {
+          this.$nextTick(() => {
+            this.ensureMap();
+          });
+        }
+      },
+      immediate: true
+    },
     value: {
       handler() {
         if (this.mapVisible) {
@@ -60,15 +71,6 @@ module.exports = app => app.component('detail-default', {
     }
   },
   methods: {
-    showText() {
-      this.mapVisible = false;
-    },
-    showMap() {
-      this.mapVisible = true;
-      this.$nextTick(() => {
-        this.ensureMap();
-      });
-    },
     ensureMap() {
       if (!this.mapVisible || !this.isGeoJsonGeometry || !this.$refs.map) {
         return;

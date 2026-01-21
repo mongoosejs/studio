@@ -17,6 +17,22 @@
       </svg>
       <span class="font-medium text-gray-900">{{path.path}}</span>
       <span class="ml-2 text-sm text-gray-500">({{(path.instance || 'unknown').toLowerCase()}})</span>
+      <div v-if="isGeoJsonGeometry" class="ml-3 inline-flex items-center rounded-full bg-gray-100 p-0.5 text-xs font-semibold">
+        <button
+          type="button"
+          class="rounded-full px-2.5 py-0.5 transition"
+          :class="detailViewMode === 'text' ? 'bg-gray-900 text-white shadow' : 'text-gray-600 hover:text-gray-800'"
+          @click.stop="setDetailViewMode('text')">
+          Text
+        </button>
+        <button
+          type="button"
+          class="rounded-full px-2.5 py-0.5 transition"
+          :class="detailViewMode === 'map' ? 'bg-gray-900 text-white shadow' : 'text-gray-600 hover:text-gray-800'"
+          @click.stop="setDetailViewMode('map')">
+          Map
+        </button>
+      </div>
     </div>
     <div class="flex items-center gap-2">
       <button
@@ -131,7 +147,10 @@
       </div>
       <!-- Expanded view -->
       <div v-else-if="needsTruncation && isValueExpanded" class="relative">
-        <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
+        <component
+          :is="getComponentForPath(path)"
+          :value="getValueForPath(path.path)"
+          :view-mode="detailViewMode"></component>
         <button
           @click="toggleValueExpansion"
           class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
@@ -144,7 +163,10 @@
       </div>
       <!-- Full view (no truncation needed) -->
       <div v-else>
-        <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
+        <component
+          :is="getComponentForPath(path)"
+          :value="getValueForPath(path.path)"
+          :view-mode="detailViewMode"></component>
       </div>
     </div>
   </div>
