@@ -65,14 +65,7 @@ module.exports = app => app.component('detail-default', {
       return this.isGeoJsonGeometry && this.value.type === 'MultiPolygon';
     },
     isEditable() {
-      const result = (this.isGeoJsonPoint || this.isGeoJsonPolygon) && typeof this.onChange === 'function';
-      console.log('[detail-default] isEditable check:', {
-        isGeoJsonPoint: this.isGeoJsonPoint,
-        isGeoJsonPolygon: this.isGeoJsonPolygon,
-        hasOnChange: typeof this.onChange === 'function',
-        result
-      });
-      return result;
+      return (this.isGeoJsonPoint || this.isGeoJsonPolygon) && typeof this.onChange === 'function';
     }
   },
   watch: {
@@ -98,10 +91,6 @@ module.exports = app => app.component('detail-default', {
         if (this.hasUnsavedChanges && (this.isGeoJsonPoint || this.isGeoJsonPolygon)) {
           this.hasUnsavedChanges = false;
           this.currentEditedGeometry = null; // Reset edited geometry when value changes externally
-        }
-        // Log geometry type for debugging
-        if (this.isGeoJsonGeometry) {
-          console.log('[detail-default] Value changed, geometry type:', this.value.type);
         }
       },
       deep: true
@@ -178,18 +167,8 @@ module.exports = app => app.component('detail-default', {
     },
     updateMapLayer() {
       if (!this.mapInstance || !this.isGeoJsonGeometry) {
-        console.log('[detail-default] updateMapLayer skipped:', {
-          hasMapInstance: !!this.mapInstance,
-          isGeoJsonGeometry: this.isGeoJsonGeometry
-        });
         return;
       }
-      
-      console.log('[detail-default] updateMapLayer called:', {
-        isGeoJsonPoint: this.isGeoJsonPoint,
-        isGeoJsonPolygon: this.isGeoJsonPolygon,
-        isEditable: this.isEditable
-      });
       
       try {
         // For Point geometries in edit mode, use a draggable marker
@@ -242,8 +221,6 @@ module.exports = app => app.component('detail-default', {
           });
           this.draggableMarkers = [];
         } else if (this.isGeoJsonPolygon && this.isEditable) {
-          console.log('[detail-default] Creating editable polygon with markers');
-          
           // Initialize current edited geometry if not set
           if (!this.currentEditedGeometry) {
             this.currentEditedGeometry = JSON.parse(JSON.stringify(this.value));
@@ -272,8 +249,6 @@ module.exports = app => app.component('detail-default', {
             interactive: false // Make polygon non-interactive so markers can be dragged
           }).addTo(this.mapInstance);
           
-          console.log('[detail-default] Polygon layer created:', this.mapLayer);
-          
           // Ensure polygon layer doesn't interfere with marker interactions
           // This is the FIRST FIX: Aggressively disable pointer events on polygon
           if (this.mapLayer.eachLayer) {
@@ -284,12 +259,10 @@ module.exports = app => app.component('detail-default', {
               // Disable pointer events on the SVG path element directly
               if (layer._path) {
                 layer._path.style.pointerEvents = 'none';
-                console.log('[detail-default] Disabled pointer events on polygon path');
               }
               // Also try to disable on renderer if it exists
               if (layer._renderer && layer._renderer._container) {
                 layer._renderer._container.style.pointerEvents = 'none';
-                console.log('[detail-default] Disabled pointer events on polygon renderer container');
               }
             });
           }
@@ -311,31 +284,19 @@ module.exports = app => app.component('detail-default', {
           // Use current edited geometry if available
           const ringGeometryToUse = this.currentEditedGeometry || this.value;
           let outerRing = [];
-          console.log('[detail-default] Full coordinates structure:', JSON.stringify(ringGeometryToUse.coordinates));
-          console.log('[detail-default] Geometry type:', ringGeometryToUse.type);
-          console.log('[detail-default] isMultiPolygon:', this.isMultiPolygon);
           
           if (this.isMultiPolygon) {
             // MultiPolygon structure: [[[[lng, lat], ...]], [[[lng, lat], ...]]]
             // Get the first polygon's outer ring
-            console.log('[detail-default] MultiPolygon - coordinates[0]:', ringGeometryToUse.coordinates[0]);
             if (ringGeometryToUse.coordinates[0] && ringGeometryToUse.coordinates[0][0]) {
               outerRing = ringGeometryToUse.coordinates[0][0];
-              console.log('[detail-default] MultiPolygon - coordinates[0][0] (outer ring):', outerRing);
-            } else {
-              console.error('[detail-default] MultiPolygon structure unexpected:', ringGeometryToUse.coordinates);
             }
-            console.log('[detail-default] MultiPolygon detected, using first polygon');
           } else {
             // Polygon structure: [[[lng, lat], ...]]
             outerRing = ringGeometryToUse.coordinates[0] || [];
-            console.log('[detail-default] Polygon - coordinates[0] (outer ring):', outerRing);
           }
-          console.log('[detail-default] Outer ring coordinates:', outerRing, 'length:', outerRing.length);
-          console.log('[detail-default] Current draggableMarkers count:', this.draggableMarkers.length);
           
           if (outerRing.length === 0) {
-            console.error('[detail-default] ERROR: Outer ring is empty!');
             return;
           }
           
@@ -347,7 +308,6 @@ module.exports = app => app.component('detail-default', {
           
           // Remove existing markers if count doesn't match
           if (this.draggableMarkers.length !== expectedMarkerCount) {
-            console.log('[detail-default] Removing existing markers and creating new ones');
             this.draggableMarkers.forEach(marker => {
               if (marker) marker.remove();
             });
@@ -356,10 +316,6 @@ module.exports = app => app.component('detail-default', {
             // Create draggable markers for each vertex
             // Use setTimeout to ensure markers are added after polygon layer is fully rendered
             this.$nextTick(() => {
-              console.log('[detail-default] Creating markers in $nextTick');
-              console.log('[detail-default] Outer ring length:', outerRing.length);
-              console.log('[detail-default] Outer ring full array:', outerRing);
-              
               // GeoJSON polygons typically have the first and last coordinate the same (closed ring)
               // We'll create markers for all coordinates except the last one if it's a duplicate
               // But we need to track the original index for updating the correct coordinate
@@ -371,20 +327,15 @@ module.exports = app => app.component('detail-default', {
                 ? outerRing.slice(0, -1) // Skip last coordinate if it's a duplicate of first
                 : outerRing;
               
-              console.log('[detail-default] Is closed ring:', isClosedRing);
-              console.log('[detail-default] Coordinates to process (after deduplication):', coordsToProcess.length);
-              
               coordsToProcess.forEach((coord, visibleIndex) => {
                 // visibleIndex is the index in the visible markers array
                 // actualIndex is the index in the coordinates array (same for non-closed rings)
                 const actualIndex = visibleIndex;
                 if (!Array.isArray(coord) || coord.length < 2) {
-                  console.error(`[detail-default] Invalid coordinate at index ${visibleIndex}:`, coord);
                   return;
                 }
                 
                 const [lng, lat] = coord;
-                console.log(`[detail-default] Creating marker ${visibleIndex} (actual index ${actualIndex}) at [${lat}, ${lng}]`);
                 
                 // Create a custom icon for the vertex marker
                 const icon = L.divIcon({
@@ -402,9 +353,6 @@ module.exports = app => app.component('detail-default', {
                   bubblingMouseEvents: false // Prevent events from bubbling to polygon
                 });
                 
-                console.log(`[detail-default] Marker ${visibleIndex} created:`, marker);
-                console.log(`[detail-default] Marker ${visibleIndex} draggable:`, marker.dragging ? marker.dragging.enabled() : 'no dragging object');
-                
                 // Add marker to map
                 marker.addTo(this.mapInstance);
                 
@@ -417,17 +365,7 @@ module.exports = app => app.component('detail-default', {
                   if (marker._icon.parentNode) {
                     marker._icon.parentNode.appendChild(marker._icon);
                   }
-                  console.log(`[detail-default] Marker ${visibleIndex} icon pointer events set to auto, z-index: ${1001 + visibleIndex}`);
                 }
-                
-                // Add drag event handlers for debugging
-                marker.on('dragstart', () => {
-                  console.log(`[detail-default] Marker ${visibleIndex} drag started`);
-                });
-                
-                marker.on('drag', () => {
-                  console.log(`[detail-default] Marker ${visibleIndex} dragging`);
-                });
                 
                 // Add dragend event handler
                 // Store the actualIndex in closure for this marker
@@ -435,7 +373,6 @@ module.exports = app => app.component('detail-default', {
                 const markerIsFirstInClosedRing = isClosedRing && actualIndex === 0;
                 
                 marker.on('dragend', () => {
-                  console.log(`[detail-default] Marker ${visibleIndex} (actual ${markerActualIndex}) drag ended`);
                   const newLat = marker.getLatLng().lat;
                   const newLng = marker.getLatLng().lng;
                   
@@ -494,8 +431,6 @@ module.exports = app => app.component('detail-default', {
                     this.currentEditedGeometry = newGeometry;
                     this.hasUnsavedChanges = true;
                     
-                    console.log('[detail-default] Updated geometry:', JSON.stringify(newGeometry));
-                    
                     // Update the polygon layer immediately for visual feedback
                     this.updatePolygonLayer(newGeometry);
                     
@@ -504,19 +439,12 @@ module.exports = app => app.component('detail-default', {
                       this.onChange(newGeometry);
                     }
                   } catch (error) {
-                    console.error('[detail-default] Error updating geometry:', error);
-                    console.error('[detail-default] Coordinates:', newCoordinates);
+                    // Silently handle errors
                   }
-                });
-                
-                // Test if marker is clickable
-                marker.on('click', () => {
-                  console.log(`[detail-default] Marker ${visibleIndex} clicked`);
                 });
                 
                 this.draggableMarkers.push(marker);
               });
-              console.log('[detail-default] All markers created, total:', this.draggableMarkers.length);
             });
           } else {
             // Update existing marker positions if coordinates changed
