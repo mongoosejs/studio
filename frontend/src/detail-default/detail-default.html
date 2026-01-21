@@ -1,6 +1,6 @@
 <div class="w-full">
   <pre v-if="!isGeoJsonGeometry || !mapVisible" class="w-full whitespace-pre-wrap break-words font-mono text-sm text-gray-700 m-0">{{displayValue}}</pre>
-  <div v-if="isGeoJsonGeometry && mapVisible" class="mt-2 border border-gray-200 rounded">
-    <div ref="map" class="h-64 w-full"></div>
+  <div v-show="isGeoJsonGeometry && mapVisible" class="mt-2 border border-gray-200 rounded">
+    <div ref="map" class="h-64 w-full" style="min-height: 256px; height: 256px;"></div>
   </div>
 </div>

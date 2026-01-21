@@ -113,6 +113,16 @@ module.exports = app => app.component('document-property', {
   methods: {
     setDetailViewMode(mode) {
       this.detailViewMode = mode;
+      
+      // When switching to map view, expand the container and value so the map is visible
+      if (mode === 'map' && this.isGeoJsonGeometry) {
+        if (this.isCollapsed) {
+          this.isCollapsed = false;
+        }
+        if (this.needsTruncation && !this.isValueExpanded) {
+          this.isValueExpanded = true;
+        }
+      }
     },
     handleInputChange(newValue) {
       const currentValue = this.getValueForPath(this.path.path);
