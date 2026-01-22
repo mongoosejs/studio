@@ -239,7 +239,9 @@ module.exports = app => app.component('models', {
         typeof value === 'object' &&
         !Array.isArray(value) &&
         Object.prototype.hasOwnProperty.call(value, 'type') &&
-        Object.prototype.hasOwnProperty.call(value, 'coordinates');
+        typeof value.type === 'string' &&
+        Object.prototype.hasOwnProperty.call(value, 'coordinates') &&
+        Array.isArray(value.coordinates);
     },
     initMap() {
       if (typeof L === 'undefined') {
