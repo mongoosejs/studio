@@ -19,7 +19,7 @@
       <span class="font-medium text-gray-900">{{path.path}}</span>
       <span class="ml-2 text-sm text-gray-500">({{(path.instance || 'unknown').toLowerCase()}})</span>
       <div v-if="isGeoJsonGeometry" class="ml-3 inline-flex items-center gap-2">
-        <div class="inline-flex items-center rounded-full bg-gray-100 p-0.5 text-xs font-semibold">
+        <div class="inline-flex items-center rounded-full bg-gray-200 p-0.5 text-xs font-semibold">
           <button
             type="button"
             class="rounded-full px-2.5 py-0.5 transition"
@@ -39,19 +39,19 @@
         </div>
         <!-- Info icon with tooltip -->
         <div v-if="editting" class="relative inline-block" style="z-index: 10002;" @mouseenter="showTooltip = true" @mouseleave="showTooltip = false" @click.stop>
-          <svg 
+          <svg
             ref="infoIcon"
-            class="w-6 h-6 text-gray-400 hover:text-gray-600 cursor-help" 
-            fill="none" 
-            stroke="currentColor" 
+            class="w-6 h-6 text-gray-400 hover:text-gray-600 cursor-help"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          <div 
+          <div
             v-show="showTooltip"
             ref="tooltip"
-            class="absolute left-full top-0 ml-2 w-64 p-3 text-white text-xs rounded-lg shadow-xl" 
+            class="absolute left-full top-0 ml-2 w-64 p-3 text-white text-xs rounded-lg shadow-xl"
             style="z-index: 99999; pointer-events: none; white-space: normal; position: fixed; background-color: #111827;"
             :style="getTooltipStyle()"
           >
