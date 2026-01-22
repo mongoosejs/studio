@@ -148,7 +148,7 @@
               <img class="h-5 w-5" src="images/json.svg">
             </button>
             <button
-              @click="geoJsonFields.length > 0 ? setOutputType('map') : null"
+              @click="setOutputType('map')"
               :disabled="geoJsonFields.length === 0"
               type="button"
               :title="geoJsonFields.length > 0 ? 'Map view' : 'No GeoJSON fields detected'"
