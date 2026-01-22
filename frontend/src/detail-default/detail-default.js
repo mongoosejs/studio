@@ -998,11 +998,10 @@ module.exports = app => app.component('detail-default', {
 
       // Don't allow deletion if we'd have too few vertices
       const currentVertexCount = isClosedRing ? outerRing.length - 1 : outerRing.length;
-      if (currentVertexCount <= minVertices) {
-        const requiredCount = minVertices + 1;
+      if (currentVertexCount < minVertices) {
         const message = isClosedRing
-          ? `Cannot delete vertex. A polygon requires at least ${requiredCount} vertices (including the closing vertex).`
-          : `Cannot delete vertex. A polygon requires at least ${requiredCount} vertices.`;
+          ? `Cannot delete vertex. A polygon requires at least ${minVertices} vertices (including the closing vertex).`
+          : `Cannot delete vertex. A polygon requires at least ${minVertices} vertices.`;
         this.$toast.error(message, {
           timeout: 5000
         });
