@@ -9,6 +9,7 @@ appendCSS(require('./models.css'));
 
 const limit = 20;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
+const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
 
 module.exports = app => app.component('models', {
   template: template,
@@ -42,7 +43,10 @@ module.exports = app => app.component('models', {
     query: {},
     scrollHeight: 0,
     interval: null,
-    outputType: 'table', // json, table
+    outputType: 'table', // json, table, map
+    selectedGeoField: null,
+    mapInstance: null,
+    mapLayer: null,
     hideSidebar: null,
     lastSelectedIndex: null,
     error: null,
@@ -52,11 +56,13 @@ module.exports = app => app.component('models', {
   created() {
     this.currentModel = this.model;
     this.loadOutputPreference();
+    this.loadSelectedGeoField();
   },
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
+    this.destroyMap();
   },
   async mounted() {
     this.onScroll = () => this.checkIfScrolledToBottom();
@@ -88,6 +94,32 @@ module.exports = app => app.component('models', {
 
     await this.initSearchFromUrl();
   },
+  watch: {
+    documents: {
+      handler() {
+        if (this.outputType === 'map' && this.mapInstance) {
+          this.$nextTick(() => {
+            this.updateMapFeatures();
+          });
+        }
+      },
+      deep: true
+    },
+    geoJsonFields: {
+      handler(newFields) {
+        // Auto-select first field if current selection is not valid
+        if (this.outputType === 'map' && newFields.length > 0) {
+          const isCurrentValid = newFields.some(f => f.path === this.selectedGeoField);
+          if (!isCurrentValid) {
+            this.selectedGeoField = newFields[0].path;
+            this.$nextTick(() => {
+              this.updateMapFeatures();
+            });
+          }
+        }
+      }
+    }
+  },
   computed: {
     referenceMap() {
       const map = {};
@@ -97,6 +129,56 @@ module.exports = app => app.component('models', {
         }
       }
       return map;
+    },
+    geoJsonFields() {
+      // Find schema paths that look like GeoJSON fields
+      // GeoJSON fields have nested 'type' and 'coordinates' properties
+      const geoFields = [];
+      const pathsByPrefix = {};
+
+      // Group paths by their parent prefix
+      for (const schemaPath of this.schemaPaths) {
+        const path = schemaPath.path;
+        const parts = path.split('.');
+        if (parts.length >= 2) {
+          const parent = parts.slice(0, -1).join('.');
+          const child = parts[parts.length - 1];
+          if (!pathsByPrefix[parent]) {
+            pathsByPrefix[parent] = {};
+          }
+          pathsByPrefix[parent][child] = schemaPath;
+        }
+      }
+
+      // Check which parents have both 'type' and 'coordinates' children
+      for (const [parent, children] of Object.entries(pathsByPrefix)) {
+        if (children.type && children.coordinates) {
+          geoFields.push({
+            path: parent,
+            label: parent
+          });
+        }
+      }
+
+      // Also check for Embedded/Mixed fields that might contain GeoJSON
+      // by looking at actual document data
+      for (const schemaPath of this.schemaPaths) {
+        if (schemaPath.instance === 'Embedded' || schemaPath.instance === 'Mixed') {
+          // Check if any document has this field with GeoJSON structure
+          const hasGeoJsonData = this.documents.some(doc => {
+            const value = mpath.get(schemaPath.path, doc);
+            return this.isGeoJsonValue(value);
+          });
+          if (hasGeoJsonData && !geoFields.find(f => f.path === schemaPath.path)) {
+            geoFields.push({
+              path: schemaPath.path,
+              label: schemaPath.path
+            });
+          }
+        }
+      }
+
+      return geoFields;
     }
   },
   methods: {
@@ -105,17 +187,167 @@ module.exports = app => app.component('models', {
         return;
       }
       const storedPreference = window.localStorage.getItem(OUTPUT_TYPE_STORAGE_KEY);
-      if (storedPreference === 'json' || storedPreference === 'table') {
+      if (storedPreference === 'json' || storedPreference === 'table' || storedPreference === 'map') {
         this.outputType = storedPreference;
       }
     },
+    loadSelectedGeoField() {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const storedField = window.localStorage.getItem(SELECTED_GEO_FIELD_STORAGE_KEY);
+      if (storedField) {
+        this.selectedGeoField = storedField;
+      }
+    },
     setOutputType(type) {
-      if (type !== 'json' && type !== 'table') {
+      if (type !== 'json' && type !== 'table' && type !== 'map') {
         return;
       }
       this.outputType = type;
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem(OUTPUT_TYPE_STORAGE_KEY, type);
+      }
+      if (type === 'map') {
+        this.$nextTick(() => {
+          this.initMap();
+        });
+      } else {
+        this.destroyMap();
+      }
+    },
+    setSelectedGeoField(field) {
+      this.selectedGeoField = field;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(SELECTED_GEO_FIELD_STORAGE_KEY, field);
+      }
+      if (this.outputType === 'map') {
+        this.$nextTick(() => {
+          this.updateMapFeatures();
+        });
+      }
+    },
+    isGeoJsonValue(value) {
+      return value != null &&
+        typeof value === 'object' &&
+        !Array.isArray(value) &&
+        Object.prototype.hasOwnProperty.call(value, 'type') &&
+        Object.prototype.hasOwnProperty.call(value, 'coordinates');
+    },
+    initMap() {
+      if (typeof L === 'undefined') {
+        console.error('Leaflet (L) is not defined');
+        return;
+      }
+      if (!this.$refs.modelsMap) {
+        return;
+      }
+      if (this.mapInstance) {
+        this.updateMapFeatures();
+        return;
+      }
+
+      const mapElement = this.$refs.modelsMap;
+      mapElement.style.setProperty('height', '100%', 'important');
+      mapElement.style.setProperty('min-height', '400px', 'important');
+      mapElement.style.setProperty('width', '100%', 'important');
+
+      this.mapInstance = L.map(this.$refs.modelsMap).setView([0, 0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(this.mapInstance);
+
+      this.$nextTick(() => {
+        if (this.mapInstance) {
+          this.mapInstance.invalidateSize();
+          this.updateMapFeatures();
+        }
+      });
+    },
+    destroyMap() {
+      if (this.mapLayer) {
+        this.mapLayer.remove();
+        this.mapLayer = null;
+      }
+      if (this.mapInstance) {
+        this.mapInstance.remove();
+        this.mapInstance = null;
+      }
+    },
+    updateMapFeatures() {
+      if (!this.mapInstance) {
+        return;
+      }
+
+      // Remove existing layer
+      if (this.mapLayer) {
+        this.mapLayer.remove();
+        this.mapLayer = null;
+      }
+
+      // Auto-select first geoJSON field if none selected
+      if (!this.selectedGeoField && this.geoJsonFields.length > 0) {
+        this.selectedGeoField = this.geoJsonFields[0].path;
+      }
+
+      if (!this.selectedGeoField) {
+        return;
+      }
+
+      // Build GeoJSON FeatureCollection from documents
+      const features = [];
+      for (const doc of this.documents) {
+        const geoValue = mpath.get(this.selectedGeoField, doc);
+        if (this.isGeoJsonValue(geoValue)) {
+          features.push({
+            type: 'Feature',
+            geometry: geoValue,
+            properties: {
+              _id: doc._id,
+              documentId: doc._id
+            }
+          });
+        }
+      }
+
+      if (features.length === 0) {
+        return;
+      }
+
+      const featureCollection = {
+        type: 'FeatureCollection',
+        features: features
+      };
+
+      // Add layer with click handler for popups
+      this.mapLayer = L.geoJSON(featureCollection, {
+        style: {
+          color: '#3388ff',
+          weight: 2,
+          opacity: 0.8,
+          fillOpacity: 0.3
+        },
+        pointToLayer: (feature, latlng) => {
+          return L.marker(latlng);
+        },
+        onEachFeature: (feature, layer) => {
+          const docId = feature.properties._id;
+          const docUrl = `#/model/${this.currentModel}/document/${docId}`;
+          const popupContent = `
+            <div style="min-width: 150px;">
+              <div style="font-weight: bold; margin-bottom: 8px;">Document</div>
+              <div style="font-family: monospace; font-size: 12px; word-break: break-all; margin-bottom: 8px;">${docId}</div>
+              <a href="${docUrl}" style="color: #3388ff; text-decoration: underline;">Open Document</a>
+            </div>
+          `;
+          layer.bindPopup(popupContent);
+        }
+      }).addTo(this.mapInstance);
+
+      // Fit bounds to show all features
+      const bounds = this.mapLayer.getBounds();
+      if (bounds.isValid()) {
+        this.mapInstance.fitBounds(bounds, { padding: [20, 20], maxZoom: 16 });
       }
     },
     buildDocumentFetchParams(options = {}) {
@@ -170,6 +402,13 @@ module.exports = app => app.component('models', {
         this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path));
       }
       this.status = 'loaded';
+
+      // Initialize map if output type is map
+      if (this.outputType === 'map') {
+        this.$nextTick(() => {
+          this.initMap();
+        });
+      }
     },
     async dropIndex(name) {
       const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
