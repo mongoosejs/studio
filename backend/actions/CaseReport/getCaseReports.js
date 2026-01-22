@@ -11,11 +11,11 @@ const GetCaseReportsParams = new Archetype({
 
 module.exports = ({ db }) => async function getCaseReports(params) {
   const { roles } = new GetCaseReportsParams(params);
-  const Sleuth = db.model('__Studio_Sleuth');
+  const CaseReport = db.model('__Studio_CaseReport');
 
-  await authorize('Sleuth.getCaseReports', roles);
+  await authorize('CaseReport.getCaseReports', roles);
 
-  const caseReports = await Sleuth.find({}).sort({ createdAt: -1 }).lean();
+  const caseReports = await CaseReport.find({}).sort({ createdAt: -1 }).lean();
 
   return { caseReports };
 };

@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 
-const sleuthSchema = new mongoose.Schema({
+const caseReportSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true
@@ -36,4 +36,4 @@ const sleuthSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = sleuthSchema;
+module.exports = caseReportSchema;

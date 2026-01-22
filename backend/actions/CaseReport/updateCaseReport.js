@@ -27,9 +27,9 @@ const UpdateCaseReportParams = new Archetype({
 
 module.exports = ({ db, options }) => async function updateCaseReport(params) {
   const { caseReportId, documents, summary, status, roles } = new UpdateCaseReportParams(params);
-  const Sleuth = db.model('__Studio_Sleuth');
+  const CaseReport = db.model('__Studio_CaseReport');
 
-  await authorize('Sleuth.updateCaseReport', roles);
+  await authorize('CaseReport.updateCaseReport', roles);
 
   const docs = Array.isArray(documents)
     ? documents
@@ -114,7 +114,7 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
     }
   }
 
-  const caseReport = await Sleuth.findByIdAndUpdate(
+  const caseReport = await CaseReport.findByIdAndUpdate(
     caseReportId,
     updateData,
     { new: true }

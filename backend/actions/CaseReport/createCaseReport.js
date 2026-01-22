@@ -24,16 +24,16 @@ const CreateCaseReportParams = new Archetype({
 
 module.exports = ({ db }) => async function createCaseReport(params) {
   const { name, documents, roles } = new CreateCaseReportParams(params);
-  const Sleuth = db.model('__Studio_Sleuth');
+  const CaseReport = db.model('__Studio_CaseReport');
 
-  await authorize('Sleuth.createCaseReport', roles);
+  await authorize('CaseReport.createCaseReport', roles);
 
   const normalizedName = name.trim();
 
   // Count existing case reports with this base name or suffixed with (x)
   const base = escapeRegExp(normalizedName);
   const namePattern = new RegExp(`^${base}( \\(\\d+\\))?$`);
-  const existingCount = await Sleuth.countDocuments({ name: { $regex: namePattern } });
+  const existingCount = await CaseReport.countDocuments({ name: { $regex: namePattern } });
 
   const finalName = existingCount > 0 ? `${normalizedName} (${existingCount})` : normalizedName;
 
@@ -48,7 +48,7 @@ module.exports = ({ db }) => async function createCaseReport(params) {
       })) :
     [];
 
-  const caseReport = await Sleuth.create({
+  const caseReport = await CaseReport.create({
     name: finalName,
     documents: docs
   });
