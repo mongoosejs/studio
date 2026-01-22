@@ -34,7 +34,7 @@
     </nav>
   </aside>
   <div class="documents bg-slate-50" ref="documentsList">
-    <div class="relative h-[42px] z-10">
+    <div class="relative h-[42px]" style="z-index: 1000">
       <div class="documents-menu bg-slate-50">
         <div class="flex flex-row items-center w-full gap-2">
           <document-search
@@ -46,7 +46,7 @@
           </document-search>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
-            <span v-else-if="typeof numDocuments === 'number'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
+            <span v-else-if="typeof numDocuments === 'number'">{{documents.length}}/{{numDocuments === 1 ? numDocuments + ' document' : numDocuments + ' documents'}}</span>
           </div>
           <button
             @click="stagingSelect"
@@ -143,9 +143,23 @@
             <button
               @click="setOutputType('json')"
               type="button"
-              class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
+              class="relative -ml-px inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
               :class="outputType === 'json' ? 'bg-gray-200' : 'bg-white'">
               <img class="h-5 w-5" src="images/json.svg">
+            </button>
+            <button
+              @click="setOutputType('map')"
+              :disabled="geoJsonFields.length === 0"
+              type="button"
+              :title="geoJsonFields.length > 0 ? 'Map view' : 'No GeoJSON fields detected'"
+              class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 focus:z-10"
+              :class="[
+                geoJsonFields.length === 0 ? 'text-gray-300 cursor-not-allowed bg-gray-100' : 'text-gray-400 hover:bg-gray-50',
+                outputType === 'map' ? 'bg-gray-200' : (geoJsonFields.length > 0 ? 'bg-white' : '')
+              ]">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+              </svg>
             </button>
           </span>
         </div>
@@ -201,6 +215,30 @@
           <list-json :value="filterDocument(document)" :references="referenceMap">
           </list-json>
         </div>
+      </div>
+      <div v-else-if="outputType === 'map'" class="flex flex-col h-full">
+        <div class="p-2 bg-white border-b flex items-center gap-2">
+          <label class="text-sm font-medium text-gray-700">GeoJSON Field:</label>
+          <select
+            :value="selectedGeoField"
+            @change="setSelectedGeoField($event.target.value)"
+            class="rounded-md border border-gray-300 py-1 px-2 text-sm focus:border-ultramarine-500 focus:ring-ultramarine-500"
+          >
+            <option v-for="field in geoJsonFields" :key="field.path" :value="field.path">
+              {{ field.label }}
+            </option>
+          </select>
+          <async-button
+            @click="loadMoreDocuments"
+            :disabled="loadedAllDocs"
+            type="button"
+            class="rounded px-2 py-1 text-xs font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            :class="loadedAllDocs ? 'bg-gray-400 cursor-not-allowed' : 'bg-ultramarine-600 hover:bg-ultramarine-500'"
+          >
+            Load more
+          </async-button>
+        </div>
+        <div class="flex-1 min-h-[400px]" ref="modelsMap"></div>
       </div>
       <div v-if="status === 'loading'" class="loader">
         <img src="images/loader.gif">
