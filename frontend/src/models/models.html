@@ -46,7 +46,7 @@
           </document-search>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
-            <span v-else-if="typeof numDocuments === 'number'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
+            <span v-else-if="typeof numDocuments === 'number'">{{documents.length}}/{{numDocuments === 1 ? numDocuments + ' document' : numDocuments + ' documents'}}</span>
           </div>
           <button
             @click="stagingSelect"
@@ -228,7 +228,7 @@
               {{ field.label }}
             </option>
           </select>
-          <button
+          <async-button
             @click="loadMoreDocuments"
             :disabled="loadedAllDocs"
             type="button"
@@ -236,7 +236,7 @@
             :class="loadedAllDocs ? 'bg-gray-400 cursor-not-allowed' : 'bg-ultramarine-600 hover:bg-ultramarine-500'"
           >
             Load more
-          </button>
+          </async-button>
         </div>
         <div class="flex-1 min-h-[400px]" ref="modelsMap"></div>
       </div>

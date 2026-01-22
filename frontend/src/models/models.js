@@ -107,6 +107,11 @@ module.exports = app => app.component('models', {
     },
     geoJsonFields: {
       handler(newFields) {
+        // Switch off map view if map is selected but no GeoJSON fields available
+        if (this.outputType === 'map' && newFields.length === 0) {
+          this.setOutputType('json');
+          return;
+        }
         // Auto-select first field if current selection is not valid
         if (this.outputType === 'map' && newFields.length > 0) {
           const isCurrentValid = newFields.some(f => f.path === this.selectedGeoField);
