@@ -10,7 +10,8 @@ const ExecuteScriptParams = new Archetype({
     $type: mongoose.Types.ObjectId
   },
   chatMessageId: {
-    $type: mongoose.Types.ObjectId
+    $type: mongoose.Types.ObjectId,
+    $required: true,
   },
   script: {
     $type: 'string'

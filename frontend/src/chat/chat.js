@@ -30,7 +30,9 @@ module.exports = {
           this.$toast.success('Chat thread created!');
         }
 
+        const userChatMessageIndex = this.chatMessages.length;
         this.chatMessages.push({
+          _id: Math.random().toString(36).substr(2, 9),
           content,
           role: 'user'
         });
@@ -48,11 +50,12 @@ module.exports = {
           if (event.chatMessage) {
             if (!userChatMessage) {
               userChatMessage = event.chatMessage;
-            } else if (!assistantChatMessage) {
+              this.chatMessages.splice(userChatMessageIndex, 1, userChatMessage);
+            } else {
               const assistantChatMessageIndex = this.chatMessages.indexOf(assistantChatMessage);
               assistantChatMessage = event.chatMessage;
               if (assistantChatMessageIndex !== -1) {
-                this.chatMessages[assistantChatMessageIndex] = assistantChatMessage;
+                this.chatMessages.splice(assistantChatMessageIndex, 1, assistantChatMessage);
               } else {
                 this.chatMessages.push(assistantChatMessage);
               }
@@ -66,6 +69,7 @@ module.exports = {
           } else if (event.textPart) {
             if (!assistantChatMessage) {
               assistantChatMessage = {
+                _id: Math.random().toString(36).substr(2, 9),
                 content: event.textPart,
                 role: 'assistant'
               };
