@@ -6,6 +6,7 @@
         v-model="aiPrompt"
         type="text"
         placeholder="Describe the document you'd like to create..."
+        @keydown.enter.prevent="requestAiSuggestion()"
         class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-ultramarine-500 focus:outline-none focus:ring-1 focus:ring-ultramarine-500"
       />
       <button

@@ -70,7 +70,6 @@ module.exports = app => app.component('create-document', {
       this.aiSuggestionReady = false;
       this.aiSuggestion = '';
       this.aiOriginalDocument = '';
-      this.aiPrompt = '';
     },
     rejectAiSuggestion() {
       this.editor.setValue(this.aiOriginalDocument);
