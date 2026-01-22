@@ -1,0 +1,5 @@
+<div class="mongoose-sleuth flex" style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
+  <sleuth-aggregating v-if="activeStep === 'aggregating'" ref="aggregating"></sleuth-aggregating>
+  <sleuth-investigating v-else-if="activeStep === 'investigating'"></sleuth-investigating>
+  <sleuth-summarize v-else-if="activeStep === 'summarize'"></sleuth-summarize>
+</div>

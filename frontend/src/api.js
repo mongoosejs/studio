@@ -75,6 +75,20 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('', { action: 'ChatMessage.executeScript', ...params }).then(res => res.data);
     }
   };
+  exports.CaseReport = {
+    createCaseReport(params) {
+      return client.post('', { action: 'CaseReport.createCaseReport', ...params }).then(res => res.data);
+    },
+    getCaseReports(params) {
+      return client.post('', { action: 'CaseReport.getCaseReports', ...params }).then(res => res.data);
+    },
+    getCaseReport(params) {
+      return client.post('', { action: 'CaseReport.getCaseReport', ...params }).then(res => res.data);
+    },
+    updateCaseReport(params) {
+      return client.post('', { action: 'CaseReport.updateCaseReport', ...params }).then(res => res.data);
+    }
+  };
   exports.Model = {
     addField(params) {
       return client.post('', { action: 'Model.addField', ...params }).then(res => res.data);
@@ -241,6 +255,20 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
   exports.ChatMessage = {
     executeScript: function executeScript(params) {
       return client.post('/ChatMessage/executeScript', params).then(res => res.data);
+    }
+  };
+  exports.CaseReport = {
+    createCaseReport: function createCaseReport(params) {
+      return client.post('/CaseReport/createCaseReport', params).then(res => res.data);
+    },
+    getCaseReports: function getCaseReports(params) {
+      return client.post('/CaseReport/getCaseReports', params).then(res => res.data);
+    },
+    getCaseReport: function getCaseReport(params) {
+      return client.post('/CaseReport/getCaseReport', params).then(res => res.data);
+    },
+    updateCaseReport: function updateCaseReport(params) {
+      return client.post('/CaseReport/updateCaseReport', params).then(res => res.data);
     }
   };
   exports.Model = {
