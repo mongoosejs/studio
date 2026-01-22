@@ -91,7 +91,7 @@ module.exports = app => app.component('case-reports', {
           return;
         }
 
-        await api.Sleuth.updateCaseReport({
+        await api.CaseReport.updateCaseReport({
           caseReportId: this.confirmCaseReportId,
           status
         });
@@ -100,7 +100,7 @@ module.exports = app => app.component('case-reports', {
         this.closeConfirmModal();
         
         // Reload case reports
-        const { caseReports } = await api.Sleuth.getCaseReports();
+        const { caseReports } = await api.CaseReport.getCaseReports();
         this.caseReports = caseReports;
       } catch (error) {
         console.error(`Error ${this.confirmAction}ing case report`, error);
@@ -110,7 +110,7 @@ module.exports = app => app.component('case-reports', {
   },
   async mounted() {
     try {
-      const { caseReports } = await api.Sleuth.getCaseReports();
+      const { caseReports } = await api.CaseReport.getCaseReports();
       this.caseReports = caseReports;
       this.status = 'loaded';
     } catch (error) {

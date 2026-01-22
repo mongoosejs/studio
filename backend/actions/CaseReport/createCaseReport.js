@@ -2,10 +2,27 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const mongoose = require('mongoose');
 
 function escapeRegExp(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+const DocumentsParams = new Archetype({
+  documentId: {
+    $type: 'string',
+    $required: true
+  },
+  documentModel: {
+    $type: 'string'
+  },
+  highlights: {
+    $type: ['string']
+  },
+  notes: {
+    $type: 'string'
+  }
+}).compile('DocumentsParams')
 
 const CreateCaseReportParams = new Archetype({
   name: {
@@ -14,8 +31,7 @@ const CreateCaseReportParams = new Archetype({
   },
   // Array of documents associated with this case report
   documents: {
-    $type: Array,
-    $default: []
+    $type: [DocumentsParams]
   },
   roles: {
     $type: ['string']
@@ -36,16 +52,18 @@ module.exports = ({ db }) => async function createCaseReport(params) {
   const existingCount = await CaseReport.countDocuments({ name: { $regex: namePattern } });
 
   const finalName = existingCount > 0 ? `${normalizedName} (${existingCount})` : normalizedName;
-
   const docs = Array.isArray(documents) ?
     documents.
-      filter(doc => doc && doc.document && doc.documentModel).
-      map(doc => ({
-        document: doc.document,
-        documentModel: doc.documentModel,
-        // notes is optional, include only if present
-        ...(doc.notes ? { notes: doc.notes } : {})
-      })) :
+      filter(doc => doc && doc.documentId && doc.documentModel).
+      map(doc => {
+        return {
+          documentId: doc.documentId,
+          documentModel: doc.documentModel,
+          ...(doc.highlightedFields ? { highlightedFields: doc.highlightedFields } : {}),
+          // notes is optional, include only if present
+          ...(doc.notes ? { notes: doc.notes } : {})
+        };
+      }) :
     [];
 
   const caseReport = await CaseReport.create({

@@ -14,10 +14,11 @@ const caseReportSchema = new mongoose.Schema({
     enum: ['created', 'in_progress', 'cancelled', 'resolved', 'archived']
   },
   documents: [{
-    document: {
+    documentId: {
       type: mongoose.Schema.Types.ObjectId,
-      refPath: 'documentModel'
+      refPath: 'documents.documentModel'
     },
+    highlightedFields: [String],
     documentModel: {
       type: String,
       required: true

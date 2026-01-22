@@ -136,11 +136,16 @@ module.exports = app => app.component('mongoose-sleuth', {
     buildDocumentsPayload() {
       return this.selectedDocuments.map(doc => {
         const base = {
-          document: doc._id,
+          documentId: doc._id,
           documentModel: doc.model
         };
         const note = this.getDocumentNote(doc);
-        base.notes = note.trim();
+        if (note && note.trim()) {
+          base.notes = note.trim();
+        }
+        if (doc.highlightedFields && doc.highlightedFields.length > 0) {
+          base.highlightedFields = doc.highlightedFields;
+        }
         return base;
       });
     },
@@ -158,7 +163,7 @@ module.exports = app => app.component('mongoose-sleuth', {
         const documentsPayload = this.buildDocumentsPayload();
 
         try {
-          await api.Sleuth.updateCaseReport({
+          await api.CaseReport.updateCaseReport({
             caseReportId: this.currentCaseReportId,
             documents: documentsPayload
           });
@@ -351,7 +356,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     },
     async loadCaseReport(caseReportId) {
-      const { caseReport } = await api.Sleuth.getCaseReport({ caseReportId });
+      const { caseReport } = await api.CaseReport.getCaseReport({ caseReportId });
       if (!caseReport || !Array.isArray(caseReport.documents)) {
         return;
       }
@@ -652,7 +657,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
 
       try {
-        const { caseReport } = await api.Sleuth.createCaseReport({
+        const { caseReport } = await api.CaseReport.createCaseReport({
           name: this.caseReportName.trim(),
           documents: documentsPayload
         });
@@ -682,7 +687,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       const documentsPayload = this.buildDocumentsPayload();
 
       try {
-        await api.Sleuth.updateCaseReport({
+        await api.CaseReport.updateCaseReport({
           caseReportId: this.currentCaseReportId,
           documents: documentsPayload
         });
@@ -709,7 +714,7 @@ module.exports = app => app.component('mongoose-sleuth', {
 
       this.savingSummary = true;
       try {
-        const { caseReport, aiSummary } = await api.Sleuth.updateCaseReport({
+        const { caseReport, aiSummary } = await api.CaseReport.updateCaseReport({
           caseReportId: this.currentCaseReportId,
           documents: documentsPayload,
           summary: this.summary || ''

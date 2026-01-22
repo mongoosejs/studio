@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
+const mongoose = require('mongoose');
 
 const UpdateCaseReportParams = new Archetype({
   caseReportId: {
@@ -33,14 +34,21 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
 
   const docs = Array.isArray(documents)
     ? documents
-      .filter(doc => doc && doc.document && doc.documentModel)
-      .map(doc => ({
-        document: doc.document,
-        documentModel: doc.documentModel,
-        ...(doc.notes ? { notes: doc.notes } : {})
-      }))
+      .filter(doc => doc && doc.documentId && doc.documentModel)
+      .map(doc => {
+        // Convert documentId to ObjectId if it's a string
+        let documentId = doc.documentId;
+        if (typeof documentId === 'string' && mongoose.Types.ObjectId.isValid(documentId)) {
+          documentId = new mongoose.Types.ObjectId(documentId);
+        }
+        return {
+          documentId: documentId,
+          documentModel: doc.documentModel,
+          ...(doc.highlightedFields ? { highlightedFields: doc.highlightedFields } : {}),
+          ...(doc.notes ? { notes: doc.notes } : {})
+        };
+      })
     : [];
-
   const updateData = { documents: docs };
   let aiSummary = null;
   
@@ -62,24 +70,24 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
         // Fetch all documents with their data for context
         const documentData = [];
         for (const docEntry of docs) {
-          if (!docEntry.document || !docEntry.documentModel) {
+          if (!docEntry.documentId || !docEntry.documentModel) {
             continue;
           }
           try {
             const Model = db.models[docEntry.documentModel];
             if (Model) {
-              const doc = await Model.findById(docEntry.document).setOptions({ sanitizeFilter: true }).lean();
+              const doc = await Model.findById(docEntry.documentId).setOptions({ sanitizeFilter: true }).lean();
               if (doc) {
                 documentData.push({
                   model: docEntry.documentModel,
-                  documentId: docEntry.document.toString(),
+                  documentId: docEntry.documentId.toString(),
                   data: doc,
                   notes: docEntry.notes || ''
                 });
               }
             }
           } catch (err) {
-            console.error(`Error fetching document ${docEntry.document} from model ${docEntry.documentModel}:`, err);
+            console.error(`Error fetching document ${docEntry.documentId} from model ${docEntry.documentModel}:`, err);
             // Continue with other documents even if one fails
           }
         }
