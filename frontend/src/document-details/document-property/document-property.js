@@ -120,7 +120,7 @@ module.exports = app => app.component('document-property', {
     isGeoJsonGeometry(newValue) {
       if (!newValue) {
         this.detailViewMode = 'text';
-      } else if (newValue && this.editting) {
+      } else if (this.editting) {
         // Default to map view when editing GeoJSON
         this.detailViewMode = 'map';
       }
