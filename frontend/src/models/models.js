@@ -1,5 +1,7 @@
 'use strict';
 
+/* global L */
+
 const api = require('../api');
 const template = require('./models.html');
 const mpath = require('mpath');
