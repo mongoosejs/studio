@@ -12,5 +12,6 @@ exports.getDocumentsStream = require('./getDocumentsStream');
 exports.getCollectionInfo = require('./getCollectionInfo');
 exports.getIndexes = require('./getIndexes');
 exports.listModels = require('./listModels');
+exports.streamChatMessage = require('./streamChatMessage');
 exports.updateDocument = require('./updateDocument');
 exports.updateDocuments = require('./updateDocuments');

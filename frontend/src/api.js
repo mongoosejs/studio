@@ -147,6 +147,55 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     updateDocument: function updateDocument(params) {
       return client.post('', { action: 'Model.updateDocument', ...params }).then(res => res.data);
     },
+    streamChatMessage: async function* streamChatMessage(params) {
+      const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
+      const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '?' + new URLSearchParams({ action: 'Model.streamChatMessage', ...params }).toString();
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `${accessToken}`,
+          Accept: 'text/event-stream'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let eventEnd;
+        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
+          const eventStr = buffer.slice(0, eventEnd);
+          buffer = buffer.slice(eventEnd + 2);
+
+          // Parse SSE event
+          const lines = eventStr.split('\n');
+          let data = '';
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              data += line.slice(5).trim();
+            }
+          }
+          if (data) {
+            try {
+              const res = JSON.parse(data);
+              yield res;
+            } catch (err) {
+              yield data;
+            }
+          }
+        }
+      }
+    },
     updateDocuments: function updateDocuments(params) {
       return client.post('', { action: 'Model.updateDocuments', ...params }).then(res => res.data);
     }
@@ -355,6 +404,55 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocument: function updateDocument(params) {
       return client.post('/Model/updateDocument', params).then(res => res.data);
+    },
+    streamChatMessage: async function* streamChatMessage(params) {
+      const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
+      const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/streamChatMessage?' + new URLSearchParams(params).toString();
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `${accessToken}`,
+          Accept: 'text/event-stream'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let eventEnd;
+        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
+          const eventStr = buffer.slice(0, eventEnd);
+          buffer = buffer.slice(eventEnd + 2);
+
+          // Parse SSE event
+          const lines = eventStr.split('\n');
+          let data = '';
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              data += line.slice(5).trim();
+            }
+          }
+          if (data) {
+            try {
+              yield JSON.parse(data);
+            } catch (err) {
+              // If not JSON, yield as string
+              yield data;
+            }
+          }
+        }
+      }
     },
     updateDocuments: function updateDocument(params) {
       return client.post('/Model/updateDocuments', params).then(res => res.data);

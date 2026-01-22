@@ -23,6 +23,7 @@ const actionsToRequiredRoles = {
   'Model.getDocumentsStream': ['owner', 'admin', 'member', 'readonly'],
   'Model.getIndexes': ['owner', 'admin', 'member', 'readonly'],
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
+  'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly'],
   'Model.updateDocuments': ['owner', 'admin', 'member']
 };
 
