@@ -22,7 +22,8 @@
     "tailwindcss": "3.4.0",
     "vue": "3.x",
     "vue-toastification": "^2.0.0-rc.5",
-    "webpack": "5.x"
+    "webpack": "5.x",
+    "xss": "^1.0.15"
   },
   "peerDependencies": {
     "mongoose": "7.x || 8.x || ^9.0.0"

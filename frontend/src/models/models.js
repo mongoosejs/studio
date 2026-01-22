@@ -5,6 +5,7 @@
 const api = require('../api');
 const template = require('./models.html');
 const mpath = require('mpath');
+const xss = require('xss');
 
 const appendCSS = require('../appendCSS');
 appendCSS(require('./models.css'));
@@ -341,7 +342,7 @@ module.exports = app => app.component('models', {
         },
         onEachFeature: (feature, layer) => {
           const docId = feature.properties._id;
-          const docUrl = `#/model/${this.currentModel}/document/${docId}`;
+          const docUrl = `#/model/${this.currentModel}/document/${xss(docId)}`;
           const popupContent = `
             <div style="min-width: 150px;">
               <div style="font-weight: bold; margin-bottom: 8px;">Document</div>
