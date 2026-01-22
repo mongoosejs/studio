@@ -518,7 +518,8 @@ module.exports = app => app.component('detail-default', {
                     this.onChange(newGeometry);
                   }
                 } catch (error) {
-                  // Silently handle errors
+                  // Log errors to aid debugging while still preventing UI crashes
+                  console.error('Error updating geometry on marker dragend:', error);
                 }
               });
 
