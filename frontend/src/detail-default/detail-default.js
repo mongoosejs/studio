@@ -295,15 +295,17 @@ module.exports = app => app.component('detail-default', {
             interactive: this.isMultiPolygon // Only interactive for MultiPolygon (to allow edge clicks)
           }).addTo(this.mapInstance);
           
-          // Add click handler to polygon edges to create new vertices (only for MultiPolygon)
+          // Add contextmenu handler to polygon edges to add vertices (only for MultiPolygon)
           if (this.isMultiPolygon && this.mapLayer.eachLayer) {
             this.mapLayer.eachLayer((layer) => {
-              layer.on('click', (e) => {
-                // Only create vertex if clicking on the edge, not on existing markers
+              layer.on('contextmenu', (e) => {
+                e.originalEvent.preventDefault();
+                e.originalEvent.stopPropagation();
+                
+                // Check if clicking near an existing marker (using pixel distance)
                 const clickPoint = e.latlng;
                 const clickContainerPoint = this.mapInstance.latLngToContainerPoint(clickPoint);
                 
-                // Check if clicking near an existing marker (using pixel distance)
                 const isClickingOnMarker = this.draggableMarkers.some(marker => {
                   if (!marker || !marker._icon) return false;
                   const markerLatLng = marker.getLatLng();
@@ -319,56 +321,28 @@ module.exports = app => app.component('detail-default', {
                 });
                 
                 if (!isClickingOnMarker) {
-                  this.addVertexAtLocation(clickPoint);
+                  this.showAddVertexContextMenu(e.originalEvent, clickPoint);
                 }
               });
             });
           }
           
-          // Ensure polygon layer allows edge clicks but doesn't interfere with marker dragging
-          // Only make interactive for MultiPolygon (to allow edge clicks for adding vertices)
+          // Make polygon layers non-interactive to avoid interfering with marker dragging
           if (this.mapLayer.eachLayer) {
             this.mapLayer.eachLayer((layer) => {
               if (layer.setStyle) {
-                if (this.isMultiPolygon) {
-                  // For MultiPolygon: make edges clickable to add vertices
-                  layer.setStyle({ 
-                    interactive: true,
-                    stroke: true,
-                    weight: 4, // Slightly thicker for easier clicking
-                    opacity: 0.8
-                  });
-                  // Make only stroke clickable, not fill
-                  if (layer._path) {
-                    layer._path.style.pointerEvents = 'stroke';
-                  }
-                } else {
-                  // For regular Polygon: keep non-interactive to avoid interfering with markers
-                  layer.setStyle({ interactive: false });
-                  if (layer._path) {
-                    layer._path.style.pointerEvents = 'none';
-                  }
+                layer.setStyle({ 
+                  interactive: this.isMultiPolygon, // Only interactive for MultiPolygon (for context menu)
+                  stroke: true,
+                  weight: 2,
+                  opacity: 0.8
+                });
+                if (layer._path) {
+                  layer._path.style.pointerEvents = this.isMultiPolygon ? 'stroke' : 'none';
                 }
               }
             });
           }
-          
-          // Additional fix: Use setTimeout to ensure DOM is ready, then set pointer events
-          setTimeout(() => {
-            if (this.mapLayer && this.mapLayer.eachLayer) {
-              this.mapLayer.eachLayer((layer) => {
-                if (layer._path) {
-                  if (this.isMultiPolygon) {
-                    // Ensure only stroke is clickable for MultiPolygon
-                    layer._path.style.pointerEvents = 'stroke';
-                  } else {
-                    // Disable pointer events for regular Polygon
-                    layer._path.style.pointerEvents = 'none';
-                  }
-                }
-              });
-            }
-          }, 100);
           
           // Get the outer ring coordinates
           // For Polygon: coordinates[0] is the outer ring
@@ -665,48 +639,47 @@ module.exports = app => app.component('detail-default', {
         interactive: this.isMultiPolygon // Only interactive for MultiPolygon (to allow edge clicks)
       }).addTo(this.mapInstance);
       
-      // Add click handler to polygon edges to create new vertices (only for MultiPolygon)
+      // Add contextmenu handler to polygon edges to add vertices (only for MultiPolygon)
       if (this.isMultiPolygon && this.mapLayer.eachLayer) {
         this.mapLayer.eachLayer((layer) => {
-          // Remove any existing click handlers first
-          layer.off('click');
+          // Remove any existing contextmenu handlers first
+          layer.off('contextmenu');
           
-          layer.on('click', (e) => {
-            // Only create vertex if clicking on the edge, not on existing markers
+          layer.on('contextmenu', (e) => {
+            e.originalEvent.preventDefault();
+            e.originalEvent.stopPropagation();
+            
             const clickPoint = e.latlng;
             const clickContainerPoint = this.mapInstance.latLngToContainerPoint(clickPoint);
             
-            // Check if clicking near an existing marker (using pixel distance)
+            // Check if clicking near an existing marker
             const isClickingOnMarker = this.draggableMarkers.some(marker => {
               if (!marker || !marker._icon) return false;
               const markerLatLng = marker.getLatLng();
               const markerContainerPoint = this.mapInstance.latLngToContainerPoint(markerLatLng);
               
-              // Calculate pixel distance
               const dx = clickContainerPoint.x - markerContainerPoint.x;
               const dy = clickContainerPoint.y - markerContainerPoint.y;
               const pixelDistance = Math.sqrt(dx * dx + dy * dy);
               
-              // 15 pixel threshold - marker icon is about 12px, so 15px gives some buffer
               return pixelDistance < 15;
             });
             
             if (!isClickingOnMarker) {
-              this.addVertexAtLocation(clickPoint);
+              this.showAddVertexContextMenu(e.originalEvent, clickPoint);
             }
           });
           
-          // Style to make edges more clickable
+          // Style polygon layer
           if (layer.setStyle) {
             layer.setStyle({ 
               interactive: true,
               stroke: true,
-              weight: 4, // Slightly thicker for easier clicking
+              weight: 2,
               opacity: 0.8
             });
           }
           
-          // Make only stroke clickable, not fill
           if (layer._path) {
             layer._path.style.pointerEvents = 'stroke';
           }
@@ -714,7 +687,7 @@ module.exports = app => app.component('detail-default', {
       } else if (!this.isMultiPolygon && this.mapLayer.eachLayer) {
         // For regular Polygon, ensure it's non-interactive
         this.mapLayer.eachLayer((layer) => {
-          layer.off('click'); // Remove any click handlers
+          layer.off('contextmenu'); // Remove any contextmenu handlers
           if (layer.setStyle) {
             layer.setStyle({ interactive: false });
           }
@@ -738,25 +711,12 @@ module.exports = app => app.component('detail-default', {
       this.hideContextMenu();
       
       // Store the marker for deletion
-      this.contextMenuMarker = { index, marker };
+      this.contextMenuMarker = { index, marker, type: 'vertex' };
       
       // Create context menu if it doesn't exist
       if (!this.contextMenu) {
         this.contextMenu = document.createElement('div');
         this.contextMenu.className = 'leaflet-context-menu';
-        
-        const deleteItem = document.createElement('div');
-        deleteItem.className = 'leaflet-context-menu-item delete';
-        deleteItem.textContent = 'Delete';
-        deleteItem.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (this.contextMenuMarker) {
-            this.deleteVertex(this.contextMenuMarker.index, this.contextMenuMarker.marker);
-          }
-          this.hideContextMenu();
-        });
-        
-        this.contextMenu.appendChild(deleteItem);
         
         // Append to map container so it's positioned relative to the map
         if (this.mapInstance && this.mapInstance.getContainer()) {
@@ -765,6 +725,22 @@ module.exports = app => app.component('detail-default', {
           document.body.appendChild(this.contextMenu);
         }
       }
+      
+      // Clear existing menu items
+      this.contextMenu.innerHTML = '';
+      
+      // Add Delete option for vertices
+      const deleteItem = document.createElement('div');
+      deleteItem.className = 'leaflet-context-menu-item delete';
+      deleteItem.textContent = 'Delete';
+      deleteItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.contextMenuMarker && this.contextMenuMarker.type === 'vertex') {
+          this.deleteVertex(this.contextMenuMarker.index, this.contextMenuMarker.marker);
+        }
+        this.hideContextMenu();
+      });
+      this.contextMenu.appendChild(deleteItem);
       
       // Get map container position for relative positioning
       const mapContainer = this.mapInstance ? this.mapInstance.getContainer() : null;
@@ -805,6 +781,71 @@ module.exports = app => app.component('detail-default', {
         this.contextMenu.style.display = 'none';
       }
       this.contextMenuMarker = null;
+    },
+    showAddVertexContextMenu(event, latlng) {
+      // Hide any existing context menu
+      this.hideContextMenu();
+      
+      // Store the location for adding vertex
+      this.contextMenuMarker = { latlng, type: 'edge' };
+      
+      // Create context menu if it doesn't exist
+      if (!this.contextMenu) {
+        this.contextMenu = document.createElement('div');
+        this.contextMenu.className = 'leaflet-context-menu';
+        
+        // Append to map container so it's positioned relative to the map
+        if (this.mapInstance && this.mapInstance.getContainer()) {
+          this.mapInstance.getContainer().appendChild(this.contextMenu);
+        } else {
+          document.body.appendChild(this.contextMenu);
+        }
+      }
+      
+      // Clear existing menu items
+      this.contextMenu.innerHTML = '';
+      
+      // Add "Add Vertex" option
+      const addVertexItem = document.createElement('div');
+      addVertexItem.className = 'leaflet-context-menu-item';
+      addVertexItem.textContent = 'Add Vertex';
+      addVertexItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.contextMenuMarker && this.contextMenuMarker.type === 'edge') {
+          this.addVertexAtLocation(this.contextMenuMarker.latlng);
+        }
+        this.hideContextMenu();
+      });
+      this.contextMenu.appendChild(addVertexItem);
+      
+      // Position the context menu
+      const mapContainer = this.mapInstance ? this.mapInstance.getContainer() : null;
+      let left = event.clientX;
+      let top = event.clientY;
+      
+      if (mapContainer) {
+        const rect = mapContainer.getBoundingClientRect();
+        left = event.clientX - rect.left;
+        top = event.clientY - rect.top;
+        this.contextMenu.style.position = 'absolute';
+      } else {
+        this.contextMenu.style.position = 'fixed';
+      }
+      
+      this.contextMenu.style.left = left + 'px';
+      this.contextMenu.style.top = top + 'px';
+      this.contextMenu.style.display = 'block';
+      
+      // Hide menu when clicking elsewhere
+      const hideMenu = (e) => {
+        if (!this.contextMenu || !this.contextMenu.contains(e.target)) {
+          this.hideContextMenu();
+          document.removeEventListener('click', hideMenu);
+        }
+      };
+      setTimeout(() => {
+        document.addEventListener('click', hideMenu);
+      }, 0);
     },
     addVertexAtLocation(latlng) {
       // Get current geometry
