@@ -1,10 +1,12 @@
 'use strict';
 
 const api = require('../api');
+const baseComponent = require('../_util/baseComponent');
 const template = require('./dashboard.html');
 
-module.exports = app => app.component('dashboard', {
+module.exports = {
   template: template,
+  extends: baseComponent,
   props: ['dashboardId'],
   data: function() {
     return {
@@ -48,7 +50,7 @@ module.exports = app => app.component('dashboard', {
       }
     },
     shouldEvaluateDashboard() {
-      if (this.dashboardResults.length === 0) {
+      if (!this.dashboardResults || this.dashboardResults.length === 0) {
         return true;
       }
 
@@ -115,6 +117,22 @@ module.exports = app => app.component('dashboard', {
         this.startingChat = false;
         this.showActionsMenu = false;
       }
+    },
+    async loadInitial() {
+      const { dashboard, dashboardResults, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: false });
+      if (!dashboard) {
+        return;
+      }
+      this.dashboard = dashboard;
+      this.code = this.dashboard.code;
+      this.title = this.dashboard.title;
+      this.description = this.dashboard.description ?? '';
+      this.dashboardResults = dashboardResults;
+      if (this.shouldEvaluateDashboard()) {
+        await this.evaluateDashboard();
+        return;
+      }
+      this.status = 'loaded';
     }
   },
   computed: {
@@ -125,22 +143,9 @@ module.exports = app => app.component('dashboard', {
   mounted: async function() {
     document.addEventListener('click', this.handleDocumentClick);
     this.showEditor = this.$route.query.edit;
-    const { dashboard, dashboardResults, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: false });
-    if (!dashboard) {
-      return;
-    }
-    this.dashboard = dashboard;
-    this.code = this.dashboard.code;
-    this.title = this.dashboard.title;
-    this.description = this.dashboard.description ?? '';
-    this.dashboardResults = dashboardResults;
-    if (this.shouldEvaluateDashboard()) {
-      await this.evaluateDashboard();
-      return;
-    }
-    this.status = 'loaded';
+    await this.loadInitial();
   },
   beforeDestroy() {
     document.removeEventListener('click', this.handleDocumentClick);
   }
-});
+};

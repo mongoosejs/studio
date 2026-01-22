@@ -1,6 +1,7 @@
 'use strict';
 
 const { inspect } = require('node-inspect-extracted');
+const deepEqual = require('./_util/deepEqual');
 
 /**
  * Format a value for display in array views

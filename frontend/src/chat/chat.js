@@ -3,7 +3,7 @@
 const api = require('../api');
 const template = require('./chat.html');
 
-module.exports = app => app.component('chat', {
+module.exports = {
   template: template,
   props: ['threadId'],
   data: () => ({
@@ -48,10 +48,14 @@ module.exports = app => app.component('chat', {
           if (event.chatMessage) {
             if (!userChatMessage) {
               userChatMessage = event.chatMessage;
-            } else {
+            } else if (!assistantChatMessage) {
               const assistantChatMessageIndex = this.chatMessages.indexOf(assistantChatMessage);
               assistantChatMessage = event.chatMessage;
-              this.chatMessages[assistantChatMessageIndex] = assistantChatMessage;
+              if (assistantChatMessageIndex !== -1) {
+                this.chatMessages[assistantChatMessageIndex] = assistantChatMessage;
+              } else {
+                this.chatMessages.push(assistantChatMessage);
+              }
             }
           } else if (event.chatThread) {
             for (const thread of this.chatThreads) {
@@ -181,5 +185,7 @@ module.exports = app => app.component('chat', {
         });
       });
     }
+
+    this.$refs.messageInput.focus();
   }
-});
+};

@@ -1,34 +1,11 @@
 'use strict';
 
 const template = require('./document-search.html');
-const { Trie } = require('../trie');
-
-const QUERY_SELECTORS = [
-  '$eq',
-  '$ne',
-  '$gt',
-  '$gte',
-  '$lt',
-  '$lte',
-  '$in',
-  '$nin',
-  '$exists',
-  '$regex',
-  '$options',
-  '$text',
-  '$search',
-  '$and',
-  '$or',
-  '$nor',
-  '$not',
-  '$elemMatch',
-  '$size',
-  '$all',
-  '$type',
-  '$expr',
-  '$jsonSchema',
-  '$mod'
-];
+const {
+  buildAutocompleteTrie,
+  getAutocompleteSuggestions,
+  applySuggestion
+} = require('../../_util/document-search-autocomplete');
 
 module.exports = app => app.component('document-search', {
   template,
@@ -70,19 +47,7 @@ module.exports = app => app.component('document-search', {
       this.$emit('search', this.searchText);
     },
     buildAutocompleteTrie() {
-      this.autocompleteTrie = new Trie();
-      this.autocompleteTrie.bulkInsert(QUERY_SELECTORS, 5, 'operator');
-      if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
-        const paths = this.schemaPaths
-          .map(path => path?.path)
-          .filter(path => typeof path === 'string' && path.length > 0);
-        for (const path of this.schemaPaths) {
-          if (path.schema) {
-            paths.push(...Object.keys(path.schema).map(subpath => `${path.path}.${subpath}`));
-          }
-        }
-        this.autocompleteTrie.bulkInsert(paths, 10, 'fieldName');
-      }
+      this.autocompleteTrie = buildAutocompleteTrie(this.schemaPaths);
     },
     initFilter(ev) {
       if (!this.searchText) {
@@ -95,60 +60,18 @@ module.exports = app => app.component('document-search', {
     updateAutocomplete() {
       const input = this.$refs.searchInput;
       const cursorPos = input ? input.selectionStart : 0;
-      const before = this.searchText.slice(0, cursorPos);
-      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
-      if (match && match[1]) {
-        const token = match[1];
-        const leadingQuoteMatch = token.match(/^["']/);
-        const trailingQuoteMatch = token.length > 1 && /["']$/.test(token)
-          ? token[token.length - 1]
-          : '';
-        const term = token
-          .replace(/^["']/, '')
-          .replace(trailingQuoteMatch ? new RegExp(`[${trailingQuoteMatch}]$`) : '', '')
-          .trim();
-        if (!term) {
-          this.autocompleteSuggestions = [];
-          return;
-        }
 
-        const colonMatch = before.match(/:\s*([^,\}\]]*)$/);
-        const role = colonMatch ? 'operator' : 'fieldName';
-
-        if (this.autocompleteTrie) {
-          const primarySuggestions = this.autocompleteTrie.getSuggestions(term, 10, role);
-          const suggestionsSet = new Set(primarySuggestions);
-          if (Array.isArray(this.schemaPaths) && this.schemaPaths.length > 0) {
-            for (const schemaPath of this.schemaPaths) {
-              const path = schemaPath?.path;
-              if (
-                typeof path === 'string' &&
-                path.startsWith(`${term}.`) &&
-                !suggestionsSet.has(path)
-              ) {
-                suggestionsSet.add(path);
-                if (suggestionsSet.size >= 10) {
-                  break;
-                }
-              }
-            }
-          }
-          let suggestions = Array.from(suggestionsSet);
-          if (leadingQuoteMatch) {
-            const leadingQuote = leadingQuoteMatch[0];
-            suggestions = suggestions.map(suggestion => `${leadingQuote}${suggestion}`);
-          }
-          if (trailingQuoteMatch) {
-            suggestions = suggestions.map(suggestion =>
-              suggestion.endsWith(trailingQuoteMatch) ? suggestion : `${suggestion}${trailingQuoteMatch}`
-            );
-          }
-          this.autocompleteSuggestions = suggestions;
-          this.autocompleteIndex = 0;
-          return;
-        }
+      if (this.autocompleteTrie) {
+        this.autocompleteSuggestions = getAutocompleteSuggestions(
+          this.autocompleteTrie,
+          this.searchText,
+          cursorPos,
+          this.schemaPaths
+        );
+        this.autocompleteIndex = 0;
+      } else {
+        this.autocompleteSuggestions = [];
       }
-      this.autocompleteSuggestions = [];
     },
     handleKeyDown(ev) {
       if (this.autocompleteSuggestions.length === 0) {
@@ -172,32 +95,15 @@ module.exports = app => app.component('document-search', {
       }
       const input = this.$refs.searchInput;
       const cursorPos = input.selectionStart;
-      const before = this.searchText.slice(0, cursorPos);
-      const after = this.searchText.slice(cursorPos);
-      const match = before.match(/(?:\{|,)\s*([^:\s]*)$/);
-      const colonNeeded = !/^\s*:/.test(after);
-      if (!match) {
+
+      const result = applySuggestion(this.searchText, cursorPos, suggestion);
+      if (!result) {
         return;
       }
-      const token = match[1];
-      const start = cursorPos - token.length;
-      let replacement = suggestion;
-      const leadingQuote = token.startsWith('"') || token.startsWith('\'') ? token[0] : '';
-      const trailingQuote = token.length > 1 && (token.endsWith('"') || token.endsWith('\'')) ? token[token.length - 1] : '';
-      if (leadingQuote && !replacement.startsWith(leadingQuote)) {
-        replacement = `${leadingQuote}${replacement}`;
-      }
-      if (trailingQuote && !replacement.endsWith(trailingQuote)) {
-        replacement = `${replacement}${trailingQuote}`;
-      }
-      // Only insert : if we know the user isn't entering in a nested path
-      if (colonNeeded && (!leadingQuote || trailingQuote)) {
-        replacement = `${replacement}:`;
-      }
-      this.searchText = this.searchText.slice(0, start) + replacement + after;
+
+      this.searchText = result.text;
       this.$nextTick(() => {
-        const pos = start + replacement.length;
-        input.setSelectionRange(pos, pos);
+        input.setSelectionRange(result.newCursorPos, result.newCursorPos);
       });
       this.autocompleteSuggestions = [];
     },

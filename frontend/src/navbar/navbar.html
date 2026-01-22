@@ -1,10 +1,19 @@
-<div class="navbar w-full bg-gray-50 flex justify-between border-b border-gray-200 !h-[55px]">
-  <div class="flex items-center gap-4 h-full pl-4">
+<div class="navbar w-full bg-white flex justify-between border-b border-gray-200 !h-[55px]">
+  <div class="flex items-center gap-4 md:gap-6 h-full pl-4">
     <router-link :to="{ name: defaultRoute }">
-      <img src="images/logo.svg" class="h-[32px] mr-1" alt="Mongoose Studio Logo" />
+      <img src="images/logo.svg" class="h-10 mr-1" alt="Mongoose Studio Logo" />
     </router-link>
-    <div v-if="!!state.nodeEnv" title="NODE_ENV" class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium text-gray-900" :class="warnEnv ? 'bg-red-300' : 'bg-yellow-300'">
-      {{state.nodeEnv}}
+    <div
+      v-if="!!state.nodeEnv"
+      title="NODE_ENV"
+      class="inline-flex items-center rounded px-2 py-1 text-xs text-gray-500 bg-white border border-gray-200 gap-2"
+    >
+      <span
+        :class="warnEnv ? 'bg-red-400' : 'bg-yellow-400'"
+        class="inline-block rounded-full"
+        style="width: 0.5em; height: 0.5em;"
+      ></span>
+      <span>{{state.nodeEnv}}</span>
     </div>
   </div>
   <div class="h-full pr-4 hidden md:block">
@@ -103,7 +112,7 @@
   <!-- Mobile menu mask -->
   <div id="mobile-menu-mask" class="fixed inset-0 bg-black bg-opacity-40 z-40 hidden"></div>
   <!-- Mobile menu drawer -->
-  <div id="mobile-menu" class="fixed inset-0 bg-white shadow-lg z-50 transform translate-x-full transition-transform duration-200 ease-in-out flex flex-col">
+  <div id="mobile-menu" style="z-index: 1000" class="fixed inset-0 bg-white shadow-lg transform translate-x-full transition-transform duration-200 ease-in-out flex flex-col">
     <div class="flex items-center justify-between px-4 !h-[55px] border-b border-gray-200">
       <router-link :to="{ name: defaultRoute }">
         <img src="images/logo.svg" class="h-[32px]" alt="Mongoose Studio Logo" />
