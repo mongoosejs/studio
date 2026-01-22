@@ -1041,14 +1041,11 @@ module.exports = app => app.component('detail-default', {
       this.currentEditedGeometry = newGeometry;
       this.hasUnsavedChanges = true;
 
-      // Remove marker from array
-      const markerIndex = this.draggableMarkers.indexOf(marker);
-      if (markerIndex > -1) {
-        this.draggableMarkers.splice(markerIndex, 1);
-      }
-      if (marker) {
-        marker.remove();
-      }
+      // Remove all markers and force recreation (needed because marker closures capture indices)
+      this.draggableMarkers.forEach(m => {
+        if (m) m.remove();
+      });
+      this.draggableMarkers = [];
 
       // Update the polygon layer and recreate markers
       this.updatePolygonLayer(newGeometry);
