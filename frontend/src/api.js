@@ -132,6 +132,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
         yield { document: doc };
       }
     },
+    getEstimatedDocumentCounts: function getEstimatedDocumentCounts() {
+      return client.post('', { action: 'Model.getEstimatedDocumentCounts' }).then(res => res.data);
+    },
     getCollectionInfo: function getCollectionInfo(params) {
       return client.post('', { action: 'Model.getCollectionInfo', ...params }).then(res => res.data);
     },
@@ -351,6 +354,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
           }
         }
       }
+    },
+    getEstimatedDocumentCounts: function getEstimatedDocumentCounts() {
+      return client.post('/Model/getEstimatedDocumentCounts', {}).then(res => res.data);
     },
     getCollectionInfo: function getCollectionInfo(params) {
       return client.post('/Model/getCollectionInfo', params).then(res => res.data);
