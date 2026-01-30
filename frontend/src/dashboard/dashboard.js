@@ -127,7 +127,7 @@ module.exports = {
       this.code = this.dashboard.code;
       this.title = this.dashboard.title;
       this.description = this.dashboard.description ?? '';
-      this.dashboardResults = dashboardResults;
+      this.dashboardResults = Array.isArray(dashboardResults) ? dashboardResults : [];
       if (this.shouldEvaluateDashboard()) {
         await this.evaluateDashboard();
         return;
