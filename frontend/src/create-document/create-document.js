@@ -54,9 +54,9 @@ module.exports = app => app.component('create-document', {
         })) {
           if (event?.textPart) {
             this.aiSuggestion += event.textPart;
-            this.editor.setValue(this.aiSuggestion);
           }
         }
+        this.editor.setValue(this.aiSuggestion);
         this.aiSuggestionReady = true;
       } catch (err) {
         this.editor.setValue(this.aiOriginalDocument);
