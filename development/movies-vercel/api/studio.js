@@ -18,7 +18,7 @@ async function handlerWrapper(req, res) {
     conn = await mongoose.connect(process.env.MONGODB_CONNECTION_STRING, { serverSelectionTimeoutMS: 3000 });
   }
 
-  const params = { ...req.query, ...req.body, ...req.params };
+  const params = { ...req.query, ...req.body, ...req.params, authorization: req.headers.authorization };
   console.log('Params', params);
 
   const result = await handler.apply(null, [req, res]).catch(err => {

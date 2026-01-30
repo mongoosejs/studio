@@ -9,7 +9,7 @@ module.exports = function next(conn, options) {
   let workspace = null;
 
   return async function wrappedNextJSFunction(req, res) {
-    const params = { ...req.query, ...req.body, ...req.params };
+    const params = { ...req.query, ...req.body, ...req.params, authorization: req.headers.authorization };
     const actionName = params?.action;
 
     const authorization = params?.authorization;
