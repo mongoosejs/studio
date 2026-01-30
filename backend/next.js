@@ -24,7 +24,10 @@ module.exports = function next(conn, options) {
     }
 
     return actionFn(params)
-      .then(result => res.status(200).json(result))
+      .then(result => {
+        res.status(200).json(result);
+        return result;
+      })
       .catch(error => res.status(500).json({ message: error.message }));
   };
 };

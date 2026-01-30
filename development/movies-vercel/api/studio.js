@@ -18,14 +18,15 @@ async function handlerWrapper(req, res) {
     conn = await mongoose.connect(process.env.MONGODB_CONNECTION_STRING, { serverSelectionTimeoutMS: 3000 });
   }
 
-  console.log('Using Mongoose Studio API Key:', process.env.MONGOOSE_STUDIO_API_KEY);
-  console.log('Using OpenAI API Key:', process.env.OPENAI_API_KEY);
-  console.log('Handler', handler.toString());
+  const params = { ...req.query, ...req.body, ...req.params };
+  console.log('Params', params);
 
-  await handler.apply(null, [req, res]).catch(err => {
+  const result = await handler.apply(null, [req, res]).catch(err => {
     console.log(err);
     throw err;
   });
+
+  console.log('Result', result);
 }
 
 module.exports = handlerWrapper;
