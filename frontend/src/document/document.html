@@ -29,6 +29,18 @@
         </button>
       </div>
 
+      <div class="hidden md:flex items-center gap-3 text-sm text-slate-600">
+        <div class="text-right leading-tight">
+          <div class="text-xs uppercase tracking-wide text-slate-400 flex items-center gap-2 justify-end">
+            <span>Loaded at</span>
+            <span class="inline-flex items-center gap-1 text-[10px] font-semibold" :class="autoRefreshEnabled ? 'text-forest-green-600' : 'text-slate-400'">
+              <span class="inline-block h-1.5 w-1.5 rounded-full" :class="autoRefreshEnabled ? 'bg-forest-green-500' : 'bg-slate-300'"></span>
+            </span>
+          </div>
+          <div class="font-medium text-slate-700">{{lastUpdatedLabel}}</div>
+        </div>
+      </div>
+
       <div class="gap-2 hidden md:flex items-center">
         <button
           v-if="!editting"
@@ -77,6 +89,23 @@
             class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
           >
             <div class="py-1 flex flex-col">
+              <button
+                @click="refreshDocument({ force: true, source: 'manual' }); desktopMenuOpen = false"
+                :disabled="isRefreshing"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', isRefreshing ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-100']"
+                type="button"
+              >
+                {{isRefreshing ? 'Refreshing...' : 'Refresh'}}
+              </button>
+              <button
+                @click="toggleAutoRefresh(); desktopMenuOpen = false"
+                :disabled="isLambda"
+                type="button"
+                :class="['flex items-center px-4 py-2 text-sm', isLambda ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-slate-100']"
+                :title="isLambda ? 'Auto-refresh is not available in lambda deployments' : ''"
+              >
+                {{autoRefreshEnabled ? 'Disable Auto-Refresh' : 'Enable Auto-Refresh'}}
+              </button>
               <button
                 @click="addField(); desktopMenuOpen = false"
                 type="button"
@@ -149,6 +178,21 @@
                 type="button"
               >
                 Save
+              </button>
+              <button
+                @click="refreshDocument({ force: true, source: 'manual' }); mobileMenuOpen = false"
+                :disabled="isRefreshing"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', isRefreshing ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-100']"
+                type="button"
+              >
+                {{isRefreshing ? 'Refreshing...' : 'Refresh'}}
+              </button>
+              <button
+                @click="toggleAutoRefresh(); mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-slate-100"
+              >
+                Auto-Refresh {{autoRefreshEnabled ? 'ON' : 'OFF'}}
               </button>
               <button
                 @click="addField(); mobileMenuOpen = false"

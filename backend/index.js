@@ -16,6 +16,11 @@ module.exports = function backend(db, studioConnection, options) {
   const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
   const ChatThread = studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
 
-  const actions = applySpec(Actions, { db, studioConnection, options });
+  let changeStream = null;
+  if (options?.changeStream) {
+    changeStream = db.watch();
+  }
+
+  const actions = applySpec(Actions, { db, studioConnection, options, changeStream });
   return actions;
 };
