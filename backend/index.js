@@ -22,5 +22,6 @@ module.exports = function backend(db, studioConnection, options) {
   }
 
   const actions = applySpec(Actions, { db, studioConnection, options, changeStream });
+  actions.services = { changeStream };
   return actions;
 };

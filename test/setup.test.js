@@ -20,6 +20,9 @@ afterEach(async function () {
 });
 
 after(async function() {
+  if (actions?.services?.changeStream) {
+    await actions.services.changeStream.close().catch(() => {});
+  }
   await connection.close();
   await studioConnection.close();
 })
