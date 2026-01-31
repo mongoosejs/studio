@@ -39,7 +39,9 @@ module.exports = defineConfig([
         process: true,
         setTimeout: true,
         navigator: true,
-        TextDecoder: true
+        TextDecoder: true,
+        AbortController: true,
+        clearTimeout: true
       },
       sourceType: 'commonjs'
     },

@@ -7,8 +7,9 @@ const { toRoute, objectRouter } = require('extrovert');
 
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
+  options = options ? { changeStream: true, ...options } : { changeStream: true };
 
-  const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
+  const mothershipUrl = options._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
   let workspace = null;
   if (options?.apiKey) {
     ({ workspace } = await fetch(`${mothershipUrl}/getWorkspace`, {
@@ -31,7 +32,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   }
 
   apiUrl = apiUrl || 'api';
-  const backend = Backend(conn, options?.studioConnection, options);
+  const backend = Backend(conn, options.studioConnection, options);
 
   router.use(
     '/api',

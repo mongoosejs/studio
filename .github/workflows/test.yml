@@ -28,6 +28,7 @@ jobs:
         uses: supercharge/mongodb-github-action@v1.10.0
         with:
           mongodb-version: ${{ matrix.mongodb }}
+          mongodb-replica-set: rs0
 
       - run: npm install
       - name: NPM Test

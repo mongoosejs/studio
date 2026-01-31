@@ -132,6 +132,16 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
         yield { document: doc };
       }
     },
+    streamDocumentChanges: async function* streamDocumentChanges(params, options = {}) {
+      const pollIntervalMs = 5000;
+      while (!options.signal?.aborted) {
+        await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+        if (options.signal?.aborted) {
+          return;
+        }
+        yield { type: 'poll', model: params.model, documentId: params.documentId };
+      }
+    },
     getCollectionInfo: function getCollectionInfo(params) {
       return client.post('', { action: 'Model.getCollectionInfo', ...params }).then(res => res.data);
     },
@@ -313,6 +323,56 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
           Authorization: `${accessToken}`,
           Accept: 'text/event-stream'
         }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let eventEnd;
+        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
+          const eventStr = buffer.slice(0, eventEnd);
+          buffer = buffer.slice(eventEnd + 2);
+
+          // Parse SSE event
+          const lines = eventStr.split('\n');
+          let data = '';
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              data += line.slice(5).trim();
+            }
+          }
+          if (data) {
+            try {
+              yield JSON.parse(data);
+            } catch (err) {
+              // If not JSON, yield as string
+              yield data;
+            }
+          }
+        }
+      }
+    },
+    streamDocumentChanges: async function* streamDocumentChanges(params, options = {}) {
+      const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
+      const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/streamDocumentChanges?' + new URLSearchParams(params).toString();
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `${accessToken}`,
+          Accept: 'text/event-stream'
+        },
+        signal: options.signal
       });
 
       if (!response.ok) {
