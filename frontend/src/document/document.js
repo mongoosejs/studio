@@ -137,6 +137,43 @@ module.exports = app => app.component('document', {
         this.changes = {};
       }
     },
+    copyDocument() {
+      if (!this.document) {
+        return;
+      }
+
+      const textToCopy = JSON.stringify(this.document, null, 2);
+      const fallbackCopy = () => {
+        if (typeof document === 'undefined') {
+          return;
+        }
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.setAttribute('readonly', '');
+        textArea.style.position = 'absolute';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+        this.$toast.success('Document copied!');
+      };
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy)
+          .then(() => {
+            this.$toast.success('Document copied!');
+          })
+          .catch(() => {
+            fallbackCopy();
+          });
+      } else {
+        fallbackCopy();
+      }
+    },
     goBack() {
       // Preserve query parameters when going back to models page
       this.$router.push({

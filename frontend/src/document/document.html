@@ -85,6 +85,13 @@
                 Add Field
               </button>
               <button
+                @click="copyDocument(); desktopMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100"
+              >
+                Copy Document
+              </button>
+              <button
                 @click="shouldShowDeleteModal=true; desktopMenuOpen = false"
                 :disabled="!canManipulate"
                 :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
@@ -156,6 +163,13 @@
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100"
               >
                 Add Field
+              </button>
+              <button
+                @click="copyDocument(); mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100"
+              >
+                Copy Document
               </button>
               <button
                 @click="shouldShowDeleteModal=true; mobileMenuOpen = false"
