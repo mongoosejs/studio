@@ -27,7 +27,7 @@ after(async function() {
   await studioConnection.close();
 })
 
-const actions = Backend(connection, studioConnection);
+const actions = Backend(connection, studioConnection, { changeStream: true });
 
 exports.actions = actions;
 exports.connection = connection;
