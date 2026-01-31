@@ -102,7 +102,7 @@
                 :disabled="isLambda"
                 type="button"
                 :class="['flex items-center px-4 py-2 text-sm', isLambda ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-slate-100']"
-                :title="isLambda ? 'Auto-refresh is not available in lambda deployments' : ''"
+                :title="isLambda ? 'Auto-refresh only available on Express deployments' : ''"
               >
                 {{autoRefreshEnabled ? 'Disable Auto-Refresh' : 'Enable Auto-Refresh'}}
               </button>
