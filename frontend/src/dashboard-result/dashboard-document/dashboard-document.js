@@ -10,7 +10,7 @@ module.exports = app => app.component('dashboard-document', {
   inject: ['state'],
   computed: {
     references() {
-      const model = this.value.$document.model || 'User';
+      const model = this.value.$document?.model;
       if (typeof model === 'string' && this.state.modelSchemaPaths?.[model]) {
         const map = {};
         for (const path of Object.keys(this.state.modelSchemaPaths[model])) {

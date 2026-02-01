@@ -46,10 +46,11 @@ module.exports = ({ db }) => async function listModels(params) {
         }
       }
     }
+    removeSpecifiedPaths(schemaPaths, '.$*');
   }
 
   return {
-    models: Object.keys(db.models).filter(key => !key.startsWith('__Studio_')).sort(),
+    models,
     modelSchemaPaths,
     readyState
   };
