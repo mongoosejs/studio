@@ -130,8 +130,12 @@ app.component('app-component', {
           const { user, roles } = await mothership.me();
 
           try {
-            const { nodeEnv } = await api.status();
+            const [{ nodeEnv }, { modelSchemaPaths }] = await Promise.all([
+              api.status(),
+              api.Model.listModels()
+            ]);
             this.nodeEnv = nodeEnv;
+            this.modelSchemaPaths = modelSchemaPaths;
           } catch (err) {
             this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
             this.status = 'loaded';
@@ -144,8 +148,12 @@ app.component('app-component', {
       }
     } else {
       try {
-        const { nodeEnv } = await api.status();
+        const [{ nodeEnv }, { modelSchemaPaths }] = await Promise.all([
+          api.status(),
+          api.Model.listModels()
+        ]);
         this.nodeEnv = nodeEnv;
+        this.modelSchemaPaths = modelSchemaPaths;
       } catch (err) {
         this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
       }
@@ -159,8 +167,9 @@ app.component('app-component', {
     const status = Vue.ref('init');
     const nodeEnv = Vue.ref(null);
     const authError = Vue.ref(null);
+    const modelSchemaPaths = Vue.ref(null);
 
-    const state = Vue.reactive({ user, roles, status, nodeEnv, authError });
+    const state = Vue.reactive({ user, roles, status, nodeEnv, authError, modelSchemaPaths });
     Vue.provide('state', state);
 
     return state;
