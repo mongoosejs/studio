@@ -1,6 +1,11 @@
 'use strict';
 
 const actionsToRequiredRoles = {
+  'Alert.createAlert': ['owner', 'admin', 'member'],
+  'Alert.deleteAlert': ['owner', 'admin', 'member'],
+  'Alert.listAlerts': ['owner', 'admin', 'member'],
+  'Alert.sendTestAlert': ['owner', 'admin', 'member'],
+  'Alert.updateAlert': ['owner', 'admin', 'member'],
   'ChatMessage.executeScript': ['owner', 'admin', 'member'],
   'ChatThread.createChatMessage': ['owner', 'admin', 'member'],
   'ChatThread.createChatThread': ['owner', 'admin', 'member'],
