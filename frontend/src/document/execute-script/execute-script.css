@@ -1,0 +1,16 @@
+.execute-script-drawer-enter-active,
+.execute-script-drawer-leave-active {
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.execute-script-drawer-enter-from,
+.execute-script-drawer-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.execute-script-drawer-enter-to,
+.execute-script-drawer-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+}

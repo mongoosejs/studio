@@ -2,6 +2,9 @@
 
 const api = require('../../api');
 const template = require('./execute-script.html');
+const appendCSS = require('../../appendCSS');
+
+appendCSS(require('./execute-script.css'));
 
 module.exports = app => app.component('execute-script', {
   template,
