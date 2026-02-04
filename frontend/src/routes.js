@@ -9,7 +9,7 @@ const roleAccess = {
   dashboards: ['dashboards', 'dashboard']
 };
 
-const allowedRoutesForLocalDev = ['document', 'root', 'chat'];
+const allowedRoutesForLocalDev = ['document', 'root', 'chat', 'model'];
 
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {
@@ -33,7 +33,7 @@ module.exports = {
       name: 'model',
       component: 'models',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -41,7 +41,7 @@ module.exports = {
       name: 'document',
       component: 'document',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -49,7 +49,7 @@ module.exports = {
       name: 'dashboards',
       component: 'dashboards',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
@@ -57,13 +57,21 @@ module.exports = {
       name: 'dashboard',
       component: 'dashboard',
       meta: {
-        authorized: true
+        authorized: false
       }
     },
     {
       path: '/team',
       name: 'team',
       component: 'team',
+      meta: {
+        authorized: false
+      }
+    },
+    {
+      path: '/tasks',
+      name: 'tasks',
+      component: 'tasks',
       meta: {
         authorized: true
       }

@@ -32,7 +32,7 @@
         href="#/dashboards"
         class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
         :class="dashboardView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Dashboards</a>
-      <span v-else class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium text-gray-300 cursor-not-allowed">
+      <span v-else class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 cursor-not-allowed">
         Dashboards
         <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
@@ -48,6 +48,12 @@
           <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
         </svg>
       </span>
+      <a
+      :href="hasTaskVisualizer"
+      class="inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
+      :class="taskView ? 'text-gray-900 border-ultramarine-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">
+      Tasks
+      </a>
       <a
         href="https://studio.mongoosejs.io/docs"
         target="_blank"

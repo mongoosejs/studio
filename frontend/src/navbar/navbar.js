@@ -41,6 +41,9 @@ module.exports = app => app.component('navbar', {
     chatView() {
       return ['chat index', 'chat'].includes(this.$route.name);
     },
+    taskView() {
+      return ['tasks'].includes(this.$route.name);
+    },
     routeName() {
       return this.$route.name;
     },
@@ -55,6 +58,14 @@ module.exports = app => app.component('navbar', {
     },
     defaultRoute() {
       return this.roles && this.roles[0] === 'dashboards' ? 'dashboards' : 'root';
+    },
+    hasTaskVisualizer() {
+      if (window.MONGOOSE_STUDIO_CONFIG.enableTaskVisualizer) {
+        return '#/tasks';
+      } else {
+        return 'https://www.npmjs.com/package/@mongoosejs/task';
+      }
+     
     }
   },
   methods: {

@@ -1,0 +1,220 @@
+<div class="p-4 space-y-6">
+         <!-- Task Details View -->
+     <task-details 
+         v-if="showTaskDetails && selectedTaskGroup"
+         :task-group="selectedTaskGroup"
+         :current-filter="taskDetailsFilter"
+         @back="hideTaskDetails"
+         @task-created="onTaskCreated"
+         @task-cancelled="onTaskCancelled"
+         @update:current-filter="taskDetailsFilter = $event"
+     ></task-details>
+
+    <!-- Main Tasks View -->
+    <div v-else>
+        <h1 class="text-2xl font-bold text-gray-700 mb-4">Task Overview</h1>
+        <div v-if="status == 'init'">
+            <img src="images/loader.gif" />
+        </div>
+        <!-- Task List -->
+        <div class="bg-white p-4 rounded-lg shadow" v-if="status == 'loaded'">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Date:</label>
+                <select v-model="selectedRange" @change="updateDateRange" class="border-gray-300 rounded-md shadow-sm w-full p-2">
+                    <option v-for="option in dateFilters" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                    </option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status:</label>
+                <select v-model="selectedStatus" @change="getTasks" class="border-gray-300 rounded-md shadow-sm w-full p-2">
+                    <option v-for="option in statusFilters" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                    </option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search by Task Name:</label>
+                <input 
+                    v-model="searchQuery" 
+                    type="text" 
+                    @input="onSearchInput"
+                    class="border-gray-300 rounded-md shadow-sm w-full p-2"
+                    placeholder="Enter task name to search..."
+                >
+            </div>
+            <div class="mb-4">
+                <button
+                  @click="resetFilters"
+                  class="w-full bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium py-2 px-4 rounded-md transition"
+                >
+                  Reset Filters
+                </button>
+            </div>
+            <div class="mb-6">
+                <button
+                  @click="openCreateTaskModal"
+                  class="w-full bg-ultramarine-600 text-white hover:bg-ultramarine-700 font-medium py-2 px-4 rounded-md transition"
+                >
+                  Create New Task
+                </button>
+            </div>
+              <!-- Summary Section -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <button 
+                    @click="setStatusFilter('pending')"
+                    :class="getStatusColor('pending') + ' p-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 cursor-pointer border-2 border-yellow-200 hover:border-yellow-300'"
+                >
+                    <div class="text-sm">Scheduled</div>
+                    <div class="text-2xl font-bold">{{pendingCount}}</div>
+                </button>
+                <button 
+                    @click="setStatusFilter('succeeded')"
+                    :class="getStatusColor('succeeded') + ' p-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 cursor-pointer border-2 border-green-200 hover:border-green-300'"
+                >
+                    <div class="text-sm">Completed</div>
+                    <div class="text-2xl font-bold">{{succeededCount}}</div>
+                </button>
+                <button 
+                    @click="setStatusFilter('failed')"
+                    :class="getStatusColor('failed') + ' p-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 cursor-pointer border-2 border-red-200 hover:border-red-300'"
+                >
+                    <div class="text-sm">Failed</div>
+                    <div class="text-2xl font-bold">{{failedCount}}</div>
+                </button>
+                <button 
+                    @click="setStatusFilter('cancelled')"
+                    :class="getStatusColor('cancelled') + ' p-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 cursor-pointer border-2 border-gray-200 hover:border-gray-300'"
+                >
+                    <div class="text-sm">Cancelled</div>
+                    <div class="text-2xl font-bold">{{cancelledCount}}</div>
+                </button>
+            </div>
+            
+            <!-- Grouped Task List -->
+            <div class="mt-6">
+                <h2 class="text-lg font-semibold text-gray-700 mb-4">Tasks by Name</h2>
+                <ul class="divide-y divide-gray-200">
+                    <li v-for="group in tasksByName" :key="group.name" class="p-4 group hover:border hover:rounded-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+                        <div class="flex items-center justify-between mb-3 ">
+                            <div class="flex-1 cursor-pointer" @click="openTaskGroupDetails(group)">
+                                <div class="flex items-center gap-2">
+                                    <div class="font-medium text-lg group-hover:text-ultramarine-600 transition-colors">{{ group.name }}</div>
+                                    <svg class="w-4 h-4 text-gray-400 group-hover:text-ultramarine-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                                <div class="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">Total: {{ group.totalCount }} tasks</div>
+                                <div class="text-xs text-ultramarine-600 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                                    Click to view details
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                Last run: {{ group.lastRun ? new Date(group.lastRun).toLocaleString() : 'Never' }}
+                            </div>
+                        </div>
+                        
+                        <!-- Status Counts -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <button 
+                                @click.stop="openTaskGroupDetailsWithFilter(group, 'pending')"
+                                class="bg-yellow-50 border border-yellow-200 rounded-md p-2 text-center shadow-sm hover:shadow-md transform hover:-translate-y-1 transition-all duration-200 cursor-pointer hover:border-yellow-300"
+                            >
+                                <div class="text-xs text-yellow-600 font-medium">Pending</div>
+                                <div class="text-lg font-bold text-yellow-700">{{ group.statusCounts.pending || 0 }}</div>
+                            </button>
+                            <button 
+                                @click.stop="openTaskGroupDetailsWithFilter(group, 'succeeded')"
+                                class="bg-green-50 border border-green-200 rounded-md p-2 text-center shadow-sm hover:shadow-md transform hover:-translate-y-1 transition-all duration-200 cursor-pointer hover:border-green-300"
+                            >
+                                <div class="text-xs text-green-600 font-medium">Succeeded</div>
+                                <div class="text-lg font-bold text-green-700">{{ group.statusCounts.succeeded || 0 }}</div>
+                            </button>
+                            <button 
+                                @click.stop="openTaskGroupDetailsWithFilter(group, 'failed')"
+                                class="bg-red-50 border border-red-200 rounded-md p-2 text-center shadow-sm hover:shadow-md transform hover:-translate-y-1 transition-all duration-200 cursor-pointer hover:border-red-300"
+                            >
+                                <div class="text-xs text-red-600 font-medium">Failed</div>
+                                <div class="text-lg font-bold text-red-700">{{ group.statusCounts.failed || 0 }}</div>
+                            </button>
+                            <button 
+                                @click.stop="openTaskGroupDetailsWithFilter(group, 'cancelled')"
+                                class="bg-gray-50 border border-gray-200 rounded-md p-2 text-center shadow-sm hover:shadow-md transform hover:-translate-y-1 transition-all duration-200 cursor-pointer hover:border-gray-300"
+                            >
+                                <div class="text-xs text-gray-600 font-medium">Cancelled</div>
+                                <div class="text-lg font-bold text-gray-700">{{ group.statusCounts.cancelled || 0 }}</div>
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Task Modal -->
+    <modal v-if="showCreateTaskModal" containerClass="!h-[90vh] !w-[90vw]">
+        <template #body>
+            <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="closeCreateTaskModal" role="button" aria-label="Close modal">&times;</div>
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Create New Task</h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Task Name:</label>
+                    <input 
+                        v-model="newTask.name" 
+                        type="text" 
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ultramarine-500"
+                        placeholder="Enter task name"
+                    >
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Scheduled Time:</label>
+                    <input 
+                        v-model="newTask.scheduledAt" 
+                        type="datetime-local" 
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ultramarine-500"
+                    >
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Parameters (JSON):</label>
+                    <textarea 
+                        ref="parametersEditor"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ultramarine-500"
+                        placeholder='{"key": "value"}'
+                    ></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Repeat Interval (ms):</label>
+                    <input 
+                        v-model="newTask.repeatInterval" 
+                        type="number" 
+                        min="0"
+                        step="1000"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ultramarine-500"
+                        placeholder="0 for no repetition"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">Enter 0 or leave empty for no repetition. Use 1000 for 1 second, 60000 for 1 minute, etc.</p>
+                </div>
+                
+                <div class="flex gap-2 pt-4">
+                    <button 
+                        @click="createTask" 
+                        class="flex-1 bg-ultramarine-600 text-white px-4 py-2 rounded-md hover:bg-ultramarine-700"
+                    >
+                        Create Task
+                    </button>
+                    <button 
+                         @click="closeCreateTaskModal" 
+                         class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                     >
+                         Cancel
+                     </button>
+                </div>
+            </div>
+        </template>
+    </modal>
+</div>
