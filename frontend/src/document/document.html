@@ -121,6 +121,13 @@
                 Copy Document
               </button>
               <button
+                @click="openScriptDrawer()"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-100"
+              >
+                Run Script
+              </button>
+              <button
                 @click="shouldShowDeleteModal=true; desktopMenuOpen = false"
                 :disabled="!canManipulate"
                 :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
@@ -216,6 +223,13 @@
                 Copy Document
               </button>
               <button
+                @click="openScriptDrawer()"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-100"
+              >
+                Run Script
+              </button>
+              <button
                 @click="shouldShowDeleteModal=true; mobileMenuOpen = false"
                 :disabled="!canManipulate"
                 :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
@@ -267,5 +281,13 @@
         </template>
       </modal>
     </div>
+    <execute-script
+      v-if="scriptDrawerOpen"
+      :model="model"
+      :document-id="documentId"
+      :editting="editting"
+      @close="closeScriptDrawer"
+      @refresh="handleScriptRefresh"
+    ></execute-script>
   </div>
 </div>

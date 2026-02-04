@@ -35,7 +35,8 @@ module.exports = app => app.component('document', {
     autoRefreshError: null,
     autoRefreshAbortController: null,
     autoRefreshRetryTimer: null,
-    pendingRefresh: false
+    pendingRefresh: false,
+    scriptDrawerOpen: false
   }),
   async mounted() {
     window.pageState = this;
@@ -318,6 +319,19 @@ module.exports = app => app.component('document', {
         path: '/model/' + this.model,
         query: this.previousQuery || {}
       });
+    },
+    openScriptDrawer() {
+      this.scriptDrawerOpen = true;
+      this.desktopMenuOpen = false;
+      this.mobileMenuOpen = false;
+    },
+    closeScriptDrawer() {
+      this.scriptDrawerOpen = false;
+    },
+    handleScriptRefresh() {
+      if (!this.editting) {
+        this.refreshDocument({ force: true, source: 'script' });
+      }
     }
   }
 });
