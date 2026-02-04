@@ -23,25 +23,77 @@ module.exports = app => app.component('create-document', {
     return {
       documentData: '',
       editor: null,
-      errors: []
+      errors: [],
+      aiPrompt: '',
+      aiSuggestion: '',
+      aiOriginalDocument: '',
+      aiStreaming: false,
+      aiSuggestionReady: false
     };
   },
   methods: {
+    async requestAiSuggestion() {
+      if (this.aiStreaming) {
+        return;
+      }
+      const prompt = this.aiPrompt.trim();
+      if (!prompt) {
+        return;
+      }
+
+      this.aiOriginalDocument = this.editor.getValue();
+      this.aiSuggestion = '';
+      this.aiSuggestionReady = false;
+      this.aiStreaming = true;
+
+      try {
+        for await (const event of api.Model.streamChatMessage({
+          model: this.currentModel,
+          content: prompt,
+          documentData: this.aiOriginalDocument
+        })) {
+          if (event?.textPart) {
+            this.aiSuggestion += event.textPart;
+          }
+        }
+        this.editor.setValue(this.aiSuggestion);
+        this.aiSuggestionReady = true;
+      } catch (err) {
+        this.editor.setValue(this.aiOriginalDocument);
+        this.$toast.error('Failed to generate a document suggestion.');
+        throw err;
+      } finally {
+        this.aiStreaming = false;
+      }
+    },
+    acceptAiSuggestion() {
+      this.aiSuggestionReady = false;
+      this.aiSuggestion = '';
+      this.aiOriginalDocument = '';
+    },
+    rejectAiSuggestion() {
+      this.editor.setValue(this.aiOriginalDocument);
+      this.aiSuggestionReady = false;
+      this.aiSuggestion = '';
+      this.aiOriginalDocument = '';
+    },
     async createDocument() {
       const data = EJSON.serialize(eval(`(${this.editor.getValue()})`));
-      const { doc } = await api.Model.createDocument({ model: this.currentModel, data }).catch(err => {
+      try {
+        const { doc } = await api.Model.createDocument({ model: this.currentModel, data });
+        this.errors.length = 0;
+        this.$toast.success('Document created!');
+        this.$emit('close', doc);
+      } catch (err) {
         if (err.response?.data?.message) {
           console.log(err.response.data);
           const message = err.response.data.message.split(': ').slice(1).join(': ');
           this.errors = message.split(',').map(error => {
             return error.split(': ').slice(1).join(': ').trim();
           });
-          throw new Error(err.response?.data?.message);
         }
         throw err;
-      });
-      this.errors.length = 0;
-      this.$emit('close', doc);
+      }
     }
   },
   mounted: function() {

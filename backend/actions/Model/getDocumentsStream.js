@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const evaluateFilter = require('../../helpers/evaluateFilter');
+const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
@@ -67,7 +68,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
     schemaPaths[path] = {
       instance: schemaType.instance,
       path,
-      ref: schemaType.options?.ref,
+      ref: getRefFromSchemaType(schemaType),
       required: schemaType.options?.required,
       enum: schemaType.options?.enum
     };
@@ -77,7 +78,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
         schemaPaths[path].schema[subpath] = {
           instance: schemaType.schema.paths[subpath].instance,
           path: subpath,
-          ref: schemaType.schema.paths[subpath].options?.ref,
+          ref: getRefFromSchemaType(schemaType.schema.paths[subpath]),
           required: schemaType.schema.paths[subpath].options?.required,
           enum: schemaType.schema.paths[subpath].options?.enum
         };

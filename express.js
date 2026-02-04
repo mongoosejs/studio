@@ -7,8 +7,9 @@ const { toRoute, objectRouter } = require('extrovert');
 
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
+  options = options ? { changeStream: true, ...options } : { changeStream: true };
 
-  const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
+  const mothershipUrl = options._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
   let workspace = null;
   if (options?.apiKey) {
     ({ workspace } = await fetch(`${mothershipUrl}/getWorkspace`, {
@@ -31,7 +32,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   }
 
   apiUrl = apiUrl || 'api';
-  const backend = Backend(conn, options?.studioConnection, options);
+  const backend = Backend(conn, options.studioConnection, options);
 
   router.use(
     '/api',
@@ -61,7 +62,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
         .then(res => res.json())
         .then(({ user, roles }) => {
           if (!user || !roles) {
-            throw new Error('Not authorized');
+            return res.status(403).json({ message: 'Not authorized' });
           }
           req._internals = req._internals || {};
           req._internals.authorization = authorization;
@@ -71,7 +72,9 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
 
           next();
         })
-        .catch(err => next(err));
+        .catch(err => {
+          return res.status(500).json({ message: err.message });
+        });
     },
     express.json(),
     objectRouter(backend, toRoute)

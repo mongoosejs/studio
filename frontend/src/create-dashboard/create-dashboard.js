@@ -28,6 +28,7 @@ module.exports = app => app.component('create-dashboard', {
         throw err;
       });
       this.errors.length = 0;
+      this.$toast.success('Dashboard created!');
       this.$emit('close', dashboard);
     }
   },

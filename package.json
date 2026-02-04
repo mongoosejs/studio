@@ -1,17 +1,17 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.1.16",
-  "description": "A sleek, powerful MongoDB UI with built-in dashboarding and auth, seamlessly integrated with your Express, Vercel, or Netlify app.",
-  "homepage": "https://studio.mongoosejs.io/",
+  "version": "0.2.10",
+  "description": "A Mongoose-native MongoDB UI with schema-aware autocomplete, AI-assisted queries, and dashboards that understand your models - not just your data.",
+  "homepage": "https://mongoosestudio.app/",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongoosejs/studio"
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@ai-sdk/anthropic": "2.x",
     "@ai-sdk/google": "2.x",
     "@ai-sdk/openai": "2.x",
-    "@ai-sdk/anthropic": "2.x",
     "ai": "5.x",
     "archetype": "0.13.1",
     "csv-stringify": "6.3.0",
@@ -20,9 +20,10 @@
     "marked": "15.0.12",
     "node-inspect-extracted": "3.x",
     "tailwindcss": "3.4.0",
-    "vanillatoasts": "^1.6.0",
     "vue": "3.x",
-    "webpack": "5.x"
+    "vue-toastification": "^2.0.0-rc.5",
+    "webpack": "5.x",
+    "xss": "^1.0.15"
   },
   "peerDependencies": {
     "mongoose": "7.x || 8.x || ^9.0.0"
@@ -35,12 +36,14 @@
     "eslint": "9.30.0",
     "express": "4.x",
     "mocha": "10.2.0",
-    "mongoose": "9.x"
+    "mongoose": "9.x",
+    "sinon": "^21.0.1"
   },
   "scripts": {
     "lint": "eslint .",
     "tailwind": "tailwindcss -o ./frontend/public/tw.css",
     "tailwind:watch": "tailwindcss -o ./frontend/public/tw.css --watch",
-    "test": "mocha test/*.test.js"
+    "test": "mocha test/*.test.js",
+    "test:frontend": "mocha test/frontend/*.test.js"
   }
 }

@@ -2,7 +2,6 @@
 
 const template = require('./list-default.html');
 const appendCSS = require('../appendCSS');
-const vanillatoast = require('vanillatoasts');
 
 appendCSS(require('./list-default.css'));
 
@@ -19,13 +18,7 @@ module.exports = app => app.component('list-default', {
       storage.setSelectionRange(0, 99999);
       document.execCommand('copy');
       elem.removeChild(storage);
-      vanillatoast.create({
-        title: 'Text copied!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Text copied!');
     },
     goToDoc(id) {
       this.$router.push({ path: `/model/${this.allude}/document/${id}` });
@@ -39,7 +32,7 @@ module.exports = app => app.component('list-default', {
       if (this.value === undefined) {
         return 'undefined';
       }
-      if (this.value.length > 30) {
+      if (this.value.length > 30 && typeof this.value === 'string') {
         return this.value.substring(0, 30) + '...';
       }
       return this.value;

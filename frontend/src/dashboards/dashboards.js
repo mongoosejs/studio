@@ -21,6 +21,7 @@ module.exports = app => app.component('dashboards', {
       const removedDashboard = this.dashboards.findIndex(x => x._id.toString() === dashboard._id.toString());
       this.dashboards.splice(removedDashboard, 1);
       this.showDeleteDashboardModal = null;
+      this.$toast.success('Dashboard deleted!');
     },
     insertNewDashboard(dashboard) {
       this.dashboards.push(dashboard);

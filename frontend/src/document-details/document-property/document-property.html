@@ -1,9 +1,10 @@
-<div class="border border-gray-200 rounded-lg mb-2">
+<div class="border border-gray-200 bg-white rounded-lg mb-2" style="overflow: visible;">
   <!-- Collapsible Header -->
   <div
     @click="toggleCollapse"
-    class="p-3 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
-    :class="{ 'bg-amber-100': highlight, 'bg-gray-50': !highlight }"
+    class="p-1 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
+    :class="{ 'bg-amber-100 hover:bg-amber-200': highlight, 'bg-slate-100 hover:bg-gray-100': !highlight }"
+    style="overflow: visible; position: relative;"
   >
     <div class="flex items-center" >
       <svg
@@ -17,6 +18,56 @@
       </svg>
       <span class="font-medium text-gray-900">{{path.path}}</span>
       <span class="ml-2 text-sm text-gray-500">({{(path.instance || 'unknown').toLowerCase()}})</span>
+      <div v-if="isGeoJsonGeometry" class="ml-3 inline-flex items-center gap-2">
+        <div class="inline-flex items-center rounded-full bg-gray-200 p-0.5 text-xs font-semibold">
+          <button
+            type="button"
+            class="rounded-full px-2.5 py-0.5 transition"
+            :class="detailViewMode === 'text' ? 'bg-blue-600 text-white shadow' : 'text-gray-700 hover:text-gray-900'"
+            :style="detailViewMode === 'text' ? 'color: white !important; background-color: #2563eb !important;' : ''"
+            @click.stop="setDetailViewMode('text')">
+            Text
+          </button>
+          <button
+            type="button"
+            class="rounded-full px-2.5 py-0.5 transition"
+            :class="detailViewMode === 'map' ? 'bg-blue-600 text-white shadow' : 'text-gray-700 hover:text-gray-900'"
+            :style="detailViewMode === 'map' ? 'color: white !important; background-color: #2563eb !important;' : ''"
+            @click.stop="setDetailViewMode('map')">
+            Map
+          </button>
+        </div>
+        <!-- Info icon with tooltip -->
+        <div v-if="editting" class="relative inline-block" style="z-index: 10002;" @mouseenter="showTooltip = true" @mouseleave="showTooltip = false" @click.stop>
+          <svg
+            ref="infoIcon"
+            class="w-6 h-6 text-gray-400 hover:text-gray-600 cursor-help"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div
+            v-show="showTooltip"
+            ref="tooltip"
+            class="absolute left-full top-0 ml-2 w-64 p-3 text-white text-xs rounded-lg shadow-xl"
+            style="z-index: 99999; pointer-events: none; white-space: normal; position: fixed; background-color: #111827;"
+            :style="getTooltipStyle()"
+          >
+            <div class="font-semibold mb-2">Map Controls:</div>
+            <div v-if="isGeoJsonPoint" class="space-y-1">
+              <div>• Drag pin to move location</div>
+            </div>
+            <div v-else-if="isGeoJsonPolygon" class="space-y-1">
+              <div>• Drag vertices to reshape polygon</div>
+              <div v-if="isMultiPolygon">• Right-click edge to add new vertex</div>
+              <div>• Right-click vertex to delete</div>
+            </div>
+            <div class="absolute top-2 -left-1 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-gray-900"></div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="flex items-center gap-2">
       <button
@@ -42,7 +93,7 @@
   </div>
 
   <!-- Collapsible Content -->
-  <div v-if="!isCollapsed" class="p-3">
+  <div v-if="!isCollapsed" class="p-2">
     <!-- Date Type Selector (when editing dates) -->
     <div v-if="editting && path.instance === 'Date'" class="mb-3 flex gap-1.5">
       <div
@@ -69,19 +120,66 @@
 
     <!-- Field Content -->
     <div v-if="editting && path.path !== '_id'">
+      <!-- Use detail-default with map editing for GeoJSON geometries -->
       <component
+        v-if="isGeoJsonGeometry"
+        :is="getComponentForPath(path)"
+        :value="getEditValueForPath(path)"
+        :view-mode="detailViewMode"
+        :on-change="handleInputChange"
+        >
+      </component>
+      <!-- Use standard edit components for other types -->
+      <component
+        v-else
         :is="getEditComponentForPath(path)"
         :value="getEditValueForPath(path)"
         :format="dateType"
         v-bind="getEditComponentProps(path)"
-        @input="changes[path.path] = $event; delete invalid[path.path];"
+        @input="handleInputChange($event)"
         @error="invalid[path.path] = $event;"
         >
       </component>
     </div>
     <div v-else>
       <!-- Show truncated or full value based on needsTruncation and isValueExpanded -->
-      <div v-if="needsTruncation && !isValueExpanded" class="relative">
+      <!-- Special handling for truncated arrays -->
+      <div v-if="isArray && shouldShowTruncated" class="w-full">
+        <div class="mt-2">
+          <div
+            v-for="(item, index) in truncatedArrayItems"
+            :key="index"
+            class="mb-1.5 py-2.5 px-3 pl-4 bg-transparent border-l-[3px] border-l-blue-500 rounded-none transition-all duration-200 cursor-pointer relative hover:bg-slate-50 hover:border-l-blue-600">
+            <div class="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-semibold font-mono z-10 hover:bg-blue-600">{{ index }}</div>
+            <div v-if="arrayUtils.isObjectItem(item)" class="flex flex-col gap-1 mt-1 px-2">
+              <div
+                v-for="key in arrayUtils.getItemKeys(item)"
+                :key="key"
+                class="flex items-start gap-2 text-xs font-mono">
+                <span class="font-semibold text-gray-600 flex-shrink-0 min-w-[80px]">{{ key }}:</span>
+                <span class="text-gray-800 break-words whitespace-pre-wrap flex-1">{{ arrayUtils.formatItemValue(item, key) }}</span>
+              </div>
+            </div>
+            <div v-else class="text-xs py-1.5 px-2 font-mono text-gray-800 break-words whitespace-pre-wrap mt-1">{{ arrayUtils.formatValue(item) }}</div>
+          </div>
+          <div class="mb-1.5 py-2.5 px-3 pl-4 bg-transparent border-none border-l-[3px] border-l-blue-500 rounded-none transition-all duration-200 cursor-pointer relative opacity-70 hover:opacity-100">
+            <div class="text-xs py-1.5 px-2 font-mono text-gray-500 italic break-words whitespace-pre-wrap mt-1">
+              ... and {{ remainingArrayCount }} more item{{ remainingArrayCount !== 1 ? 's' : '' }}
+            </div>
+          </div>
+        </div>
+        <button
+          @click="toggleValueExpansion"
+          class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+          Show all {{ arrayValue.length }} items
+        </button>
+      </div>
+      <!-- Non-array truncated view -->
+      <div v-else-if="shouldShowTruncated && !isArray" class="relative">
         <div class="text-gray-700 whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>
         <button
           @click="toggleValueExpansion"
@@ -93,8 +191,12 @@
           Show more ({{valueAsString.length}} characters)
         </button>
       </div>
+      <!-- Expanded view -->
       <div v-else-if="needsTruncation && isValueExpanded" class="relative">
-        <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
+        <component
+          :is="getComponentForPath(path)"
+          :value="getValueForPath(path.path)"
+          :view-mode="detailViewMode"></component>
         <button
           @click="toggleValueExpansion"
           class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
@@ -105,8 +207,12 @@
           Show less
         </button>
       </div>
+      <!-- Full view (no truncation needed) -->
       <div v-else>
-        <component :is="getComponentForPath(path)" :value="getValueForPath(path.path)"></component>
+        <component
+          :is="getComponentForPath(path)"
+          :value="getValueForPath(path.path)"
+          :view-mode="detailViewMode"></component>
       </div>
     </div>
   </div>

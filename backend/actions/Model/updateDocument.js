@@ -16,13 +16,16 @@ const UpdateDocumentsParams = new Archetype({
     $type: Object,
     $required: true
   },
+  unset: {
+    $type: Object
+  },
   roles: {
     $type: ['string']
   }
 }).compile('UpdateDocumentsParams');
 
 module.exports = ({ db }) => async function updateDocument(params) {
-  const { model, _id, update, roles } = new UpdateDocumentsParams(params);
+  const { model, _id, update, unset, roles } = new UpdateDocumentsParams(params);
 
   await authorize('Model.updateDocument', roles);
 
@@ -32,14 +35,12 @@ module.exports = ({ db }) => async function updateDocument(params) {
   }
 
   const setFields = {};
-  const unsetFields = {};
-  
+  const unsetFields = unset || {};
+
   if (Object.keys(update).length > 0) {
     Object.entries(update).forEach(([key, value]) => {
-      if (value === 'null') {
-        setFields[key] = null;
-      } else if (value === 'undefined') {
-        // Use $unset to remove the field for undefined values
+      if (value === '') {
+        // Treat empty strings as undefined - unset the field
         unsetFields[key] = 1;
       } else {
         setFields[key] = value;

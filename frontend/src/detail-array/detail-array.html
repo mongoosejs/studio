@@ -1,3 +1,25 @@
-<div class="detail-array">
-  <pre><code ref="code" class="language-javascript" v-text="displayValue"></code></pre>
+<div class="w-full">
+  <div v-if="!arrayValue || arrayValue.length === 0" class="text-gray-400 text-xs py-2 text-center">
+    Empty array
+  </div>
+
+  <div v-else class="mt-2">
+    <div
+      v-for="(item, index) in arrayValue"
+      :key="index"
+      :title="'Index: ' + index"
+      class="mb-1.5 last:mb-0 py-2.5 px-3 pl-4 bg-transparent border-l-[3px] border-l-blue-500 rounded-none transition-all duration-200 cursor-pointer relative hover:bg-slate-50 hover:border-l-blue-600 hover:shadow-lg hover:-translate-y-0.5">
+      <div class="absolute -left-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-semibold font-mono z-10 hover:bg-blue-600">{{ index >= 1000 ? '1k+' : index }}</div>
+      <div v-if="arrayUtils.isObjectItem(item)" class="flex flex-col gap-1 mt-1 px-2">
+        <div
+          v-for="key in arrayUtils.getItemKeys(item)"
+          :key="key"
+          class="flex items-start gap-2 text-xs font-mono">
+          <span class="font-semibold text-gray-600 flex-shrink-0 min-w-[80px]">{{ key }}:</span>
+          <span class="text-gray-800 break-words whitespace-pre-wrap flex-1">{{ arrayUtils.formatItemValue(item, key) }}</span>
+        </div>
+      </div>
+      <div v-else class="text-xs py-1.5 px-2 font-mono text-gray-800 break-words whitespace-pre-wrap mt-1">{{ arrayUtils.formatValue(item) }}</div>
+    </div>
+  </div>
 </div>

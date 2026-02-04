@@ -1,3 +1,15 @@
-<div class="list-array">
-  <pre><code ref="code" class="language-javascript" v-text="displayValue"></code></pre>
+<div class="list-array tooltip">
+  <div>{{displayValue}}</div>
+  <div class="tooltiptext" style="display:flex; width: 100%; justify-content: space-around; align-items: center; min-width: 180px;">
+    <div class="tooltiptextchild" @click.stop="showViewDataModal = true">View data</div>
+    <div class="tooltiptextchild" @click.stop="copyText(value)">Copy &#x1F4CB;</div>
+  </div>
+  <modal ref="viewDataModal" v-if="showViewDataModal" containerClass="!h-[90vh] !w-[90vw]">
+    <template #body>
+      <div @click.stop class="w-full h-full cursor-auto">
+        <div class="modal-exit" @click="showViewDataModal = false">&times;</div>
+        <list-json :value="value" :expandedFields="Object.keys(value || []).map(key => `root[${key}]`)" />
+      </div>
+    </template>
+  </modal>
 </div>

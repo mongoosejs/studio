@@ -17,8 +17,16 @@ const formatSchemaTypeInstance = schemaType => {
   return schemaType.instance;
 };
 
+const formatEnum = schemaType => {
+  if (!schemaType.options?.enum) {
+    return '';
+  }
+  return ` (enum: ${JSON.stringify(schemaType.options.enum)})`;
+};
+
 const formatSchemaPath = (path, schemaType) => `- ${path}: ${formatSchemaTypeInstance(schemaType)}` +
   formatRef(schemaType) +
+  formatEnum(schemaType) +
   (schemaType.schema ? formatNestedSchema(schemaType) : '');
 
 const listModelPaths = Model => [

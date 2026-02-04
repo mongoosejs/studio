@@ -3,6 +3,7 @@
 'use strict';
 
 const mpath = require('mpath');
+const deepEqual = require('../../_util/deepEqual');
 const template = require('./document-property.html');
 
 const appendCSS = require('../../appendCSS');
@@ -16,8 +17,10 @@ module.exports = app => app.component('document-property', {
       dateType: 'picker', // picker, iso
       isCollapsed: false, // Start uncollapsed by default
       isValueExpanded: false, // Track if the value is expanded
+      detailViewMode: 'text',
       copyButtonLabel: 'Copy',
-      copyResetTimeoutId: null
+      copyResetTimeoutId: null,
+      showTooltip: false
     };
   },
   beforeDestroy() {
@@ -38,9 +41,31 @@ module.exports = app => app.component('document-property', {
       }
       return String(value);
     },
+    _arrayValueData() {
+      const value = this.getValueForPath(this.path.path);
+      return {
+        value: Array.isArray(value) ? value : [],
+        isArray: Array.isArray(value)
+      };
+    },
+    isArray() {
+      return this._arrayValueData.isArray;
+    },
+    arrayValue() {
+      return this._arrayValueData.value;
+    },
     needsTruncation() {
-      // Truncate if value is longer than 200 characters
+      // For arrays, check if it has more than 3 items (regardless of expansion state)
+      if (this.isArray) {
+        const arr = this.arrayValue;
+        return arr && arr.length > 3;
+      }
+      // For other types, truncate if value is longer than 200 characters
       return this.valueAsString.length > 200;
+    },
+    shouldShowTruncated() {
+      // For other types, show truncated if needs truncation and not expanded
+      return this.needsTruncation && !this.isValueExpanded;
     },
     displayValue() {
       if (!this.needsTruncation || this.isValueExpanded) {
@@ -51,12 +76,90 @@ module.exports = app => app.component('document-property', {
     },
     truncatedString() {
       if (this.needsTruncation && !this.isValueExpanded) {
-        return this.valueAsString.substring(0, 200) + '...';
+        // Arrays are handled in template, so this is for non-arrays
+        if (!this.isArray) {
+          return this.valueAsString.substring(0, 200) + '...';
+        }
       }
       return this.valueAsString;
+    },
+    truncatedArrayItems() {
+      if (this.isArray && this.needsTruncation && !this.isValueExpanded) {
+        return this.arrayValue.slice(0, 2);
+      }
+      return [];
+    },
+    remainingArrayCount() {
+      if (this.isArray && this.needsTruncation && !this.isValueExpanded) {
+        return this.arrayValue.length - 2;
+      }
+      return 0;
+    },
+    isGeoJsonGeometry() {
+      const value = this.getValueForPath(this.path.path);
+      return value != null
+        && typeof value === 'object'
+        && !Array.isArray(value)
+        && Object.prototype.hasOwnProperty.call(value, 'type')
+        && Object.prototype.hasOwnProperty.call(value, 'coordinates');
+    },
+    isGeoJsonPoint() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && value.type === 'Point';
+    },
+    isGeoJsonPolygon() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && (value.type === 'Polygon' || value.type === 'MultiPolygon');
+    },
+    isMultiPolygon() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && value.type === 'MultiPolygon';
+    }
+  },
+  watch: {
+    isGeoJsonGeometry(newValue) {
+      if (!newValue) {
+        this.detailViewMode = 'text';
+      } else if (this.editting) {
+        // Default to map view when editing GeoJSON
+        this.detailViewMode = 'map';
+      }
+    },
+    editting(newValue) {
+      // When entering edit mode for GeoJSON, default to map view
+      if (newValue && this.isGeoJsonGeometry) {
+        this.detailViewMode = 'map';
+      }
     }
   },
   methods: {
+    setDetailViewMode(mode) {
+      this.detailViewMode = mode;
+      
+      // When switching to map view, expand the container and value so the map is visible
+      if (mode === 'map' && this.isGeoJsonGeometry) {
+        if (this.isCollapsed) {
+          this.isCollapsed = false;
+        }
+        if (this.needsTruncation && !this.isValueExpanded) {
+          this.isValueExpanded = true;
+        }
+      }
+    },
+    handleInputChange(newValue) {
+      const currentValue = this.getValueForPath(this.path.path);
+
+      // Only record as a change if the value is actually different
+      if (!deepEqual(currentValue, newValue)) {
+        this.changes[this.path.path] = newValue;
+      } else {
+        // If the value is the same as the original, remove it from changes
+        delete this.changes[this.path.path];
+      }
+
+      // Always clear invalid state on input
+      delete this.invalid[this.path.path];
+    },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
         return 'detail-array';
@@ -79,6 +182,9 @@ module.exports = app => app.component('document-property', {
       if (path.instance === 'Embedded') {
         return 'edit-subdocument';
       }
+      if (path.instance === 'Mixed') {
+        return 'edit-subdocument';
+      }
       if (path.instance === 'Boolean') {
         return 'edit-boolean';
       }
@@ -90,6 +196,10 @@ module.exports = app => app.component('document-property', {
         if (path.enum?.length > 0) {
           props.enumValues = path.enum;
         }
+      }
+      if (path.instance === 'Array') {
+        props.path = path;
+        props.schemaPaths = this.schemaPaths;
       }
       return props;
     },
@@ -106,6 +216,11 @@ module.exports = app => app.component('document-property', {
       if (!this.document) {
         return;
       }
+      // If there are unsaved changes for this path, use the changed value
+      if (Object.prototype.hasOwnProperty.call(this.changes, path)) {
+        return this.changes[path];
+      }
+      // Otherwise, use the document value
       const documentValue = mpath.get(path, this.document);
       return documentValue;
     },
@@ -124,6 +239,16 @@ module.exports = app => app.component('document-property', {
         this.copyButtonLabel = 'Copy';
         this.copyResetTimeoutId = null;
       }, 5000);
+    },
+    getTooltipStyle() {
+      if (!this.$refs.infoIcon || !this.showTooltip) {
+        return {};
+      }
+      const rect = this.$refs.infoIcon.getBoundingClientRect();
+      return {
+        left: (rect.right + 8) + 'px',
+        top: rect.top + 'px'
+      };
     },
     copyPropertyValue() {
       const textToCopy = this.valueAsString;

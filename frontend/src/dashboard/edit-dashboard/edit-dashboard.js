@@ -31,6 +31,7 @@ module.exports = app => app.component('edit-dashboard', {
         });
         this.$emit('update', { doc });
         this.editor.setValue(doc.code);
+        this.$toast.success('Dashboard updated!');
         this.closeEditor();
       } catch (err) {
         this.$emit('update', { error: { message: err.message } });

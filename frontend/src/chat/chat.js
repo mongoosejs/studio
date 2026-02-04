@@ -2,9 +2,8 @@
 
 const api = require('../api');
 const template = require('./chat.html');
-const vanillatoasts = require('vanillatoasts');
 
-module.exports = app => app.component('chat', {
+module.exports = {
   template: template,
   props: ['threadId'],
   data: () => ({
@@ -28,9 +27,12 @@ module.exports = app => app.component('chat', {
           this.chatThreads.unshift(chatThread);
           this.chatThreadId = chatThread._id;
           this.chatMessages = [];
+          this.$toast.success('Chat thread created!');
         }
 
+        const userChatMessageIndex = this.chatMessages.length;
         this.chatMessages.push({
+          _id: Math.random().toString(36).substr(2, 9),
           content,
           role: 'user'
         });
@@ -48,10 +50,15 @@ module.exports = app => app.component('chat', {
           if (event.chatMessage) {
             if (!userChatMessage) {
               userChatMessage = event.chatMessage;
+              this.chatMessages.splice(userChatMessageIndex, 1, userChatMessage);
             } else {
               const assistantChatMessageIndex = this.chatMessages.indexOf(assistantChatMessage);
               assistantChatMessage = event.chatMessage;
-              this.chatMessages[assistantChatMessageIndex] = assistantChatMessage;
+              if (assistantChatMessageIndex !== -1) {
+                this.chatMessages.splice(assistantChatMessageIndex, 1, assistantChatMessage);
+              } else {
+                this.chatMessages.push(assistantChatMessage);
+              }
             }
           } else if (event.chatThread) {
             for (const thread of this.chatThreads) {
@@ -62,6 +69,7 @@ module.exports = app => app.component('chat', {
           } else if (event.textPart) {
             if (!assistantChatMessage) {
               assistantChatMessage = {
+                _id: Math.random().toString(36).substr(2, 9),
                 content: event.textPart,
                 role: 'assistant'
               };
@@ -121,6 +129,7 @@ module.exports = app => app.component('chat', {
     },
     async createNewThread() {
       const { chatThread } = await api.ChatThread.createChatThread();
+      this.$toast.success('Chat thread created!');
       this.$router.push('/chat/' + chatThread._id);
     },
     async toggleShareThread() {
@@ -136,16 +145,12 @@ module.exports = app => app.component('chat', {
           this.chatThreads.splice(idx, 1, chatThread);
         }
 
+        this.$toast.success('Chat thread shared!');
+
         // Copy current URL to clipboard and show a toast
         const url = window.location.href;
         await navigator.clipboard.writeText(url);
-        vanillatoasts.create({
-          title: 'Share link copied!',
-          type: 'success',
-          timeout: 3000,
-          icon: 'images/success.png',
-          positionClass: 'bottomRight'
-        });
+        this.$toast.success('Share link copied!');
       } finally {
         this.sharingThread = false;
       }
@@ -184,5 +189,7 @@ module.exports = app => app.component('chat', {
         });
       });
     }
+
+    this.$refs.messageInput.focus();
   }
-});
+};

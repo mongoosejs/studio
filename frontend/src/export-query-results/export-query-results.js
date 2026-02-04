@@ -30,7 +30,7 @@ module.exports = app => app.component('export-query-results', {
         params.searchText = this.searchText;
       }
       await api.Model.exportQueryResults(params);
-
+      this.$toast.success('Export completed!');
       this.$emit('done');
     }
   }

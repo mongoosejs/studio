@@ -4,7 +4,7 @@
   </div>
   <aside class="bg-white border-r overflow-y-auto overflow-x-hidden h-full transition-all duration-300 ease-in-out z-20 w-0 lg:w-48 fixed lg:relative shrink-0" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-48' : ''">
     <div class="flex items-center border-b border-gray-100 w-48 overflow-x-hidden">
-      <div class="p-4 font-bold text-lg">Models</div>
+      <div class="p-1 ml-2 font-bold">Models</div>
       <button
         @click="hideSidebar = true"
         class="ml-auto mr-2 p-2 rounded hover:bg-gray-200 focus:outline-none"
@@ -14,14 +14,14 @@
       </button>
     </div>
     <nav class="flex flex-1 flex-col">
-      <ul role="list" class="flex flex-1 flex-col gap-y-7">
+      <ul role="list" class="flex flex-1 flex-col gap-y-7 p-1">
         <li>
           <ul role="list">
             <li v-for="model in models">
               <router-link
                 :to="'/model/' + model"
-                class="block truncate rounded-md py-2 pr-2 pl-2 text-sm font-semibold text-gray-700"
-                :class="model === currentModel ? 'bg-ultramarine-100 font-bold' : 'hover:bg-ultramarine-100'">
+                class="block truncate rounded-md py-2 pr-2 pl-2 text-sm text-gray-700"
+                :class="model === currentModel ? 'bg-ultramarine-100 font-bold text-gray-900' : 'hover:bg-ultramarine-50'">
                 {{model}}
               </router-link>
             </li>
@@ -33,9 +33,9 @@
       </div>
     </nav>
   </aside>
-  <div class="documents" ref="documentsList">
-    <div class="relative h-[42px] z-10">
-      <div class="documents-menu">
+  <div class="documents bg-slate-50" ref="documentsList">
+    <div class="relative h-[42px]" style="z-index: 1000">
+      <div class="documents-menu bg-slate-50">
         <div class="flex flex-row items-center w-full gap-2">
           <document-search
             ref="documentSearch"
@@ -46,15 +46,8 @@
           </document-search>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
-            <span v-else-if="typeof numDocuments === 'number'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
+            <span v-else-if="typeof numDocuments === 'number'">{{documents.length}}/{{numDocuments === 1 ? numDocuments + ' document' : numDocuments + ' documents'}}</span>
           </div>
-          <button
-            @click="shouldShowExportModal = true"
-            type="button"
-            v-show="!selectMultiple"
-            class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
-            Export
-          </button>
           <button
             @click="stagingSelect"
             type="button"
@@ -79,27 +72,66 @@
             >
             Delete
           </button>
-          <button
-            @click="openIndexModal"
-            type="button"
-            v-show="!selectMultiple"
-            class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
-            Indexes
-          </button>
-          <button
-            @click="shouldShowCreateModal = true;"
-            type="button"
-            v-show="!selectMultiple"
-            class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
-            Create
-          </button>
-          <button
-            @click="openFieldSelection"
-            type="button"
-            v-show="!selectMultiple"
-            class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
-            Fields
-          </button>
+          <div class="relative" v-show="!selectMultiple" ref="actionsMenuContainer" @keyup.esc.prevent="closeActionsMenu">
+            <button
+              @click="toggleActionsMenu"
+              type="button"
+              aria-label="More actions"
+              class="rounded bg-white px-2 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+              </svg>
+            </button>
+            <div
+              v-if="showActionsMenu"
+              class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20"
+            >
+              <div class="py-1">
+                <button
+                  @click="shouldShowExportModal = true; showActionsMenu = false"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Export
+                </button>
+                <button
+                  @click="shouldShowCreateModal = true; showActionsMenu = false"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Create
+                </button>
+                <button
+                  @click="openFieldSelection(); showActionsMenu = false"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Projection
+                </button>
+                <button
+                  @click="openIndexModal"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Indexes
+                </button>
+                <button
+                  @click="openCollectionInfo"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Collection Info
+                </button>
+                <button
+                  @click="findOldestDocument"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Find oldest document
+                </button>
+              </div>
+            </div>
+          </div>
           <span class="isolate inline-flex rounded-md shadow-sm">
             <button
               @click="setOutputType('table')"
@@ -111,9 +143,23 @@
             <button
               @click="setOutputType('json')"
               type="button"
-              class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
+              class="relative -ml-px inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
               :class="outputType === 'json' ? 'bg-gray-200' : 'bg-white'">
               <img class="h-5 w-5" src="images/json.svg">
+            </button>
+            <button
+              @click="setOutputType('map')"
+              :disabled="geoJsonFields.length === 0"
+              type="button"
+              :title="geoJsonFields.length > 0 ? 'Map view' : 'No GeoJSON fields detected'"
+              class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 focus:z-10"
+              :class="[
+                geoJsonFields.length === 0 ? 'text-gray-300 cursor-not-allowed bg-gray-100' : 'text-gray-400 hover:bg-gray-50',
+                outputType === 'map' ? 'bg-gray-200' : (geoJsonFields.length > 0 ? 'bg-white' : '')
+              ]">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+              </svg>
             </button>
           </span>
         </div>
@@ -127,8 +173,8 @@
         </div>
       </div>
       <table v-else-if="outputType === 'table'">
-        <thead>
-          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="cursor-pointer">
+        <thead class="bg-slate-50">
+          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="cursor-pointer p-3">
             {{path.path}}
             <span class="path-type">
               ({{(path.instance || 'unknown')}})
@@ -138,8 +184,8 @@
           </th>
         </thead>
         <tbody>
-          <tr v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id">
-            <td v-for="schemaPath in filteredPaths" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
+          <tr v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id" class="bg-white hover:bg-slate-50">
+            <td v-for="schemaPath in filteredPaths" class="p-3 cursor-pointer" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
               <component
                 :is="getComponentForPath(schemaPath)"
                 :value="getValueForPath(document, schemaPath.path)"
@@ -149,14 +195,14 @@
           </tr>
         </tbody>
       </table>
-      <div v-else-if="outputType === 'json'" class="flex flex-col space-y-6">
+      <div v-else-if="outputType === 'json'" class="flex flex-col space-y-2 p-1 mt-1">
         <div
           v-for="document in documents"
           :key="document._id"
           @click="handleDocumentContainerClick(document, $event)"
           :class="[
-            'group relative transition-colors',
-            selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:bg-slate-100'
+            'group relative transition-colors rounded-md border border-slate-100',
+            selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:shadow-sm hover:border-slate-300 bg-white'
           ]"
         >
           <button
@@ -169,6 +215,30 @@
           <list-json :value="filterDocument(document)" :references="referenceMap">
           </list-json>
         </div>
+      </div>
+      <div v-else-if="outputType === 'map'" class="flex flex-col h-full">
+        <div class="p-2 bg-white border-b flex items-center gap-2">
+          <label class="text-sm font-medium text-gray-700">GeoJSON Field:</label>
+          <select
+            :value="selectedGeoField"
+            @change="setSelectedGeoField($event.target.value)"
+            class="rounded-md border border-gray-300 py-1 px-2 text-sm focus:border-ultramarine-500 focus:ring-ultramarine-500"
+          >
+            <option v-for="field in geoJsonFields" :key="field.path" :value="field.path">
+              {{ field.label }}
+            </option>
+          </select>
+          <async-button
+            @click="loadMoreDocuments"
+            :disabled="loadedAllDocs"
+            type="button"
+            class="rounded px-2 py-1 text-xs font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            :class="loadedAllDocs ? 'bg-gray-400 cursor-not-allowed' : 'bg-ultramarine-600 hover:bg-ultramarine-500'"
+          >
+            Load more
+          </async-button>
+        </div>
+        <div class="flex-1 min-h-[400px]" ref="modelsMap"></div>
       </div>
       <div v-if="status === 'loading'" class="loader">
         <img src="images/loader.gif">
@@ -193,7 +263,12 @@
       <div v-for="index in mongoDBIndexes" class="w-full flex items-center">
         <div class="grow shrink text-left flex justify-between items-center" v-if="index.name != '_id_'">
           <div>
-            <div class="font-bold">{{ index.name }}</div>
+            <div class="font-bold flex items-center gap-2">
+              <div>{{ index.name }}</div>
+              <div v-if="isTTLIndex(index)" class="rounded-full bg-ultramarine-100 px-2 py-0.5 text-xs font-semibold text-ultramarine-700">
+                TTL: {{ formatTTL(index.expireAfterSeconds) }}
+              </div>
+            </div>
             <div class="text-sm font-mono">{{ JSON.stringify(index.key) }}</div>
           </div>
           <div>
@@ -204,6 +279,44 @@
               Drop
             </async-button>
           </div>
+        </div>
+      </div>
+    </template>
+  </modal>
+  <modal v-if="shouldShowCollectionInfoModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="shouldShowCollectionInfoModal = false">&times;</div>
+      <div class="text-xl font-bold mb-2">Collection Info</div>
+      <div v-if="!collectionInfo" class="text-gray-600">Loading collection details...</div>
+      <div v-else class="space-y-3">
+        <div class="flex justify-between gap-4">
+          <div class="font-semibold text-gray-700">Documents</div>
+          <div class="text-gray-900">{{ formatNumber(collectionInfo.documentCount) }}</div>
+        </div>
+        <div class="flex justify-between gap-4">
+          <div class="font-semibold text-gray-700">Indexes</div>
+          <div class="text-gray-900">{{ formatNumber(collectionInfo.indexCount) }}</div>
+        </div>
+        <div class="flex justify-between gap-4">
+          <div class="font-semibold text-gray-700">Total Index Size</div>
+          <div class="text-gray-900">{{ formatCollectionSize(collectionInfo.totalIndexSize) }}</div>
+        </div>
+        <div class="flex justify-between gap-4">
+          <div class="font-semibold text-gray-700">Total Storage Size</div>
+          <div class="text-gray-900">{{ formatCollectionSize(collectionInfo.size) }}</div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between gap-4">
+            <div class="font-semibold text-gray-700">Collation</div>
+            <div class="text-gray-900">{{ collectionInfo.hasCollation ? 'Yes' : 'No' }}</div>
+          </div>
+          <div v-if="collectionInfo.hasCollation" class="rounded bg-gray-100 p-3 text-sm text-gray-800 overflow-x-auto">
+            <pre class="whitespace-pre-wrap">{{ JSON.stringify(collectionInfo.collation, null, 2) }}</pre>
+          </div>
+        </div>
+        <div class="flex justify-between gap-4">
+          <div class="font-semibold text-gray-700">Capped</div>
+          <div class="text-gray-900">{{ collectionInfo.capped ? 'Yes' : 'No' }}</div>
         </div>
       </div>
     </template>

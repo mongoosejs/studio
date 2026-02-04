@@ -9,13 +9,23 @@ console.log(`Mongoose Studio Version ${version}`);
 
 const api = require('./api');
 const format = require('./format');
+const arrayUtils = require('./array-utils');
 const mothership = require('./mothership');
 const { routes, hasAccess } = require('./routes');
-const vanillatoasts = require('vanillatoasts');
+const Toast = require('vue-toastification').default;
+const { useToast } = require('vue-toastification');
+const appendCSS = require('./appendCSS');
+appendCSS(require('vue-toastification/dist/index.css'));
 
 const app = Vue.createApp({
   template: '<app-component />'
 });
+
+// https://github.com/Maronato/vue-toastification/tree/main?tab=readme-ov-file#toast-types
+app.use(Toast, { position: 'bottom-right', timeout: 3000 });
+
+// Create a global toast instance for convenience (must be after app.use)
+const toast = useToast();
 
 // Import all components
 const requireComponents = require.context(
@@ -34,7 +44,11 @@ requireComponents.keys().forEach((filePath) => {
   // Check if the file name matches the directory name
   if (directoryName === fileName) {
     components[directoryName] = requireComponents(filePath);
-    components[directoryName](app);
+    if (typeof components[directoryName] === 'function') {
+      components[directoryName](app);
+    } else {
+      app.component(directoryName, components[directoryName]);
+    }
   }
 });
 
@@ -55,11 +69,8 @@ app.component('app-component', {
   </div>
   `,
   errorCaptured(err) {
-    vanillatoasts.create({
-      title: `Error: ${err?.response?.data?.message || err.message}`,
-      icon: 'images/failure.jpg',
-      timeout: 10000,
-      positionClass: 'bottomRight'
+    this.$toast.error(`Error: ${err?.response?.data?.message || err.message}`, {
+      timeout: 10000
     });
   },
   computed: {
@@ -78,42 +89,74 @@ app.component('app-component', {
       if (hashParams.has('code')) {
         const code = hashParams.get('code');
         const provider = hashParams.get('provider');
+
+        let user;
+        let accessToken;
+        let roles;
         try {
-          const { accessToken, user, roles } = provider === 'github' ? await mothership.github(code) : await mothership.google(code);
+          ({ accessToken, user, roles } = provider === 'github' ? await mothership.github(code) : await mothership.google(code));
           if (roles == null) {
             this.authError = 'You are not authorized to access this workspace';
             this.status = 'loaded';
             return;
           }
-          this.user = user;
-          this.roles = roles;
-          window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
         } catch (err) {
           this.authError = 'An error occurred while logging in. Please try again.';
           this.status = 'loaded';
           return;
-        } finally {
-          setTimeout(() => {
-            this.$router.replace(this.$router.currentRoute.value.path);
-          }, 0);
         }
 
-        const { nodeEnv } = await api.status();
-        this.nodeEnv = nodeEnv;
+        window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
+
+        try {
+          const { nodeEnv } = await api.status();
+          this.nodeEnv = nodeEnv;
+        } catch (err) {
+          this.authError = 'Error connecting to Mongoose Studio API: ' + err.response?.data?.message ?? err.message;
+          this.status = 'loaded';
+          window.localStorage.setItem('_mongooseStudioAccessToken', '');
+          return;
+        }
+
+        this.user = user;
+        this.roles = roles;
+
+        setTimeout(() => {
+          this.$router.replace(this.$router.currentRoute.value.path);
+        }, 0);
       } else {
         const token = window.localStorage.getItem('_mongooseStudioAccessToken');
         if (token) {
           const { user, roles } = await mothership.me();
+
+          try {
+            const [{ nodeEnv }, { modelSchemaPaths }] = await Promise.all([
+              api.status(),
+              api.Model.listModels()
+            ]);
+            this.nodeEnv = nodeEnv;
+            this.modelSchemaPaths = modelSchemaPaths;
+          } catch (err) {
+            this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
+            this.status = 'loaded';
+            return;
+          }
+
           this.user = user;
           this.roles = roles;
-
-          const { nodeEnv } = await api.status();
-          this.nodeEnv = nodeEnv;
         }
       }
     } else {
-      const { nodeEnv } = await api.status();
-      this.nodeEnv = nodeEnv;
+      try {
+        const [{ nodeEnv }, { modelSchemaPaths }] = await Promise.all([
+          api.status(),
+          api.Model.listModels()
+        ]);
+        this.nodeEnv = nodeEnv;
+        this.modelSchemaPaths = modelSchemaPaths;
+      } catch (err) {
+        this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
+      }
     }
 
     this.status = 'loaded';
@@ -124,8 +167,9 @@ app.component('app-component', {
     const status = Vue.ref('init');
     const nodeEnv = Vue.ref(null);
     const authError = Vue.ref(null);
+    const modelSchemaPaths = Vue.ref(null);
 
-    const state = Vue.reactive({ user, roles, status, nodeEnv, authError });
+    const state = Vue.reactive({ user, roles, status, nodeEnv, authError, modelSchemaPaths });
     Vue.provide('state', state);
 
     return state;
@@ -151,12 +195,12 @@ router.beforeEach((to, from, next) => {
 
   // Get roles from the app state
   const roles = window.state?.roles;
-  
+
   // Check if user has access to the route
   if (!hasAccess(roles, to.name)) {
     // Find all routes the user has access to
     const allowedRoutes = routes.filter(route => hasAccess(roles, route.name));
-    
+
     // If user has no allowed routes, redirect to splash/login
     if (allowedRoutes.length === 0) {
       next({ name: 'root' });
@@ -184,7 +228,7 @@ router.beforeEach((to, from, next) => {
   }
 });
 
-app.config.globalProperties = { format };
+app.config.globalProperties = { format, arrayUtils, $toast: toast };
 app.use(router);
 
 app.mount('#content');

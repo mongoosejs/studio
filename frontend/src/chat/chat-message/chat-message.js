@@ -2,7 +2,6 @@
 
 const api = require('../../api');
 const marked = require('marked').marked;
-const vanillatoasts = require('vanillatoasts');
 const template = require('./chat-message.html');
 
 module.exports = app => app.component('chat-message', {
@@ -62,6 +61,7 @@ module.exports = app => app.component('chat-message', {
       });
       message.executionResult = chatMessage.executionResult;
       console.log(message);
+      this.$toast.success('Script executed successfully!');
     },
     async copyMessage() {
       const parts = this.contentSplitByScripts;
@@ -86,13 +86,7 @@ module.exports = app => app.component('chat-message', {
         }
       }
       await navigator.clipboard.writeText(output.trim());
-      vanillatoasts.create({
-        title: 'Message output copied!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Message output copied!');
     }
   }
 });

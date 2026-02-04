@@ -2,7 +2,6 @@
 
 const template = require('./list-string.html');
 const appendCSS = require('../appendCSS');
-const vanillatoast = require('vanillatoasts');
 appendCSS(require('./list-string.css'));
 
 module.exports = app => app.component('list-string', {
@@ -18,13 +17,7 @@ module.exports = app => app.component('list-string', {
       storage.setSelectionRange(0, 99999);
       document.execCommand('copy');
       elem.removeChild(storage);
-      vanillatoast.create({
-        title: 'Text copied!',
-        type: 'success',
-        timeout: 3000,
-        icon: 'images/success.png',
-        positionClass: 'bottomRight'
-      });
+      this.$toast.success('Text copied!');
     }
   },
   computed: {

@@ -1,6 +1,15 @@
 <div class="list-subdocument tooltip">
-  <pre>
-    <code ref="SubDocCode" class="language-javascript">{{shortenValue}}</code>
-    <span class="tooltiptext" @click.stop="copyText(value)">copy &#x1F4CB;</span>
-  </pre>
+  <div>{{shortenValue}}</div>
+  <div class="tooltiptext" style="display:flex; width: 100%; justify-content: space-around; align-items: center; min-width: 180px;">
+    <div class="tooltiptextchild" @click.stop="showViewDataModal = true">View data</div>
+    <div class="tooltiptextchild" @click.stop="copyText(value)">Copy &#x1F4CB;</div>
+  </div>
+  <modal ref="viewDataModal" v-if="showViewDataModal" containerClass="!h-[90vh] !w-[90vw]">
+    <template #body>
+      <div @click.stop class="w-full h-full cursor-auto">
+        <div class="modal-exit" @click="showViewDataModal = false">&times;</div>
+        <list-json :value="value" :maxTopLevelFields="null" />
+      </div>
+    </template>
+  </modal>
 </div>
