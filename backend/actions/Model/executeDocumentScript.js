@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const mongoose = require('mongoose');
+const util = require('util');
 const vm = require('vm');
 
 const ExecuteDocumentScriptParams = new Archetype({
@@ -43,7 +44,7 @@ module.exports = ({ db }) => async function executeDocumentScript(params) {
 
   sandbox.console.log = function() {
     const args = Array.from(arguments);
-    logs.push(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' '));
+    logs.push(args.map(arg => typeof arg === 'object' ? util.inspect(arg) : arg).join(' '));
   };
 
   const context = vm.createContext(sandbox);
