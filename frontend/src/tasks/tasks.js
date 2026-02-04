@@ -2,8 +2,6 @@
 
 const template = require('./tasks.html');
 const api = require('../api');
-const vanillatoasts = require('vanillatoasts');
-
 
 module.exports = app => app.component('tasks', {
   data: () => ({
@@ -62,11 +60,11 @@ module.exports = app => app.component('tasks', {
       } else if (this.start) {
         params.start = this.start;
       }
-      
+
       if (this.searchQuery.trim()) {
         params.name = this.searchQuery.trim();
       }
-      
+
       const { tasks, groupedTasks } = await api.Task.getTasks(params);
       this.tasks = tasks;
       this.groupedTasks = groupedTasks;
@@ -112,7 +110,7 @@ module.exports = app => app.component('tasks', {
             parameters = JSON.parse(parametersText);
           } catch (e) {
             console.error('Invalid JSON in parameters field:', e);
-            vanillatoasts.create({
+            this.$toast.create({
               title: 'Invalid JSON Parameters',
               text: 'Please check your JSON syntax in the parameters field',
               type: 'error',
@@ -129,7 +127,7 @@ module.exports = app => app.component('tasks', {
           const interval = parseInt(this.newTask.repeatInterval);
           if (isNaN(interval) || interval < 0) {
             console.error('Invalid repeat interval. Must be a positive number.');
-            vanillatoasts.create({
+            this.$toast.create({
               title: 'Invalid Repeat Interval',
               text: 'Repeat interval must be a positive number (in milliseconds)',
               type: 'error',
@@ -152,7 +150,7 @@ module.exports = app => app.component('tasks', {
         await api.Task.createTask(taskData);
 
         // Show success message
-        vanillatoasts.create({
+        this.$toast.create({
           title: 'Task Created Successfully!',
           text: `Task "${taskData.name}" has been scheduled`,
           type: 'success',
@@ -167,7 +165,7 @@ module.exports = app => app.component('tasks', {
         await this.getTasks();
       } catch (error) {
         console.error('Error creating task:', error);
-        vanillatoasts.create({
+        this.$toast.create({
           title: 'Failed to Create Task',
           text: error?.response?.data?.message || error.message || 'An unexpected error occurred',
           type: 'error',
@@ -305,7 +303,7 @@ module.exports = app => app.component('tasks', {
   computed: {
     tasksByName() {
       const groups = {};
-      
+
       // Process tasks from groupedTasks to create name-based groups
       Object.entries(this.groupedTasks).forEach(([status, tasks]) => {
         tasks.forEach(task => {
@@ -323,15 +321,15 @@ module.exports = app => app.component('tasks', {
               lastRun: null
             };
           }
-          
+
           groups[task.name].tasks.push(task);
           groups[task.name].totalCount++;
-          
+
           // Count status using the status from groupedTasks
           if (groups[task.name].statusCounts.hasOwnProperty(status)) {
             groups[task.name].statusCounts[status]++;
           }
-          
+
           // Track last run time
           const taskTime = new Date(task.scheduledAt || task.createdAt || 0);
           if (!groups[task.name].lastRun || taskTime > new Date(groups[task.name].lastRun)) {
@@ -339,7 +337,7 @@ module.exports = app => app.component('tasks', {
           }
         });
       });
-      
+
       // Convert to array and sort alphabetically by name
       return Object.values(groups).sort((a, b) => {
         return a.name.localeCompare(b.name);

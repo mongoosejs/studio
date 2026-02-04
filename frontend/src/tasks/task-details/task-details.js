@@ -2,7 +2,6 @@
 
 const template = require('./task-details.html');
 const api = require('../../api');
-const vanillatoasts = require('vanillatoasts');
 
 module.exports = app => app.component('task-details', {
   props: ['taskGroup', 'currentFilter'],
@@ -16,12 +15,12 @@ module.exports = app => app.component('task-details', {
   computed: {
     sortedTasks() {
       let tasks = this.taskGroup.tasks;
-      
+
       // Apply filter if one is set
       if (this.currentFilter) {
         tasks = tasks.filter(task => task.status === this.currentFilter);
       }
-      
+
       return tasks.sort((a, b) => {
         const dateA = new Date(a.scheduledAt || a.createdAt || 0);
         const dateB = new Date(b.scheduledAt || b.createdAt || 0);
@@ -95,22 +94,22 @@ module.exports = app => app.component('task-details', {
     async confirmRescheduleTask() {
       try {
         await this.rescheduleTask(this.selectedTask);
-        
+
         // Show success message
-        vanillatoasts.create({
+        this.$toast.create({
           title: 'Task Rescheduled Successfully!',
           text: `Task ${this.selectedTask.id} has been rescheduled`,
           type: 'success',
           timeout: 3000,
           positionClass: 'bottomRight'
         });
-        
+
         this.showRescheduleModal = false;
         this.selectedTask = null;
         this.newScheduledTime = '';
       } catch (error) {
         console.error('Error in confirmRescheduleTask:', error);
-        vanillatoasts.create({
+        this.$toast.create({
           title: 'Failed to Reschedule Task',
           text: error?.response?.data?.message || error.message || 'An unexpected error occurred',
           type: 'error',
@@ -122,21 +121,21 @@ module.exports = app => app.component('task-details', {
     async confirmRunTask() {
       try {
         await this.runTask(this.selectedTask);
-        
+
         // Show success message
-        vanillatoasts.create({
+        this.$toast.create({
           title: 'Task Started Successfully!',
           text: `Task ${this.selectedTask.id} is now running`,
           type: 'success',
           timeout: 3000,
           positionClass: 'bottomRight'
         });
-        
+
         this.showRunModal = false;
         this.selectedTask = null;
       } catch (error) {
         console.error('Error in confirmRunTask:', error);
-        vanillatoasts.create({
+        this.$toast.create({
           title: 'Failed to Run Task',
           text: error?.response?.data?.message || error.message || 'An unexpected error occurred',
           type: 'error',
@@ -148,21 +147,21 @@ module.exports = app => app.component('task-details', {
     async confirmCancelTask() {
       try {
         await this.cancelTask(this.selectedTask);
-        
+
         // Show success message
-        vanillatoasts.create({
+        this.$toast.create({
           title: 'Task Cancelled Successfully!',
           text: `Task ${this.selectedTask.id} has been cancelled`,
           type: 'success',
           timeout: 3000,
           positionClass: 'bottomRight'
         });
-        
+
         this.showCancelModal = false;
         this.selectedTask = null;
       } catch (error) {
         console.error('Error in confirmCancelTask:', error);
-        vanillatoasts.create({
+        this.$toast.create({
           title: 'Failed to Cancel Task',
           text: error?.response?.data?.message || error.message || 'An unexpected error occurred',
           type: 'error',
