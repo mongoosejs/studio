@@ -329,9 +329,7 @@ module.exports = app => app.component('document', {
       this.scriptDrawerOpen = false;
     },
     handleScriptRefresh() {
-      if (!this.editting) {
-        this.refreshDocument({ force: true, source: 'script' });
-      }
+      this.refreshDocument({ force: true, source: 'script' });
     }
   }
 });

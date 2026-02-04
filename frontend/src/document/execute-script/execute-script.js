@@ -8,7 +8,7 @@ appendCSS(require('./execute-script.css'));
 
 module.exports = app => app.component('execute-script', {
   template,
-  props: ['model', 'documentId', 'editting'],
+  props: ['model', 'documentId', 'editting', 'visible'],
   data() {
     return {
       scriptText: '',
@@ -17,13 +17,37 @@ module.exports = app => app.component('execute-script', {
       scriptError: null,
       scriptHasRun: false,
       scriptRunning: false,
-      scriptEditor: null
+      scriptEditor: null,
+      isOpen: false,
+      isClosing: false
     };
   },
+  watch: {
+    visible(newVal) {
+      if (newVal) {
+        this.isOpen = true;
+        this.isClosing = false;
+      } else if (this.isOpen) {
+        this.isClosing = true;
+        this.destroyScriptEditor();
+        setTimeout(() => {
+          this.isOpen = false;
+          this.isClosing = false;
+        }, 200);
+      }
+    },
+    isOpen(newVal) {
+      if (newVal) {
+        this.$nextTick(() => {
+          this.initializeScriptEditor();
+        });
+      }
+    }
+  },
   mounted() {
-    this.$nextTick(() => {
-      this.initializeScriptEditor();
-    });
+    if (this.visible) {
+      this.isOpen = true;
+    }
   },
   beforeDestroy() {
     this.destroyScriptEditor();
@@ -105,9 +129,7 @@ module.exports = app => app.component('execute-script', {
         this.scriptResult = result;
         this.scriptLogs = logs;
         this.scriptHasRun = true;
-        if (!this.editting) {
-          this.$emit('refresh');
-        }
+        this.$emit('refresh');
         this.$toast.success('Script executed successfully!');
       } catch (err) {
         this.scriptError = err?.message || String(err);
