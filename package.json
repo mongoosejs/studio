@@ -28,9 +28,11 @@
   "peerDependencies": {
     "mongoose": "7.x || 8.x || ^9.0.0"
   },
+  "optionalPeerDependencies": {
+    "@mongoosejs/task": "0.5.x || 0.6.x"
+  },
   "devDependencies": {
     "@masteringjs/eslint-config": "0.1.1",
-    "@mongoosejs/task": "^0.3.0",
     "axios": "1.2.2",
     "dedent": "^1.6.0",
     "eslint": "9.30.0",
