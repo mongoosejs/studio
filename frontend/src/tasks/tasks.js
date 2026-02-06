@@ -2,6 +2,7 @@
 
 const template = require('./tasks.html');
 const api = require('../api');
+const { taskNameToSlug } = require('../_util/taskRoute');
 
 module.exports = app => app.component('tasks', {
   data: () => ({
@@ -31,10 +32,6 @@ module.exports = app => app.component('tasks', {
     ],
     searchQuery: '',
     searchTimeout: null,
-    // Task details view state
-    showTaskDetails: false,
-    selectedTaskGroup: null,
-    taskDetailsFilter: null,
     // Create task modal state
     showCreateTaskModal: false,
     newTask: {
@@ -70,28 +67,10 @@ module.exports = app => app.component('tasks', {
       this.groupedTasks = groupedTasks;
     },
     openTaskGroupDetails(group) {
-      this.selectedTaskGroup = group;
-      this.showTaskDetails = true;
+      this.$router.push({ path: `/task/${taskNameToSlug(group.name)}` });
     },
     openTaskGroupDetailsWithFilter(group, status) {
-      // Create a filtered version of the task group with only the specified status
-      const filteredGroup = {
-        ...group,
-        tasks: group.tasks.filter(task => task.status === status),
-        filteredStatus: status
-      };
-      this.selectedTaskGroup = filteredGroup;
-      this.taskDetailsFilter = status;
-      this.showTaskDetails = true;
-    },
-    async onTaskCancelled() {
-      // Refresh the task data when a task is cancelled
-      await this.getTasks();
-    },
-    hideTaskDetails() {
-      this.showTaskDetails = false;
-      this.selectedTaskGroup = null;
-      this.taskDetailsFilter = null;
+      this.$router.push({ path: `/task/${taskNameToSlug(group.name)}`, query: status ? { status } : {} });
     },
     async onTaskCreated() {
       // Refresh the task data when a new task is created

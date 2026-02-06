@@ -2,9 +2,14 @@
 
 const template = require('./task-details.html');
 const api = require('../../api');
+const { taskNameToSlug } = require('../../_util/taskRoute');
 
 module.exports = app => app.component('task-details', {
-  props: ['taskGroup', 'currentFilter'],
+  props: {
+    taskGroup: { type: Object, required: true },
+    currentFilter: { type: String, default: null },
+    backTo: { type: Object, default: null }
+  },
   data: () => ({
     showRescheduleModal: false,
     showRunModal: false,
@@ -13,6 +18,10 @@ module.exports = app => app.component('task-details', {
     newScheduledTime: ''
   }),
   computed: {
+    backLabel() {
+      if (this.backTo?.path?.startsWith('/task/') || this.backTo?.name === 'taskByName') return `Back to ${this.taskGroup?.name || 'tasks'}`;
+      return 'Back to Task Groups';
+    },
     sortedTasks() {
       let tasks = this.taskGroup.tasks;
 
@@ -74,6 +83,21 @@ module.exports = app => app.component('task-details', {
     },
     clearFilter() {
       this.$emit('update:currentFilter', null);
+    },
+    goBack() {
+      if (this.backTo) {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          this.$router.push(this.backTo);
+        }
+      } else {
+        this.$emit('back');
+      }
+    },
+    taskDetailRoute(task) {
+      const id = String(task.id || task._id);
+      return { path: `/task/${taskNameToSlug(this.taskGroup.name)}/${id}` };
     },
     showRescheduleConfirmation(task) {
       this.selectedTask = task;
