@@ -42,7 +42,8 @@ module.exports = defineConfig([
         navigator: true,
         TextDecoder: true,
         AbortController: true,
-        clearTimeout: true
+        clearTimeout: true,
+        requestAnimationFrame: true
       },
       sourceType: 'commonjs'
     },

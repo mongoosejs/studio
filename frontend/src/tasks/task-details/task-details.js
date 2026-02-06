@@ -3,16 +3,30 @@
 const template = require('./task-details.html');
 const api = require('../../api');
 
+const STATUS_ORDER = ['pending', 'succeeded', 'failed', 'cancelled'];
+const PIE_COLORS = ['#eab308', '#22c55e', '#ef4444', '#6b7280'];
+const PIE_HOVER = ['#ca8a04', '#16a34a', '#dc2626', '#4b5563'];
+
 module.exports = app => app.component('task-details', {
-  props: ['taskGroup', 'currentFilter'],
+  props: {
+    taskGroup: { type: Object, required: true },
+    currentFilter: { type: String, default: null },
+    backTo: { type: Object, default: null }
+  },
   data: () => ({
     showRescheduleModal: false,
     showRunModal: false,
     showCancelModal: false,
     selectedTask: null,
-    newScheduledTime: ''
+    newScheduledTime: '',
+    statusView: 'summary',
+    statusChart: null
   }),
   computed: {
+    backLabel() {
+      if (this.backTo?.path?.startsWith('/tasks/') || this.backTo?.name === 'taskByName') return `Back to ${this.taskGroup?.name || 'tasks'}`;
+      return 'Back to Task Groups';
+    },
     sortedTasks() {
       let tasks = this.taskGroup.tasks;
 
@@ -26,9 +40,117 @@ module.exports = app => app.component('task-details', {
         const dateB = new Date(b.scheduledAt || b.createdAt || 0);
         return dateB - dateA; // Most recent first
       });
+    },
+    pieChartData() {
+      const counts = this.taskGroup?.statusCounts || {};
+      return {
+        labels: ['Pending', 'Succeeded', 'Failed', 'Cancelled'],
+        datasets: [{
+          data: STATUS_ORDER.map(s => counts[s] || 0),
+          backgroundColor: PIE_COLORS,
+          hoverBackgroundColor: PIE_HOVER,
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      };
+    },
+    statusOrderForDisplay() {
+      return STATUS_ORDER;
     }
   },
+  watch: {
+    statusView(val) {
+      if (val !== 'chart') this.destroyStatusChart();
+      else {
+        this.$nextTick(() => {
+          requestAnimationFrame(() => this.ensureStatusChart());
+        });
+      }
+    },
+    taskGroup: {
+      deep: true,
+      handler() {
+        this.$nextTick(() => {
+          requestAnimationFrame(() => this.ensureStatusChart());
+        });
+      }
+    },
+  },
   methods: {
+    destroyStatusChart() {
+      if (this.statusChart) {
+        try {
+          this.statusChart.destroy();
+        } catch (_) {
+          // ignore Chart.js teardown errors
+        }
+        this.statusChart = null;
+      }
+    },
+    isChartCanvasReady(canvas) {
+      return canvas && typeof canvas.getContext === 'function' && canvas.isConnected && canvas.offsetParent != null;
+    },
+    ensureStatusChart() {
+      if (this.statusView !== 'chart' || !this.taskGroup || this.taskGroup.totalCount === 0) {
+        this.destroyStatusChart();
+        return;
+      }
+      const canvas = this.$refs.statusPieChart;
+      if (!canvas || !this.isChartCanvasReady(canvas)) return;
+      const Chart = typeof window !== 'undefined' && window.Chart;
+      if (!Chart) return;
+      const data = this.pieChartData;
+      if (this.statusChart) {
+        try {
+          this.statusChart.data.labels = data.labels;
+          this.statusChart.data.datasets[0].data = data.datasets[0].data;
+          this.statusChart.update('none');
+        } catch (_) {
+          this.destroyStatusChart();
+        }
+        return;
+      }
+      try {
+        this.statusChart = new Chart(canvas, {
+          type: 'doughnut',
+          data,
+          options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            layout: {
+              padding: 8
+            },
+            onClick: (_evt, elements) => {
+              if (elements && elements.length > 0) {
+                const status = STATUS_ORDER[elements[0].index];
+                this.$nextTick(() => this.filterByStatus(status));
+              }
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      } catch (_) {
+        this.statusChart = null;
+      }
+    },
+    statusLabel(status) {
+      return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+    },
+    getStatusPillClass(status) {
+      const classes = {
+        pending: 'bg-yellow-200 text-yellow-900 ring-2 ring-yellow-500',
+        succeeded: 'bg-green-200 text-green-900 ring-2 ring-green-500',
+        failed: 'bg-red-200 text-red-900 ring-2 ring-red-500',
+        cancelled: 'bg-gray-200 text-gray-900 ring-2 ring-gray-500'
+      };
+      return classes[status] || 'bg-slate-200 text-slate-900 ring-2 ring-slate-500';
+    },
     getStatusColor(status) {
       if (status === 'succeeded') {
         return 'bg-green-100 text-green-800';
@@ -74,6 +196,21 @@ module.exports = app => app.component('task-details', {
     },
     clearFilter() {
       this.$emit('update:currentFilter', null);
+    },
+    goBack() {
+      if (this.backTo) {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          this.$router.push(this.backTo);
+        }
+      } else {
+        this.$emit('back');
+      }
+    },
+    taskDetailRoute(task) {
+      const id = String(task.id || task._id);
+      return { path: `/tasks/${encodeURIComponent(this.taskGroup.name || '')}/${id}` };
     },
     showRescheduleConfirmation(task) {
       this.selectedTask = task;
@@ -177,6 +314,9 @@ module.exports = app => app.component('task-details', {
     if (this.taskGroup.filteredStatus && !this.currentFilter) {
       this.$emit('update:currentFilter', this.taskGroup.filteredStatus);
     }
+  },
+  beforeUnmount() {
+    this.destroyStatusChart();
   },
   template: template
 });
