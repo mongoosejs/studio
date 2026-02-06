@@ -3,7 +3,6 @@
 // Page: all tasks with a given name. Reuses task-details to render the list (many tasks).
 const template = require('./task-by-name.html');
 const api = require('../api');
-const { taskSlugToName } = require('../_util/taskRoute');
 
 function buildTaskGroup(name, tasks) {
   const statusCounts = { pending: 0, succeeded: 0, failed: 0, cancelled: 0, in_progress: 0, unknown: 0 };
@@ -37,7 +36,7 @@ module.exports = app => app.component('task-by-name', {
   }),
   computed: {
     taskName() {
-      return taskSlugToName(this.$route.params.name);
+      return this.$route.params.name || '';
     }
   },
   watch: {

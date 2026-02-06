@@ -2,7 +2,6 @@
 
 const template = require('./task-details.html');
 const api = require('../../api');
-const { taskNameToSlug } = require('../../_util/taskRoute');
 
 const STATUS_ORDER = ['pending', 'succeeded', 'failed', 'cancelled'];
 const PIE_COLORS = ['#eab308', '#22c55e', '#ef4444', '#6b7280'];
@@ -25,7 +24,7 @@ module.exports = app => app.component('task-details', {
   }),
   computed: {
     backLabel() {
-      if (this.backTo?.path?.startsWith('/task/') || this.backTo?.name === 'taskByName') return `Back to ${this.taskGroup?.name || 'tasks'}`;
+      if (this.backTo?.path?.startsWith('/tasks/') || this.backTo?.name === 'taskByName') return `Back to ${this.taskGroup?.name || 'tasks'}`;
       return 'Back to Task Groups';
     },
     sortedTasks() {
@@ -50,7 +49,7 @@ module.exports = app => app.component('task-details', {
           data: STATUS_ORDER.map(s => counts[s] || 0),
           backgroundColor: PIE_COLORS,
           hoverBackgroundColor: PIE_HOVER,
-          borderWidth: STATUS_ORDER.map(s => (this.currentFilter === s ? 4 : 2)),
+          borderWidth: 2,
           borderColor: '#fff'
         }]
       };
@@ -76,9 +75,6 @@ module.exports = app => app.component('task-details', {
         });
       }
     },
-    currentFilter() {
-      this.updateStatusChartSelection();
-    }
   },
   methods: {
     destroyStatusChart() {
@@ -108,7 +104,6 @@ module.exports = app => app.component('task-details', {
         try {
           this.statusChart.data.labels = data.labels;
           this.statusChart.data.datasets[0].data = data.datasets[0].data;
-          this.statusChart.data.datasets[0].borderWidth = data.datasets[0].borderWidth;
           this.statusChart.update('none');
         } catch (_) {
           this.destroyStatusChart();
@@ -129,7 +124,7 @@ module.exports = app => app.component('task-details', {
             onClick: (_evt, elements) => {
               if (elements && elements.length > 0) {
                 const status = STATUS_ORDER[elements[0].index];
-                this.filterByStatus(status);
+                this.$nextTick(() => this.filterByStatus(status));
               }
             },
             plugins: {
@@ -143,11 +138,6 @@ module.exports = app => app.component('task-details', {
       } catch (_) {
         this.statusChart = null;
       }
-    },
-    updateStatusChartSelection() {
-      if (!this.statusChart || !this.statusChart.data?.datasets?.[0]) return;
-      const borderWidths = STATUS_ORDER.map(s => (this.currentFilter === s ? 4 : 2));
-      this.statusChart.data.datasets[0].borderWidth = borderWidths;
     },
     statusLabel(status) {
       return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
@@ -220,7 +210,7 @@ module.exports = app => app.component('task-details', {
     },
     taskDetailRoute(task) {
       const id = String(task.id || task._id);
-      return { path: `/task/${taskNameToSlug(this.taskGroup.name)}/${id}` };
+      return { path: `/tasks/${encodeURIComponent(this.taskGroup.name || '')}/${id}` };
     },
     showRescheduleConfirmation(task) {
       this.selectedTask = task;

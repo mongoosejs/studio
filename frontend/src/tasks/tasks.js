@@ -2,7 +2,6 @@
 
 const template = require('./tasks.html');
 const api = require('../api');
-const { taskNameToSlug } = require('../_util/taskRoute');
 
 module.exports = app => app.component('tasks', {
   data: () => ({
@@ -67,10 +66,10 @@ module.exports = app => app.component('tasks', {
       this.groupedTasks = groupedTasks;
     },
     openTaskGroupDetails(group) {
-      this.$router.push({ path: `/task/${taskNameToSlug(group.name)}` });
+      this.$router.push({ path: `/tasks/${encodeURIComponent(group.name || '')}` });
     },
     openTaskGroupDetailsWithFilter(group, status) {
-      this.$router.push({ path: `/task/${taskNameToSlug(group.name)}`, query: status ? { status } : {} });
+      this.$router.push({ path: `/tasks/${encodeURIComponent(group.name || '')}`, query: status ? { status } : {} });
     },
     async onTaskCreated() {
       // Refresh the task data when a new task is created

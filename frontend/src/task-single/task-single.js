@@ -21,7 +21,8 @@ module.exports = app => app.component('task-single', {
       return this.$route.params.id || '';
     },
     taskByNamePath() {
-      return { path: `/task/${this.$route.params.name}` };
+      const name = this.task?.name ?? this.$route.params.name ?? '';
+      return { path: `/tasks/${encodeURIComponent(name || '')}` };
     },
     taskPayload() {
       if (!this.task) return null;

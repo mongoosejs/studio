@@ -77,7 +77,7 @@ module.exports = {
       }
     },
     {
-      path: '/task/:name',
+      path: '/tasks/:name',
       name: 'taskByName',
       component: 'task-by-name',
       meta: {
@@ -85,7 +85,7 @@ module.exports = {
       }
     },
     {
-      path: '/task/:name/:id',
+      path: '/tasks/:name/:id',
       name: 'taskSingle',
       component: 'task-single',
       meta: {
