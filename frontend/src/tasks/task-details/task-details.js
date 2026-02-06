@@ -59,7 +59,7 @@ module.exports = app => app.component('task-details', {
       return STATUS_ORDER;
     }
   },
-    watch: {
+  watch: {
     statusView(val) {
       if (val !== 'chart') this.destroyStatusChart();
       else {
