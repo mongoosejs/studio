@@ -46,6 +46,23 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('', { action: 'Dashboard.updateDashboard', ...params }).then(res => res.data);
     }
   };
+  exports.Alert = {
+    createAlert(params) {
+      return client.post('', { action: 'Alert.createAlert', ...params }).then(res => res.data);
+    },
+    deleteAlert(params) {
+      return client.post('', { action: 'Alert.deleteAlert', ...params }).then(res => res.data);
+    },
+    listAlerts(params) {
+      return client.post('', { action: 'Alert.listAlerts', ...params }).then(res => res.data);
+    },
+    sendTestAlert(params) {
+      return client.post('', { action: 'Alert.sendTestAlert', ...params }).then(res => res.data);
+    },
+    updateAlert(params) {
+      return client.post('', { action: 'Alert.updateAlert', ...params }).then(res => res.data);
+    }
+  };
   exports.ChatThread = {
     createChatMessage(params) {
       return client.post('', { action: 'ChatThread.createChatMessage', ...params }).then(res => res.data);
@@ -208,6 +225,23 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDashboard: function updateDashboard(params) {
       return client.post('/Dashboard/updateDashboard', params).then(res => res.data);
+    }
+  };
+  exports.Alert = {
+    createAlert(params) {
+      return client.post('/Alert/createAlert', params).then(res => res.data);
+    },
+    deleteAlert(params) {
+      return client.post('/Alert/deleteAlert', params).then(res => res.data);
+    },
+    listAlerts(params) {
+      return client.post('/Alert/listAlerts', params).then(res => res.data);
+    },
+    sendTestAlert(params) {
+      return client.post('/Alert/sendTestAlert', params).then(res => res.data);
+    },
+    updateAlert(params) {
+      return client.post('/Alert/updateAlert', params).then(res => res.data);
     }
   };
   exports.ChatThread = {
