@@ -1,9 +1,8 @@
 'use strict';
 
-// Page: one task by name + id. Dedicated single-task detail UI (not the list).
+// Page: one task by id. Dedicated single-task detail UI (not the list).
 const template = require('./task-single.html');
 const api = require('../api');
-const { taskSlugToName } = require('../_util/taskRoute');
 
 module.exports = app => app.component('task-single', {
   template,
@@ -18,9 +17,6 @@ module.exports = app => app.component('task-single', {
     newScheduledTime: ''
   }),
   computed: {
-    taskName() {
-      return taskSlugToName(this.$route.params.name);
-    },
     taskId() {
       return this.$route.params.id || '';
     },
@@ -55,22 +51,19 @@ module.exports = app => app.component('task-single', {
       return new Date(dateString).toLocaleString();
     },
     async loadTask() {
-      if (!this.taskName || !this.taskId) return;
+      if (!this.taskId) return;
       this.status = 'init';
       this.task = null;
       this.errorMessage = '';
       try {
-        const { tasks } = await api.Task.getTasks({ name: this.taskName });
-        const found = tasks.find(t => String(t.id) === String(this.taskId) || String(t._id) === String(this.taskId));
-        if (!found) {
-          this.status = 'notfound';
-          return;
-        }
-        this.task = found;
+        const { task } = await api.Task.getTask({ taskId: this.taskId });
+        this.task = task;
         this.status = 'loaded';
       } catch (err) {
-        this.status = 'error';
-        this.errorMessage = err?.response?.data?.message || err.message || 'Failed to load task';
+        const status = err?.response?.status;
+        const notFound = status === 404 || err?.response?.data?.name === 'DocumentNotFoundError';
+        this.status = notFound ? 'notfound' : 'error';
+        this.errorMessage = notFound ? '' : (err?.response?.data?.message || err.message || 'Failed to load task');
       }
     },
     showRescheduleConfirmation(task) {
