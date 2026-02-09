@@ -18,7 +18,7 @@ module.exports = function backend(db, studioConnection, options) {
 
   let changeStream = null;
   if (options?.changeStream) {
-    changeStream = db.watch();
+    changeStream = db instanceof mongoose.Mongoose ? db.connection.watch() : db.watch();
   }
 
   const actions = applySpec(Actions, { db, studioConnection, options, changeStream });
