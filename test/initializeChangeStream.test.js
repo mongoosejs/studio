@@ -40,15 +40,27 @@ describe('initializeChangeStream()', function () {
 
     await Test.create({ name: 'before' });
 
-    const change = await Promise.race([
-      nextChange,
-      new Promise(resolve => setTimeout(() => resolve(null), 5000))
-    ]);
+    let timeoutId;
+    let change;
+    try {
+      change = await Promise.race([
+        nextChange,
+        new Promise(resolve => {
+          timeoutId = setTimeout(() => resolve(null), 5000);
+          if (timeoutId && typeof timeoutId.unref === 'function') {
+            timeoutId.unref();
+          }
+        })
+      ]);
 
-    await changeStream.close();
-
-    assert.ok(change, 'Expected to receive a change event');
-    assert.strictEqual(change.operationType, 'insert');
+      assert.ok(change, 'Expected to receive a change event');
+      assert.strictEqual(change.operationType, 'insert');
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      await changeStream.close();
+    }
   });
 
   it('does not create a change stream when disabled', function () {
