@@ -3,6 +3,7 @@
 const Actions = require('./actions');
 const { applySpec } = require('extrovert');
 const mongoose = require('mongoose');
+const initializeChangeStream = require('./changeStream/initializeChangeStream');
 
 const chatMessageSchema = require('./db/chatMessageSchema');
 const chatThreadSchema = require('./db/chatThreadSchema');
@@ -16,10 +17,7 @@ module.exports = function backend(db, studioConnection, options) {
   const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
   const ChatThread = studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
 
-  let changeStream = null;
-  if (options?.changeStream) {
-    changeStream = db instanceof mongoose.Mongoose ? db.connection.watch() : db.watch();
-  }
+  const changeStream = initializeChangeStream(db, options);
 
   const actions = applySpec(Actions, { db, studioConnection, options, changeStream });
   actions.services = { changeStream };
