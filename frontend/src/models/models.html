@@ -34,9 +34,9 @@
     </nav>
   </aside>
   <div class="documents bg-slate-50" ref="documentsList">
-    <div class="relative h-[42px]" style="z-index: 1000">
+    <div class="relative min-h-[50px]" style="z-index: 1000">
       <div class="documents-menu bg-slate-50">
-        <div class="flex flex-row items-center w-full gap-2">
+        <div class="flex flex-row items-center w-full gap-2 flex-wrap">
           <document-search
             ref="documentSearch"
             :value="searchText"
@@ -102,13 +102,6 @@
                   Create
                 </button>
                 <button
-                  @click="openFieldSelection(); showActionsMenu = false"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Projection
-                </button>
-                <button
                   @click="openIndexModal"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
@@ -172,30 +165,121 @@
           <span class="block">{{ error }}</span>
         </div>
       </div>
-      <table v-else-if="outputType === 'table'">
-        <thead class="bg-slate-50">
-          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="cursor-pointer p-3">
-            {{path.path}}
-            <span class="path-type">
-              ({{(path.instance || 'unknown')}})
-            </span>
-            <span class="sort-arrow" @click="sortDocs(1, path.path)">{{sortBy[path.path] == 1 ? 'X' : '↑'}}</span>
-            <span class="sort-arrow" @click="sortDocs(-1, path.path)">{{sortBy[path.path] == -1 ? 'X' : '↓'}}</span>
-          </th>
-        </thead>
-        <tbody>
-          <tr v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id" class="bg-white hover:bg-slate-50">
-            <td v-for="schemaPath in filteredPaths" class="p-3 cursor-pointer" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
-              <component
-                :is="getComponentForPath(schemaPath)"
-                :value="getValueForPath(document, schemaPath.path)"
-                :allude="getReferenceModel(schemaPath)">
-              </component>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-else-if="outputType === 'json'" class="flex flex-col space-y-2 p-1 mt-1">
+      <div v-else-if="outputType === 'table'" class="projection-view">
+        <form class="projection-input-row" @submit.prevent="applyProjectionFromInput">
+          <input
+            ref="projectionInput"
+            v-model="projectionText"
+            type="text"
+            placeholder="Projection (e.g. { _id: 1, name: 1 } or name, age)"
+            class="projection-input"
+            @click="initProjection"
+            @blur="applyProjectionFromInput"
+          />
+          <button
+            type="button"
+            class="projection-action-btn"
+            title="Add all fields to projection"
+            @click="addAllFields"
+          >
+            Add all
+          </button>
+          <button
+            type="button"
+            class="projection-action-btn"
+            title="Reset to default (_id only)"
+            @click="resetProjection"
+          >
+            Reset
+          </button>
+        </form>
+        <div class="table-wrapper">
+          <table class="projection-table">
+            <thead>
+              <tr>
+                <th
+                  v-for="schemaPath in filteredPaths"
+                  :key="schemaPath.path"
+                  class="table-header-cell"
+                >
+                  <div class="projection-column-def">
+                    <span v-if="schemaPath.ref" class="column-ref-icon" title="Reference" aria-hidden="true">↗</span>
+                    <span
+                      class="column-name cursor-pointer truncate"
+                      @click="addPathFilter(schemaPath.path)"
+                      :title="schemaPath.path"
+                    >
+                      {{ schemaPath.path }}
+                    </span>
+                    <span class="column-type">{{ schemaPath.instance || 'unknown' }}</span>
+                    <span class="column-sort cursor-pointer" @click.stop="sortDocs(1, schemaPath.path)" title="Sort ascending">↑</span>
+                    <span class="column-sort cursor-pointer" @click.stop="sortDocs(-1, schemaPath.path)" title="Sort descending">↓</span>
+                    <button
+                      type="button"
+                      class="column-remove"
+                      :title="'Remove ' + schemaPath.path"
+                      @click.stop="removeField(schemaPath)"
+                      aria-label="Remove field"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </th>
+                <th class="table-header-add">
+                  <div class="projection-add-column" ref="addFieldContainer">
+                    <button
+                      type="button"
+                      class="add-column-btn"
+                      @click="toggleAddFieldDropdown"
+                      aria-label="Add field"
+                    >
+                      +
+                    </button>
+                    <ul
+                      v-if="showAddFieldDropdown"
+                      class="add-field-dropdown"
+                    >
+                      <li
+                        v-for="path in availablePathsToAdd"
+                        :key="path.path"
+                        class="add-field-option"
+                        @click="addField(path)"
+                      >
+                        {{ path.path }}
+                      </li>
+                      <li v-if="availablePathsToAdd.length === 0" class="add-field-option add-field-empty">
+                        No more fields to add
+                      </li>
+                    </ul>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="document in documents"
+                :key="document._id"
+                :class="{ 'table-row-selected': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
+                @click="handleDocumentClick(document, $event)"
+              >
+                <td
+                  v-for="schemaPath in filteredPaths"
+                  :key="schemaPath.path"
+                  class="table-cell"
+                >
+                  <component
+                    :is="getComponentForPath(schemaPath)"
+                    :value="getValueForPath(document, schemaPath.path)"
+                    :allude="getReferenceModel(schemaPath)">
+                  </component>
+                </td>
+                <td class="table-cell-add"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div v-else-if="outputType === 'json'" class="json-view flex flex-col space-y-2">
         <div
           v-for="document in documents"
           :key="document._id"
@@ -212,7 +296,7 @@
           >
             Open this Document
           </button>
-          <list-json :value="filterDocument(document)" :references="referenceMap">
+          <list-json :value="document" :references="referenceMap">
           </list-json>
         </div>
       </div>
@@ -318,23 +402,6 @@
           <div class="font-semibold text-gray-700">Capped</div>
           <div class="text-gray-900">{{ collectionInfo.capped ? 'Yes' : 'No' }}</div>
         </div>
-      </div>
-    </template>
-  </modal>
-  <modal v-if="shouldShowFieldModal">
-    <template v-slot:body>
-      <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
-      <div v-for="(path, index) in schemaPaths" :key="index" class="w-5 flex items-center">
-        <input  class="mt-0 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-600 accent-sky-600" type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)" />
-        <div class="ml-2 text-gray-700 grow shrink text-left">
-          <label :for="'path.path' + index">{{path.path}}</label>
-        </div>
-      </div>
-      <div class="mt-4 flex gap-2">
-        <button type="button" @click="filterDocuments()" class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Filter Selection</button>
-        <button type="button" @click="selectAll()" class="rounded-md bg-forest-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">Select All</button>
-        <button type="button" @click="deselectAll()" class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">Deselect All</button>
-        <button type="button" @click="resetDocuments()" class="rounded-md bg-gray-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600" >Cancel</button>
       </div>
     </template>
   </modal>
