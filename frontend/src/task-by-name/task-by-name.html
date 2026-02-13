@@ -8,10 +8,8 @@
   <task-details
     v-else-if="taskGroup"
     :task-group="taskGroup"
-    :current-filter="currentFilter"
     :back-to="{ name: 'tasks' }"
     @task-created="onTaskCreated"
     @task-cancelled="onTaskCancelled"
-    @update:current-filter="currentFilter = $event"
   ></task-details>
 </div>

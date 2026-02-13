@@ -10,10 +10,10 @@ const PIE_HOVER = ['#ca8a04', '#16a34a', '#dc2626', '#4b5563'];
 module.exports = app => app.component('task-details', {
   props: {
     taskGroup: { type: Object, required: true },
-    currentFilter: { type: String, default: null },
     backTo: { type: Object, default: null }
   },
   data: () => ({
+    currentFilter: null,
     showRescheduleModal: false,
     showRunModal: false,
     showCancelModal: false,
@@ -59,6 +59,12 @@ module.exports = app => app.component('task-details', {
     }
   },
   watch: {
+    '$route.query.status': {
+      handler(status) {
+        this.currentFilter = status || null;
+      },
+      immediate: true
+    },
     statusView(val) {
       if (val !== 'chart') this.destroyStatusChart();
       else {
@@ -187,15 +193,18 @@ module.exports = app => app.component('task-details', {
       this.$emit('task-cancelled');
     },
     filterByStatus(status) {
-      // If clicking the same status, clear the filter
-      if (this.currentFilter === status) {
-        this.$emit('update:currentFilter', null);
-      } else {
-        this.$emit('update:currentFilter', status);
-      }
+      const next = this.currentFilter === status ? null : status;
+      this.currentFilter = next;
+      const query = { ...this.$route.query };
+      if (next) query.status = next;
+      else delete query.status;
+      this.$router.replace({ path: this.$route.path, query });
     },
     clearFilter() {
-      this.$emit('update:currentFilter', null);
+      this.currentFilter = null;
+      const query = { ...this.$route.query };
+      delete query.status;
+      this.$router.replace({ path: this.$route.path, query });
     },
     goBack() {
       if (this.backTo) {
@@ -210,7 +219,9 @@ module.exports = app => app.component('task-details', {
     },
     taskDetailRoute(task) {
       const id = String(task.id || task._id);
-      return { path: `/tasks/${encodeURIComponent(this.taskGroup.name || '')}/${id}` };
+      const path = `/tasks/${encodeURIComponent(this.taskGroup.name || '')}/${id}`;
+      const query = this.currentFilter ? { status: this.currentFilter } : {};
+      return { path, query };
     },
     showRescheduleConfirmation(task) {
       this.selectedTask = task;
@@ -310,9 +321,9 @@ module.exports = app => app.component('task-details', {
 
   },
   mounted() {
-    // Check if the task group was already filtered when passed from parent
     if (this.taskGroup.filteredStatus && !this.currentFilter) {
-      this.$emit('update:currentFilter', this.taskGroup.filteredStatus);
+      this.currentFilter = this.taskGroup.filteredStatus;
+      this.$router.replace({ path: this.$route.path, query: { ...this.$route.query, status: this.taskGroup.filteredStatus } });
     }
   },
   beforeUnmount() {

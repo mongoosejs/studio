@@ -31,7 +31,6 @@ module.exports = app => app.component('task-by-name', {
   data: () => ({
     status: 'init',
     taskGroup: null,
-    currentFilter: null,
     errorMessage: ''
   }),
   computed: {
@@ -43,7 +42,6 @@ module.exports = app => app.component('task-by-name', {
     taskName: {
       immediate: true,
       handler() {
-        this.currentFilter = this.$route.query.status || null;
         this.loadTasks();
       }
     }
@@ -69,8 +67,5 @@ module.exports = app => app.component('task-by-name', {
     async onTaskCancelled() {
       await this.loadTasks();
     }
-  },
-  mounted() {
-    this.currentFilter = this.$route.query.status || null;
   }
 });

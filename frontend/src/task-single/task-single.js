@@ -22,7 +22,9 @@ module.exports = app => app.component('task-single', {
     },
     taskByNamePath() {
       const name = this.task?.name ?? this.$route.params.name ?? '';
-      return { path: `/tasks/${encodeURIComponent(name || '')}` };
+      const path = `/tasks/${encodeURIComponent(name || '')}`;
+      const query = this.$route.query?.status ? { status: this.$route.query.status } : {};
+      return { path, query };
     },
     taskPayload() {
       if (!this.task) return null;
@@ -57,8 +59,8 @@ module.exports = app => app.component('task-single', {
       this.task = null;
       this.errorMessage = '';
       try {
-        const { task } = await api.Task.getTask({ taskId: this.taskId });
-        this.task = task;
+        const { doc } = await api.Model.getDocument({ model: 'Task', documentId: this.taskId });
+        this.task = doc;
         this.status = 'loaded';
       } catch (err) {
         const status = err?.response?.status;
@@ -84,27 +86,19 @@ module.exports = app => app.component('task-single', {
     },
     async confirmRescheduleTask() {
       if (!this.newScheduledTime) return;
-      try {
-        await api.Task.rescheduleTask({ taskId: this.selectedTask.id, scheduledAt: this.newScheduledTime });
-        this.$toast.create({ title: 'Task Rescheduled', text: `Task ${this.selectedTask.id} has been rescheduled`, type: 'success', timeout: 3000, positionClass: 'bottomRight' });
+      await api.Task.rescheduleTask({ taskId: this.selectedTask.id, scheduledAt: this.newScheduledTime });
+        this.$toast.success({ title: 'Task Rescheduled', text: `Task ${this.selectedTask.id} has been rescheduled`,  });
         this.showRescheduleModal = false;
         this.selectedTask = null;
         this.newScheduledTime = '';
         await this.loadTask();
-      } catch (err) {
-        this.$toast.create({ title: 'Failed to Reschedule', text: err?.response?.data?.message || err.message || 'An unexpected error occurred', type: 'error', timeout: 5000, positionClass: 'bottomRight' });
-      }
     },
     async confirmRunTask() {
-      try {
-        await api.Task.runTask({ taskId: this.selectedTask.id });
-        this.$toast.create({ title: 'Task Started', text: `Task ${this.selectedTask.id} is now running`, type: 'success', timeout: 3000, positionClass: 'bottomRight' });
-        this.showRunModal = false;
-        this.selectedTask = null;
-        await this.loadTask();
-      } catch (err) {
-        this.$toast.create({ title: 'Failed to Run Task', text: err?.response?.data?.message || err.message || 'An unexpected error occurred', type: 'error', timeout: 5000, positionClass: 'bottomRight' });
-      }
+      await api.Task.runTask({ taskId: this.selectedTask.id });
+      this.$toast.success({ title: 'Task Started', text: `Task ${this.selectedTask.id} is now running`, type: 'success' });
+      this.showRunModal = false;
+      this.selectedTask = null;
+      await this.loadTask();
     },
     goBack() {
       if (window.history.length > 1) {
@@ -114,15 +108,11 @@ module.exports = app => app.component('task-single', {
       }
     },
     async confirmCancelTask() {
-      try {
-        await api.Task.cancelTask({ taskId: this.selectedTask.id });
-        this.$toast.create({ title: 'Task Cancelled', text: `Task ${this.selectedTask.id} has been cancelled`, type: 'success', timeout: 3000, positionClass: 'bottomRight' });
+      await api.Task.cancelTask({ taskId: this.selectedTask.id });
+        this.$toast.success({ title: 'Task Cancelled', text: `Task ${this.selectedTask.id} has been cancelled` });
         this.showCancelModal = false;
         this.selectedTask = null;
         this.goBack();
-      } catch (err) {
-        this.$toast.create({ title: 'Failed to Cancel Task', text: err?.response?.data?.message || err.message || 'An unexpected error occurred', type: 'error', timeout: 5000, positionClass: 'bottomRight' });
-      }
     }
   },
   mounted() {
