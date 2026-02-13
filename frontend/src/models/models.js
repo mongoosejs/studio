@@ -13,6 +13,7 @@ appendCSS(require('./models.css'));
 const limit = 20;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
+const PROJECTION_STORAGE_KEY_PREFIX = 'studio:model-projection:';
 
 module.exports = app => app.component('models', {
   template: template,
@@ -36,7 +37,9 @@ module.exports = app => app.component('models', {
     searchText: '',
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
-    shouldShowFieldModal: false,
+    projectionText: '',
+    addFieldFilterText: '',
+    showAddFieldDropdown: false,
     shouldShowIndexModal: false,
     shouldShowCollectionInfoModal: false,
     shouldShowUpdateMultipleModal: false,
@@ -65,6 +68,7 @@ module.exports = app => app.component('models', {
     document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
+    document.removeEventListener('click', this.onOutsideAddFieldDropdownClick, true);
     this.destroyMap();
   },
   async mounted() {
@@ -81,7 +85,18 @@ module.exports = app => app.component('models', {
         this.closeActionsMenu();
       }
     };
+    this.onOutsideAddFieldDropdownClick = event => {
+      if (!this.showAddFieldDropdown) {
+        return;
+      }
+      const container = this.$refs.addFieldContainer;
+      if (container && !container.contains(event.target)) {
+        this.showAddFieldDropdown = false;
+        this.addFieldFilterText = '';
+      }
+    };
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
+    document.addEventListener('click', this.onOutsideAddFieldDropdownClick, true);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     if (this.currentModel == null && this.models.length > 0) {
@@ -98,6 +113,14 @@ module.exports = app => app.component('models', {
     await this.initSearchFromUrl();
   },
   watch: {
+    model(newModel) {
+      if (newModel !== this.currentModel) {
+        this.currentModel = newModel;
+        if (this.currentModel != null) {
+          this.initSearchFromUrl();
+        }
+      }
+    },
     documents: {
       handler() {
         if (this.outputType === 'map' && this.mapInstance) {
@@ -187,6 +210,16 @@ module.exports = app => app.component('models', {
       }
 
       return geoFields;
+    },
+    availablePathsToAdd() {
+      const currentPaths = new Set(this.filteredPaths.map(p => p.path));
+      return this.schemaPaths.filter(p => !currentPaths.has(p.path));
+    },
+    filteredPathsToAdd() {
+      const available = this.availablePathsToAdd;
+      const query = (this.addFieldFilterText || '').trim().toLowerCase();
+      if (!query) return available;
+      return available.filter(p => p.path.toLowerCase().includes(query));
     }
   },
   methods: {
@@ -400,16 +433,24 @@ module.exports = app => app.component('models', {
         const sort = eval(`(${this.$route.query.sort})`);
         const path = Object.keys(sort)[0];
         const num = Object.values(sort)[0];
-        this.sortDocs(num, path);
+        for (const key in this.sortBy) {
+          delete this.sortBy[key];
+        }
+        this.sortBy[path] = num;
+        this.query.sort = `{${path}:${num}}`;
       }
-
-
       if (this.currentModel != null) {
         await this.getDocuments();
       }
       if (this.$route.query?.fields) {
-        const filter = this.$route.query.fields.split(',');
-        this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path));
+        const urlPaths = this.$route.query.fields.split(',').map(s => s.trim()).filter(Boolean);
+        if (urlPaths.length > 0) {
+          this.filteredPaths = urlPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+          if (this.filteredPaths.length > 0) {
+            this.syncProjectionFromPaths();
+            this.saveProjectionPreference();
+          }
+        }
       }
       this.status = 'loaded';
 
@@ -472,6 +513,8 @@ module.exports = app => app.component('models', {
         this.query.sort = `{${path}:${num}}`;
         this.$router.push({ query: this.query });
       }
+      this.documents = [];
+      this.loadedAllDocs = false;
       await this.loadMoreDocuments();
     },
     async search(searchText) {
@@ -627,8 +670,17 @@ module.exports = app => app.component('models', {
           for (const { path } of this.schemaPaths) {
             this.shouldExport[path] = true;
           }
-          this.filteredPaths = [...this.schemaPaths];
-          this.selectedPaths = [...this.schemaPaths];
+          const savedPaths = this.loadProjectionPreference();
+          if (savedPaths && savedPaths.length > 0) {
+            this.filteredPaths = savedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+            if (this.filteredPaths.length === 0) {
+              this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+            }
+          } else {
+            this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+          }
+          this.selectedPaths = [...this.filteredPaths];
+          this.syncProjectionFromPaths();
           schemaPathsReceived = true;
         }
         if (event.numDocs !== undefined) {
@@ -673,61 +725,166 @@ module.exports = app => app.component('models', {
         this.loadedAllDocs = true;
       }
     },
-    addOrRemove(path) {
-      const exists = this.selectedPaths.findIndex(x => x.path == path.path);
-      if (exists > 0) { // remove
-        this.selectedPaths.splice(exists, 1);
-      } else { // add
-        this.selectedPaths.push(path);
-        this.selectedPaths = Object.keys(this.selectedPaths).sort((k1, k2) => {
-          if (k1 === '_id' && k2 !== '_id') {
-            return -1;
+    loadProjectionPreference() {
+      if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
+        return null;
+      }
+      const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
+      const stored = window.localStorage.getItem(key);
+      if (stored) {
+        try {
+          const paths = stored.split(',').map(s => s.trim()).filter(Boolean);
+          return paths.length > 0 ? paths : null;
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    },
+    saveProjectionPreference() {
+      if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
+        return;
+      }
+      const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
+      const paths = this.filteredPaths.map(p => p.path).join(',');
+      window.localStorage.setItem(key, paths);
+    },
+    addAllFields() {
+      this.filteredPaths = [...this.schemaPaths].sort((a, b) => {
+        if (a.path === '_id') return -1;
+        if (b.path === '_id') return 1;
+        return 0;
+      });
+      this.selectedPaths = [...this.filteredPaths];
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+    },
+    resetProjection() {
+      const idPath = this.schemaPaths.find(p => p.path === '_id');
+      this.filteredPaths = idPath ? [idPath] : (this.schemaPaths.length > 0 ? [this.schemaPaths[0]] : []);
+      this.selectedPaths = [...this.filteredPaths];
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+    },
+    initProjection(ev) {
+      if (!this.projectionText || !this.projectionText.trim()) {
+        this.projectionText = '{}';
+        this.$nextTick(() => {
+          if (ev && ev.target) {
+            ev.target.setSelectionRange(1, 1);
           }
-          if (k1 !== '_id' && k2 === '_id') {
-            return 1;
-          }
-          return 0;
-        }).map(key => this.selectedPaths[key]);
+        });
       }
     },
-    openFieldSelection() {
-      if (this.$route.query?.fields) {
-        this.selectedPaths.length = 0;
-        console.log('there are fields in play', this.$route.query.fields);
-        const fields = this.$route.query.fields.split(',');
-        for (let i = 0; i < fields.length; i++) {
-          this.selectedPaths.push({ path: fields[i] });
+    syncProjectionFromPaths() {
+      if (this.filteredPaths.length === 0) {
+        this.projectionText = '{}';
+        return;
+      }
+      this.projectionText = '{ ' + this.filteredPaths.map(p => p.path + ': 1').join(', ') + ' }';
+    },
+    parseProjectionInput(text) {
+      if (!text || typeof text !== 'string') {
+        return [];
+      }
+      const trimmed = text.trim();
+      if (!trimmed) {
+        return [];
+      }
+      let paths = [];
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          const obj = eval('(' + trimmed + ')');
+          const inclusionKeys = Object.keys(obj).filter(k => obj[k]);
+          const exclusionKeys = Object.keys(obj).filter(k => !obj[k]);
+          if (exclusionKeys.length > 0 && inclusionKeys.length === 0) {
+            const excludeSet = new Set(exclusionKeys);
+            paths = this.schemaPaths.map(p => p.path).filter(p => !excludeSet.has(p));
+          } else {
+            paths = inclusionKeys;
+          }
+        } catch (e) {
+          return null;
         }
       } else {
-        this.selectedPaths = [{ path: '_id' }];
+        paths = trimmed.split(/\s+/).filter(Boolean);
       }
-      this.shouldShowFieldModal = true;
+      return paths;
     },
-    filterDocuments() {
-      if (this.selectedPaths.length > 0) {
-        this.filteredPaths = [...this.selectedPaths];
+    applyProjectionFromInput() {
+      const paths = this.parseProjectionInput(this.projectionText);
+      if (paths === null) {
+        this.syncProjectionFromPaths();
+        return;
+      }
+      if (paths.length === 0) {
+        this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+        if (this.filteredPaths.length === 0 && this.schemaPaths.length > 0) {
+          const idPath = this.schemaPaths.find(p => p.path === '_id');
+          this.filteredPaths = idPath ? [idPath] : [this.schemaPaths[0]];
+        }
       } else {
-        this.filteredPaths.length = 0;
+        this.filteredPaths = paths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+        const validPaths = new Set(this.schemaPaths.map(p => p.path));
+        for (const path of paths) {
+          if (validPaths.has(path) && !this.filteredPaths.find(p => p.path === path)) {
+            this.filteredPaths.push(this.schemaPaths.find(p => p.path === path));
+          }
+        }
+        if (this.filteredPaths.length === 0) {
+          this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+        }
       }
-      this.shouldShowFieldModal = false;
-      const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-      this.query.fields = selectedParams;
-      this.$router.push({ query: this.query });
-    },
-    resetDocuments() {
       this.selectedPaths = [...this.filteredPaths];
-      this.query.fields = {};
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+    },
+    updateProjectionQuery() {
+      const selectedParams = this.filteredPaths.map(x => x.path).join(',');
+      if (selectedParams) {
+        this.query.fields = selectedParams;
+      } else {
+        delete this.query.fields;
+      }
       this.$router.push({ query: this.query });
-      this.shouldShowFieldModal = false;
     },
-    deselectAll() {
-      this.selectedPaths = [];
+    removeField(schemaPath) {
+      const index = this.filteredPaths.findIndex(p => p.path === schemaPath.path);
+      if (index !== -1) {
+        this.filteredPaths.splice(index, 1);
+        if (this.filteredPaths.length === 0) {
+          const idPath = this.schemaPaths.find(p => p.path === '_id');
+          this.filteredPaths = idPath ? [idPath] : [];
+        }
+        this.syncProjectionFromPaths();
+        this.updateProjectionQuery();
+        this.saveProjectionPreference();
+      }
     },
-    selectAll() {
-      this.selectedPaths = [...this.schemaPaths];
+    addField(schemaPath) {
+      if (!this.filteredPaths.find(p => p.path === schemaPath.path)) {
+        this.filteredPaths.push(schemaPath);
+        this.filteredPaths.sort((a, b) => {
+          if (a.path === '_id') return -1;
+          if (b.path === '_id') return 1;
+          return 0;
+        });
+        this.syncProjectionFromPaths();
+        this.updateProjectionQuery();
+        this.saveProjectionPreference();
+        this.showAddFieldDropdown = false;
+        this.addFieldFilterText = '';
+      }
     },
-    isSelected(path) {
-      return this.selectedPaths.find(x => x.path == path);
+    toggleAddFieldDropdown() {
+      this.showAddFieldDropdown = !this.showAddFieldDropdown;
+      if (this.showAddFieldDropdown) {
+        this.addFieldFilterText = '';
+        this.$nextTick(() => this.$refs.addFieldFilterInput?.focus());
+      }
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
