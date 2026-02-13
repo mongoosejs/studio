@@ -25,7 +25,7 @@
           class="text-xs px-2 py-1 rounded-full font-medium"
           :class="getStatusColor(task.status)"
         >
-          {{ task.status }}
+          {{ task?.status }}
         </span>
       </div>
 
@@ -34,24 +34,34 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">Scheduled At</label>
           <div class="text-sm text-gray-900">{{ formatDate(task.scheduledAt) }}</div>
         </div>
-        <div v-if="task.startedAt">
+        <div v-if="task?.startedAt">
           <label class="block text-sm font-medium text-gray-700 mb-1">Started At</label>
           <div class="text-sm text-gray-900">{{ formatDate(task.startedAt) }}</div>
         </div>
-        <div v-if="task.completedAt">
+        <div v-if="task?.completedAt">
           <label class="block text-sm font-medium text-gray-700 mb-1">Completed At</label>
           <div class="text-sm text-gray-900">{{ formatDate(task.completedAt) }}</div>
         </div>
-        <div v-if="task.error">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Error</label>
-          <div class="text-sm text-red-600">{{ task.error }}</div>
+      </div>
+
+      <div v-if="task?.params" class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Params</label>
+        <div class="bg-gray-50 rounded-md p-4">
+          <list-json :value="task.params"></list-json>
         </div>
       </div>
 
-      <div v-if="taskPayload && Object.keys(taskPayload).length > 0" class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Payload</label>
+      <div v-if="task?.result" class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Result</label>
         <div class="bg-gray-50 rounded-md p-4">
-          <pre class="text-sm text-gray-800 whitespace-pre-wrap">{{ JSON.stringify(taskPayload, null, 2) }}</pre>
+          <list-json :value="task.result"></list-json>
+        </div>
+      </div>
+
+      <div v-if="task?.error" class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Error</label>
+        <div class="bg-gray-50 rounded-md p-4">
+          <list-json :value="task.error"></list-json>
         </div>
       </div>
 

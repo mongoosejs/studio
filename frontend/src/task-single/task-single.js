@@ -26,11 +26,6 @@ module.exports = app => app.component('task-single', {
       const query = this.$route.query?.status ? { status: this.$route.query.status } : {};
       return { path, query };
     },
-    taskPayload() {
-      if (!this.task) return null;
-      const p = this.task.payload ?? this.task.parameters;
-      return p && typeof p === 'object' ? p : null;
-    }
   },
   watch: {
     '$route.params': {
