@@ -235,22 +235,33 @@
                     >
                       +
                     </button>
-                    <ul
+                    <div
                       v-if="showAddFieldDropdown"
                       class="add-field-dropdown"
+                      @click.stop
                     >
-                      <li
-                        v-for="path in availablePathsToAdd"
-                        :key="path.path"
-                        class="add-field-option"
-                        @click="addField(path)"
-                      >
-                        {{ path.path }}
-                      </li>
-                      <li v-if="availablePathsToAdd.length === 0" class="add-field-option add-field-empty">
-                        No more fields to add
-                      </li>
-                    </ul>
+                      <input
+                        ref="addFieldFilterInput"
+                        v-model="addFieldFilterText"
+                        type="text"
+                        placeholder="Search fields..."
+                        class="add-field-filter-input"
+                        @click.stop
+                      />
+                      <ul class="add-field-list">
+                        <li
+                          v-for="path in filteredPathsToAdd"
+                          :key="path.path"
+                          class="add-field-option"
+                          @click="addField(path)"
+                        >
+                          {{ path.path }}
+                        </li>
+                        <li v-if="filteredPathsToAdd.length === 0" class="add-field-option add-field-empty">
+                          {{ addFieldFilterText.trim() ? 'No matching fields' : 'No more fields to add' }}
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </th>
               </tr>

@@ -38,6 +38,7 @@ module.exports = app => app.component('models', {
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     projectionText: '',
+    addFieldFilterText: '',
     showAddFieldDropdown: false,
     shouldShowIndexModal: false,
     shouldShowCollectionInfoModal: false,
@@ -91,6 +92,7 @@ module.exports = app => app.component('models', {
       const container = this.$refs.addFieldContainer;
       if (container && !container.contains(event.target)) {
         this.showAddFieldDropdown = false;
+        this.addFieldFilterText = '';
       }
     };
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
@@ -212,6 +214,12 @@ module.exports = app => app.component('models', {
     availablePathsToAdd() {
       const currentPaths = new Set(this.filteredPaths.map(p => p.path));
       return this.schemaPaths.filter(p => !currentPaths.has(p.path));
+    },
+    filteredPathsToAdd() {
+      const available = this.availablePathsToAdd;
+      const query = (this.addFieldFilterText || '').trim().toLowerCase();
+      if (!query) return available;
+      return available.filter(p => p.path.toLowerCase().includes(query));
     }
   },
   methods: {
@@ -425,10 +433,12 @@ module.exports = app => app.component('models', {
         const sort = eval(`(${this.$route.query.sort})`);
         const path = Object.keys(sort)[0];
         const num = Object.values(sort)[0];
-        this.sortDocs(num, path);
+        for (const key in this.sortBy) {
+          delete this.sortBy[key];
+        }
+        this.sortBy[path] = num;
+        this.query.sort = `{${path}:${num}}`;
       }
-
-
       if (this.currentModel != null) {
         await this.getDocuments();
       }
@@ -866,10 +876,15 @@ module.exports = app => app.component('models', {
         this.updateProjectionQuery();
         this.saveProjectionPreference();
         this.showAddFieldDropdown = false;
+        this.addFieldFilterText = '';
       }
     },
     toggleAddFieldDropdown() {
       this.showAddFieldDropdown = !this.showAddFieldDropdown;
+      if (this.showAddFieldDropdown) {
+        this.addFieldFilterText = '';
+        this.$nextTick(() => this.$refs.addFieldFilterInput?.focus());
+      }
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {

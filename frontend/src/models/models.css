@@ -280,9 +280,31 @@
   border: 1px solid #cbd5e1;
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  max-height: 200px;
+  min-width: 180px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.models .add-field-filter-input {
+  flex-shrink: 0;
+  margin: 6px 8px;
+  padding: 6px 8px;
+  font-size: 0.8125rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  outline: none;
+}
+
+.models .add-field-filter-input:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 1px #93c5fd;
+}
+
+.models .add-field-list {
+  max-height: 180px;
   overflow-y: auto;
-  min-width: 160px;
   list-style: none;
   padding: 4px 0;
   margin: 0;
