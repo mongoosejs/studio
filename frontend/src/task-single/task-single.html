@@ -1,0 +1,157 @@
+<div class="p-4 space-y-6">
+  <div v-if="status === 'init'">
+    <img src="images/loader.gif" alt="Loading" />
+  </div>
+  <div v-else-if="status === 'error'" class="text-red-600">
+    {{ errorMessage }}
+  </div>
+  <div v-else-if="status === 'notfound'" class="text-gray-600">
+    Task not found.
+  </div>
+  <div v-else-if="task" class="max-w-4xl">
+    <button @click="goBack" class="text-gray-500 hover:text-gray-700 mb-4 flex items-center gap-1">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Back to {{ task.name }}
+    </button>
+    <h1 class="text-2xl font-bold text-gray-700 mb-1">{{ task.name }}</h1>
+    <p class="text-gray-500 mb-6">Task details</p>
+
+    <div class="bg-white rounded-lg shadow p-6 md:p-8">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="text-sm font-medium text-gray-900">ID: {{ task.id }}</span>
+        <span
+          class="text-xs px-2 py-1 rounded-full font-medium"
+          :class="getStatusColor(task.status)"
+        >
+          {{ task?.status }}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Scheduled At</label>
+          <div class="text-sm text-gray-900">{{ formatDate(task.scheduledAt) }}</div>
+        </div>
+        <div v-if="task?.startedAt">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Started At</label>
+          <div class="text-sm text-gray-900">{{ formatDate(task.startedAt) }}</div>
+        </div>
+        <div v-if="task?.completedAt">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Completed At</label>
+          <div class="text-sm text-gray-900">{{ formatDate(task.completedAt) }}</div>
+        </div>
+      </div>
+
+      <div v-if="task?.params" class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Params</label>
+        <div class="bg-gray-50 rounded-md p-4">
+          <list-json :value="task.params"></list-json>
+        </div>
+      </div>
+
+      <div v-if="task?.result" class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Result</label>
+        <div class="bg-gray-50 rounded-md p-4">
+          <list-json :value="task.result"></list-json>
+        </div>
+      </div>
+
+      <div v-if="task?.error" class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Error</label>
+        <div class="bg-gray-50 rounded-md p-4">
+          <list-json :value="task.error"></list-json>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+        <button
+          @click="showRescheduleConfirmation(task)"
+          class="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="task.status === 'in_progress'"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Reschedule
+        </button>
+        <button
+          @click="showRunConfirmation(task)"
+          class="flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="task.status === 'in_progress'"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l14 9-14 9V3z"></path>
+          </svg>
+          Run Now
+        </button>
+        <button
+          v-if="task.status === 'pending'"
+          @click="showCancelConfirmation(task)"
+          class="flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-red-600 hover:to-red-700"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          Cancel Task
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reschedule Modal -->
+  <modal v-if="showRescheduleModal" containerClass="!max-w-md">
+    <template #body>
+      <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showRescheduleModal = false" role="button" aria-label="Close modal">&times;</div>
+      <div class="p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Reschedule Task</h3>
+        <p class="text-sm text-gray-600 mb-2">Reschedule task <strong>{{ selectedTask?.id }}</strong>?</p>
+        <p class="text-sm text-gray-500 mb-4">This will reset the task's status and schedule it to run again.</p>
+        <label for="newScheduledTime" class="block text-sm font-medium text-gray-700 mb-2">New Scheduled Time</label>
+        <input
+          id="newScheduledTime"
+          v-model="newScheduledTime"
+          type="datetime-local"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 mb-4"
+        />
+        <div class="flex gap-3">
+          <button @click="confirmRescheduleTask" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium">Reschedule</button>
+          <button @click="showRescheduleModal = false" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 font-medium">Cancel</button>
+        </div>
+      </div>
+    </template>
+  </modal>
+
+  <!-- Run Modal -->
+  <modal v-if="showRunModal" containerClass="!max-w-md">
+    <template #body>
+      <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showRunModal = false" role="button" aria-label="Close modal">&times;</div>
+      <div class="p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Run Task Now</h3>
+        <p class="text-sm text-gray-600 mb-2">Run task <strong>{{ selectedTask?.id }}</strong> immediately?</p>
+        <p class="text-sm text-gray-500 mb-4">This will execute the task right away, bypassing its scheduled time.</p>
+        <div class="flex gap-3">
+          <button @click="confirmRunTask" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 font-medium">Run Now</button>
+          <button @click="showRunModal = false" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 font-medium">Cancel</button>
+        </div>
+      </div>
+    </template>
+  </modal>
+
+  <!-- Cancel Task Modal -->
+  <modal v-if="showCancelModal" containerClass="!max-w-md">
+    <template #body>
+      <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showCancelModal = false" role="button" aria-label="Close modal">&times;</div>
+      <div class="p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Cancel Task</h3>
+        <p class="text-sm text-gray-600 mb-2">Cancel task <strong>{{ selectedTask?.id }}</strong>?</p>
+        <p class="text-sm text-gray-500 mb-4">This will permanently cancel the task and it cannot be undone.</p>
+        <div class="flex gap-3">
+          <button @click="confirmCancelTask" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 font-medium">Cancel Task</button>
+          <button @click="showCancelModal = false" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 font-medium">Keep Task</button>
+        </div>
+      </div>
+    </template>
+  </modal>
+</div>
