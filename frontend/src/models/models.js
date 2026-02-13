@@ -799,7 +799,7 @@ module.exports = app => app.component('models', {
           return null;
         }
       } else {
-        paths = trimmed.split(',').map(s => s.trim()).filter(Boolean);
+        paths = trimmed.split(/\s+/).filter(Boolean);
       }
       return paths;
     },
