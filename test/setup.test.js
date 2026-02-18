@@ -1,6 +1,7 @@
 'use strict';
 
 const Backend = require('../backend');
+const { MongoMemoryReplSet } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 
 let replSet;
@@ -13,11 +14,10 @@ const Test = connection.model('Test', new mongoose.Schema({ name: String }));
 before(async function() {
   this.timeout(60000);
 
-  let dataUri = 'mongodb://127.0.0.1:27017/studio_data_test';
-  let connUri = 'mongodb://127.0.0.1:27017/studio_conn_test';
+  let uri = 'mongodb://127.0.0.1:27017';
 
   if (process.env.GITHUB_ACTIONS) {
-    const { MongoMemoryReplSet } = require('mongodb-memory-server');
+
     replSet = await MongoMemoryReplSet.create({
       replSet: {
         name: 'rs0',
@@ -28,13 +28,12 @@ before(async function() {
       }
     });
 
-    const uri = replSet.getUri();
-    dataUri = uri + 'studio_data_test';
-    connUri = uri + 'studio_conn_test';
+    uri = replSet.getUri();
+    console.log('Created MongoDB Memory server', uri);
   }
 
-  await connection.openUri(dataUri);
-  await studioConnection.openUri(connUri);
+  await connection.openUri(uri, { dbName: 'studio_data_test' });
+  await studioConnection.openUri(uri, { dbName: 'studio_conn_test' });
 
   await Test.deleteMany();
 });
@@ -44,8 +43,8 @@ afterEach(async function () {
 });
 
 after(async function() {
-  if (actions?.services?.changeStream) {
-    await actions.services.changeStream.close().catch(() => {});
+  if (actions?.services?.changeStream()) {
+    await actions.services.changeStream().close().catch(() => {});
   }
   await connection.close();
   await studioConnection.close();
