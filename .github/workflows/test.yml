@@ -5,13 +5,6 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
-    services:
-      mongo:
-        image: mongo:${{ matrix.mongodb }}
-        ports:
-          - 27017:27017
-        options: >-
-          --replSet rs0 --bind_ip_all
     strategy:
       fail-fast: false
       matrix:
@@ -30,6 +23,20 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node }}
+
+      - name: Install MongoDB
+        run: |
+          wget -qO - https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2204-${{ matrix.mongodb }}.tgz | tar zx
+          mv mongodb-linux-x86_64-ubuntu2204-${{ matrix.mongodb }} mongodb
+
+      - name: Start MongoDB
+        run: |
+          mkdir -p data/db
+          ./mongodb/bin/mongod --dbpath ./data/db --replSet rs0 --fork --logpath ./mongod.log
+
+      - name: Init replica set
+        run: |
+          ./mongodb/bin/mongosh --eval "rs.initiate()"
 
       - run: npm install
       - name: NPM Test
