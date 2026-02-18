@@ -25,7 +25,7 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - name: Start MongoDB server
-        uses: supercharge/mongodb-github-action@v1.10.0
+        uses: supercharge/mongodb-github-action@v1.12.1
         with:
           mongodb-version: ${{ matrix.mongodb }}
           mongodb-replica-set: rs0
