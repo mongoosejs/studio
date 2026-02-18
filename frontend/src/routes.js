@@ -2,14 +2,14 @@
 
 // Role-based access control configuration
 const roleAccess = {
-  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'mongoose-sleuth', 'case-reports'],
-  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'mongoose-sleuth', 'case-reports'],
-  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat', 'mongoose-sleuth', 'case-reports'],
-  readonly: ['root', 'model', 'document', 'chat', 'mongoose-sleuth', 'case-reports'],
+  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'mongoose-sleuth', 'case-reports', 'case-report'],
+  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'mongoose-sleuth', 'case-reports', 'case-report'],
+  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat', 'mongoose-sleuth', 'case-reports', 'case-report'],
+  readonly: ['root', 'model', 'document', 'chat', 'mongoose-sleuth', 'case-reports', 'case-report'],
   dashboards: ['dashboards', 'dashboard']
 };
 
-const allowedRoutesForLocalDev = ['document', 'root', 'chat', 'mongoose-sleuth', 'case-reports'];
+const allowedRoutesForLocalDev = ['document', 'root', 'chat', 'mongoose-sleuth', 'case-reports', 'case-report'];
 
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {
@@ -45,17 +45,17 @@ module.exports = {
       }
     },
     {
-      path: '/mongoose-sleuth',
-      name: 'mongoose-sleuth',
-      component: 'mongoose-sleuth',
+      path: '/case-reports',
+      name: 'case-reports',
+      component: 'case-reports',
       meta: {
         authorized: true
       }
     },
     {
-      path: '/case-reports',
-      name: 'case-reports',
-      component: 'case-reports',
+      path: '/case-reports/:caseReportId',
+      name: 'case-report',
+      component: 'mongoose-sleuth',
       meta: {
         authorized: true
       }

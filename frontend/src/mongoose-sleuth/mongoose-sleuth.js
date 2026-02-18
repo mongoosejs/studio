@@ -52,17 +52,14 @@ module.exports = app => app.component('mongoose-sleuth', {
     this.loadOutputPreference();
   },
   beforeDestroy() {
-    const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
+    const container = this.$refs.unified?.$refs?.documentsList?.querySelector('.documents-container');
     if (container) {
       container.removeEventListener('scroll', this.onScroll, true);
     }
   },
   async mounted() {
     this.onScroll = () => this.checkIfScrolledToBottom();
-    const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
-    if (container) {
-      container.addEventListener('scroll', this.onScroll, true);
-    }
+    this.attachScrollListener();
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     if (this.models.length === 0) {
@@ -74,8 +71,8 @@ module.exports = app => app.component('mongoose-sleuth', {
       this.status = 'loaded';
     }
 
-    // If opened with an existing case report, load it and go to Step 2
-    const caseReportId = this.$route?.query?.caseReportId;
+    // If opened with an existing case report (from route params on case-report page or query when embedded), load it and go to Step 2
+    const caseReportId = this.$route?.params?.caseReportId || this.$route?.query?.caseReportId;
     if (caseReportId) {
       this.currentCaseReportId = caseReportId;
       try {
@@ -86,15 +83,22 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     }
   },
-  updated() {
-    // Re-attach scroll listener when documents container is updated
-    this.$nextTick(() => {
-      const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
-      if (container) {
-        container.removeEventListener('scroll', this.onScroll, true);
-        container.addEventListener('scroll', this.onScroll, true);
+  watch: {
+    '$route.params.caseReportId': {
+      async handler(caseReportId) {
+        if (!caseReportId) return;
+        this.currentCaseReportId = caseReportId;
+        try {
+          await this.loadCaseReport(caseReportId);
+        } catch (err) {
+          console.error('Error loading case report', err);
+          this.$toast.error(`Error loading case report: ${err?.message || 'Unknown error'}`);
+        }
       }
-    });
+    }
+  },
+  updated() {
+    this.$nextTick(() => this.attachScrollListener());
   },
   computed: {
     referenceMap() {
@@ -117,7 +121,6 @@ module.exports = app => app.component('mongoose-sleuth', {
         }
         grouped[doc.model].push(doc);
       }
-      // Convert to array of { model, documents } for easier iteration
       return Object.keys(grouped).map(model => ({
         model,
         documents: grouped[model]
@@ -125,6 +128,13 @@ module.exports = app => app.component('mongoose-sleuth', {
     }
   },
   methods: {
+    attachScrollListener() {
+      const container = this.$refs.unified?.$refs?.documentsList?.querySelector('.documents-container');
+      if (container) {
+        container.removeEventListener('scroll', this.onScroll, true);
+        container.addEventListener('scroll', this.onScroll, true);
+      }
+    },
     async goToAggregating() {
       // If we're coming from Step 2 and have an existing case report,
       // persist current notes/document state before going back.
@@ -235,14 +245,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       this.error = null;
       await this.getDocuments();
       this.status = 'loaded';
-      // Attach scroll listener after documents are loaded
-      this.$nextTick(() => {
-        const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
-        if (container) {
-          container.removeEventListener('scroll', this.onScroll, true);
-          container.addEventListener('scroll', this.onScroll, true);
-        }
-      });
+      this.$nextTick(() => this.attachScrollListener());
     },
     getDocumentKey(doc) {
       if (!doc || !doc._id || !doc.model) {
@@ -306,9 +309,9 @@ module.exports = app => app.component('mongoose-sleuth', {
       this.status = 'loaded';
     },
     addPathFilter(path) {
-      const aggregating = this.$refs.aggregating;
-      if (aggregating?.$refs?.documentSearch?.addPathFilter) {
-        aggregating.$refs.documentSearch.addPathFilter(path);
+      const unified = this.$refs.unified;
+      if (unified?.$refs?.documentSearch?.addPathFilter) {
+        unified.$refs.documentSearch.addPathFilter(path);
       }
     },
     async getDocuments() {
@@ -438,7 +441,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       if (this.status === 'loading' || this.loadedAllDocs || !this.currentModel) {
         return;
       }
-      const container = this.$refs.aggregating?.$refs?.documentsList?.querySelector('.documents-container');
+      const container = this.$refs.unified?.$refs?.documentsList?.querySelector('.documents-container');
       if (container && container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
         this.status = 'loading';
         await this.loadMoreDocuments();

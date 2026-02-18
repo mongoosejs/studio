@@ -3,6 +3,7 @@
 const api = require('../api');
 const template = require('./models.html');
 const mpath = require('mpath');
+const { hasAccess } = require('../routes');
 
 const appendCSS = require('../appendCSS');
 appendCSS(require('./models.css'));
@@ -47,7 +48,12 @@ module.exports = app => app.component('models', {
     lastSelectedIndex: null,
     error: null,
     showActionsMenu: false,
-    collectionInfo: null
+    collectionInfo: null,
+    hideRightPanel: true,
+    activeRightTab: null,
+    rightPanelTabs: [
+      { id: 'sleuth', label: 'Sleuth' }
+    ]
   }),
   created() {
     this.currentModel = this.model;
@@ -89,6 +95,12 @@ module.exports = app => app.component('models', {
     await this.initSearchFromUrl();
   },
   computed: {
+    hasSleuthAccess() {
+      return hasAccess(this.roles, 'mongoose-sleuth');
+    },
+    hasAnyRightPanelTabAccess() {
+      return this.rightPanelTabs.some(tab => this.hasRightPanelTabAccess(tab));
+    },
     referenceMap() {
       const map = {};
       for (const path of this.filteredPaths) {
@@ -100,6 +112,18 @@ module.exports = app => app.component('models', {
     }
   },
   methods: {
+    hasRightPanelTabAccess(tab) {
+      if (tab.id === 'sleuth') return this.hasSleuthAccess;
+      return false;
+    },
+    openRightPanel(tabId) {
+      this.hideRightPanel = false;
+      this.activeRightTab = tabId;
+    },
+    closeRightPanel() {
+      this.hideRightPanel = true;
+      this.activeRightTab = null;
+    },
     loadOutputPreference() {
       if (typeof window === 'undefined' || !window.localStorage) {
         return;
@@ -593,11 +617,6 @@ module.exports = app => app.component('models', {
       } else {
         this.selectMultiple = true;
       }
-    },
-    goToMongooseSleuth() {
-      this.$router.push({
-        path: '/mongoose-sleuth'
-      });
     }
   }
 });
