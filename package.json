@@ -38,6 +38,7 @@
     "eslint": "9.30.0",
     "express": "4.x",
     "mocha": "10.2.0",
+    "mongodb-memory-server": "^11.0.1",
     "mongoose": "9.x",
     "sinon": "^21.0.1"
   },
