@@ -27,7 +27,8 @@ module.exports = ({ db, changeStream }) => async function* streamDocumentChanges
     throw new Error(`Model ${model} not found`);
   }
 
-  if (!changeStream) {
+  const stream = changeStream();
+  if (!stream) {
     throw new Error('Change streams are not enabled');
   }
 
@@ -79,9 +80,9 @@ module.exports = ({ db, changeStream }) => async function* streamDocumentChanges
     enqueue({ type: 'end' });
   }
 
-  changeStream.on('change', handleChange);
-  changeStream.on('error', handleError);
-  changeStream.on('end', handleEnd);
+  stream.on('change', handleChange);
+  stream.on('error', handleError);
+  stream.on('end', handleEnd);
 
   try {
     while (true) {
@@ -112,9 +113,9 @@ module.exports = ({ db, changeStream }) => async function* streamDocumentChanges
       }
     }
   } finally {
-    changeStream.off('change', handleChange);
-    changeStream.off('error', handleError);
-    changeStream.off('end', handleEnd);
+    stream.off('change', handleChange);
+    stream.off('error', handleError);
+    stream.off('end', handleEnd);
     if (resolveQueue) {
       resolveQueue();
       resolveQueue = null;
