@@ -5,6 +5,13 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    services:
+      mongo:
+        image: mongo:${{ matrix.mongodb }}
+        ports:
+          - 27017:27017
+        options: >-
+          --replSet rs0 --bind_ip_all
     strategy:
       fail-fast: false
       matrix:
@@ -23,12 +30,6 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node }}
-
-      - name: Start MongoDB server
-        uses: supercharge/mongodb-github-action@v1.12.1
-        with:
-          mongodb-version: ${{ matrix.mongodb }}
-          mongodb-replica-set: rs0
 
       - run: npm install
       - name: NPM Test
