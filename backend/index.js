@@ -16,12 +16,20 @@ module.exports = function backend(db, studioConnection, options) {
   const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
   const ChatThread = studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
 
-  let changeStream = null;
+  const services = { db, studioConnection, options };
   if (options?.changeStream) {
-    changeStream = db instanceof mongoose.Mongoose ? db.connection.watch() : db.watch();
+    const conn = db instanceof mongoose.Mongoose ? db.connection : db;
+    if (conn.readyState !== mongoose.Connection.STATES.connected) {
+      conn._waitForConnect().then(() => {
+        services.changeStream = conn.watch();
+      });
+    } else {
+      services.changeStream = conn.watch();
+    }
+
   }
 
-  const actions = applySpec(Actions, { db, studioConnection, options, changeStream });
-  actions.services = { changeStream };
+  const actions = applySpec(Actions, services);
+  actions.services = services;
   return actions;
 };
