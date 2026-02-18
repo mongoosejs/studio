@@ -4,7 +4,8 @@ const Archetype = require('archetype');
 
 const GetTasksParams = new Archetype({
   start: {
-    $type: Date
+    $type: Date,
+    $required: true
   },
   end: {
     $type: Date
@@ -31,22 +32,24 @@ module.exports = ({ db }) => async function getTasks(params) {
   }
   if (status) {
     filter.status = status;
+  } else {
+    filter.status = { $in: ['pending', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown'] };
   }
   if (name) {
     filter.name = { $regex: name, $options: 'i' };
   }
 
   const tasks = await Task.find(filter);
-  
+
   // Define all possible statuses
   const allStatuses = ['pending', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown'];
-  
+
   // Initialize groupedTasks with all statuses
   const groupedTasks = allStatuses.reduce((groups, status) => {
     groups[status] = [];
     return groups;
   }, {});
-  
+
   // Group tasks by status
   tasks.forEach(task => {
     const taskStatus = task.status || 'unknown';
@@ -54,7 +57,7 @@ module.exports = ({ db }) => async function getTasks(params) {
       groupedTasks[taskStatus].push(task);
     }
   });
- 
+
   return {
     tasks,
     groupedTasks

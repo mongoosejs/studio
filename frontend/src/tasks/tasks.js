@@ -8,11 +8,12 @@ module.exports = app => app.component('tasks', {
     status: 'init',
     tasks: [],
     groupedTasks: {},
-    selectedRange: 'today',
+    selectedRange: 'last_hour',
     start: null,
     end: null,
     dateFilters: [
       { value: 'all', label: 'All Time' },
+      { value: 'last_hour', label: 'Last Hour' },
       { value: 'today', label: 'Today' },
       { value: 'yesterday', label: 'Yesterday' },
       { value: 'thisWeek', label: 'This Week' },
@@ -233,6 +234,11 @@ module.exports = app => app.component('tasks', {
       let start, end;
 
       switch (this.selectedRange) {
+        case 'last_hour':
+          start = new Date();
+          start.setHours(start.getHours() - 1);
+          end = new Date();
+          break;
         case 'today':
           start = new Date();
           start.setHours(0, 0, 0, 0);

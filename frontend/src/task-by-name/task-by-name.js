@@ -52,8 +52,15 @@ module.exports = app => app.component('task-by-name', {
       this.status = 'init';
       this.taskGroup = null;
       this.errorMessage = '';
+      const start = new Date();
+      start.setHours(start.getHours() - 1);
+      const end = new Date();
       try {
-        const { tasks } = await api.Task.getTasks({ name: this.taskName });
+        const { tasks } = await api.Task.getTasks({
+          name: this.taskName,
+          start,
+          end
+        });
         this.taskGroup = buildTaskGroup(this.taskName, tasks);
         this.status = 'loaded';
       } catch (err) {
