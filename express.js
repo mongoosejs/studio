@@ -33,6 +33,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
 
   apiUrl = apiUrl || 'api';
   const backend = Backend(conn, options.studioConnection, options);
+  delete backend.services;
 
   router.use(
     '/api',

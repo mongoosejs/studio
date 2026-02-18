@@ -1,17 +1,5 @@
 <div class="p-4 space-y-6">
-         <!-- Task Details View -->
-     <task-details 
-         v-if="showTaskDetails && selectedTaskGroup"
-         :task-group="selectedTaskGroup"
-         :current-filter="taskDetailsFilter"
-         @back="hideTaskDetails"
-         @task-created="onTaskCreated"
-         @task-cancelled="onTaskCancelled"
-         @update:current-filter="taskDetailsFilter = $event"
-     ></task-details>
-
-    <!-- Main Tasks View -->
-    <div v-else>
+    <div>
         <h1 class="text-2xl font-bold text-gray-700 mb-4">Task Overview</h1>
         <div v-if="status == 'init'">
             <img src="images/loader.gif" />

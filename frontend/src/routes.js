@@ -2,14 +2,14 @@
 
 // Role-based access control configuration
 const roleAccess = {
-  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat'],
-  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat'],
-  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat'],
+  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'tasks', 'taskByName', 'taskSingle'],
+  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'tasks', 'taskByName', 'taskSingle'],
+  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat', 'tasks', 'taskByName', 'taskSingle'],
   readonly: ['root', 'model', 'document', 'chat'],
   dashboards: ['dashboards', 'dashboard']
 };
 
-const allowedRoutesForLocalDev = ['document', 'root', 'chat', 'model'];
+const allowedRoutesForLocalDev = ['document', 'root', 'chat', 'model', 'tasks', 'taskByName', 'taskSingle'];
 
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {
@@ -72,6 +72,22 @@ module.exports = {
       path: '/tasks',
       name: 'tasks',
       component: 'tasks',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/tasks/:name',
+      name: 'taskByName',
+      component: 'task-by-name',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/tasks/:name/:id',
+      name: 'taskSingle',
+      component: 'task-single',
       meta: {
         authorized: true
       }

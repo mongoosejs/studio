@@ -8,11 +8,12 @@ module.exports = app => app.component('tasks', {
     status: 'init',
     tasks: [],
     groupedTasks: {},
-    selectedRange: 'today',
+    selectedRange: 'last_hour',
     start: null,
     end: null,
     dateFilters: [
       { value: 'all', label: 'All Time' },
+      { value: 'last_hour', label: 'Last Hour' },
       { value: 'today', label: 'Today' },
       { value: 'yesterday', label: 'Yesterday' },
       { value: 'thisWeek', label: 'This Week' },
@@ -31,10 +32,6 @@ module.exports = app => app.component('tasks', {
     ],
     searchQuery: '',
     searchTimeout: null,
-    // Task details view state
-    showTaskDetails: false,
-    selectedTaskGroup: null,
-    taskDetailsFilter: null,
     // Create task modal state
     showCreateTaskModal: false,
     newTask: {
@@ -70,28 +67,10 @@ module.exports = app => app.component('tasks', {
       this.groupedTasks = groupedTasks;
     },
     openTaskGroupDetails(group) {
-      this.selectedTaskGroup = group;
-      this.showTaskDetails = true;
+      this.$router.push({ path: `/tasks/${encodeURIComponent(group.name || '')}` });
     },
     openTaskGroupDetailsWithFilter(group, status) {
-      // Create a filtered version of the task group with only the specified status
-      const filteredGroup = {
-        ...group,
-        tasks: group.tasks.filter(task => task.status === status),
-        filteredStatus: status
-      };
-      this.selectedTaskGroup = filteredGroup;
-      this.taskDetailsFilter = status;
-      this.showTaskDetails = true;
-    },
-    async onTaskCancelled() {
-      // Refresh the task data when a task is cancelled
-      await this.getTasks();
-    },
-    hideTaskDetails() {
-      this.showTaskDetails = false;
-      this.selectedTaskGroup = null;
-      this.taskDetailsFilter = null;
+      this.$router.push({ path: `/tasks/${encodeURIComponent(group.name || '')}`, query: status ? { status } : {} });
     },
     async onTaskCreated() {
       // Refresh the task data when a new task is created
@@ -255,6 +234,11 @@ module.exports = app => app.component('tasks', {
       let start, end;
 
       switch (this.selectedRange) {
+        case 'last_hour':
+          start = new Date();
+          start.setHours(start.getHours() - 1);
+          end = new Date();
+          break;
         case 'today':
           start = new Date();
           start.setHours(0, 0, 0, 0);
