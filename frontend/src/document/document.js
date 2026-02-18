@@ -3,6 +3,7 @@
 const api = require('../api');
 const mpath = require('mpath');
 const template = require('./document.html');
+const { hasAccess } = require('../routes');
 
 const appendCSS = require('../appendCSS');
 
@@ -63,9 +64,25 @@ module.exports = app => app.component('document', {
     },
     canEdit() {
       return this.canManipulate && this.viewMode === 'fields';
+    },
+    hasSleuthAccess() {
+      return hasAccess(this.roles, 'mongoose-sleuth');
     }
   },
   methods: {
+    addToSleuth() {
+      try {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          window.sessionStorage.setItem('studio:sleuth:addDocument', JSON.stringify({
+            model: this.model,
+            documentId: this.documentId
+          }));
+        }
+        this.$router.push({ path: `/model/${encodeURIComponent(this.model)}`, query: { openSleuth: '1' } });
+      } catch (e) {
+        console.error('Add to Sleuth', e);
+      }
+    },
     cancelEdit() {
       this.changes = {};
       this.editting = false;

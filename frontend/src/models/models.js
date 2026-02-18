@@ -93,6 +93,16 @@ module.exports = app => app.component('models', {
     }
 
     await this.initSearchFromUrl();
+    if (this.$route.query?.openSleuth === '1') {
+      this.openRightPanel('sleuth');
+    }
+  },
+  watch: {
+    '$route.query.openSleuth'(val) {
+      if (val === '1') {
+        this.openRightPanel('sleuth');
+      }
+    }
   },
   computed: {
     hasSleuthAccess() {
@@ -123,6 +133,12 @@ module.exports = app => app.component('models', {
     closeRightPanel() {
       this.hideRightPanel = true;
       this.activeRightTab = null;
+    },
+    addSelectedToSleuth() {
+      this.openRightPanel('sleuth');
+      this.$nextTick(() => {
+        this.$refs.mongooseSleuth?.addSourceSelectedToSleuth?.();
+      });
     },
     loadOutputPreference() {
       if (typeof window === 'undefined' || !window.localStorage) {

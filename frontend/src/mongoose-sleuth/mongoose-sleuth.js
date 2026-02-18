@@ -9,7 +9,14 @@ const OUTPUT_TYPE_STORAGE_KEY = 'studio:mongoose-sleuth-output-type';
 
 module.exports = app => app.component('mongoose-sleuth', {
   template: template,
-  props: [],
+  props: {
+    sourceModel: { type: String, default: null },
+    sourceDocuments: { type: Array, default: null },
+    sourceNumDocuments: { type: Number, default: null },
+    sourceSchemaPaths: { type: Array, default: null },
+    sourceFilteredPaths: { type: Array, default: null },
+    sourceSelectedDocuments: { type: Array, default: null }
+  },
   provide() {
     return {
       sleuthContext: this
@@ -82,8 +89,21 @@ module.exports = app => app.component('mongoose-sleuth', {
         this.$toast.error(`Error loading case report: ${err?.message || 'Unknown error'}`);
       }
     }
+
+    // When embedded in models view: add document from document view if user clicked "Add to Sleuth"
+    if (this.hasSourceFromModelsView) {
+      this.applyPendingAddFromDocumentView();
+    }
   },
   watch: {
+    sourceModel: {
+      handler(val) {
+        if (this.hasSourceFromModelsView && val) {
+          this.currentModel = val;
+        }
+      },
+      immediate: true
+    },
     '$route.params.caseReportId': {
       async handler(caseReportId) {
         if (!caseReportId) return;
@@ -101,9 +121,39 @@ module.exports = app => app.component('mongoose-sleuth', {
     this.$nextTick(() => this.attachScrollListener());
   },
   computed: {
+    hasSourceFromModelsView() {
+      return this.sourceModel != null && this.sourceModel !== '';
+    },
+    displayModel() {
+      return this.hasSourceFromModelsView ? this.sourceModel : this.currentModel;
+    },
+    displayDocuments() {
+      if (this.hasSourceFromModelsView && Array.isArray(this.sourceDocuments)) {
+        return this.sourceDocuments;
+      }
+      return this.documents;
+    },
+    displayNumDocuments() {
+      if (this.hasSourceFromModelsView && typeof this.sourceNumDocuments === 'number') {
+        return this.sourceNumDocuments;
+      }
+      return this.numDocuments;
+    },
+    displaySchemaPaths() {
+      if (this.hasSourceFromModelsView && Array.isArray(this.sourceSchemaPaths) && this.sourceSchemaPaths.length > 0) {
+        return this.sourceSchemaPaths;
+      }
+      return this.schemaPaths;
+    },
+    displayFilteredPaths() {
+      if (this.hasSourceFromModelsView && Array.isArray(this.sourceFilteredPaths) && this.sourceFilteredPaths.length > 0) {
+        return this.sourceFilteredPaths;
+      }
+      return this.filteredPaths;
+    },
     referenceMap() {
       const map = {};
-      for (const path of this.filteredPaths) {
+      for (const path of this.displayFilteredPaths) {
         if (path?.ref) {
           map[path.path] = path.ref;
         }
@@ -312,6 +362,38 @@ module.exports = app => app.component('mongoose-sleuth', {
       const unified = this.$refs.unified;
       if (unified?.$refs?.documentSearch?.addPathFilter) {
         unified.$refs.documentSearch.addPathFilter(path);
+      }
+    },
+    async applyPendingAddFromDocumentView() {
+      try {
+        const raw = typeof window !== 'undefined' && window.sessionStorage
+          ? window.sessionStorage.getItem('studio:sleuth:addDocument')
+          : null;
+        if (!raw) return;
+        const { model, documentId } = JSON.parse(raw);
+        if (!model || !documentId) return;
+        window.sessionStorage.removeItem('studio:sleuth:addDocument');
+        const { doc } = await api.Model.getDocument({ model, documentId });
+        if (!doc) return;
+        const withModel = { ...doc, model };
+        const key = this.getDocumentKey(withModel);
+        if (!this.selectedDocuments.some(d => this.getDocumentKey(d) === key)) {
+          this.selectedDocuments.push(withModel);
+        }
+      } catch (e) {
+        console.error('Apply pending add to Sleuth', e);
+      }
+    },
+    addSourceSelectedToSleuth() {
+      const source = Array.isArray(this.sourceSelectedDocuments) ? this.sourceSelectedDocuments : [];
+      const model = this.sourceModel || this.currentModel;
+      for (const doc of source) {
+        if (!doc || !doc._id) continue;
+        const withModel = doc.model ? doc : { ...doc, model };
+        const key = this.getDocumentKey(withModel);
+        if (!this.selectedDocuments.some(d => this.getDocumentKey(d) === key)) {
+          this.selectedDocuments.push(withModel);
+        }
       }
     },
     async getDocuments() {
