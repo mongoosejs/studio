@@ -3,7 +3,6 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
-const mongoose = require('mongoose');
 
 const UpdateCaseReportParams = new Archetype({
   caseReportId: {
@@ -27,22 +26,31 @@ const UpdateCaseReportParams = new Archetype({
 }).compile('UpdateCaseReportParams');
 
 module.exports = ({ db, options }) => async function updateCaseReport(params) {
-  const { caseReportId, documents, summary, status, roles } = new UpdateCaseReportParams(params);
+  const { caseReportId: rawCaseReportId, documents, summary, status, roles } = new UpdateCaseReportParams(params);
   const CaseReport = db.model('__Studio_CaseReport');
 
   await authorize('CaseReport.updateCaseReport', roles);
 
+  const caseReportId = rawCaseReportId != null && typeof rawCaseReportId === 'object' && typeof rawCaseReportId.toString === 'function'
+    ? rawCaseReportId.toString()
+    : String(rawCaseReportId ?? '');
+  if (!caseReportId) {
+    throw new Error('Case report ID is required');
+  }
+
   const docs = Array.isArray(documents)
     ? documents
-      .filter(doc => doc && doc.documentId && doc.documentModel)
+      .filter(doc => doc && doc.documentId != null && doc.documentModel)
       .map(doc => {
-        // Convert documentId to ObjectId if it's a string
+        // Schema expects documentId as String; normalize to string
         let documentId = doc.documentId;
-        if (typeof documentId === 'string' && mongoose.Types.ObjectId.isValid(documentId)) {
-          documentId = new mongoose.Types.ObjectId(documentId);
+        if (documentId != null && typeof documentId === 'object' && typeof documentId.toString === 'function') {
+          documentId = documentId.toString();
+        } else if (documentId != null) {
+          documentId = String(documentId);
         }
         return {
-          documentId: documentId,
+          documentId,
           documentModel: doc.documentModel,
           ...(doc.highlightedFields ? { highlightedFields: doc.highlightedFields } : {}),
           ...(doc.notes ? { notes: doc.notes } : {})

@@ -2,7 +2,6 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const mongoose = require('mongoose');
 
 function escapeRegExp(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -52,24 +51,43 @@ module.exports = ({ db }) => async function createCaseReport(params) {
   const existingCount = await CaseReport.countDocuments({ name: { $regex: namePattern } });
 
   const finalName = existingCount > 0 ? `${normalizedName} (${existingCount})` : normalizedName;
-  const docs = Array.isArray(documents) ?
-    documents.
-      filter(doc => doc && doc.documentId && doc.documentModel).
-      map(doc => {
-        return {
-          documentId: doc.documentId,
-          documentModel: doc.documentModel,
-          ...(doc.highlightedFields ? { highlightedFields: doc.highlightedFields } : {}),
-          // notes is optional, include only if present
-          ...(doc.notes ? { notes: doc.notes } : {})
-        };
-      }) :
-    [];
+  const docs = Array.isArray(documents)
+    ? documents
+        .filter(doc => doc && doc.documentId != null && doc.documentModel)
+        .map(doc => {
+          let documentId = doc.documentId;
+          if (documentId != null && typeof documentId === 'object' && typeof documentId.toString === 'function') {
+            documentId = documentId.toString();
+          } else if (documentId != null) {
+            documentId = String(documentId);
+          }
+          return {
+            documentId,
+            documentModel: doc.documentModel,
+            ...(doc.highlightedFields ? { highlightedFields: doc.highlightedFields } : {}),
+            ...(doc.notes ? { notes: doc.notes } : {})
+          };
+        })
+    : [];
+  console.log('document created');
+  let created = null;
+  try {
+    created = await CaseReport.create({
+      name: finalName,
+      documents: docs
+    });
+  } catch(err) {
+    console.log('mongoose error', err);
+  }
+  console.log('creating the document', created);
 
-  const caseReport = await CaseReport.create({
-    name: finalName,
-    documents: docs
-  });
+  const caseReport = await CaseReport.findById(created._id).lean();
+  if (!caseReport) {
+    throw new Error('Case report created but could not be read back');
+  }
 
+  console.log('document queried');
+
+  console.log('document is lean');
   return { caseReport };
 };

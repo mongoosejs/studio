@@ -75,12 +75,20 @@
             Delete
           </button>
           <button
+            v-if="hasSleuthAccess && sleuthPanelOpen && !selectMultiple"
+            type="button"
+            class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            @click.prevent.stop="stagingSelect"
+          >
+            Add documents to case report
+          </button>
+          <button
             v-if="hasSleuthAccess && selectMultiple && selectedDocuments.length > 0"
             @click="addSelectedToSleuth"
             type="button"
             class="rounded bg-ultramarine-600 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
           >
-            Add to Sleuth
+            {{ sleuthPanelOpen ? 'Add to case report' : 'Add to Sleuth' }}
           </button>
           <div class="relative" v-show="!selectMultiple" ref="actionsMenuContainer" @keyup.esc.prevent="closeActionsMenu">
             <button

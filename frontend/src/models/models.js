@@ -11,6 +11,9 @@ appendCSS(require('./models.css'));
 const limit = 20;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 
+// Persist selected documents per model so switching models preserves selection
+const selectedDocumentsByModel = {};
+
 module.exports = app => app.component('models', {
   template: template,
   props: ['model', 'user', 'roles'],
@@ -58,8 +61,12 @@ module.exports = app => app.component('models', {
   created() {
     this.currentModel = this.model;
     this.loadOutputPreference();
+    const key = this.currentModel != null ? this.currentModel : '';
+    this.selectedDocuments = Array.isArray(selectedDocumentsByModel[key]) ? selectedDocumentsByModel[key].slice() : [];
   },
   beforeDestroy() {
+    const key = this.currentModel != null ? this.currentModel : '';
+    selectedDocumentsByModel[key] = Array.isArray(this.selectedDocuments) ? this.selectedDocuments.slice() : [];
     document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
@@ -108,6 +115,9 @@ module.exports = app => app.component('models', {
     hasSleuthAccess() {
       return hasAccess(this.roles, 'mongoose-sleuth');
     },
+    sleuthPanelOpen() {
+      return !this.hideRightPanel && this.activeRightTab === 'sleuth';
+    },
     hasAnyRightPanelTabAccess() {
       return this.rightPanelTabs.some(tab => this.hasRightPanelTabAccess(tab));
     },
@@ -135,10 +145,18 @@ module.exports = app => app.component('models', {
       this.activeRightTab = null;
     },
     addSelectedToSleuth() {
+      const wasPanelOpen = this.sleuthPanelOpen;
       this.openRightPanel('sleuth');
-      this.$nextTick(() => {
+      const runAdd = () => {
         this.$refs.mongooseSleuth?.addSourceSelectedToSleuth?.();
-      });
+      };
+      if (wasPanelOpen) {
+        runAdd();
+      } else {
+        this.$nextTick(() => {
+          this.$nextTick(runAdd);
+        });
+      }
     },
     loadOutputPreference() {
       if (typeof window === 'undefined' || !window.localStorage) {

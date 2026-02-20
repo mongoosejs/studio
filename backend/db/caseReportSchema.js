@@ -15,7 +15,7 @@ const caseReportSchema = new mongoose.Schema({
   },
   documents: [{
     documentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String, // for cases where its not an objectId but is used like one
       refPath: 'documents.documentModel'
     },
     highlightedFields: [String],

@@ -195,8 +195,15 @@ module.exports = app => app.component('mongoose-sleuth', {
     },
     buildDocumentsPayload() {
       return this.selectedDocuments.map(doc => {
+        const rawId = doc._id;
+        const documentId = rawId == null
+          ? undefined
+          : (Array.isArray(rawId) ? rawId[0] : rawId);
+        const idStr = documentId != null && typeof documentId === 'object' && typeof documentId.toString === 'function'
+          ? documentId.toString()
+          : documentId != null ? String(documentId) : undefined;
         const base = {
-          documentId: doc._id,
+          documentId: idStr,
           documentModel: doc.model
         };
         const note = this.getDocumentNote(doc);
@@ -380,11 +387,38 @@ module.exports = app => app.component('mongoose-sleuth', {
         if (!this.selectedDocuments.some(d => this.getDocumentKey(d) === key)) {
           this.selectedDocuments.push(withModel);
         }
+        if (this.selectedDocuments.length > 0) {
+          const documentsPayload = this.buildDocumentsPayload();
+          if (this.currentCaseReportId) {
+            await api.CaseReport.updateCaseReport({
+              caseReportId: this.currentCaseReportId,
+              documents: documentsPayload
+            });
+            this.$toast.success('Case report updated');
+          } else {
+            const name = this.getDefaultCaseReportName();
+            const { caseReport } = await api.CaseReport.createCaseReport({
+              name,
+              documents: documentsPayload
+            });
+            if (caseReport && caseReport._id) {
+              this.currentCaseReportId = caseReport._id != null ? String(caseReport._id) : caseReport._id;
+            }
+            this.investigationSelections = this.selectedDocuments.slice();
+            this.$toast.success('Case report created');
+          }
+        }
       } catch (e) {
         console.error('Apply pending add to Sleuth', e);
       }
     },
-    addSourceSelectedToSleuth() {
+    getDefaultCaseReportName() {
+      const now = new Date();
+      const date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+      return `Case report – ${date}, ${time}`;
+    },
+    async addSourceSelectedToSleuth() {
       const source = Array.isArray(this.sourceSelectedDocuments) ? this.sourceSelectedDocuments : [];
       const model = this.sourceModel || this.currentModel;
       for (const doc of source) {
@@ -394,6 +428,31 @@ module.exports = app => app.component('mongoose-sleuth', {
         if (!this.selectedDocuments.some(d => this.getDocumentKey(d) === key)) {
           this.selectedDocuments.push(withModel);
         }
+      }
+      if (this.selectedDocuments.length === 0) return;
+      const documentsPayload = this.buildDocumentsPayload();
+      try {
+        if (this.currentCaseReportId) {
+          await api.CaseReport.updateCaseReport({
+            caseReportId: this.currentCaseReportId,
+            documents: documentsPayload
+          });
+          this.$toast.success('Case report updated');
+        } else {
+          const name = this.getDefaultCaseReportName();
+          const { caseReport } = await api.CaseReport.createCaseReport({
+            name,
+            documents: documentsPayload
+          });
+          if (caseReport && caseReport._id) {
+            this.currentCaseReportId = caseReport._id != null ? String(caseReport._id) : caseReport._id;
+          }
+          this.investigationSelections = this.selectedDocuments.slice();
+          this.$toast.success('Case report created');
+        }
+      } catch (err) {
+        console.error('Error saving case report', err);
+        this.$toast.error(err?.message || 'Error saving case report');
       }
     },
     async getDocuments() {
@@ -747,7 +806,7 @@ module.exports = app => app.component('mongoose-sleuth', {
           documents: documentsPayload
         });
         if (caseReport && caseReport._id) {
-          this.currentCaseReportId = caseReport._id;
+          this.currentCaseReportId = caseReport._id != null ? String(caseReport._id) : caseReport._id;
         }
         this.shouldShowCaseReportModal = false;
         this.caseReportName = '';
