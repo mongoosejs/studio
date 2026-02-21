@@ -10,7 +10,8 @@ const PIE_HOVER = ['#ca8a04', '#16a34a', '#dc2626', '#4b5563'];
 module.exports = app => app.component('task-details', {
   props: {
     taskGroup: { type: Object, required: true },
-    backTo: { type: Object, default: null }
+    backTo: { type: Object, default: null },
+    showBackButton: { type: Boolean, default: true }
   },
   data: () => ({
     currentFilter: null,
