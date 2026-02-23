@@ -80,7 +80,7 @@ module.exports = app => app.component('task-details', {
           requestAnimationFrame(() => this.ensureStatusChart());
         });
       }
-    },
+    }
   },
   methods: {
     destroyStatusChart() {
