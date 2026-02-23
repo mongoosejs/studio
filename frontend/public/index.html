@@ -20,6 +20,27 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/codemirror@5.65.16/lib/codemirror.js"></script>
     <script src="https://unpkg.com/codemirror@5.65.16/mode/javascript/javascript.js"></script>
+    <script src="https://unpkg.com/darkreader@4.9.120"></script>
+    <script>
+      (function() {
+        // to prevent a flash of light
+        var key = 'studio-theme';
+        var stored = localStorage.getItem(key);
+        var prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
+        var isDark = stored === 'dark' || (!stored && prefersDark);
+        if (!stored) localStorage.setItem(key, isDark ? 'dark' : 'light');
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (typeof DarkReader !== 'undefined') {
+          if (isDark) {
+            DarkReader.enable({ brightness: 100, contrast: 95, sepia: 0 });
+            if (meta) meta.setAttribute('content', '#1a1a1a');
+          } else {
+            DarkReader.disable();
+            if (meta) meta.setAttribute('content', '#ffffff');
+          }
+        }
+      })();
+    </script>
   </head>
 
   <body>

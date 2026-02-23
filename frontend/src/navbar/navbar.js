@@ -13,7 +13,10 @@ module.exports = app => app.component('navbar', {
   template: template,
   props: ['user', 'roles'],
   inject: ['state'],
-  data: () => ({ showFlyout: false }),
+  data: () => ({
+    showFlyout: false,
+    darkMode: typeof localStorage !== 'undefined' && localStorage.getItem('studio-theme') === 'dark'
+  }),
   mounted: function() {
     const mobileMenuMask = document.querySelector('#mobile-menu-mask');
     const mobileMenu = document.querySelector('#mobile-menu');
@@ -82,6 +85,21 @@ module.exports = app => app.component('navbar', {
     logout() {
       window.localStorage.setItem('_mongooseStudioAccessToken', '');
       window.location.reload();
+    },
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+      const theme = this.darkMode ? 'dark' : 'light';
+      window.localStorage.setItem('studio-theme', theme);
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (typeof window.DarkReader !== 'undefined') {
+        if (this.darkMode) {
+          window.DarkReader.enable({ brightness: 100, contrast: 95, sepia: 0 });
+          if (meta) meta.setAttribute('content', '#1a1a1a');
+        } else {
+          window.DarkReader.disable();
+          if (meta) meta.setAttribute('content', '#ffffff');
+        }
+      }
     }
   },
   directives: {
