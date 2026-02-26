@@ -40,11 +40,17 @@ module.exports = app => app.component('document', {
   }),
   async mounted() {
     window.pageState = this;
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('keydown', this.handleSaveShortcut);
+    }
     // Store query parameters from the route (preserved from models page)
     this.previousQuery = Object.assign({}, this.$route.query);
     await this.refreshDocument({ force: true, source: 'initial' });
   },
   beforeDestroy() {
+    if (typeof window !== 'undefined' && window.removeEventListener) {
+      window.removeEventListener('keydown', this.handleSaveShortcut);
+    }
     this.stopAutoRefresh();
   },
   computed: {
@@ -86,6 +92,19 @@ module.exports = app => app.component('document', {
     }
   },
   methods: {
+    handleSaveShortcut(event) {
+      const key = typeof event?.key === 'string' ? event.key.toLowerCase() : '';
+      const isSaveShortcut = (event.ctrlKey || event.metaKey) && key === 's';
+      if (!isSaveShortcut) {
+        return;
+      }
+      if (!this.editting || !this.canManipulate) {
+        return;
+      }
+
+      event.preventDefault();
+      this.shouldShowConfirmModal = true;
+    },
     cancelEdit() {
       this.changes = {};
       this.editting = false;
