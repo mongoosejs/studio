@@ -85,7 +85,7 @@ module.exports = app => app.component('models', {
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
-    this.loadModelCounts();
+    await this.loadModelCounts();
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
     }
