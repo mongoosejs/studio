@@ -599,7 +599,7 @@ module.exports = app => app.component('models', {
         return `${value}`;
       }
       const formatValue = (number, suffix) => {
-        const rounded = (Math.round(number * 10) / 10).toFixed(1).replace(/\\.0$/, '');
+        const rounded = (Math.round(number * 10) / 10).toFixed(1).replace(/\.0$/, '');
         return `${rounded}${suffix}`;
       };
       if (value < 1000000) {
