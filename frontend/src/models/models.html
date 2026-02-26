@@ -24,8 +24,8 @@
                 :class="model === currentModel ? 'bg-ultramarine-100 font-bold text-gray-900' : 'hover:bg-ultramarine-50'">
                 <span class="truncate">{{model}}</span>
                 <span
-                  v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined"
-                  class="ml-auto text-xs text-gray-500"
+                  v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined && model !== currentModel"
+                  class="ml-auto text-xs text-gray-500 bg-gray-100 rounded-md px-1 py-[2px]"
                 >
                   {{formatCompactCount(modelDocumentCounts[model])}}
                 </span>

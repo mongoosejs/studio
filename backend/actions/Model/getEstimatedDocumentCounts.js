@@ -20,9 +20,6 @@ module.exports = ({ db }) => async function getEstimatedDocumentCounts(params) {
   const results = await Promise.allSettled(
     modelNames.map(name => {
       const Model = db.models[name];
-      if (!Model?.estimatedDocumentCount) {
-        return null;
-      }
       return Model.estimatedDocumentCount().exec();
     })
   );
