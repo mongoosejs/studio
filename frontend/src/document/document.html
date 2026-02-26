@@ -1,4 +1,4 @@
-<div class="document px-1 pt-4 md:px-0 bg-slate-50 w-full">
+<div class="document px-1 pt-4 pb-16 md:px-0 bg-slate-50 w-full">
   <div class="max-w-7xl mx-auto">
     <div class="flex gap-4 items-center sticky top-0 z-50 bg-white p-4 border-b border-gray-200 shadow-sm">
       <div class="font-bold overflow-hidden text-ellipsis">{{model}}: {{documentId}}</div>
@@ -27,6 +27,18 @@
           </svg>
           JSON
         </button>
+      </div>
+
+      <div class="hidden md:flex items-center gap-3 text-sm text-slate-600">
+        <div class="text-right leading-tight">
+          <div class="text-xs uppercase tracking-wide text-slate-400 flex items-center gap-2 justify-end">
+            <span>Loaded at</span>
+            <span class="inline-flex items-center gap-1 text-[10px] font-semibold" :class="autoRefreshEnabled ? 'text-forest-green-600' : 'text-slate-400'">
+              <span class="inline-block h-1.5 w-1.5 rounded-full" :class="autoRefreshEnabled ? 'bg-forest-green-500' : 'bg-slate-300'"></span>
+            </span>
+          </div>
+          <div class="font-medium text-slate-700">{{lastUpdatedLabel}}</div>
+        </div>
       </div>
 
       <div class="gap-2 hidden md:flex items-center">
@@ -78,11 +90,42 @@
           >
             <div class="py-1 flex flex-col">
               <button
+                @click="refreshDocument({ force: true, source: 'manual' }); desktopMenuOpen = false"
+                :disabled="isRefreshing"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', isRefreshing ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-100']"
+                type="button"
+              >
+                {{isRefreshing ? 'Refreshing...' : 'Refresh'}}
+              </button>
+              <button
+                @click="toggleAutoRefresh(); desktopMenuOpen = false"
+                :disabled="isLambda"
+                type="button"
+                :class="['flex items-center px-4 py-2 text-sm', isLambda ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-slate-100']"
+                :title="isLambda ? 'Auto-refresh only available on Express deployments' : ''"
+              >
+                {{autoRefreshEnabled ? 'Disable Auto-Refresh' : 'Enable Auto-Refresh'}}
+              </button>
+              <button
                 @click="addField(); desktopMenuOpen = false"
                 type="button"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100"
               >
                 Add Field
+              </button>
+              <button
+                @click="copyDocument(); desktopMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100"
+              >
+                Copy Document
+              </button>
+              <button
+                @click="openScriptDrawer()"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-100"
+              >
+                Run Script
               </button>
               <button
                 @click="shouldShowDeleteModal=true; desktopMenuOpen = false"
@@ -151,11 +194,40 @@
                 Save
               </button>
               <button
+                @click="refreshDocument({ force: true, source: 'manual' }); mobileMenuOpen = false"
+                :disabled="isRefreshing"
+                :class="['flex items-center px-4 py-2 text-sm text-gray-700', isRefreshing ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-100']"
+                type="button"
+              >
+                {{isRefreshing ? 'Refreshing...' : 'Refresh'}}
+              </button>
+              <button
+                @click="toggleAutoRefresh(); mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-slate-100"
+              >
+                Auto-Refresh {{autoRefreshEnabled ? 'ON' : 'OFF'}}
+              </button>
+              <button
                 @click="addField(); mobileMenuOpen = false"
                 type="button"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100"
               >
                 Add Field
+              </button>
+              <button
+                @click="copyDocument(); mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100"
+              >
+                Copy Document
+              </button>
+              <button
+                @click="openScriptDrawer()"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-100"
+              >
+                Run Script
               </button>
               <button
                 @click="shouldShowDeleteModal=true; mobileMenuOpen = false"
@@ -209,5 +281,13 @@
         </template>
       </modal>
     </div>
+    <execute-script
+      :visible="scriptDrawerOpen"
+      :model="model"
+      :document-id="documentId"
+      :editting="editting"
+      @close="closeScriptDrawer"
+      @refresh="handleScriptRefresh"
+    ></execute-script>
   </div>
 </div>

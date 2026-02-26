@@ -33,12 +33,17 @@ module.exports = defineConfig([
         CodeMirror: true,
         Chart: true,
         URLSearchParams: true,
+        URL: true,
         fetch: true,
         __dirname: true,
         process: true,
+        clearTimeout: true,
         setTimeout: true,
         navigator: true,
-        TextDecoder: true
+        TextDecoder: true,
+        AbortController: true,
+        clearTimeout: true,
+        requestAnimationFrame: true
       },
       sourceType: 'commonjs'
     },

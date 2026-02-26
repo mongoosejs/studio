@@ -82,9 +82,9 @@ function getAutocompleteContext(searchText, cursorPos) {
   
   // Check if we're in a value context (after a colon)
   // Match the last colon followed by optional whitespace and capture everything after
-  const valueMatch = before.match(/:\s*([^\s,\}\]:]*)$/);
+  const valueMatch = before.match(/:\s*(\{?\s*)([^\s,\}\]:]*)$/);
   if (valueMatch) {
-    const token = valueMatch[1];
+    const token = valueMatch[2];
     return {
       token,
       role: 'value',
@@ -159,9 +159,9 @@ function applySuggestion(searchText, cursorPos, suggestion) {
   const after = searchText.slice(cursorPos);
   
   // Check if we're in a value context
-  const valueMatch = before.match(/:\s*([^\s,\}\]:]*)$/);
+  const valueMatch = before.match(/:\s*(\{?\s*)([^\s,\}\]:]*)$/);
   if (valueMatch) {
-    const token = valueMatch[1];
+    const token = valueMatch[2];
     const start = cursorPos - token.length;
     let replacement = suggestion;
     let cursorOffset = replacement.length;

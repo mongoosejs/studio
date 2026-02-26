@@ -1,6 +1,6 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.2.1",
+  "version": "0.2.12",
   "description": "A Mongoose-native MongoDB UI with schema-aware autocomplete, AI-assisted queries, and dashboards that understand your models - not just your data.",
   "homepage": "https://mongoosestudio.app/",
   "repository": {
@@ -22,10 +22,14 @@
     "tailwindcss": "3.4.0",
     "vue": "3.x",
     "vue-toastification": "^2.0.0-rc.5",
-    "webpack": "5.x"
+    "webpack": "5.x",
+    "xss": "^1.0.15"
   },
   "peerDependencies": {
     "mongoose": "7.x || 8.x || ^9.0.0"
+  },
+  "optionalPeerDependencies": {
+    "@mongoosejs/task": "0.5.x || 0.6.x"
   },
   "devDependencies": {
     "@masteringjs/eslint-config": "0.1.1",
@@ -34,12 +38,15 @@
     "eslint": "9.30.0",
     "express": "4.x",
     "mocha": "10.2.0",
-    "mongoose": "9.x"
+    "mongodb-memory-server": "^11.0.1",
+    "mongoose": "9.x",
+    "sinon": "^21.0.1"
   },
   "scripts": {
     "lint": "eslint .",
     "tailwind": "tailwindcss -o ./frontend/public/tw.css",
     "tailwind:watch": "tailwindcss -o ./frontend/public/tw.css --watch",
-    "test": "mocha test/*.test.js"
+    "test": "mocha test/*.test.js",
+    "test:frontend": "mocha test/frontend/*.test.js"
   }
 }

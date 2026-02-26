@@ -18,12 +18,21 @@ client.interceptors.request.use(req => {
   return req;
 });
 
+function sanitizedReturnUrl() {
+  const url = new URL(window.location.href);
+  if (url.hash && url.hash.includes('?')) {
+    const [hashPath, hashSearch] = url.hash.split('?', 2);
+    url.hash = hashPath;
+  }
+  return url.toString();
+}
+
 exports.githubLogin = function githubLogin() {
-  return client.post('/githubLogin', { state: window.location.href }).then(res => res.data);
+  return client.post('/githubLogin', { state: sanitizedReturnUrl() }).then(res => res.data);
 };
 
 exports.googleLogin = function googleLogin() {
-  return client.post('/googleLogin', { state: window.location.href }).then(res => res.data);
+  return client.post('/googleLogin', { state: sanitizedReturnUrl() }).then(res => res.data);
 };
 
 exports.getWorkspaceTeam = function getWorkspaceTeam() {

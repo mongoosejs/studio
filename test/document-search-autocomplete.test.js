@@ -234,6 +234,24 @@ describe('document-search-autocomplete', function() {
       assert.strictEqual(result.newCursorPos, '{ value: Math'.length);
     });
 
+    it('preserves opening brace when applying operator suggestions', function() {
+      const searchText = '{ _id: { $ex';
+      const cursorPos = searchText.length;
+      const result = applySuggestion(searchText, cursorPos, '$exists');
+
+      assert.strictEqual(result.text, '{ _id: { $exists');
+      assert.strictEqual(result.newCursorPos, '{ _id: { $exists'.length);
+    });
+
+    it('does not add a brace when completing function helpers', function() {
+      const searchText = '{ _id: object';
+      const cursorPos = searchText.length;
+      const result = applySuggestion(searchText, cursorPos, 'objectIdRange');
+
+      assert.strictEqual(result.text, '{ _id: objectIdRange()');
+      assert.strictEqual(result.newCursorPos, '{ _id: objectIdRange('.length);
+    });
+
     it('applies suggestion in field context with colon', function() {
       const searchText = '{ na';
       const cursorPos = searchText.length;

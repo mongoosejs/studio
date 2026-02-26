@@ -17,6 +17,7 @@ const actionsToRequiredRoles = {
   'Model.deleteDocument': ['owner', 'admin', 'member'],
   'Model.deleteDocuments': ['owner', 'admin', 'member'],
   'Model.dropIndex': ['owner', 'admin'],
+  'Model.executeDocumentScript': ['owner', 'admin', 'member'],
   'Model.exportQueryResults': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocument': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocuments': ['owner', 'admin', 'member', 'readonly'],
@@ -24,6 +25,8 @@ const actionsToRequiredRoles = {
   'Model.getEstimatedDocumentCounts': ['owner', 'admin', 'member', 'readonly'],
   'Model.getIndexes': ['owner', 'admin', 'member', 'readonly'],
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
+  'Model.streamDocumentChanges': ['owner', 'admin', 'member', 'readonly'],
+  'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly'],
   'Model.updateDocuments': ['owner', 'admin', 'member']
 };
 

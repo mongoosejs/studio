@@ -66,7 +66,7 @@ module.exports = async function* streamLLM(messages, system, options) {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      messages,
+      messages: [{ role: 'system', content: { type: 'text', text: system } }, ...messages],
       model: options?.model
     })
   }).then(response => {

@@ -66,7 +66,7 @@ module.exports = ({ db }) => async function getDashboard(params) {
         );
       });
 
-      return { dashboard, dashboardResult };
+      return { dashboard, dashboardResult, result };
     } catch (error) {
       return { dashboard, error: { message: error.message } };
     }

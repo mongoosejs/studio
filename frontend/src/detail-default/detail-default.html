@@ -1,3 +1,16 @@
 <div class="w-full">
-  <pre class="w-full whitespace-pre-wrap break-words font-mono text-sm text-gray-700 m-0">{{displayValue}}</pre>
+  <pre v-if="!isGeoJsonGeometry || !mapVisible" class="w-full whitespace-pre-wrap break-words font-mono text-sm text-gray-700 m-0">{{displayValue}}</pre>
+  <div v-show="isGeoJsonGeometry && mapVisible" class="mt-2 border border-gray-200 rounded relative">
+    <div ref="map" class="h-64 w-full" style="min-height: 256px; height: 256px;"></div>
+    <!-- Undo button below map -->
+    <div v-if="isEditable && canUndo" class="mt-2 flex justify-end">
+      <button
+        @click="undoDelete"
+        class="text-xs px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+        title="Undo all changes"
+      >
+        Undo
+      </button>
+    </div>
+  </div>
 </div>

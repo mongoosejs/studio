@@ -54,7 +54,7 @@ module.exports = async function callLLM(messages, system, options) {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      messages,
+      messages: [{ role: 'system', content: { type: 'text', text: system } }, ...messages],
       model: options?.model
     })
   }).then(response => {

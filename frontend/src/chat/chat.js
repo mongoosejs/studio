@@ -3,7 +3,7 @@
 const api = require('../api');
 const template = require('./chat.html');
 
-module.exports = app => app.component('chat', {
+module.exports = {
   template: template,
   props: ['threadId'],
   data: () => ({
@@ -30,7 +30,9 @@ module.exports = app => app.component('chat', {
           this.$toast.success('Chat thread created!');
         }
 
+        const userChatMessageIndex = this.chatMessages.length;
         this.chatMessages.push({
+          _id: Math.random().toString(36).substr(2, 9),
           content,
           role: 'user'
         });
@@ -48,10 +50,15 @@ module.exports = app => app.component('chat', {
           if (event.chatMessage) {
             if (!userChatMessage) {
               userChatMessage = event.chatMessage;
+              this.chatMessages.splice(userChatMessageIndex, 1, userChatMessage);
             } else {
               const assistantChatMessageIndex = this.chatMessages.indexOf(assistantChatMessage);
               assistantChatMessage = event.chatMessage;
-              this.chatMessages[assistantChatMessageIndex] = assistantChatMessage;
+              if (assistantChatMessageIndex !== -1) {
+                this.chatMessages.splice(assistantChatMessageIndex, 1, assistantChatMessage);
+              } else {
+                this.chatMessages.push(assistantChatMessage);
+              }
             }
           } else if (event.chatThread) {
             for (const thread of this.chatThreads) {
@@ -62,6 +69,7 @@ module.exports = app => app.component('chat', {
           } else if (event.textPart) {
             if (!assistantChatMessage) {
               assistantChatMessage = {
+                _id: Math.random().toString(36).substr(2, 9),
                 content: event.textPart,
                 role: 'assistant'
               };
@@ -184,4 +192,4 @@ module.exports = app => app.component('chat', {
 
     this.$refs.messageInput.focus();
   }
-});
+};
