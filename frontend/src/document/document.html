@@ -289,5 +289,31 @@
       @close="closeScriptDrawer"
       @refresh="handleScriptRefresh"
     ></execute-script>
+    <div
+      v-if="keyboardShortcuts.length > 0"
+      class="fixed bottom-4 left-4 z-40 group"
+    >
+      <button
+        type="button"
+        aria-label="Keyboard shortcuts"
+        title="Keyboard shortcuts"
+        class="rounded-full border border-slate-300 bg-white p-2 text-slate-700 shadow-sm transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-ultramarine-500"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <rect x="2.5" y="6.5" width="19" height="11" rx="2" stroke-width="1.5"></rect>
+          <path d="M6 10.5h1.5M9 10.5h1.5M12 10.5h1.5M15 10.5h1.5M18 10.5h.01M6 13.5h1.5M9 13.5h6M16.5 13.5h1.5" stroke-width="1.5" stroke-linecap="round"></path>
+        </svg>
+      </button>
+      <div class="pointer-events-none absolute left-0 bottom-full mb-2 min-w-[220px] translate-y-1 rounded-lg bg-slate-900 px-3 py-2.5 text-slate-200 opacity-0 shadow-xl transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        <div
+          v-for="shortcut in keyboardShortcuts"
+          :key="shortcut.command + shortcut.description"
+          class="flex items-center justify-between gap-3 text-xs"
+        >
+          <span class="font-mono font-semibold text-slate-50">{{shortcut.command}}</span>
+          <span class="text-slate-300">{{shortcut.description}}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

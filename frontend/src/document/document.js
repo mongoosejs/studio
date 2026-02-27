@@ -80,6 +80,13 @@ module.exports = app => app.component('document', {
     canEdit() {
       return this.canManipulate && this.viewMode === 'fields';
     },
+    keyboardShortcuts() {
+      const shortcuts = [];
+      if (this.editting && this.canManipulate) {
+        shortcuts.push({ command: 'Ctrl + S', description: 'Save document' });
+      }
+      return shortcuts;
+    },
     isLambda() {
       return !!window?.MONGOOSE_STUDIO_CONFIG?.isLambda;
     }
