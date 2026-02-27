@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const escape = require('regexp.escape');
 
 const GetTasksParams = new Archetype({
   start: { $type: Date },
@@ -15,11 +16,6 @@ const ALL_STATUSES = ['pending', 'in_progress', 'succeeded', 'failed', 'cancelle
 
 /** Max documents per request to avoid excessive memory and response size. */
 const MAX_LIMIT = 2000;
-
-/** Escape special regex characters so the name is matched literally. */
-function escapeRegex(str) {
-  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 function buildMatch(params) {
   const { start, end, status, name } = params;
@@ -37,7 +33,7 @@ function buildMatch(params) {
   }
   if (name != null && name !== '') {
     const nameStr = typeof name === 'string' ? name.trim() : String(name);
-    match.name = { $regex: escapeRegex(nameStr), $options: 'i' };
+    match.name = { $regex: escape(nameStr), $options: 'i' };
   }
   return match;
 }
@@ -56,20 +52,8 @@ const TASK_PROJECT_STAGE = {
   parameters: '$payload'
 };
 
-function ensureDate(value) {
-  if (value == null) return value;
-  if (value instanceof Date) return value;
-  if (typeof value === 'string' || typeof value === 'number') {
-    const d = new Date(value);
-    if (!Number.isNaN(d.getTime())) return d;
-  }
-  return value;
-}
-
 module.exports = ({ db }) => async function getTasks(params) {
   params = new GetTasksParams(params);
-  params.start = ensureDate(params.start);
-  params.end = ensureDate(params.end);
   if (typeof params.status === 'string') params.status = params.status.trim();
   if (typeof params.name === 'string') params.name = params.name.trim();
 

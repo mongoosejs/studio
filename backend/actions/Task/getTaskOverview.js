@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const escape = require('regexp.escape');
 
 const GetTaskOverviewParams = new Archetype({
   start: { $type: Date },
@@ -12,29 +13,13 @@ const GetTaskOverviewParams = new Archetype({
 /** Statuses shown on the Task overview page. */
 const OVERVIEW_STATUSES = ['pending', 'succeeded', 'failed', 'cancelled'];
 
-function ensureDate(value) {
-  if (value == null) return value;
-  if (value instanceof Date) return value;
-  if (typeof value === 'string' || typeof value === 'number') {
-    const d = new Date(value);
-    if (!Number.isNaN(d.getTime())) return d;
-  }
-  return value;
-}
-
-function escapeRegex(str) {
-  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function buildMatch(params) {
   const { start, end, status, name } = params;
   const match = {};
-  const startDate = ensureDate(start);
-  const endDate = ensureDate(end);
-  if (startDate != null && endDate != null) {
-    match.scheduledAt = { $gte: startDate, $lt: endDate };
-  } else if (startDate != null) {
-    match.scheduledAt = { $gte: startDate };
+  if (start != null && end != null) {
+    match.scheduledAt = { $gte: start, $lt: end };
+  } else if (start != null) {
+    match.scheduledAt = { $gte: start };
   }
   const statusVal = typeof status === 'string' ? status.trim() : status;
   if (statusVal != null && statusVal !== '') {
@@ -44,15 +29,13 @@ function buildMatch(params) {
   }
   if (name != null && name !== '') {
     const nameStr = typeof name === 'string' ? name.trim() : String(name);
-    match.name = { $regex: escapeRegex(nameStr), $options: 'i' };
+    match.name = { $regex: escape(nameStr), $options: 'i' };
   }
   return match;
 }
 
 module.exports = ({ db }) => async function getTaskOverview(params) {
   params = new GetTaskOverviewParams(params);
-  params.start = ensureDate(params.start);
-  params.end = ensureDate(params.end);
   if (typeof params.status === 'string') params.status = params.status.trim();
   if (typeof params.name === 'string') params.name = params.name.trim();
   const { Task } = db.models;

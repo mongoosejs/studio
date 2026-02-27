@@ -2,6 +2,7 @@
 
 const template = require('./tasks.html');
 const api = require('../api');
+const { DATE_FILTERS, getDateRangeForRange } = require('../_util/dateRange');
 
 module.exports = app => app.component('tasks', {
   data: () => ({
@@ -11,15 +12,7 @@ module.exports = app => app.component('tasks', {
     selectedRange: 'last_hour',
     start: null,
     end: null,
-    dateFilters: [
-      { value: 'last_hour', label: 'Last Hour' },
-      { value: 'today', label: 'Today' },
-      { value: 'yesterday', label: 'Yesterday' },
-      { value: 'thisWeek', label: 'This Week' },
-      { value: 'lastWeek', label: 'Last Week' },
-      { value: 'thisMonth', label: 'This Month' },
-      { value: 'lastMonth', label: 'Last Month' }
-    ],
+    dateFilters: DATE_FILTERS,
     selectedStatus: 'all',
     statusFilters: [
       { label: 'All', value: 'all' },
@@ -234,64 +227,9 @@ module.exports = app => app.component('tasks', {
       }, 300);
     },
     async updateDateRange() {
-      const now = new Date();
-      let start, end;
-
-      switch (this.selectedRange) {
-        case 'last_hour':
-          start = new Date();
-          start.setHours(start.getHours() - 1);
-          end = new Date();
-          break;
-        case 'today':
-          start = new Date();
-          start.setHours(0, 0, 0, 0);
-          end = new Date();
-          end.setHours(23, 59, 59, 999);
-          break;
-        case 'yesterday':
-          start = new Date(now);
-          start.setDate(start.getDate() - 1);
-          start.setHours(0, 0, 0, 0);
-          end = new Date(start);
-          end.setHours(23, 59, 59, 999);
-          break;
-        case 'thisWeek':
-          start = new Date(now.getTime() - (7 * 86400000));
-          start.setHours(0, 0, 0, 0);
-          end = new Date();
-          end.setHours(23, 59, 59, 999);
-          break;
-        case 'lastWeek':
-          start = new Date(now.getTime() - (14 * 86400000));
-          start.setHours(0, 0, 0, 0);
-          end = new Date(now.getTime() - (7 * 86400000));
-          end.setHours(23, 59, 59, 999);
-          break;
-        case 'thisMonth': {
-          const y = now.getUTCFullYear();
-          const m = now.getUTCMonth();
-          start = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
-          end = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999));
-          break;
-        }
-        case 'lastMonth': {
-          const y = now.getUTCFullYear();
-          const m = now.getUTCMonth();
-          start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0, 0));
-          end = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
-          break;
-        }
-        default:
-          start = new Date();
-          start.setHours(start.getHours() - 1);
-          end = new Date();
-          break;
-      }
-
+      const { start, end } = getDateRangeForRange(this.selectedRange);
       this.start = start;
       this.end = end;
-
       await this.getTasks();
     }
   },
