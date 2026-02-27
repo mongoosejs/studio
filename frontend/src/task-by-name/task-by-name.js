@@ -42,7 +42,8 @@ module.exports = app => app.component('task-by-name', {
     page: 1,
     pageSize: 50,
     numDocs: 0,
-    pageSizeOptions: PAGE_SIZE_OPTIONS
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
+    _loadId: 0
   }),
   computed: {
     taskName() {
@@ -73,6 +74,12 @@ module.exports = app => app.component('task-by-name', {
         if (dateRange && DATE_FILTER_VALUES.includes(dateRange) && this.selectedRange !== dateRange) {
           this.selectedRange = dateRange;
         }
+        const effectiveDateRange = (dateRange && DATE_FILTER_VALUES.includes(dateRange)) ? dateRange : (this.selectedRange || 'last_hour');
+        const effectiveStatus = query.status ?? '';
+        const key = `${effectiveDateRange}|${effectiveStatus}`;
+        if (this._lastQueryFilters === key) return;
+        this.page = 1;
+        this.loadTasks();
       },
       deep: true
     }
@@ -98,6 +105,7 @@ module.exports = app => app.component('task-by-name', {
     },
     async loadTasks() {
       if (!this.taskName) return;
+      const loadId = ++this._loadId;
       this.status = 'init';
       this.taskGroup = null;
       this.errorMessage = '';
@@ -119,13 +127,16 @@ module.exports = app => app.component('task-by-name', {
       };
       const statusFromQuery = this.$route.query.status;
       if (statusFromQuery) params.status = statusFromQuery;
+      this._lastQueryFilters = `${dateRange}|${statusFromQuery ?? ''}`;
       try {
         const { tasks, numDocs } = await api.Task.getTasks(params);
+        if (loadId !== this._loadId) return;
         this.numDocs = numDocs ?? tasks.length;
         this.taskGroup = buildTaskGroup(this.taskName, tasks);
         this.taskGroup.totalCount = this.numDocs;
         this.status = 'loaded';
       } catch (err) {
+        if (loadId !== this._loadId) return;
         this.status = 'error';
         this.errorMessage = err?.response?.data?.message || err.message || 'Failed to load tasks';
       }
