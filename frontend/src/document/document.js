@@ -47,7 +47,7 @@ module.exports = app => app.component('document', {
     this.previousQuery = Object.assign({}, this.$route.query);
     await this.refreshDocument({ force: true, source: 'initial' });
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('keydown', this.handleSaveShortcut);
     }
