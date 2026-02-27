@@ -43,7 +43,8 @@ module.exports = app => app.component('task-by-name', {
     pageSize: 50,
     numDocs: 0,
     pageSizeOptions: PAGE_SIZE_OPTIONS,
-    _loadId: 0
+    _loadId: 0,
+    _lastQueryFilters: null
   }),
   computed: {
     taskName() {
@@ -129,11 +130,12 @@ module.exports = app => app.component('task-by-name', {
       if (statusFromQuery) params.status = statusFromQuery;
       this._lastQueryFilters = `${dateRange}|${statusFromQuery ?? ''}`;
       try {
-        const { tasks, numDocs } = await api.Task.getTasks(params);
+        const { tasks, numDocs, statusCounts } = await api.Task.getTasks(params);
         if (loadId !== this._loadId) return;
         this.numDocs = numDocs ?? tasks.length;
         this.taskGroup = buildTaskGroup(this.taskName, tasks);
         this.taskGroup.totalCount = this.numDocs;
+        if (statusCounts) this.taskGroup.statusCounts = statusCounts;
         this.status = 'loaded';
       } catch (err) {
         if (loadId !== this._loadId) return;

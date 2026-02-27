@@ -14,6 +14,9 @@ const GetTasksParams = new Archetype({
 
 const ALL_STATUSES = ['pending', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown'];
 
+/** Status keys for statusCounts (same shape as getTaskOverview). */
+const STATUS_COUNT_KEYS = ['pending', 'succeeded', 'failed', 'cancelled'];
+
 /** Max documents per request to avoid excessive memory and response size. */
 const MAX_LIMIT = 2000;
 
@@ -62,6 +65,8 @@ module.exports = ({ db }) => async function getTasks(params) {
   const { Task } = db.models;
   const match = buildMatch(params);
 
+  const defaultCounts = STATUS_COUNT_KEYS.map(s => ({ k: s, v: 0 }));
+
   const pipeline = [
     { $match: match },
     {
@@ -72,7 +77,21 @@ module.exports = ({ db }) => async function getTasks(params) {
           { $limit: limit },
           { $project: TASK_PROJECT_STAGE }
         ],
-        count: [{ $count: 'total' }]
+        count: [{ $count: 'total' }],
+        statusCounts: [
+          { $group: { _id: { $ifNull: ['$status', 'unknown'] }, count: { $sum: 1 } } },
+          { $group: { _id: null, counts: { $push: { k: '$_id', v: '$count' } } } },
+          {
+            $project: {
+              statusCounts: {
+                $arrayToObject: {
+                  $concatArrays: [{ $literal: defaultCounts }, '$counts']
+                }
+              }
+            }
+          },
+          { $replaceRoot: { newRoot: '$statusCounts' } }
+        ]
       }
     }
   ];
@@ -80,6 +99,7 @@ module.exports = ({ db }) => async function getTasks(params) {
   const [result] = await Task.aggregate(pipeline);
   const tasks = result.tasks || [];
   const numDocs = (result.count && result.count[0] && result.count[0].total) || 0;
+  const statusCounts = result.statusCounts?.[0] ?? {};
 
-  return { tasks, numDocs };
+  return { tasks, numDocs, statusCounts };
 };

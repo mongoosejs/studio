@@ -30,11 +30,13 @@ describe('Task.getTasks()', function() {
     await Task.deleteMany();
   });
 
-  it('returns empty tasks and numDocs 0 when no documents', async function() {
+  it('returns empty tasks, numDocs 0, and statusCounts when no documents', async function() {
     const res = await actions.Task.getTasks({});
     assert.strictEqual(Array.isArray(res.tasks), true);
     assert.strictEqual(res.tasks.length, 0);
     assert.strictEqual(res.numDocs, 0);
+    assert.strictEqual(typeof res.statusCounts, 'object');
+    assert.ok(res.statusCounts.pending === 0 || res.statusCounts.pending === undefined);
   });
 
   it('returns tasks with projected shape (id, parameters from payload)', async function() {
@@ -198,6 +200,19 @@ describe('Task.getTasks()', function() {
     const res = await actions.Task.getTasks({});
     assert.strictEqual(res.tasks.length, 6);
     assert.strictEqual(res.numDocs, 6);
+  });
+
+  it('returns statusCounts for matching documents', async function() {
+    await Task.insertMany([
+      { name: 'a', status: 'succeeded', scheduledAt: new Date() },
+      { name: 'b', status: 'succeeded', scheduledAt: new Date() },
+      { name: 'c', status: 'failed', scheduledAt: new Date() }
+    ]);
+    const res = await actions.Task.getTasks({});
+    assert.strictEqual(res.statusCounts.succeeded, 2);
+    assert.strictEqual(res.statusCounts.failed, 1);
+    assert.strictEqual(res.statusCounts.pending, 0);
+    assert.strictEqual(res.statusCounts.cancelled, 0);
   });
 
   it('returns numDocs as total matching count when using pagination', async function() {
