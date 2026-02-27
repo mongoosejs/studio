@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 
+require('./setup');
 const documentComponent = require('../../frontend/src/document/document');
 
 describe('document component keyboard shortcuts', function() {
