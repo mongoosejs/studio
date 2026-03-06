@@ -59,7 +59,8 @@ module.exports = app => app.component('models', {
     showActionsMenu: false,
     collectionInfo: null,
     modelSearch: '',
-    recentlyViewedModels: []
+    recentlyViewedModels: [],
+    showModelSwitcher: false
   }),
   created() {
     this.currentModel = this.model;
@@ -71,6 +72,7 @@ module.exports = app => app.component('models', {
     document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
+    document.removeEventListener('keydown', this.onCtrlP, true);
     this.destroyMap();
   },
   async mounted() {
@@ -88,6 +90,13 @@ module.exports = app => app.component('models', {
       }
     };
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
+    this.onCtrlP = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+        event.preventDefault();
+        this.openModelSwitcher();
+      }
+    };
+    document.addEventListener('keydown', this.onCtrlP, true);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     await this.loadModelCounts();
@@ -924,6 +933,14 @@ module.exports = app => app.component('models', {
       } else {
         this.selectMultiple = true;
       }
+    },
+    openModelSwitcher() {
+      this.showModelSwitcher = true;
+    },
+    selectSwitcherModel(model) {
+      this.showModelSwitcher = false;
+      this.trackRecentModel(model);
+      this.$router.push('/model/' + model);
     },
     async loadModelCounts() {
       if (!Array.isArray(this.models) || this.models.length === 0) {

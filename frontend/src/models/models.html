@@ -400,4 +400,12 @@
       </div>
     </template>
   </modal>
+  <model-switcher
+    :show="showModelSwitcher"
+    :models="models"
+    :recently-viewed-models="recentlyViewedModels"
+    :model-document-counts="modelDocumentCounts"
+    @close="showModelSwitcher = false"
+    @select="selectSwitcherModel"
+  ></model-switcher>
 </div>
