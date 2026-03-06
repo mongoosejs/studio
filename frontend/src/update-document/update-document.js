@@ -1,8 +1,6 @@
 'use strict';
 
 const api = require('../api');
-
-const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 const { BSON, EJSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
@@ -22,13 +20,13 @@ module.exports = app => app.component('update-document', {
   template,
   data: function() {
     return {
-      editor: null,
+      editorValue: '{\n    \n}',
       errors: []
     };
   },
   methods: {
     async updateDocument() {
-      const data = EJSON.serialize(eval(`(${this.editor.getValue()})`));
+      const data = EJSON.serialize(eval(`(${this.editorValue})`));
       try {
         if (this.multiple) {
           const ids = this.document.map(x => x._id);
@@ -52,19 +50,6 @@ module.exports = app => app.component('update-document', {
         }
         throw err;
       }
-    }
-  },
-  mounted: function() {
-    const container = this.$refs.codeEditor;
-    this.editor = createAceEditor(container, {
-      value: '{\n    \n}',
-      mode: 'javascript',
-      lineNumbers: true
-    });
-  },
-  beforeDestroy() {
-    if (this.editor) {
-      destroyAceEditor(this.editor);
     }
   }
 });

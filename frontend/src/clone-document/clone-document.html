@@ -1,6 +1,11 @@
 <div>
     <div class="mb-2">
-      <div class="border border-gray-200 h-[300px] w-full" ref="codeEditor"></div>
+      <ace-editor
+        v-model="documentData"
+        mode="javascript"
+        :line-numbers="true"
+        class="border border-gray-200 h-[300px] w-full"
+      />
     </div>
     <button @click="cloneDocument()" class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Submit</button>
     <div v-if="errors.length > 0" class="rounded-md bg-red-50 p-4 mt-1">

@@ -2,7 +2,6 @@
 
 const api = require('../../api');
 const template = require('./edit-dashboard.html');
-const { createAceEditor, destroyAceEditor } = require('../../aceEditor');
 
 module.exports = app => app.component('edit-dashboard', {
   template: template,
@@ -11,10 +10,15 @@ module.exports = app => app.component('edit-dashboard', {
   data: function() {
     return {
       status: 'loaded',
-      editor: null,
       title: '',
-      description: ''
+      description: '',
+      editCode: ''
     };
+  },
+  mounted() {
+    this.editCode = this.code || '';
+    this.description = this.currentDescription;
+    this.title = this.currentTitle;
   },
   methods: {
     closeEditor() {
@@ -23,15 +27,19 @@ module.exports = app => app.component('edit-dashboard', {
     async updateCode() {
       this.status = 'loading';
       try {
+        const codeToSave = this.$refs.codeEditor ? this.$refs.codeEditor.getValue() : this.editCode;
         const { doc } = await api.Dashboard.updateDashboard({
           dashboardId: this.dashboardId,
-          code: this.editor.getValue(),
+          code: codeToSave,
           title: this.title,
           description: this.description,
           evaluate: false
         });
         this.$emit('update', { doc });
-        this.editor.setValue(doc.code);
+        this.editCode = doc.code;
+        if (this.$refs.codeEditor) {
+          this.$refs.codeEditor.setValue(doc.code);
+        }
         this.$toast.success('Dashboard updated!');
         this.closeEditor();
       } catch (err) {
@@ -39,22 +47,6 @@ module.exports = app => app.component('edit-dashboard', {
       } finally {
         this.status = 'loaded';
       }
-    }
-  },
-  mounted: async function() {
-    const container = this.$refs.codeEditor;
-    this.editor = createAceEditor(container, {
-      value: this.code || '',
-      mode: 'javascript',
-      lineNumbers: true,
-      wrap: true
-    });
-    this.description = this.currentDescription;
-    this.title = this.currentTitle;
-  },
-  beforeDestroy() {
-    if (this.editor) {
-      destroyAceEditor(this.editor);
     }
   }
 });

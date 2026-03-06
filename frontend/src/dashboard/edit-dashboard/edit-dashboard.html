@@ -10,8 +10,14 @@
           <textarea v-model="description" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Description">{{description}}</textarea>
         </div>
         <div class="border border-gray-300 rounded-md">
-          <div ref="codeEditor" class="w-full min-h-[200px] border border-gray-300 rounded-md focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500"></div>
-          <textarea v-model="chatMessage" class="w-full p-2"></textarea>
+          <ace-editor
+            ref="codeEditor"
+            v-model="editCode"
+            mode="javascript"
+            :line-numbers="true"
+            :wrap="true"
+            class="w-full min-h-[200px]"
+          />
         </div>
         <div class="flex space-x-2">
           <async-button @click="updateCode" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit</async-button>

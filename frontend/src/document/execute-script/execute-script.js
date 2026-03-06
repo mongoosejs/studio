@@ -3,7 +3,6 @@
 const api = require('../../api');
 const template = require('./execute-script.html');
 const appendCSS = require('../../appendCSS');
-const { createAceEditor, destroyAceEditor } = require('../../aceEditor');
 
 appendCSS(require('./execute-script.css'));
 
@@ -18,7 +17,6 @@ module.exports = app => app.component('execute-script', {
       scriptError: null,
       scriptHasRun: false,
       scriptRunning: false,
-      scriptEditor: null,
       isOpen: false,
       isClosing: false
     };
@@ -30,18 +28,10 @@ module.exports = app => app.component('execute-script', {
         this.isClosing = false;
       } else if (this.isOpen) {
         this.isClosing = true;
-        this.destroyScriptEditor();
         setTimeout(() => {
           this.isOpen = false;
           this.isClosing = false;
         }, 200);
-      }
-    },
-    isOpen(newVal) {
-      if (newVal) {
-        this.$nextTick(() => {
-          this.initializeScriptEditor();
-        });
       }
     }
   },
@@ -50,37 +40,9 @@ module.exports = app => app.component('execute-script', {
       this.isOpen = true;
     }
   },
-  beforeDestroy() {
-    this.destroyScriptEditor();
-  },
   methods: {
     close() {
       this.$emit('close');
-    },
-    initializeScriptEditor() {
-      const container = this.$refs.scriptEditor;
-      if (!container || this.scriptEditor) {
-        return;
-      }
-
-      this.scriptEditor = createAceEditor(container, {
-        value: this.scriptText,
-        mode: 'javascript',
-        lineNumbers: true,
-        wrap: true
-      });
-      this.scriptEditor.session.on('change', () => {
-        this.scriptText = this.scriptEditor.getValue();
-      });
-    },
-    destroyScriptEditor() {
-      if (this.scriptEditor) {
-        destroyAceEditor(this.scriptEditor);
-        this.scriptEditor = null;
-      }
-    },
-    updateScriptText(event) {
-      this.scriptText = event.target.value;
     },
     clearScript() {
       this.scriptText = '';
@@ -88,9 +50,6 @@ module.exports = app => app.component('execute-script', {
       this.scriptLogs = '';
       this.scriptError = null;
       this.scriptHasRun = false;
-      if (this.scriptEditor) {
-        this.scriptEditor.setValue('');
-      }
     },
     formatScriptOutput(value) {
       if (value === undefined) {
@@ -109,7 +68,7 @@ module.exports = app => app.component('execute-script', {
       }
     },
     async runDocumentScript() {
-      const scriptToRun = (this.scriptEditor ? this.scriptEditor.getValue() : this.scriptText || '').trim();
+      const scriptToRun = (this.scriptText || '').trim();
       if (!scriptToRun) {
         this.$toast.error('Script cannot be empty.');
         return;
@@ -125,9 +84,6 @@ module.exports = app => app.component('execute-script', {
           script: scriptToRun
         });
         this.scriptText = scriptToRun;
-        if (this.scriptEditor) {
-          this.scriptEditor.setValue(scriptToRun);
-        }
         this.scriptResult = result;
         this.scriptLogs = logs;
         this.scriptHasRun = true;

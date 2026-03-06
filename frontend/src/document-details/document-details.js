@@ -4,7 +4,6 @@ const mpath = require('mpath');
 const template = require('./document-details.html');
 
 const appendCSS = require('../appendCSS');
-const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 
 appendCSS(require('./document-details.css'));
 
@@ -23,8 +22,7 @@ module.exports = app => app.component('document-details', {
         value: ''
       },
       fieldErrors: {},
-      isSubmittingField: false,
-      fieldValueEditor: null
+      isSubmittingField: false
     };
   },
   mounted() {
@@ -33,32 +31,11 @@ module.exports = app => app.component('document-details', {
       if (this.$refs.searchInput) {
         this.$refs.searchInput.focus();
       }
-
-      if (this.showAddFieldModal) {
-        this.initializeFieldValueEditor();
-      }
     });
 
     this.searchQuery = this.getSearchQueryFromRoute();
   },
-  beforeDestroy() {
-    this.destroyFieldValueEditor();
-  },
   watch: {
-    'fieldData.type'(newType, oldType) {
-      // When field type changes, we need to handle the transition
-      if (newType !== oldType) {
-        // Destroy existing Ace editor if it exists
-        this.destroyFieldValueEditor();
-
-        // If switching to a type that needs Ace, initialize it
-        if (this.shouldUseAce) {
-          this.$nextTick(() => {
-            this.initializeFieldValueEditor();
-          });
-        }
-      }
-    },
     searchQuery(newValue) {
       this.syncSearchQueryToUrl(newValue);
     },
@@ -314,15 +291,9 @@ module.exports = app => app.component('document-details', {
     },
     openAddFieldModal() {
       this.showAddFieldModal = true;
-      this.$nextTick(() => {
-        if (this.shouldUseAce) {
-          this.initializeFieldValueEditor();
-        }
-      });
     },
     closeAddFieldModal() {
       this.showAddFieldModal = false;
-      this.destroyFieldValueEditor();
       this.resetFieldForm();
     },
     async addNewField(fieldData) {
@@ -431,30 +402,6 @@ module.exports = app => app.component('document-details', {
       };
       this.fieldErrors = {};
       this.isSubmittingField = false;
-      // Reset Ace editor if it exists
-      if (this.fieldValueEditor) {
-        this.fieldValueEditor.setValue('');
-      }
-    },
-    initializeFieldValueEditor() {
-      const container = this.$refs.fieldValueEditor;
-      if (container && !this.fieldValueEditor && this.shouldUseAce) {
-        this.fieldValueEditor = createAceEditor(container, {
-          value: this.fieldData.value || '',
-          mode: 'json',
-          lineNumbers: true,
-          minLines: 3
-        });
-        this.fieldValueEditor.session.on('change', () => {
-          this.fieldData.value = this.fieldValueEditor.getValue();
-        });
-      }
-    },
-    destroyFieldValueEditor() {
-      if (this.fieldValueEditor) {
-        destroyAceEditor(this.fieldValueEditor);
-        this.fieldValueEditor = null;
-      }
     },
     getVirtualFieldType(virtual) {
       const value = virtual.value;

@@ -1,7 +1,9 @@
 <div class="w-full">
-  <!-- Ace editor for the entire array -->
-  <div
-    ref="arrayEditor"
-    class="w-full border border-gray-300 font-mono min-h-[300px]"
-  ></div>
+  <ace-editor
+    :value="arrayStr"
+    @input="onEditorInput"
+    mode="json"
+    :line-numbers="true"
+    class="min-h-[300px]"
+  />
 </div>

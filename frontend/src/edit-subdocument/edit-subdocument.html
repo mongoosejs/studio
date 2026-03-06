@@ -1,3 +1,8 @@
 <div class="edit-subdocument">
-  <div ref="editor" class="w-full border border-gray-300 h-[300px] min-h-[200px]"></div>
+  <ace-editor
+    v-model="currentValue"
+    mode="javascript"
+    :line-numbers="true"
+    class="w-full h-[300px] min-h-[200px]"
+  />
 </div>

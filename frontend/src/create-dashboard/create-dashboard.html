@@ -13,7 +13,12 @@
   <div class="my-4">
     <label class="block text-sm font-medium leading-6 text-gray-900">Code</label>
     <div class="border border-gray-200">
-      <div class="h-[300px] w-full" ref="codeEditor"></div>
+      <ace-editor
+        v-model="code"
+        mode="javascript"
+        :line-numbers="true"
+        class="h-[300px] w-full"
+      />
     </div>
   </div>
   <async-button

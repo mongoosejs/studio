@@ -3,7 +3,6 @@
 
 const api = require('../../api');
 const template = require('./chat-message-script.html');
-const { createAceEditor, destroyAceEditor } = require('../../aceEditor');
 
 module.exports = app => app.component('chat-message-script', {
   template,
@@ -19,9 +18,7 @@ module.exports = app => app.component('chat-message-script', {
       newDashboardTitle: '',
       dashboardCode: '',
       createError: null,
-      dashboardEditor: null,
       isEditing: false,
-      codeEditor: null,
       editedScript: null,
       overwriteDashboardCode: '',
       overwriteError: null
@@ -37,10 +34,7 @@ module.exports = app => app.component('chat-message-script', {
   },
   methods: {
     async executeScript() {
-      let scriptToRun = this.script;
-      if (this.isEditing) {
-        scriptToRun = this.codeEditor ? this.codeEditor.getValue() : this.editedScript;
-      }
+      const scriptToRun = this.isEditing ? this.editedScript : this.script;
       this.editedScript = scriptToRun;
       const { chatMessage } = await api.ChatMessage.executeScript({
         chatMessageId: this.message._id,
@@ -67,29 +61,12 @@ module.exports = app => app.component('chat-message-script', {
       this.dashboardCode = this.script;
       this.createError = null;
       this.showCreateDashboardModal = true;
-      this.$nextTick(() => {
-        if (this.dashboardEditor) {
-          destroyAceEditor(this.dashboardEditor);
-          this.dashboardEditor = null;
-        }
-        const container = this.$refs.dashboardCodeEditor;
-        if (container) {
-          this.dashboardEditor = createAceEditor(container, {
-            value: this.dashboardCode,
-            mode: 'javascript',
-            lineNumbers: true
-          });
-          this.dashboardEditor.session.on('change', () => {
-            this.dashboardCode = this.dashboardEditor.getValue();
-          });
-        }
-      });
     },
     openOverwriteDashboardConfirmation() {
       if (!this.canOverwriteDashboard) {
         return;
       }
-      this.overwriteDashboardCode = this.codeEditor?.getValue?.() ?? this.script;
+      this.overwriteDashboardCode = this.isEditing ? this.editedScript : this.script;
       this.overwriteError = null;
       this.showOverwriteDashboardConfirmationModal = true;
     },
@@ -99,36 +76,15 @@ module.exports = app => app.component('chat-message-script', {
     startEditing() {
       this.isEditing = true;
       this.editedScript = this.script;
-      this.$nextTick(() => {
-        const container = this.$refs.scriptEditor;
-        if (!container) return;
-        this.destroyAceEditor();
-        this.codeEditor = createAceEditor(container, {
-          value: this.editedScript,
-          mode: 'javascript',
-          lineNumbers: true
-        });
-        this.codeEditor.session.on('change', () => {
-          this.editedScript = this.codeEditor.getValue();
-        });
-      });
     },
     cancelEditing() {
       this.isEditing = false;
-      this.destroyAceEditor();
       this.editedScript = this.script;
       this.highlightCode();
     },
     finishEditing() {
       this.isEditing = false;
-      this.destroyAceEditor();
       this.highlightCode();
-    },
-    destroyAceEditor() {
-      if (this.codeEditor) {
-        destroyAceEditor(this.codeEditor);
-        this.codeEditor = null;
-      }
     },
     handleScriptInput(event) {
       this.editedScript = event?.target?.value || '';
@@ -147,9 +103,8 @@ module.exports = app => app.component('chat-message-script', {
       }
     },
     async createDashboardFromScript() {
-      this.dashboardCode = this.dashboardEditor.getValue();
       const { dashboard } = await api.Dashboard.createDashboard({
-        code: this.dashboardCode,
+        code: this.dashboardCode || '',
         title: this.newDashboardTitle
       }).catch(err => {
         if (err.response?.data?.message) {
@@ -170,7 +125,7 @@ module.exports = app => app.component('chat-message-script', {
         return;
       }
 
-      this.overwriteDashboardCode = this.codeEditor?.getValue?.() ?? this.script;
+      this.overwriteDashboardCode = this.isEditing ? this.editedScript : this.script;
 
       const params = {
         dashboardId: this.targetDashboardId,
@@ -212,12 +167,6 @@ module.exports = app => app.component('chat-message-script', {
     }
   },
   watch: {
-    showCreateDashboardModal(val) {
-      if (!val && this.dashboardEditor) {
-        destroyAceEditor(this.dashboardEditor);
-        this.dashboardEditor = null;
-      }
-    },
     script(newScript) {
       if (!this.isEditing) {
         this.editedScript = newScript;
@@ -235,7 +184,6 @@ module.exports = app => app.component('chat-message-script', {
     }
   },
   unmounted() {
-    this.destroyAceEditor();
     document.body.removeEventListener('click', this.handleBodyClick);
   }
 });
