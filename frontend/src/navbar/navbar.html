@@ -64,7 +64,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>
       </a>
 
-      <div class="h-full flex items-center">
+      <div class="h-full flex items-center" v-if="!user || !hasAPIKey">
         <button
           type="button"
           @click="toggleDarkMode"
@@ -105,6 +105,16 @@
           aria-labelledby="user-menu-button"
           style="z-index: 10000"
           tabindex="-1">
+          <button
+            type="button"
+            @click="toggleDarkMode(); showFlyout = false"
+            class="w-full cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-ultramarine-200 text-left flex items-center gap-2"
+            role="menuitem"
+            tabindex="-1">
+            <svg v-if="darkMode" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+            {{ darkMode ? 'Light mode' : 'Dark mode' }}
+          </button>
           <router-link to="/team" v-if="hasAccess(roles, 'team')" @click="showFlyout = false" class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-ultramarine-200" role="menuitem" tabindex="-1" id="user-menu-item-2">Team</router-link>
           <span v-else class="block px-4 py-2 text-sm text-gray-300 cursor-not-allowed" role="menuitem" tabindex="-1" id="user-menu-item-2">
             Team
@@ -144,7 +154,7 @@
       </button>
     </div>
     <nav class="flex-1 px-4 py-4 space-y-2">
-      <div class="flex items-center gap-2 px-3 py-2">
+      <div class="flex items-center gap-2 px-3 py-2" v-if="!user || !hasAPIKey">
         <button
           type="button"
           @click="toggleDarkMode"
@@ -199,6 +209,14 @@
           <span class="text-gray-900 font-medium">{{ user.name }}</span>
         </div>
         <div class="mt-2 space-y-1">
+          <button
+            type="button"
+            @click="toggleDarkMode"
+            class="w-full inline-flex items-center gap-2 px-3 py-2 rounded-md text-base text-gray-700 hover:bg-ultramarine-100 text-left">
+            <svg v-if="darkMode" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+            {{ darkMode ? 'Light mode' : 'Dark mode' }}
+          </button>
           <router-link to="/team" v-if="hasAccess(roles, 'team')" class="block px-3 py-2 rounded-md text-base text-gray-700 hover:bg-ultramarine-100">Team</router-link>
           <span v-else class="block px-3 py-2 rounded-md text-base text-gray-300 cursor-not-allowed">
             Team
