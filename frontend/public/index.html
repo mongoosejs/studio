@@ -24,14 +24,21 @@
     <script src="https://unpkg.com/codemirror@5.65.16/mode/javascript/javascript.js"></script>
     <script>
       (function() {
-        var key = 'studio-theme';
-        var stored = localStorage.getItem(key);
-        var prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
-        var isDark = stored === 'dark' || (!stored && prefersDark);
-        if (!stored) localStorage.setItem(key, isDark ? 'dark' : 'light');
-        if (isDark) document.documentElement.classList.add('dark');
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', isDark ? '#0f0f0f' : '#ffffff');
+        try {
+          var key = 'studio-theme';
+          var stored = localStorage.getItem(key);
+          var prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = stored === 'dark' || (!stored && prefersDark);
+          if (!stored) localStorage.setItem(key, isDark ? 'dark' : 'light');
+          if (isDark) document.documentElement.classList.add('dark');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', isDark ? '#0f0f0f' : '#ffffff');
+        } catch (err) {
+          var prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
+          if (prefersDark) document.documentElement.classList.add('dark');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', prefersDark ? '#0f0f0f' : '#ffffff');
+        }
       })();
     </script>
   </head>

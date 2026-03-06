@@ -17,27 +17,37 @@ function getThemeColors() {
 
 function applyThemeChartOptions(config) {
   const { tickColor, gridColor } = getThemeColors();
-  const merged = JSON.parse(JSON.stringify(config));
-  merged.options = merged.options || {};
-  merged.options.scales = merged.options.scales || {};
+  const options = config.options || {};
+  const scales = { ...options.scales };
   const applyScaleTheme = (id) => {
-    merged.options.scales[id].ticks = merged.options.scales[id].ticks || {};
-    merged.options.scales[id].ticks.color = tickColor;
-    merged.options.scales[id].grid = merged.options.scales[id].grid || {};
-    merged.options.scales[id].grid.color = gridColor;
+    const scale = scales[id] || {};
+    scales[id] = {
+      ...scale,
+      ticks: { ...scale.ticks, color: tickColor },
+      grid: { ...scale.grid, color: gridColor }
+    };
   };
   ['x', 'y'].forEach(id => {
-    if (!merged.options.scales[id]) merged.options.scales[id] = {};
+    if (!scales[id]) scales[id] = {};
     applyScaleTheme(id);
   });
-  Object.keys(merged.options.scales).forEach(id => {
+  Object.keys(scales).forEach(id => {
     if (id !== 'x' && id !== 'y') applyScaleTheme(id);
   });
-  merged.options.plugins = merged.options.plugins || {};
-  merged.options.plugins.legend = merged.options.plugins.legend || {};
-  merged.options.plugins.legend.labels = merged.options.plugins.legend.labels || {};
-  merged.options.plugins.legend.labels.color = tickColor;
-  return merged;
+  const plugins = { ...options.plugins };
+  const legend = plugins.legend || {};
+  plugins.legend = {
+    ...legend,
+    labels: { ...legend.labels, color: tickColor }
+  };
+  return {
+    ...config,
+    options: {
+      ...options,
+      scales,
+      plugins
+    }
+  };
 }
 
 function recreateChartWithTheme(component) {

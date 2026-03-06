@@ -44,7 +44,9 @@ module.exports = defineConfig([
         AbortController: true,
         clearTimeout: true,
         requestAnimationFrame: true,
-        localStorage: true
+        localStorage: true,
+        getComputedStyle: true,
+        CustomEvent: true
       },
       sourceType: 'commonjs'
     },

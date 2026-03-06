@@ -69,11 +69,11 @@
 }
 
 .dark .hover\:text-gray-700:hover,
-.dark .group-hover\:text-gray-700:hover {
+.dark .group:hover .group-hover\:text-gray-700 {
   color: var(--studio-text-primary);
 }
 
-.dark .group-hover\:text-ultramarine-600:hover {
+.dark .group:hover .group-hover\:text-ultramarine-600 {
   color: #a7b9ff;
 }
 
