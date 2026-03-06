@@ -1,6 +1,11 @@
 <div v-if="show" class="fixed inset-0 z-[9999]">
   <div class="fixed inset-0 bg-black/40" @click="$emit('close')"></div>
-  <div class="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-lg bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden">
+  <div
+    class="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-lg bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Model switcher"
+  >
     <div class="p-3 border-b border-gray-100">
       <input
         ref="searchInput"
