@@ -39,17 +39,12 @@ module.exports = app => app.component('ace-editor', {
   data() {
     return { editor: null };
   },
-  computed: {
-    boundValue() {
-      return this.modelValue !== '' ? this.modelValue : this.value;
-    }
-  },
   mounted() {
     this.$nextTick(() => {
       const container = this.$refs.container;
       if (!container) return;
       this.editor = createAceEditor(container, {
-        value: this.boundValue,
+        value: this.modelValue !== '' ? this.modelValue : this.value,
         mode: this.mode,
         lineNumbers: this.lineNumbers,
         readOnly: this.readOnly,
@@ -85,9 +80,6 @@ module.exports = app => app.component('ace-editor', {
     }
   },
   methods: {
-    getValue() {
-      return this.editor ? this.editor.getValue() : this.boundValue;
-    },
     setValue(val) {
       if (this.editor) {
         this.editor.setValue(val ?? '', -1);
