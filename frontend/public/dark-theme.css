@@ -1,0 +1,547 @@
+/*
+ * Theme overrides for Mongoose Studio.
+ * Uses CSS variables from theme-variables.css so existing Tailwind classes
+ * pick up the active theme (e.g. .dark). Add dark: variants in templates for
+ * component-level control where needed.
+ * Base page and links use variables in style.css; .dark overrides variables in theme-variables.css.
+ */
+
+/* Override Tailwind utilities under .dark using theme variables */
+
+/* Backgrounds */
+.dark .bg-white {
+  background-color: var(--studio-bg-surface);
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: var(--studio-bg-muted);
+}
+
+.dark .bg-gray-200 {
+  background-color: var(--studio-bg-subtle);
+}
+
+.dark .bg-gray-300 {
+  background-color: var(--studio-bg-subtle-hover);
+}
+
+.dark .bg-gray-600 {
+  background-color: var(--studio-bg-strong);
+}
+
+.dark .bg-gray-800 {
+  background-color: var(--studio-bg-stronger);
+}
+
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--studio-bg-muted-hover);
+}
+
+.dark .hover\:bg-gray-200:hover {
+  background-color: var(--studio-bg-subtle-hover);
+}
+
+.dark .hover\:bg-gray-300:hover,
+.dark .hover\:bg-gray-400:hover {
+  background-color: var(--studio-bg-strong);
+}
+
+/* Text */
+.dark .text-gray-300,
+.dark .text-gray-400,
+.dark .text-gray-500 {
+  color: var(--studio-text-subtle);
+}
+
+.dark .text-gray-600 {
+  color: var(--studio-text-muted);
+}
+
+.dark .text-gray-700 {
+  color: var(--studio-text-secondary);
+}
+
+.dark .text-gray-900,
+.dark .text-black {
+  color: var(--studio-text-primary);
+}
+
+.dark .hover\:text-gray-700:hover,
+.dark .group-hover\:text-gray-700:hover {
+  color: var(--studio-text-primary);
+}
+
+.dark .group-hover\:text-ultramarine-600:hover {
+  color: #a7b9ff;
+}
+
+/* Borders */
+.dark .border-gray-200,
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--studio-border);
+}
+
+.dark .border-gray-300 {
+  border-color: var(--studio-border-strong);
+}
+
+.dark .outline-gray-300 {
+  outline-color: var(--studio-border-strong);
+}
+
+.dark .ring-gray-900\/5 {
+  --tw-ring-color: var(--studio-ring);
+}
+
+/* Status / semantic */
+.dark .bg-red-50 {
+  background-color: var(--studio-bg-error);
+}
+
+.dark .bg-yellow-50 {
+  background-color: var(--studio-bg-warning);
+}
+
+.dark .bg-green-50 {
+  background-color: var(--studio-bg-success);
+}
+
+.dark .bg-blue-100 {
+  background-color: var(--studio-bg-info);
+}
+
+.dark .border-red-200 {
+  border-color: var(--studio-border-error);
+}
+
+.dark .border-yellow-200 {
+  border-color: var(--studio-border-warning);
+}
+
+.dark .border-green-200 {
+  border-color: var(--studio-border-success);
+}
+
+.dark .text-red-700 {
+  color: var(--studio-text-error);
+}
+
+.dark .text-green-700 {
+  color: var(--studio-text-success);
+}
+
+.dark .ring-green-600\/20 {
+  --tw-ring-color: var(--studio-ring-success);
+}
+
+.dark .ring-gray-600\/20 {
+  --tw-ring-color: var(--studio-ring-muted);
+}
+
+/* Code / inline */
+.dark .bg-gray-100.px-1.rounded {
+  background-color: var(--studio-bg-muted);
+}
+
+/* Tooltip */
+.dark .tooltip .tooltiptext {
+  background-color: var(--studio-tooltip-bg);
+  color: var(--studio-tooltip-text);
+  border: 1px solid var(--studio-tooltip-border);
+}
+
+/* Slate (documents area, filter bar, document view) */
+.dark .bg-slate-50 {
+  background-color: var(--studio-bg-muted);
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: var(--studio-bg-muted-hover);
+}
+
+.dark .bg-slate-100 {
+  background-color: var(--studio-bg-muted);
+}
+
+.dark .border-slate-100,
+.dark .border-slate-300 {
+  border-color: var(--studio-border);
+}
+
+.dark .text-slate-400 {
+  color: var(--studio-text-muted);
+}
+
+.dark .text-slate-500 {
+  color: var(--studio-text-muted);
+}
+
+.dark .text-slate-600 {
+  color: var(--studio-text-secondary);
+}
+
+.dark .text-slate-700 {
+  color: var(--studio-text-secondary);
+}
+
+.dark .text-slate-800 {
+  color: var(--studio-text-primary);
+}
+
+.dark .hover\:text-slate-700:hover {
+  color: var(--studio-text-primary);
+}
+
+/* Sidebar selected / hover (ultramarine) */
+.dark .bg-ultramarine-50 {
+  background-color: rgba(63, 83, 255, 0.15);
+}
+
+.dark .bg-ultramarine-100 {
+  background-color: rgba(63, 83, 255, 0.25);
+}
+
+.dark .hover\:bg-ultramarine-50:hover {
+  background-color: rgba(63, 83, 255, 0.2);
+}
+
+.dark .text-ultramarine-700 {
+  color: #a7b9ff;
+}
+
+/* JSON view (list-json, json-node) – high-contrast value colors */
+.dark .text-blue-600 {
+  color: #93c5fd;
+}
+
+.dark .text-sky-700,
+.dark .text-sky-800 {
+  color: #7dd3fc;
+}
+
+.dark .text-emerald-600 {
+  color: #6ee7b7;
+}
+
+.dark .text-amber-600 {
+  color: #fcd34d;
+}
+
+.dark .text-violet-600 {
+  color: #c4b5fd;
+}
+
+/* Ring / shadow */
+.dark .ring-black\/5,
+.dark .ring-opacity-5 {
+  --tw-ring-color: var(--studio-ring);
+}
+
+/* Document layout – remove hardcoded white */
+.dark .document .document-menu {
+  background-color: var(--studio-bg-surface);
+}
+
+/* Document details (path keys, types, JSON pre) */
+.dark .document-details .path-key {
+  background-color: var(--studio-bg-subtle);
+}
+
+.dark .document-details .path-type {
+  color: var(--studio-text-muted);
+}
+
+.dark .document-details .value {
+  color: var(--studio-text-secondary);
+}
+
+.dark .json-view pre {
+  background-color: var(--studio-bg-surface);
+  color: var(--studio-text-primary);
+}
+
+.dark .json-view pre::-webkit-scrollbar-track {
+  background: var(--studio-bg-subtle);
+}
+
+.dark .json-view pre::-webkit-scrollbar-thumb {
+  background: var(--studio-bg-strong);
+}
+
+.dark .json-view pre::-webkit-scrollbar-thumb:hover {
+  background: var(--studio-text-muted);
+}
+
+/* Models table and sidebar */
+.dark .models .documents table th,
+.dark .models .documents table td,
+.dark .models .documents table tr {
+  color: var(--studio-text-primary);
+  border-bottom-color: var(--studio-border);
+}
+
+.dark .models .documents table th::after {
+  border-bottom-color: var(--studio-border);
+}
+
+.dark .models .model-selector,
+.dark .models button.gray {
+  background-color: var(--studio-bg-muted);
+  color: var(--studio-text-primary);
+}
+
+.dark .models .path-type {
+  color: var(--studio-text-muted);
+}
+
+/* Modal (avoid white box in dark) */
+.dark .modal-container {
+  background-color: var(--studio-bg-surface);
+  color: var(--studio-text-primary);
+}
+
+.dark .modal-body {
+  color: inherit;
+}
+
+/* Modal text editors (CodeMirror and textareas) in dark mode */
+.dark .modal-container .CodeMirror,
+.dark .modal-body .CodeMirror {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.dark .modal-container .CodeMirror .CodeMirror-gutters,
+.dark .modal-body .CodeMirror .CodeMirror-gutters {
+  background-color: var(--studio-bg-subtle) !important;
+  border-color: var(--studio-border) !important;
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .modal-container .CodeMirror .CodeMirror-linenumber,
+.dark .modal-body .CodeMirror .CodeMirror-linenumber {
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .modal-container .CodeMirror .CodeMirror-cursor,
+.dark .modal-body .CodeMirror .CodeMirror-cursor {
+  border-left-color: var(--studio-text-primary) !important;
+}
+
+.dark .modal-container .CodeMirror .CodeMirror-selected,
+.dark .modal-body .CodeMirror .CodeMirror-selected {
+  background: var(--studio-bg-strong) !important;
+}
+
+.dark .modal-container .CodeMirror:focus-within,
+.dark .modal-body .CodeMirror:focus-within,
+.dark .modal-container .CodeMirror.CodeMirror-focused,
+.dark .modal-body .CodeMirror.CodeMirror-focused {
+  border-color: var(--studio-focus-ring) !important;
+  box-shadow: 0 0 0 3px var(--studio-focus-ring-shadow) !important;
+}
+
+.dark .modal-container textarea,
+.dark .modal-body textarea {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.dark .modal-container textarea::placeholder,
+.dark .modal-body textarea::placeholder {
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .modal-container textarea:focus,
+.dark .modal-body textarea:focus {
+  border-color: var(--studio-focus-ring) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--studio-focus-ring-shadow) !important;
+}
+
+/* Dashboard editor panel (inline edit form, not in a modal) */
+.dark .dashboard-editor {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary);
+}
+
+.dark .dashboard-editor input,
+.dark .dashboard-editor textarea {
+  background-color: var(--studio-bg-surface) !important;
+  color: var(--studio-text-primary) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.dark .dashboard-editor input::placeholder,
+.dark .dashboard-editor textarea::placeholder {
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .dashboard-editor input:focus,
+.dark .dashboard-editor textarea:focus {
+  border-color: var(--studio-focus-ring) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--studio-focus-ring-shadow) !important;
+}
+
+.dark .dashboard-editor .CodeMirror {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.dark .dashboard-editor .CodeMirror .CodeMirror-gutters {
+  background-color: var(--studio-bg-subtle) !important;
+  border-color: var(--studio-border) !important;
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .dashboard-editor .CodeMirror .CodeMirror-linenumber {
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .dashboard-editor .CodeMirror .CodeMirror-cursor {
+  border-left-color: var(--studio-text-primary) !important;
+}
+
+.dark .dashboard-editor .CodeMirror .CodeMirror-selected {
+  background: var(--studio-bg-strong) !important;
+}
+
+.dark .dashboard-editor .CodeMirror:focus-within,
+.dark .dashboard-editor .CodeMirror.CodeMirror-focused {
+  border-color: var(--studio-focus-ring) !important;
+  box-shadow: 0 0 0 3px var(--studio-focus-ring-shadow) !important;
+}
+
+.dark .dashboard-editor .border-gray-300 {
+  border-color: var(--studio-border) !important;
+}
+
+/* Chat message script block (code tab / text editor) */
+.dark .chat-message-script {
+  background-color: var(--studio-bg-surface) !important;
+  color: var(--studio-text-primary);
+  border-color: var(--studio-border) !important;
+}
+
+.dark .chat-message-script .flex.border-b {
+  background-color: var(--studio-bg-surface) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.dark .chat-message-script .bg-gray-100,
+.dark .chat-message-script .hover\:bg-gray-200:hover {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary);
+}
+
+.dark .chat-message-script .bg-gray-700 {
+  background-color: var(--studio-bg-strong) !important;
+  color: var(--studio-text-primary);
+}
+
+.dark .chat-message-script .text-gray-600,
+.dark .chat-message-script .text-gray-700 {
+  color: var(--studio-text-primary);
+}
+
+.dark .chat-message-script .border-gray-200,
+.dark .chat-message-script .border-gray-300 {
+  border-color: var(--studio-border) !important;
+}
+
+.dark .chat-message-script .border-r.border-gray-300 {
+  border-color: var(--studio-border) !important;
+}
+
+/* Code tab content: code block (pre/code) and editor area */
+.dark .chat-message-script pre[class*="zinc-50"],
+.dark .chat-message-script pre.bg-zinc-50 {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary);
+}
+
+.dark .chat-message-script .border-gray-200 textarea {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.dark .chat-message-script .CodeMirror {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.dark .chat-message-script .CodeMirror .CodeMirror-gutters {
+  background-color: var(--studio-bg-subtle) !important;
+  border-color: var(--studio-border) !important;
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .chat-message-script .CodeMirror .CodeMirror-linenumber {
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .chat-message-script .CodeMirror .CodeMirror-cursor {
+  border-left-color: var(--studio-text-primary) !important;
+}
+
+.dark .chat-message-script .CodeMirror .CodeMirror-selected {
+  background: var(--studio-bg-strong) !important;
+}
+
+/* Output tab and dropdown in chat script block */
+.dark .chat-message-script .bg-white.border-t {
+  background-color: var(--studio-bg-surface) !important;
+  border-color: var(--studio-border) !important;
+  color: var(--studio-text-primary);
+}
+
+.dark .chat-message-script .bg-gray-100.rounded,
+.dark .chat-message-script .bg-gray-100.p-3 {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary);
+}
+
+.dark .chat-message-script .origin-top-right.bg-white {
+  background-color: var(--studio-bg-surface) !important;
+  border-color: var(--studio-border);
+}
+
+.dark .chat-message-script .origin-top-right .text-gray-700,
+.dark .chat-message-script .origin-top-right .hover\:bg-gray-100:hover {
+  color: var(--studio-text-primary);
+  background-color: var(--studio-bg-muted-hover) !important;
+}
+
+.dark .chat-message-script .hover\:bg-gray-300:hover {
+  background-color: var(--studio-bg-subtle-hover) !important;
+}
+
+.dark .chat-message-script .bg-gray-300,
+.dark .chat-message-script .bg-gray-500 {
+  background-color: var(--studio-bg-subtle) !important;
+  color: var(--studio-text-primary);
+}
+
+.dark .chat-message-script .hover\:bg-gray-400:hover,
+.dark .chat-message-script .hover\:bg-gray-600:hover {
+  background-color: var(--studio-bg-strong) !important;
+}
+
+/* Selected document row (table / json list) */
+.dark .bg-blue-200 {
+  background-color: rgba(63, 83, 255, 0.35);
+}
+
+/* Input placeholder contrast */
+.dark ::placeholder,
+.dark .placeholder\:text-gray-400::placeholder {
+  color: var(--studio-text-muted);
+}

@@ -90,16 +90,14 @@ module.exports = app => app.component('navbar', {
       this.darkMode = !this.darkMode;
       const theme = this.darkMode ? 'dark' : 'light';
       window.localStorage.setItem('studio-theme', theme);
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (typeof window.DarkReader !== 'undefined') {
-        if (this.darkMode) {
-          window.DarkReader.enable({ brightness: 100, contrast: 95, sepia: 0 });
-          if (meta) meta.setAttribute('content', '#1a1a1a');
-        } else {
-          window.DarkReader.disable();
-          if (meta) meta.setAttribute('content', '#ffffff');
-        }
+      if (this.darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
       }
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', this.darkMode ? '#0f0f0f' : '#ffffff');
+      document.documentElement.dispatchEvent(new CustomEvent('studio-theme-changed', { detail: { dark: this.darkMode } }));
     }
   },
   directives: {

@@ -50,6 +50,7 @@ module.exports = app => app.component('models', {
     selectedGeoField: null,
     mapInstance: null,
     mapLayer: null,
+    mapTileLayer: null,
     hideSidebar: null,
     lastSelectedIndex: null,
     error: null,
@@ -65,6 +66,7 @@ module.exports = app => app.component('models', {
     document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
+    document.documentElement.removeEventListener('studio-theme-changed', this.onStudioThemeChanged);
     this.destroyMap();
   },
   async mounted() {
@@ -82,6 +84,8 @@ module.exports = app => app.component('models', {
       }
     };
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
+    this.onStudioThemeChanged = () => this.updateMapTileLayer();
+    document.documentElement.addEventListener('studio-theme-changed', this.onStudioThemeChanged);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     if (this.currentModel == null && this.models.length > 0) {
@@ -263,9 +267,7 @@ module.exports = app => app.component('models', {
       mapElement.style.setProperty('width', '100%', 'important');
 
       this.mapInstance = L.map(this.$refs.modelsMap).setView([0, 0], 2);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(this.mapInstance);
+      this.updateMapTileLayer();
 
       this.$nextTick(() => {
         if (this.mapInstance) {
@@ -274,10 +276,29 @@ module.exports = app => app.component('models', {
         }
       });
     },
+    getMapTileLayerOptions() {
+      const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+      return isDark
+        ? { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }
+        : { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; OpenStreetMap contributors' };
+    },
+    updateMapTileLayer() {
+      if (!this.mapInstance || typeof L === 'undefined') return;
+      if (this.mapTileLayer) {
+        this.mapTileLayer.remove();
+        this.mapTileLayer = null;
+      }
+      const opts = this.getMapTileLayerOptions();
+      this.mapTileLayer = L.tileLayer(opts.url, opts).addTo(this.mapInstance);
+    },
     destroyMap() {
       if (this.mapLayer) {
         this.mapLayer.remove();
         this.mapLayer = null;
+      }
+      if (this.mapTileLayer) {
+        this.mapTileLayer.remove();
+        this.mapTileLayer = null;
       }
       if (this.mapInstance) {
         this.mapInstance.remove();

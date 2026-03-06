@@ -6,9 +6,11 @@
     <meta name="msapplication-TileColor" />
     <meta name="theme-color" content="#ffffff"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter"/>
+    <link rel="stylesheet" href="theme-variables.css">
     <link rel="stylesheet" type="text/css" href="style.css"/>
     <link rel="stylesheet" href="https://unpkg.com/prismjs@1.29.0/themes/prism.css"/>
     <link rel="stylesheet" href="tw.css">
+    <link rel="stylesheet" href="dark-theme.css">
     <link rel="stylesheet" href="vanillatoasts/vanillatoasts.css">
     <link rel="stylesheet" href="https://unpkg.com/codemirror@5.65.16/lib/codemirror.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -20,26 +22,16 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/codemirror@5.65.16/lib/codemirror.js"></script>
     <script src="https://unpkg.com/codemirror@5.65.16/mode/javascript/javascript.js"></script>
-    <!--Docs: https://www.npmjs.com/package/darkreader-->
-    <script src="https://unpkg.com/darkreader@4.9.120"></script>
     <script>
       (function() {
-        // to prevent a flash of light
         var key = 'studio-theme';
         var stored = localStorage.getItem(key);
         var prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
         var isDark = stored === 'dark' || (!stored && prefersDark);
         if (!stored) localStorage.setItem(key, isDark ? 'dark' : 'light');
+        if (isDark) document.documentElement.classList.add('dark');
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (typeof DarkReader !== 'undefined') {
-          if (isDark) {
-            DarkReader.enable({ brightness: 100, contrast: 95, sepia: 0 });
-            if (meta) meta.setAttribute('content', '#1a1a1a');
-          } else {
-            DarkReader.disable();
-            if (meta) meta.setAttribute('content', '#ffffff');
-          }
-        }
+        if (meta) meta.setAttribute('content', isDark ? '#0f0f0f' : '#ffffff');
       })();
     </script>
   </head>

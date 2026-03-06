@@ -1,4 +1,5 @@
-<div class="dashboard px-1">
+<div class="dashboard-root">
+  <div class="dashboard px-1">
   <div v-if="status === 'loading'" class="max-w-5xl mx-auto text-center">
     <img src="images/loader.gif" class="inline mt-10">
   </div>
@@ -15,7 +16,7 @@
         </button>
 
         <async-button
-          @click="evaluateDashboard"
+          @click="() => evaluateDashboard()"
           type="button"
           :disabled="status === 'evaluating'"
           class="flex items-center rounded-md bg-ultramarine-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600 disabled:cursor-not-allowed disabled:bg-gray-600"
@@ -63,7 +64,7 @@
         <div class="flex flex-col items-center justify-center py-8">
           <p class="text-gray-700 text-base mb-4">This dashboard hasn't been evaluated yet.</p>
           <async-button
-            @click="evaluateDashboard"
+            @click="() => evaluateDashboard()"
             type="button"
             :disabled="status === 'evaluating'"
             class="rounded-md bg-ultramarine-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600 disabled:cursor-not-allowed disabled:bg-gray-600"
@@ -116,9 +117,9 @@
   <div v-if="!dashboard && status !== 'loading'">
     No dashboard with the given id could be found.
   </div>
-</div>
+  </div>
 
-<modal
+  <modal
   v-if="showDetailModal"
   containerClass="!h-[90vh] !w-[90vw]"
   role="dialog"
@@ -138,3 +139,4 @@
     </div>
   </template>
 </modal>
+</div>

@@ -12,7 +12,8 @@ module.exports = app => app.component('edit-dashboard', {
       status: 'loaded',
       editor: null,
       title: '',
-      description: ''
+      description: '',
+      chatMessage: ''
     };
   },
   methods: {

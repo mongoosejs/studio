@@ -2,6 +2,7 @@
 
 module.exports = {
   mode: 'jit',
+  darkMode: 'class',
   content: ['./frontend/src/**/*.html', './frontend/src/**/*.js', './frontend/src/**/**/*.html', './frontend/src/**/**/*.js'],
   corePlugins: {
     container: true
