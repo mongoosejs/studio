@@ -15,6 +15,7 @@ const appendCSS = require('../appendCSS');
 appendCSS(require('./create-document.css'));
 
 const template = require('./create-document.html');
+const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 
 module.exports = app => app.component('create-document', {
   props: ['currentModel', 'paths'],
@@ -104,11 +105,19 @@ module.exports = app => app.component('create-document', {
       this.documentData += `  ${requiredPaths[i].path}: ${isLast ? '' : ','}\n`;
     }
     this.documentData += '}';
-    this.$refs.codeEditor.value = this.documentData;
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
+    const container = this.$refs.codeEditor;
+    this.editor = createAceEditor(container, {
+      value: this.documentData,
       mode: 'javascript',
-      lineNumbers: true,
-      smartIndent: false
+      lineNumbers: true
     });
+    this.editor.session.on('change', () => {
+      this.documentData = this.editor.getValue();
+    });
+  },
+  beforeDestroy() {
+    if (this.editor) {
+      destroyAceEditor(this.editor);
+    }
   }
 });

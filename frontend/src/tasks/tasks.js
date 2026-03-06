@@ -2,6 +2,7 @@
 
 const template = require('./tasks.html');
 const api = require('../api');
+const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 
 module.exports = app => app.component('tasks', {
   data: () => ({
@@ -176,12 +177,15 @@ module.exports = app => app.component('tasks', {
       this.setDefaultCreateTaskValues();
     },
     initializeParametersEditor() {
-      if (this.$refs.parametersEditor && !this.parametersEditor) {
-        this.parametersEditor = CodeMirror.fromTextArea(this.$refs.parametersEditor, {
-          mode: 'javascript',
-          lineNumbers: true,
-          smartIndent: false,
-          theme: 'default'
+      const container = this.$refs.parametersEditor;
+      if (container && !this.parametersEditor) {
+        this.parametersEditor = createAceEditor(container, {
+          value: this.newTask.parameters || '',
+          mode: 'json',
+          lineNumbers: true
+        });
+        this.parametersEditor.session.on('change', () => {
+          this.newTask.parameters = this.parametersEditor.getValue();
         });
       }
     },
@@ -340,6 +344,14 @@ module.exports = app => app.component('tasks', {
       return this.groupedTasks.pending ? this.groupedTasks.pending.length : 0;
     }
   },
+  watch: {
+    showCreateTaskModal(val) {
+      if (!val && this.parametersEditor) {
+        destroyAceEditor(this.parametersEditor);
+        this.parametersEditor = null;
+      }
+    }
+  },
   mounted: async function() {
     await this.updateDateRange();
     await this.getTasks();
@@ -348,7 +360,8 @@ module.exports = app => app.component('tasks', {
   },
   beforeDestroy() {
     if (this.parametersEditor) {
-      this.parametersEditor.toTextArea();
+      destroyAceEditor(this.parametersEditor);
+      this.parametersEditor = null;
     }
   },
 

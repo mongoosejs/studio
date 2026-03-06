@@ -1,8 +1,9 @@
-/* global CodeMirror, Prism */
+/* global Prism */
 'use strict';
 
 const api = require('../../api');
 const template = require('./chat-message-script.html');
+const { createAceEditor, destroyAceEditor } = require('../../aceEditor');
 
 module.exports = app => app.component('chat-message-script', {
   template,
@@ -68,16 +69,20 @@ module.exports = app => app.component('chat-message-script', {
       this.showCreateDashboardModal = true;
       this.$nextTick(() => {
         if (this.dashboardEditor) {
-          this.dashboardEditor.toTextArea();
+          destroyAceEditor(this.dashboardEditor);
+          this.dashboardEditor = null;
         }
-        this.$refs.dashboardCodeEditor.value = this.dashboardCode;
-        this.dashboardEditor = CodeMirror.fromTextArea(this.$refs.dashboardCodeEditor, {
-          mode: 'javascript',
-          lineNumbers: true
-        });
-        this.dashboardEditor.on('change', () => {
-          this.dashboardCode = this.dashboardEditor.getValue();
-        });
+        const container = this.$refs.dashboardCodeEditor;
+        if (container) {
+          this.dashboardEditor = createAceEditor(container, {
+            value: this.dashboardCode,
+            mode: 'javascript',
+            lineNumbers: true
+          });
+          this.dashboardEditor.session.on('change', () => {
+            this.dashboardCode = this.dashboardEditor.getValue();
+          });
+        }
       });
     },
     openOverwriteDashboardConfirmation() {
@@ -95,35 +100,33 @@ module.exports = app => app.component('chat-message-script', {
       this.isEditing = true;
       this.editedScript = this.script;
       this.$nextTick(() => {
-        if (!this.$refs.scriptEditor) {
-          return;
-        }
-        this.$refs.scriptEditor.value = this.editedScript;
-        if (typeof CodeMirror === 'undefined') {
-          return;
-        }
-        this.destroyCodeMirror();
-        this.codeEditor = CodeMirror.fromTextArea(this.$refs.scriptEditor, {
+        const container = this.$refs.scriptEditor;
+        if (!container) return;
+        this.destroyAceEditor();
+        this.codeEditor = createAceEditor(container, {
+          value: this.editedScript,
           mode: 'javascript',
-          lineNumbers: true,
-          smartIndent: false
+          lineNumbers: true
+        });
+        this.codeEditor.session.on('change', () => {
+          this.editedScript = this.codeEditor.getValue();
         });
       });
     },
     cancelEditing() {
       this.isEditing = false;
-      this.destroyCodeMirror();
+      this.destroyAceEditor();
       this.editedScript = this.script;
       this.highlightCode();
     },
     finishEditing() {
       this.isEditing = false;
-      this.destroyCodeMirror();
+      this.destroyAceEditor();
       this.highlightCode();
     },
-    destroyCodeMirror() {
+    destroyAceEditor() {
       if (this.codeEditor) {
-        this.codeEditor.toTextArea();
+        destroyAceEditor(this.codeEditor);
         this.codeEditor = null;
       }
     },
@@ -211,7 +214,7 @@ module.exports = app => app.component('chat-message-script', {
   watch: {
     showCreateDashboardModal(val) {
       if (!val && this.dashboardEditor) {
-        this.dashboardEditor.toTextArea();
+        destroyAceEditor(this.dashboardEditor);
         this.dashboardEditor = null;
       }
     },
@@ -232,7 +235,7 @@ module.exports = app => app.component('chat-message-script', {
     }
   },
   unmounted() {
-    this.destroyCodeMirror();
+    this.destroyAceEditor();
     document.body.removeEventListener('click', this.handleBodyClick);
   }
 });

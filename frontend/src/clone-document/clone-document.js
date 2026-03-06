@@ -15,6 +15,7 @@ const appendCSS = require('../appendCSS');
 appendCSS(require('./clone-document.css'));
 
 const template = require('./clone-document.html');
+const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 
 module.exports = app => app.component('clone-document', {
   props: ['currentModel', 'doc', 'schemaPaths'],
@@ -64,11 +65,19 @@ module.exports = app => app.component('clone-document', {
     }
 
     this.documentData = JSON.stringify(filteredDoc, null, 2);
-    this.$refs.codeEditor.value = this.documentData;
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
+    const container = this.$refs.codeEditor;
+    this.editor = createAceEditor(container, {
+      value: this.documentData,
       mode: 'javascript',
-      lineNumbers: true,
-      smartIndent: false
+      lineNumbers: true
     });
+    this.editor.session.on('change', () => {
+      this.documentData = this.editor.getValue();
+    });
+  },
+  beforeDestroy() {
+    if (this.editor) {
+      destroyAceEditor(this.editor);
+    }
   }
 });

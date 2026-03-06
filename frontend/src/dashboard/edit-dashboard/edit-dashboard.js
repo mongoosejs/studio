@@ -2,6 +2,7 @@
 
 const api = require('../../api');
 const template = require('./edit-dashboard.html');
+const { createAceEditor, destroyAceEditor } = require('../../aceEditor');
 
 module.exports = app => app.component('edit-dashboard', {
   template: template,
@@ -41,20 +42,19 @@ module.exports = app => app.component('edit-dashboard', {
     }
   },
   mounted: async function() {
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
+    const container = this.$refs.codeEditor;
+    this.editor = createAceEditor(container, {
+      value: this.code || '',
       mode: 'javascript',
       lineNumbers: true,
-      indentUnit: 4,
-      smartIndent: true,
-      tabsize: 4,
-      indentWithTabs: true,
-      cursorBlinkRate: 300,
-      lineWrapping: true,
-      showCursorWhenSelecting: true
+      wrap: true
     });
-    // this.editor.focus();
-    // this.editor.refresh(); // if anything weird happens on load, this usually fixes it. However, this breaks it in this case.
     this.description = this.currentDescription;
     this.title = this.currentTitle;
+  },
+  beforeDestroy() {
+    if (this.editor) {
+      destroyAceEditor(this.editor);
+    }
   }
 });

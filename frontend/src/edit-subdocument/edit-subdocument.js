@@ -2,6 +2,7 @@
 
 const template = require('./edit-subdocument.html');
 
+const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 const { BSON, EJSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
@@ -18,12 +19,13 @@ module.exports = app => app.component('edit-subdocument', {
     this.currentValue = this.value == null
       ? '' + this.value
       : JSON.stringify(this.value, null, '  ').trim();
-    this.$refs.editor.value = this.currentValue;
-    this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
+    const container = this.$refs.editor;
+    this.editor = createAceEditor(container, {
+      value: this.currentValue,
       mode: 'javascript',
       lineNumbers: true
     });
-    this.editor.on('change', ev => {
+    this.editor.session.on('change', () => {
       this.currentValue = this.editor.getValue();
     });
     this.status = 'loaded';
@@ -43,7 +45,7 @@ module.exports = app => app.component('edit-subdocument', {
   },
   beforeDestroy() {
     if (this.editor) {
-      this.editor.toTextArea();
+      destroyAceEditor(this.editor);
     }
   },
   emits: ['input', 'error']

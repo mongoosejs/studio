@@ -2,6 +2,7 @@
 
 const api = require('../api');
 
+const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 const { BSON, EJSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
@@ -54,11 +55,16 @@ module.exports = app => app.component('update-document', {
     }
   },
   mounted: function() {
-    this.$refs.codeEditor.value = '{\n    \n}';
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
+    const container = this.$refs.codeEditor;
+    this.editor = createAceEditor(container, {
+      value: '{\n    \n}',
       mode: 'javascript',
-      lineNumbers: true,
-      smartIndent: false
+      lineNumbers: true
     });
+  },
+  beforeDestroy() {
+    if (this.editor) {
+      destroyAceEditor(this.editor);
+    }
   }
 });

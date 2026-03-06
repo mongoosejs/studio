@@ -4,6 +4,7 @@ const mpath = require('mpath');
 const template = require('./document-details.html');
 
 const appendCSS = require('../appendCSS');
+const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 
 appendCSS(require('./document-details.css'));
 
@@ -47,11 +48,11 @@ module.exports = app => app.component('document-details', {
     'fieldData.type'(newType, oldType) {
       // When field type changes, we need to handle the transition
       if (newType !== oldType) {
-        // Destroy existing CodeMirror if it exists
+        // Destroy existing Ace editor if it exists
         this.destroyFieldValueEditor();
 
-        // If switching to a type that needs CodeMirror, initialize it
-        if (this.shouldUseCodeMirror) {
+        // If switching to a type that needs Ace, initialize it
+        if (this.shouldUseAce) {
           this.$nextTick(() => {
             this.initializeFieldValueEditor();
           });
@@ -122,7 +123,7 @@ module.exports = app => app.component('document-details', {
       const allTypes = new Set([...schemaTypes, ...commonTypes]);
       return Array.from(allTypes).sort();
     },
-    shouldUseCodeMirror() {
+    shouldUseAce() {
       return ['Array', 'Object', 'Embedded'].includes(this.fieldData.type);
     },
     shouldUseDatePicker() {
@@ -314,7 +315,7 @@ module.exports = app => app.component('document-details', {
     openAddFieldModal() {
       this.showAddFieldModal = true;
       this.$nextTick(() => {
-        if (this.shouldUseCodeMirror) {
+        if (this.shouldUseAce) {
           this.initializeFieldValueEditor();
         }
       });
@@ -430,27 +431,28 @@ module.exports = app => app.component('document-details', {
       };
       this.fieldErrors = {};
       this.isSubmittingField = false;
-      // Reset CodeMirror editor if it exists
+      // Reset Ace editor if it exists
       if (this.fieldValueEditor) {
         this.fieldValueEditor.setValue('');
       }
     },
     initializeFieldValueEditor() {
-      if (this.$refs.fieldValueEditor && !this.fieldValueEditor && this.shouldUseCodeMirror) {
-        this.$refs.fieldValueEditor.value = this.fieldData.value || '';
-        this.fieldValueEditor = CodeMirror.fromTextArea(this.$refs.fieldValueEditor, {
-          mode: 'javascript',
+      const container = this.$refs.fieldValueEditor;
+      if (container && !this.fieldValueEditor && this.shouldUseAce) {
+        this.fieldValueEditor = createAceEditor(container, {
+          value: this.fieldData.value || '',
+          mode: 'json',
           lineNumbers: true,
-          height: 'auto'
+          minLines: 3
         });
-        this.fieldValueEditor.on('change', () => {
+        this.fieldValueEditor.session.on('change', () => {
           this.fieldData.value = this.fieldValueEditor.getValue();
         });
       }
     },
     destroyFieldValueEditor() {
       if (this.fieldValueEditor) {
-        this.fieldValueEditor.toTextArea();
+        destroyAceEditor(this.fieldValueEditor);
         this.fieldValueEditor = null;
       }
     },

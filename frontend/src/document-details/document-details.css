@@ -70,21 +70,16 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
 
-/* CodeMirror styling in modal */
-.add-field-modal .CodeMirror {
+/* Ace editor styling in modal */
+.add-field-modal .add-field-ace-editor.ace_editor {
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   font-size: 14px;
-  height: auto;
   min-height: 100px;
 }
 
-.add-field-modal .CodeMirror:focus-within {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.add-field-modal .CodeMirror.CodeMirror-focused {
+.add-field-modal .add-field-ace-editor:focus-within.ace_editor,
+.add-field-modal .add-field-ace-editor.ace_focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }

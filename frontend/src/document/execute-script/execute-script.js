@@ -3,6 +3,7 @@
 const api = require('../../api');
 const template = require('./execute-script.html');
 const appendCSS = require('../../appendCSS');
+const { createAceEditor, destroyAceEditor } = require('../../aceEditor');
 
 appendCSS(require('./execute-script.css'));
 
@@ -57,23 +58,24 @@ module.exports = app => app.component('execute-script', {
       this.$emit('close');
     },
     initializeScriptEditor() {
-      if (!this.$refs.scriptEditor || this.scriptEditor || typeof CodeMirror === 'undefined') {
+      const container = this.$refs.scriptEditor;
+      if (!container || this.scriptEditor) {
         return;
       }
 
-      this.$refs.scriptEditor.value = this.scriptText;
-      this.scriptEditor = CodeMirror.fromTextArea(this.$refs.scriptEditor, {
+      this.scriptEditor = createAceEditor(container, {
+        value: this.scriptText,
         mode: 'javascript',
         lineNumbers: true,
-        lineWrapping: true
+        wrap: true
       });
-      this.scriptEditor.on('change', () => {
+      this.scriptEditor.session.on('change', () => {
         this.scriptText = this.scriptEditor.getValue();
       });
     },
     destroyScriptEditor() {
       if (this.scriptEditor) {
-        this.scriptEditor.toTextArea();
+        destroyAceEditor(this.scriptEditor);
         this.scriptEditor = null;
       }
     },

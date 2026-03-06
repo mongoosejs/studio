@@ -2,6 +2,7 @@
 
 const template = require('./edit-array.html');
 
+const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 const { BSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
@@ -30,7 +31,7 @@ module.exports = app => app.component('edit-array', {
         this.arrayValue = [];
       }
       
-      // Update CodeMirror editor if it exists
+      // Update Ace editor if it exists
       this.$nextTick(() => {
         if (this.arrayEditor) {
           const arrayStr = JSON.stringify(this.arrayValue, null, 2);
@@ -40,16 +41,16 @@ module.exports = app => app.component('edit-array', {
     },
     initializeArrayEditor() {
       this.$nextTick(() => {
-        const textareaRef = this.$refs.arrayEditor;
-        const textarea = Array.isArray(textareaRef) ? textareaRef[0] : textareaRef;
-        if (textarea && !this.arrayEditor) {
+        const ref = this.$refs.arrayEditor;
+        const container = Array.isArray(ref) ? ref[0] : ref;
+        if (container && !this.arrayEditor) {
           const arrayStr = JSON.stringify(this.arrayValue, null, 2);
-          textarea.value = arrayStr;
-          this.arrayEditor = CodeMirror.fromTextArea(textarea, {
-            mode: 'javascript',
+          this.arrayEditor = createAceEditor(container, {
+            value: arrayStr,
+            mode: 'json',
             lineNumbers: true
           });
-          this.arrayEditor.on('change', () => {
+          this.arrayEditor.session.on('change', () => {
             this.updateArrayFromEditor();
           });
         }
@@ -85,7 +86,7 @@ module.exports = app => app.component('edit-array', {
   },
   beforeDestroy() {
     if (this.arrayEditor) {
-      this.arrayEditor.toTextArea();
+      destroyAceEditor(this.arrayEditor);
     }
   },
   watch: {

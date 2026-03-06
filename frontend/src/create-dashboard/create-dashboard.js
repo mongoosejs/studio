@@ -3,6 +3,7 @@
 const api = require('../api');
 
 const template = require('./create-dashboard.html');
+const { createAceEditor, destroyAceEditor } = require('../aceEditor');
 
 module.exports = app => app.component('create-dashboard', {
   template,
@@ -33,9 +34,19 @@ module.exports = app => app.component('create-dashboard', {
     }
   },
   mounted: function() {
-    this._editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
+    const container = this.$refs.codeEditor;
+    this._editor = createAceEditor(container, {
+      value: this.code || '',
       mode: 'javascript',
       lineNumbers: true
     });
+    this._editor.session.on('change', () => {
+      this.code = this._editor.getValue();
+    });
+  },
+  beforeDestroy() {
+    if (this._editor) {
+      destroyAceEditor(this._editor);
+    }
   }
 });
