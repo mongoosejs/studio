@@ -3,7 +3,7 @@
   <div class="flex items-center gap-2 self-center">
     <router-link class="flex items-center gap-2" :to="{ name: defaultRoute }">
       <img src="images/mongoose-studio.svg" class="h-10" alt="Mongoose Studio Logo" />
-      <span class="text-base font-semibold text-gray-900 whitespace-nowrap">Mongoose Studio</span>
+      <span class="text-base font-semibold text-shark-800 whitespace-nowrap">Mongoose Studio</span>
     </router-link>
   </div>
   <!-- Center: Nav Links -->
@@ -11,7 +11,7 @@
     <a v-if="hasAccess(roles, 'root')"
       href="#/"
       class="inline-flex items-center px-1 border-b-2 text-sm font-medium"
-      :class="documentView ? 'text-gray-900 border-merlot-900' : 'border-transparent text-gray-500 hover:text-gray-900'">Documents</a>
+      :class="documentView ? 'text-shark-800 border-merlot-900' : 'border-transparent text-gray-500 hover:text-gray-900'">Documents</a>
     <span v-else class="inline-flex items-center px-1 border-b-2 border-transparent text-sm font-medium text-gray-300 cursor-not-allowed" aria-disabled="true">
       Documents
       <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -21,7 +21,7 @@
     <a v-if="hasAccess(roles, 'dashboards')"
       href="#/dashboards"
       class="inline-flex items-center px-1 border-b-2 text-sm font-medium"
-      :class="dashboardView ? 'text-gray-900 border-merlot-900' : 'border-transparent text-gray-500 hover:text-gray-900'">Dashboards</a>
+      :class="dashboardView ? 'text-shark-800 border-merlot-900' : 'border-transparent text-gray-500 hover:text-gray-900'">Dashboards</a>
     <span v-else class="inline-flex items-center px-1 border-b-2 border-transparent text-sm font-medium text-gray-300 cursor-not-allowed">
       Dashboards
       <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -31,7 +31,7 @@
     <a v-if="hasAccess(roles, 'chat')"
       href="#/chat"
       class="inline-flex items-center px-1 border-b-2 text-sm font-medium"
-      :class="chatView ? 'text-gray-900 border-merlot-900' : 'border-transparent text-gray-500 hover:text-gray-900'">Chat</a>
+      :class="chatView ? 'text-shark-800 border-merlot-900' : 'border-transparent text-gray-500 hover:text-gray-900'">Chat</a>
     <span v-else class="inline-flex items-center px-1 border-b-2 border-transparent text-sm font-medium text-gray-300 cursor-not-allowed">
       Chat
       <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -41,7 +41,7 @@
     <a
       :href="hasTaskVisualizer"
       class="inline-flex items-center px-1 border-b-2 text-sm font-medium"
-      :class="taskView ? 'text-gray-900 border-merlot-900' : 'border-transparent text-gray-500 hover:text-gray-900'">
+      :class="taskView ? 'text-shark-800 border-merlot-900' : 'border-transparent text-gray-500 hover:text-gray-900'">
       Tasks
     </a>
     <a
