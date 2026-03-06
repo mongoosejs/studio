@@ -13,6 +13,8 @@ appendCSS(require('./models.css'));
 const limit = 20;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
+const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
+const MAX_RECENT_MODELS = 4;
 
 module.exports = app => app.component('models', {
   template: template,
@@ -55,12 +57,15 @@ module.exports = app => app.component('models', {
     lastSelectedIndex: null,
     error: null,
     showActionsMenu: false,
-    collectionInfo: null
+    collectionInfo: null,
+    modelSearch: '',
+    recentlyViewedModels: []
   }),
   created() {
     this.currentModel = this.model;
     this.loadOutputPreference();
     this.loadSelectedGeoField();
+    this.loadRecentlyViewedModels();
   },
   beforeDestroy() {
     document.removeEventListener('scroll', this.onScroll, true);
@@ -140,6 +145,21 @@ module.exports = app => app.component('models', {
       }
       return map;
     },
+    filteredModels() {
+      if (!this.modelSearch.trim()) {
+        return this.models;
+      }
+      const search = this.modelSearch.trim().toLowerCase();
+      return this.models.filter(m => m.toLowerCase().includes(search));
+    },
+    filteredRecentModels() {
+      const recent = this.recentlyViewedModels.filter(m => this.models.includes(m));
+      if (!this.modelSearch.trim()) {
+        return recent;
+      }
+      const search = this.modelSearch.trim().toLowerCase();
+      return recent.filter(m => m.toLowerCase().includes(search));
+    },
     geoJsonFields() {
       // Find schema paths that look like GeoJSON fields
       // GeoJSON fields have nested 'type' and 'coordinates' properties
@@ -192,6 +212,44 @@ module.exports = app => app.component('models', {
     }
   },
   methods: {
+    highlightMatch(model) {
+      const search = this.modelSearch.trim();
+      if (!search) {
+        return model;
+      }
+      const idx = model.toLowerCase().indexOf(search.toLowerCase());
+      if (idx === -1) {
+        return model;
+      }
+      const before = model.slice(0, idx);
+      const match = model.slice(idx, idx + search.length);
+      const after = model.slice(idx + search.length);
+      return `${before}<strong>${match}</strong>${after}`;
+    },
+    loadRecentlyViewedModels() {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      try {
+        const stored = window.localStorage.getItem(RECENTLY_VIEWED_MODELS_KEY);
+        if (stored) {
+          this.recentlyViewedModels = JSON.parse(stored);
+        }
+      } catch (err) {
+        this.recentlyViewedModels = [];
+      }
+    },
+    trackRecentModel(model) {
+      if (!model) {
+        return;
+      }
+      const filtered = this.recentlyViewedModels.filter(m => m !== model);
+      filtered.unshift(model);
+      this.recentlyViewedModels = filtered.slice(0, MAX_RECENT_MODELS);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(RECENTLY_VIEWED_MODELS_KEY, JSON.stringify(this.recentlyViewedModels));
+      }
+    },
     loadOutputPreference() {
       if (typeof window === 'undefined' || !window.localStorage) {
         return;
@@ -620,6 +678,9 @@ module.exports = app => app.component('models', {
       }
     },
     async getDocuments() {
+      // Track recently viewed model
+      this.trackRecentModel(this.currentModel);
+
       // Clear previous data
       this.documents = [];
       this.schemaPaths = [];
