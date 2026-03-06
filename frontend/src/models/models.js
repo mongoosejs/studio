@@ -242,7 +242,12 @@ module.exports = app => app.component('models', {
       try {
         const stored = window.localStorage.getItem(RECENTLY_VIEWED_MODELS_KEY);
         if (stored) {
-          this.recentlyViewedModels = JSON.parse(stored);
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            this.recentlyViewedModels = parsed.map(item => String(item)).slice(0, MAX_RECENT_MODELS);
+          } else {
+            this.recentlyViewedModels = [];
+          }
         }
       } catch (err) {
         this.recentlyViewedModels = [];
