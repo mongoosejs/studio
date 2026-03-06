@@ -83,7 +83,7 @@
   </div>
 
   <div class="p-0 max-h-[50vh] max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] overflow-y-auto" v-show="activeTab === 'code'">
-    <div v-if="isEditing" class="flex flex-col space-y-2">
+    <div v-if="isEditing" class="flex flex-col space-y-2 chat-script-editor-wrap">
       <div class="border border-gray-200">
         <textarea ref="scriptEditor" class="w-full h-[45vh]" @input="handleScriptInput"></textarea>
       </div>

@@ -472,28 +472,49 @@
   border-color: var(--studio-border) !important;
 }
 
-.dark .chat-message-script .CodeMirror {
+/* CodeMirror in chat script (editor replaces textarea, can be sibling in DOM) */
+.dark .chat-message-script .CodeMirror,
+.dark .chat-script-editor-wrap .CodeMirror {
   background-color: var(--studio-bg-muted) !important;
   color: var(--studio-text-primary) !important;
   border-color: var(--studio-border) !important;
 }
 
-.dark .chat-message-script .CodeMirror .CodeMirror-gutters {
+.dark .chat-message-script .CodeMirror .CodeMirror-gutters,
+.dark .chat-script-editor-wrap .CodeMirror .CodeMirror-gutters {
   background-color: var(--studio-bg-subtle) !important;
   border-color: var(--studio-border) !important;
   color: var(--studio-text-subtle) !important;
 }
 
-.dark .chat-message-script .CodeMirror .CodeMirror-linenumber {
+.dark .chat-message-script .CodeMirror .CodeMirror-linenumber,
+.dark .chat-script-editor-wrap .CodeMirror .CodeMirror-linenumber {
   color: var(--studio-text-subtle) !important;
 }
 
-.dark .chat-message-script .CodeMirror .CodeMirror-cursor {
+.dark .chat-message-script .CodeMirror .CodeMirror-cursor,
+.dark .chat-script-editor-wrap .CodeMirror .CodeMirror-cursor {
   border-left-color: var(--studio-text-primary) !important;
 }
 
-.dark .chat-message-script .CodeMirror .CodeMirror-selected {
+.dark .chat-message-script .CodeMirror .CodeMirror-selected,
+.dark .chat-script-editor-wrap .CodeMirror .CodeMirror-selected {
   background: var(--studio-bg-strong) !important;
+}
+
+.dark .chat-message-script .CodeMirror .CodeMirror-line,
+.dark .chat-message-script .CodeMirror .CodeMirror-line span,
+.dark .chat-script-editor-wrap .CodeMirror .CodeMirror-line,
+.dark .chat-script-editor-wrap .CodeMirror .CodeMirror-line span {
+  color: var(--studio-text-primary) !important;
+}
+
+.dark .chat-message-script .CodeMirror:focus-within,
+.dark .chat-script-editor-wrap .CodeMirror:focus-within,
+.dark .chat-message-script .CodeMirror.CodeMirror-focused,
+.dark .chat-script-editor-wrap .CodeMirror.CodeMirror-focused {
+  border-color: var(--studio-focus-ring) !important;
+  box-shadow: 0 0 0 2px var(--studio-focus-ring-shadow) !important;
 }
 
 /* Output tab and dropdown in chat script block */
