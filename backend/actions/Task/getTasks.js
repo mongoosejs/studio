@@ -8,8 +8,8 @@ const GetTasksParams = new Archetype({
   end: { $type: Date },
   status: { $type: 'string' },
   name: { $type: 'string' },
-  skip: { $type: Number, $default: 0 },
-  limit: { $type: Number, $default: 100 }
+  skip: { $type: 'number', $default: 0 },
+  limit: { $type: 'number', $default: 100 }
 }).compile('GetTasksParams');
 
 const ALL_STATUSES = ['pending', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown'];
@@ -61,7 +61,7 @@ module.exports = ({ db }) => async function getTasks(params) {
   if (typeof params.name === 'string') params.name = params.name.trim();
 
   const skip = Math.max(0, Number(params.skip) || 0);
-  const limit = Math.min(MAX_LIMIT, Math.max(0, Number(params.limit) || 100));
+  const limit = Math.min(MAX_LIMIT, Math.max(1, Number(params.limit) || 100));
   const { Task } = db.models;
   const match = buildMatch(params);
 
