@@ -1,6 +1,7 @@
 'use strict';
 
 const template = require('./model-switcher.html');
+const xss = require('xss');
 
 module.exports = app => app.component('model-switcher', {
   template: template,
@@ -105,7 +106,7 @@ module.exports = app => app.component('model-switcher', {
       const before = model.slice(0, idx);
       const match = model.slice(idx, idx + search.length);
       const after = model.slice(idx + search.length);
-      return `${before}<strong>${match}</strong>${after}`;
+      return `${xss(before)}<strong>${xss(match)}</strong>${xss(after)}`;
     },
     formatCompactCount(value) {
       if (typeof value !== 'number') return '—';
