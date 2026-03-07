@@ -233,7 +233,7 @@ module.exports = app => app.component('models', {
       const before = model.slice(0, idx);
       const match = model.slice(idx, idx + search.length);
       const after = model.slice(idx + search.length);
-      return `${before}<strong>${match}</strong>${after}`;
+      return `${xss(before)}<strong>${xss(match)}</strong>${xss(after)}`;
     },
     loadRecentlyViewedModels() {
       if (typeof window === 'undefined' || !window.localStorage) {
