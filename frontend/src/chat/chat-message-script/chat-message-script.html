@@ -85,7 +85,12 @@
   <div class="p-0 max-h-[50vh] max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] overflow-y-auto" v-show="activeTab === 'code'">
     <div v-if="isEditing" class="flex flex-col space-y-2">
       <div class="border border-gray-200">
-        <textarea ref="scriptEditor" class="w-full h-[45vh]" @input="handleScriptInput"></textarea>
+        <ace-editor
+          v-model="editedScript"
+          mode="javascript"
+          :line-numbers="true"
+          class="w-full h-[45vh] min-h-[200px]"
+        />
       </div>
       <div class="flex justify-end gap-2 pb-2">
         <button
@@ -143,7 +148,12 @@
         <div class="my-4">
           <label class="block text-sm font-medium leading-6 text-gray-900">Code</label>
           <div class="border border-gray-200">
-            <textarea class="p-2 h-[300px] w-full" ref="dashboardCodeEditor"></textarea>
+            <ace-editor
+              v-model="dashboardCode"
+              mode="javascript"
+              :line-numbers="true"
+              class="h-[300px] w-full"
+            />
           </div>
         </div>
         <async-button

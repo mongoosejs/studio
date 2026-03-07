@@ -18,14 +18,13 @@
     <div class="flex-1 overflow-auto p-5 space-y-4">
       <div class="space-y-2">
         <label class="text-sm font-medium text-gray-700">Script</label>
-        <textarea
-          ref="scriptEditor"
-          :value="scriptText"
-          @input="updateScriptText"
-          rows="8"
-          placeholder="await doc.updateName('new name')&#10;return doc"
-          class="w-full rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-        ></textarea>
+        <ace-editor
+          v-model="scriptText"
+          mode="javascript"
+          :line-numbers="true"
+          :wrap="true"
+          class="min-h-[200px]"
+        />
         <p class="text-xs text-gray-500">Return a value to see it in the output panel.</p>
       </div>
       <div class="flex items-center gap-3">

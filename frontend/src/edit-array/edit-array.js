@@ -1,7 +1,6 @@
 'use strict';
 
 const template = require('./edit-array.html');
-
 const { BSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
@@ -16,9 +15,13 @@ module.exports = app => app.component('edit-array', {
   props: ['value'],
   data() {
     return {
-      arrayValue: [],
-      arrayEditor: null
+      arrayValue: []
     };
+  },
+  computed: {
+    arrayStr() {
+      return JSON.stringify(this.arrayValue, null, 2);
+    }
   },
   methods: {
     initializeArray() {
@@ -29,42 +32,13 @@ module.exports = app => app.component('edit-array', {
       } else {
         this.arrayValue = [];
       }
-      
-      // Update CodeMirror editor if it exists
-      this.$nextTick(() => {
-        if (this.arrayEditor) {
-          const arrayStr = JSON.stringify(this.arrayValue, null, 2);
-          this.arrayEditor.setValue(arrayStr);
-        }
-      });
     },
-    initializeArrayEditor() {
-      this.$nextTick(() => {
-        const textareaRef = this.$refs.arrayEditor;
-        const textarea = Array.isArray(textareaRef) ? textareaRef[0] : textareaRef;
-        if (textarea && !this.arrayEditor) {
-          const arrayStr = JSON.stringify(this.arrayValue, null, 2);
-          textarea.value = arrayStr;
-          this.arrayEditor = CodeMirror.fromTextArea(textarea, {
-            mode: 'javascript',
-            lineNumbers: true
-          });
-          this.arrayEditor.on('change', () => {
-            this.updateArrayFromEditor();
-          });
-        }
-      });
-    },
-    updateArrayFromEditor() {
-      if (!this.arrayEditor) {
-        return;
-      }
+    onEditorInput(str) {
       try {
-        const value = this.arrayEditor.getValue();
-        if (value.trim() === '') {
+        if (str.trim() === '') {
           this.arrayValue = [];
         } else {
-          this.arrayValue = JSON.parse(value);
+          this.arrayValue = JSON.parse(str);
         }
         this.emitUpdate();
       } catch (err) {
@@ -81,25 +55,11 @@ module.exports = app => app.component('edit-array', {
   },
   mounted() {
     this.initializeArray();
-    this.initializeArrayEditor();
-  },
-  beforeDestroy() {
-    if (this.arrayEditor) {
-      this.arrayEditor.toTextArea();
-    }
   },
   watch: {
     value: {
-      handler(newValue, oldValue) {
-        // Initialize array when value prop changes
+      handler() {
         this.initializeArray();
-        // Update array editor if it exists
-        if (this.arrayEditor) {
-          this.$nextTick(() => {
-            const arrayStr = JSON.stringify(this.arrayValue, null, 2);
-            this.arrayEditor.setValue(arrayStr);
-          });
-        }
       },
       deep: true,
       immediate: true

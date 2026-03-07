@@ -1,4 +1,4 @@
-/* global CodeMirror, Prism */
+/* global Prism */
 'use strict';
 
 const api = require('../../api');
@@ -18,9 +18,7 @@ module.exports = app => app.component('chat-message-script', {
       newDashboardTitle: '',
       dashboardCode: '',
       createError: null,
-      dashboardEditor: null,
       isEditing: false,
-      codeEditor: null,
       editedScript: null,
       overwriteDashboardCode: '',
       overwriteError: null
@@ -36,10 +34,7 @@ module.exports = app => app.component('chat-message-script', {
   },
   methods: {
     async executeScript() {
-      let scriptToRun = this.script;
-      if (this.isEditing) {
-        scriptToRun = this.codeEditor ? this.codeEditor.getValue() : this.editedScript;
-      }
+      const scriptToRun = this.isEditing ? this.editedScript : this.script;
       this.editedScript = scriptToRun;
       const { chatMessage } = await api.ChatMessage.executeScript({
         chatMessageId: this.message._id,
@@ -66,25 +61,12 @@ module.exports = app => app.component('chat-message-script', {
       this.dashboardCode = this.script;
       this.createError = null;
       this.showCreateDashboardModal = true;
-      this.$nextTick(() => {
-        if (this.dashboardEditor) {
-          this.dashboardEditor.toTextArea();
-        }
-        this.$refs.dashboardCodeEditor.value = this.dashboardCode;
-        this.dashboardEditor = CodeMirror.fromTextArea(this.$refs.dashboardCodeEditor, {
-          mode: 'javascript',
-          lineNumbers: true
-        });
-        this.dashboardEditor.on('change', () => {
-          this.dashboardCode = this.dashboardEditor.getValue();
-        });
-      });
     },
     openOverwriteDashboardConfirmation() {
       if (!this.canOverwriteDashboard) {
         return;
       }
-      this.overwriteDashboardCode = this.codeEditor?.getValue?.() ?? this.script;
+      this.overwriteDashboardCode = this.isEditing ? this.editedScript : this.script;
       this.overwriteError = null;
       this.showOverwriteDashboardConfirmationModal = true;
     },
@@ -94,38 +76,15 @@ module.exports = app => app.component('chat-message-script', {
     startEditing() {
       this.isEditing = true;
       this.editedScript = this.script;
-      this.$nextTick(() => {
-        if (!this.$refs.scriptEditor) {
-          return;
-        }
-        this.$refs.scriptEditor.value = this.editedScript;
-        if (typeof CodeMirror === 'undefined') {
-          return;
-        }
-        this.destroyCodeMirror();
-        this.codeEditor = CodeMirror.fromTextArea(this.$refs.scriptEditor, {
-          mode: 'javascript',
-          lineNumbers: true,
-          smartIndent: false
-        });
-      });
     },
     cancelEditing() {
       this.isEditing = false;
-      this.destroyCodeMirror();
       this.editedScript = this.script;
       this.highlightCode();
     },
     finishEditing() {
       this.isEditing = false;
-      this.destroyCodeMirror();
       this.highlightCode();
-    },
-    destroyCodeMirror() {
-      if (this.codeEditor) {
-        this.codeEditor.toTextArea();
-        this.codeEditor = null;
-      }
     },
     handleScriptInput(event) {
       this.editedScript = event?.target?.value || '';
@@ -144,9 +103,8 @@ module.exports = app => app.component('chat-message-script', {
       }
     },
     async createDashboardFromScript() {
-      this.dashboardCode = this.dashboardEditor.getValue();
       const { dashboard } = await api.Dashboard.createDashboard({
-        code: this.dashboardCode,
+        code: this.dashboardCode || '',
         title: this.newDashboardTitle
       }).catch(err => {
         if (err.response?.data?.message) {
@@ -167,7 +125,7 @@ module.exports = app => app.component('chat-message-script', {
         return;
       }
 
-      this.overwriteDashboardCode = this.codeEditor?.getValue?.() ?? this.script;
+      this.overwriteDashboardCode = this.isEditing ? this.editedScript : this.script;
 
       const params = {
         dashboardId: this.targetDashboardId,
@@ -209,12 +167,6 @@ module.exports = app => app.component('chat-message-script', {
     }
   },
   watch: {
-    showCreateDashboardModal(val) {
-      if (!val && this.dashboardEditor) {
-        this.dashboardEditor.toTextArea();
-        this.dashboardEditor = null;
-      }
-    },
     script(newScript) {
       if (!this.isEditing) {
         this.editedScript = newScript;
@@ -232,7 +184,6 @@ module.exports = app => app.component('chat-message-script', {
     }
   },
   unmounted() {
-    this.destroyCodeMirror();
     document.body.removeEventListener('click', this.handleBodyClick);
   }
 });

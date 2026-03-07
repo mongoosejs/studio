@@ -39,8 +39,7 @@ module.exports = app => app.component('tasks', {
       scheduledAt: '',
       parameters: '',
       repeatInterval: ''
-    },
-    parametersEditor: null
+    }
   }),
   methods: {
     async getTasks() {
@@ -83,7 +82,7 @@ module.exports = app => app.component('tasks', {
     async createTask() {
       try {
         let parameters = {};
-        const parametersText = this.parametersEditor ? this.parametersEditor.getValue() : '';
+        const parametersText = this.newTask.parameters || '';
         if (parametersText.trim()) {
           try {
             parameters = JSON.parse(parametersText);
@@ -160,9 +159,6 @@ module.exports = app => app.component('tasks', {
         parameters: '',
         repeatInterval: ''
       };
-      if (this.parametersEditor) {
-        this.parametersEditor.setValue('');
-      }
     },
     setDefaultCreateTaskValues() {
       // Set default scheduled time to 1 hour from now
@@ -175,21 +171,8 @@ module.exports = app => app.component('tasks', {
       this.resetCreateTaskForm();
       this.setDefaultCreateTaskValues();
     },
-    initializeParametersEditor() {
-      if (this.$refs.parametersEditor && !this.parametersEditor) {
-        this.parametersEditor = CodeMirror.fromTextArea(this.$refs.parametersEditor, {
-          mode: 'javascript',
-          lineNumbers: true,
-          smartIndent: false,
-          theme: 'default'
-        });
-      }
-    },
     openCreateTaskModal() {
       this.showCreateTaskModal = true;
-      this.$nextTick(() => {
-        this.initializeParametersEditor();
-      });
     },
     getStatusColor(status) {
       if (status === 'succeeded') {
@@ -346,11 +329,5 @@ module.exports = app => app.component('tasks', {
     this.status = 'loaded';
     this.setDefaultCreateTaskValues();
   },
-  beforeDestroy() {
-    if (this.parametersEditor) {
-      this.parametersEditor.toTextArea();
-    }
-  },
-
   template: template
 });

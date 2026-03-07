@@ -235,7 +235,7 @@
 
             <!-- Simple input for basic types -->
             <input
-              v-else-if="!shouldUseCodeMirror"
+              v-else-if="!shouldUseAce"
               v-model="fieldData.value"
               type="text"
               id="fieldValue"
@@ -244,21 +244,22 @@
               :class="{ 'border-red-500': fieldErrors.value }"
             />
 
-            <!-- CodeMirror textarea for complex types -->
-            <textarea
+            <!-- Ace editor for complex types (Array/Object/Embedded) -->
+            <ace-editor
               v-else
-              ref="fieldValueEditor"
               id="fieldValue"
-              rows="3"
-              placeholder="Enter initial value (optional)..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              v-model="fieldData.value"
+              mode="json"
+              :line-numbers="true"
+              :min-lines="3"
+              class="add-field-ace-editor w-full min-h-[100px]"
               :class="{ 'border-red-500': fieldErrors.value }"
-            ></textarea>
+            />
 
             <p v-if="fieldErrors.value" class="mt-1 text-sm text-red-600">{{fieldErrors.value}}</p>
             <p class="mt-1 text-xs text-gray-500">
               <span v-if="shouldUseDatePicker">Select a date or leave empty for null/undefined values.</span>
-              <span v-else-if="shouldUseCodeMirror">Leave empty for null/undefined values. Use valid JSON format.</span>
+              <span v-else-if="shouldUseAce">Leave empty for null/undefined values. Use valid JSON format.</span>
               <span v-else>Leave empty for null/undefined values.</span>
             </p>
           </div>
