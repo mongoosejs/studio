@@ -17,19 +17,22 @@ module.exports = app => app.component('navbar', {
   mounted: function() {
     const mobileMenuMask = document.querySelector('#mobile-menu-mask');
     const mobileMenu = document.querySelector('#mobile-menu');
+    const openBtn = document.querySelector('#open-mobile-menu');
 
-    document.querySelector('#open-mobile-menu').addEventListener('click', (event) => {
-      event.stopPropagation();
-      mobileMenuMask.style.display = 'block';
-      mobileMenu.classList.remove('translate-x-full');
-      mobileMenu.classList.add('translate-x-0');
-    });
+    if (openBtn && mobileMenuMask && mobileMenu) {
+      openBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        mobileMenuMask.style.display = 'block';
+        mobileMenu.classList.remove('translate-x-full');
+        mobileMenu.classList.add('translate-x-0');
+      });
 
-    document.querySelector('body').addEventListener('click', () => {
-      mobileMenuMask.style.display = 'none';
-      mobileMenu.classList.remove('translate-x-0');
-      mobileMenu.classList.add('translate-x-full');
-    });
+      document.querySelector('body').addEventListener('click', () => {
+        mobileMenuMask.style.display = 'none';
+        mobileMenu.classList.remove('translate-x-0');
+        mobileMenu.classList.add('translate-x-full');
+      });
+    }
   },
   computed: {
     dashboardView() {

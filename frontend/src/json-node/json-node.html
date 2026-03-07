@@ -10,7 +10,7 @@
     </button>
     <span v-else class="w-4 h-4 mr-1 inline-flex items-center justify-center invisible flex-shrink-0"></span>
     <template v-if="hasKey">
-      <span class="text-blue-600">"{{ nodeKey }}"</span><span>: </span>
+      <span class="text-merlot-600">"{{ nodeKey }}"</span><span>: </span>
     </template>
     <template v-if="isComplex">
       <template v-if="hasChildren">
@@ -52,7 +52,7 @@
         </span>
         <a
           href="#"
-          class="ml-1 text-sm text-sky-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+          class="ml-1 text-sm text-merlot-900 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
           @click.stop.prevent="goToReference()"
         >
           View Document

@@ -1,0 +1,53 @@
+<div v-if="show" class="fixed inset-0 z-[9999]">
+  <div class="fixed inset-0 bg-black/40" @click="$emit('close')"></div>
+  <div
+    class="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-lg bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Model switcher"
+  >
+    <div class="p-3 border-b border-gray-100">
+      <input
+        ref="searchInput"
+        v-model="search"
+        type="text"
+        placeholder="Type a model name..."
+        @keydown="handleKeydown"
+        class="w-full rounded-md border border-gray-200 bg-gray-50 py-2 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+      />
+    </div>
+    <div ref="list" class="max-h-80 overflow-y-auto">
+      <template v-for="(item, index) in items" :key="item.section + '-' + item.model">
+        <div
+          v-if="index === 0 || items[index - 1].section !== item.section"
+          class="px-3 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+        >
+          {{ item.section }}
+        </div>
+        <div
+          :data-selected="index === selectedIndex"
+          @click="selectModel(item.model)"
+          @mouseenter="onMouseEnter(index)"
+          class="flex items-center px-3 py-1.5 mx-2 rounded-md cursor-pointer text-sm"
+          :class="index === selectedIndex ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'"
+        >
+          <span class="truncate" v-html="highlightMatch(item.model)"></span>
+          <span
+            v-if="modelDocumentCounts && modelDocumentCounts[item.model] !== undefined"
+            class="ml-auto text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-[1px]"
+          >
+            {{ formatCompactCount(modelDocumentCounts[item.model]) }}
+          </span>
+        </div>
+      </template>
+      <div v-if="items.length === 0" class="px-3 py-4 text-sm text-gray-500 text-center">
+        No models match "{{ search }}"
+      </div>
+    </div>
+    <div class="border-t border-gray-100 px-3 py-2 text-xs text-gray-400 flex gap-3">
+      <span>↑↓ navigate</span>
+      <span>↵ select</span>
+      <span>esc close</span>
+    </div>
+  </div>
+</div>

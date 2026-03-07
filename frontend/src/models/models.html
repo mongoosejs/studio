@@ -1,48 +1,107 @@
 <div class="models flex" style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
-  <div class="fixed top-[65px] cursor-pointer bg-gray-100 rounded-r-md z-10" @click="hideSidebar = false">
-    <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" class="w-5" fill="#5f6368"><path d="M360-120v-720h80v720h-80Zm160-160v-400l200 200-200 200Z"/></svg>
-  </div>
-  <aside class="bg-white border-r overflow-y-auto overflow-x-hidden h-full transition-all duration-300 ease-in-out z-20 w-0 lg:w-48 fixed lg:relative shrink-0" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-48' : ''">
-    <div class="flex items-center border-b border-gray-100 w-48 overflow-x-hidden">
-      <div class="p-1 ml-2 font-bold">Models</div>
-      <button
-        @click="hideSidebar = true"
-        class="ml-auto mr-2 p-2 rounded hover:bg-gray-200 focus:outline-none"
-        aria-label="Close sidebar"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" class="w-5" fill="currentColor"><path d="M660-320v-320L500-480l160 160ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm120-80v-560H200v560h120Zm80 0h360v-560H400v560Zm-80 0H200h120Z"/></svg>
-      </button>
+  <aside class="bg-gray-50 border-r overflow-hidden transition-all duration-300 ease-in-out z-20 w-0 lg:w-64 fixed lg:relative shrink-0 flex flex-col top-[55px] bottom-0 lg:top-auto lg:bottom-auto lg:h-full" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-64' : ''">
+    <!-- Search -->
+    <div class="p-3 shrink-0">
+      <div class="relative">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input
+          v-model="modelSearch"
+          type="text"
+          placeholder="Find model..."
+          @keydown.esc="modelSearch = ''"
+          class="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+        />
+      </div>
     </div>
-    <nav class="flex flex-1 flex-col">
-      <ul role="list" class="flex flex-1 flex-col gap-y-7 p-1">
-        <li>
-          <ul role="list">
-            <li v-for="model in models">
-              <router-link
-                :to="'/model/' + model"
-                class="flex items-center gap-2 rounded-md py-2 pr-2 pl-2 text-sm text-gray-700"
-                :class="model === currentModel ? 'bg-ultramarine-100 font-bold text-gray-900' : 'hover:bg-ultramarine-50'">
-                <span class="truncate">{{model}}</span>
-                <span
-                  v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined && model !== currentModel"
-                  class="ml-auto text-xs text-gray-500 bg-gray-100 rounded-md px-1 py-[2px]"
-                >
-                  {{formatCompactCount(modelDocumentCounts[model])}}
-                </span>
-              </router-link>
-            </li>
-          </ul>
+    <!-- Model list (scrollable) -->
+    <nav class="flex-1 overflow-y-auto px-2 pb-2">
+      <!-- Recently Viewed -->
+      <div v-if="filteredRecentModels.length > 0 && !modelSearch.trim()">
+        <div class="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Recently Viewed</div>
+        <ul role="list">
+          <li v-for="model in filteredRecentModels" :key="'recent-' + model">
+            <router-link
+              :to="'/model/' + model"
+              class="flex items-center rounded-md py-1.5 px-2 text-sm text-gray-700"
+              :class="model === currentModel ? 'bg-gray-200 font-semibold text-gray-900' : 'hover:bg-gray-100'">
+              <span class="truncate" v-html="highlightMatch(model)"></span>
+              <span
+                v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined && model !== currentModel"
+                class="ml-auto text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-[1px]"
+              >
+                {{formatCompactCount(modelDocumentCounts[model])}}
+              </span>
+            </router-link>
+          </li>
+        </ul>
+        <div class="border-b border-gray-200 my-2"></div>
+      </div>
+      <!-- All Models / Search Results -->
+      <div class="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ modelSearch.trim() ? 'Search Results' : 'All Models' }}</div>
+      <ul role="list">
+        <li v-for="model in filteredModels" :key="'all-' + model">
+          <router-link
+            :to="'/model/' + model"
+            class="flex items-center rounded-md py-1.5 px-2 text-sm text-gray-700"
+            :class="model === currentModel ? 'bg-gray-200 font-semibold text-gray-900' : 'hover:bg-gray-100'">
+            <span class="truncate" v-html="highlightMatch(model)"></span>
+            <span
+              v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined && model !== currentModel"
+              class="ml-auto text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-[1px]"
+            >
+              {{formatCompactCount(modelDocumentCounts[model])}}
+            </span>
+          </router-link>
         </li>
       </ul>
-      <div v-if="models.length === 0 && status === 'loaded'" class="p-2 bg-red-100">
+      <div v-if="filteredModels.length === 0 && modelSearch.trim()" class="px-2 py-2 text-sm text-gray-500">
+        No models match "{{modelSearch}}"
+      </div>
+      <div v-if="models.length === 0 && status === 'loaded'" class="p-2 bg-red-100 rounded-md">
         No models found
       </div>
     </nav>
+    <!-- Bottom toolbar -->
+    <div class="shrink-0 border-t border-gray-200 bg-gray-50 px-2 py-1.5 flex items-center gap-1">
+      <button
+        type="button"
+        @click="hideSidebar = true"
+        class="rounded p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200"
+        title="Hide sidebar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        @click="openModelSwitcher"
+        class="rounded p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200"
+        title="Quick switch (Ctrl+P)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+      </button>
+    </div>
   </aside>
-  <div class="documents bg-slate-50" ref="documentsList">
-    <div class="relative h-[42px]" style="z-index: 1000">
+  <div class="documents bg-slate-50 min-w-0" ref="documentsList">
       <div class="documents-menu bg-slate-50">
         <div class="flex flex-row items-center w-full gap-2">
+          <button
+            v-if="hideSidebar === true || hideSidebar === null"
+            type="button"
+            @click="hideSidebar = false"
+            class="shrink-0 rounded-md p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            :class="hideSidebar === null ? 'lg:hidden' : ''"
+            title="Show sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
           <document-search
             ref="documentSearch"
             :value="searchText"
@@ -57,8 +116,8 @@
           <button
             @click="stagingSelect"
             type="button"
-            :class="{ 'bg-gray-500 ring-inset ring-2 ring-gray-300 hover:bg-gray-600': selectMultiple, 'bg-ultramarine-600 hover:bg-ultramarine-500' : !selectMultiple }"
-            class="rounded px-2 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            :class="{ 'bg-gray-500 ring-inset ring-2 ring-gray-300 hover:bg-gray-600': selectMultiple, 'bg-merlot-900 hover:bg-merlot-800' : !selectMultiple }"
+            class="rounded px-2 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-merlot-800"
           >
             {{ selectMultiple ? 'Cancel' : 'Select' }}
           </button>
@@ -170,7 +229,6 @@
           </span>
         </div>
       </div>
-    </div>
     <div class="documents-container relative">
       <div v-if="error">
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 relative m-4 rounded-md" role="alert">
@@ -180,7 +238,7 @@
       </div>
       <table v-else-if="outputType === 'table'">
         <thead class="bg-slate-50">
-          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="cursor-pointer p-3">
+          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="bg-slate-50 cursor-pointer p-3">
             {{path.path}}
             <span class="path-type">
               ({{(path.instance || 'unknown')}})
@@ -213,7 +271,7 @@
         >
           <button
             type="button"
-            class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-ultramarine-600 px-2 py-1 text-xs font-semibold text-white shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-merlot-900 px-2 py-1 text-xs font-semibold text-white shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-merlot-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-merlot-800"
             @click.stop="openDocument(document)"
           >
             Open this Document
@@ -373,4 +431,12 @@
       </div>
     </template>
   </modal>
+  <model-switcher
+    :show="showModelSwitcher"
+    :models="models"
+    :recently-viewed-models="recentlyViewedModels"
+    :model-document-counts="modelDocumentCounts"
+    @close="showModelSwitcher = false"
+    @select="selectSwitcherModel"
+  ></model-switcher>
 </div>
