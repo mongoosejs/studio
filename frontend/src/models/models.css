@@ -81,17 +81,11 @@
 }
 
 .models .documents-menu {
-  position: fixed;
-  z-index: 1;
+  position: sticky;
+  top: 0;
+  z-index: 2;
   padding: 4px;
   display: flex;
-  width: 100vw;
-}
-
-@media (min-width: 1024px) {
-  .models .documents-menu {
-    width: calc(100vw - 16rem);
-  }
 }
 
 .models .documents-menu .search-input {
