@@ -1,7 +1,7 @@
 <form @submit.prevent="emitSearch" class="relative flex-grow m-0">
   <input
     ref="searchInput"
-    class="w-full font-mono rounded-md p-1 border border-gray-300 outline-gray-300 text-lg focus:ring-1 focus:ring-ultramarine-200 focus:ring-offset-0 focus:outline-none"
+    class="w-full font-mono rounded-md p-1 border border-edge-strong outline-edge-strong text-lg focus:ring-1 focus:ring-primary-subtle focus:ring-offset-0 focus:outline-none"
     type="text"
     placeholder="Filter (supports JS, dates, ObjectIds, and more)"
     v-model="searchText"
@@ -9,12 +9,12 @@
     @input="updateAutocomplete"
     @keydown="handleKeyDown"
   />
-  <ul v-if="autocompleteSuggestions.length" class="absolute z-[9999] bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto shadow">
+  <ul v-if="autocompleteSuggestions.length" class="absolute z-[9999] bg-surface border border-edge-strong rounded mt-1 w-full max-h-40 overflow-y-auto shadow">
     <li
       v-for="(suggestion, index) in autocompleteSuggestions"
       :key="suggestion"
       class="px-2 py-1 cursor-pointer"
-      :class="{ 'bg-ultramarine-100': index === autocompleteIndex }"
+      :class="{ 'bg-primary-subtle': index === autocompleteIndex }"
       @mousedown.prevent="applySuggestion(index)"
     >
       {{ suggestion }}

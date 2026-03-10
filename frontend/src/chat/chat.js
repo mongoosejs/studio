@@ -126,7 +126,7 @@ module.exports = {
       this.$router.push('/chat/' + threadId);
     },
     styleForMessage(message) {
-      return message.role === 'user' ? 'bg-gray-100' : '';
+      return message.role === 'user' ? 'bg-muted' : '';
     },
     async createNewThread() {
       const { chatThread } = await api.ChatThread.createChatThread();

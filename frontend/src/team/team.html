@@ -14,7 +14,7 @@
         <async-button
           type="submit"
           @click="getWorkspaceCustomerPortalLink"
-          class="inline-flex items-center justify-center rounded-md border border-transparent bg-ultramarine-600 py-1 px-2 text-sm font-medium text-white shadow-sm hover:bg-ultramarine-500 focus:outline-none focus:ring-2 focus:ring-forest-green-500 focus:ring-offset-2">
+          class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary py-1 px-2 text-sm font-medium text-primary-text shadow-sm hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-forest-green-500 focus:ring-offset-2">
           View in Stripe
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 ml-1">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -25,7 +25,7 @@
     <div v-else-if="workspace && !workspace.subscriptionTier" class="mt-4 flex justify-between items-center">
       <div>
         <span class="font-bold">No active subscription</span>
-        <div class="text-sm text-gray-700">
+        <div class="text-sm text-content-secondary">
           You won't be able to invite your team until you activate a subscription
         </div>
       </div>
@@ -33,7 +33,7 @@
         <a
           :href="paymentLink"
           target="_blank"
-          class="inline-flex items-center justify-center rounded-md border border-transparent bg-ultramarine-600 py-1 px-2 text-sm font-medium text-white shadow-sm hover:bg-ultramarine-500 focus:outline-none focus:ring-2 focus:ring-ultramarine-500 focus:ring-offset-2">
+          class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary py-1 px-2 text-sm font-medium text-primary-text shadow-sm hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
           Subscribe With Stripe
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 ml-1">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -52,21 +52,21 @@
     <ul v-else role="list" class="divide-y divide-gray-100">
       <li class="flex justify-between gap-x-6 py-5" v-for="user in users">
         <div class="flex min-w-0 gap-x-4">
-          <img class="size-12 flex-none rounded-full bg-gray-50" :src="user.picture ?? 'images/logo.svg'" alt="">
+          <img class="size-12 flex-none rounded-full bg-page" :src="user.picture ?? 'images/logo.svg'" alt="">
           <div class="min-w-0 flex-auto">
-            <p class="text-sm/6 font-semibold text-gray-900">
+            <p class="text-sm/6 font-semibold text-content">
               {{user.name || user.githubUsername}}
               <span v-if="user.isFreeUser" class="ml-1 inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Free</span>
             </p>
-            <p class="mt-1 truncate text-xs/5 text-gray-500">{{user.email ?? 'No Email'}}</p>
+            <p class="mt-1 truncate text-xs/5 text-content-tertiary">{{user.email ?? 'No Email'}}</p>
           </div>
         </div>
         <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
-          <p class="text-sm/6 text-gray-900 capitalize">{{getRolesForUser(user).join(', ')}}</p>
+          <p class="text-sm/6 text-content capitalize">{{getRolesForUser(user).join(', ')}}</p>
           <div class="flex gap-3">
             <button
               type="button"
-              class="mt-1 text-xs/5 text-gray-500 cursor-pointer disabled:cursor-not-allowed disabled:text-gray-300"
+              class="mt-1 text-xs/5 text-content-tertiary cursor-pointer disabled:cursor-not-allowed disabled:text-gray-300"
               :disabled="getRolesForUser(user).includes('owner')"
               @click="openEditModal(user)">
               Edit
@@ -93,7 +93,7 @@
           @click="showNewInvitationModal = true"
           :disabled="status === 'loading'"
           :tier="workspace?.subscriptionTier"
-          class="block rounded-md bg-ultramarine-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 disabled:bg-gray-500 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
+          class="block rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover disabled:bg-page0 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
           New Invitation
           <svg class="inline w-4 h-4 ml-1" v-if="workspace && !workspace.subscriptionTier" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
             <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clip-rule="evenodd" />
@@ -110,26 +110,26 @@
           <table class="min-w-full divide-y divide-gray-300">
             <thead>
               <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">GitHub Username</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Role</th>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-content sm:pl-0">GitHub Username</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-content">Email</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-content">Status</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-content">Role</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
+            <tbody class="divide-y divide-gray-200 bg-surface">
               <tr v-for="invitation in invitations">
                 <td class="whitespace-nowrap py-5 pl-4 pr-3 text-sm sm:pl-0">
                   {{invitation.githubUsername}}
                 </td>
-                <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
+                <td class="whitespace-nowrap px-3 py-5 text-sm text-content-tertiary">
                   {{invitation.email}}
                 </td>
-                <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                  <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-600/20">
+                <td class="whitespace-nowrap px-3 py-5 text-sm text-content-tertiary">
+                  <span class="inline-flex items-center rounded-md bg-page px-2 py-1 text-xs font-medium text-content-secondary ring-1 ring-inset ring-gray-600/20">
                     Pending
                   </span>
                 </td>
-                <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
+                <td class="whitespace-nowrap px-3 py-5 text-sm text-content-tertiary">
                   {{invitation.roles.join(', ')}}
                 </td>
               </tr>
@@ -143,8 +143,8 @@
         <svg class="mx-auto size-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
         </svg>
-        <h3 class="mt-2 text-sm font-semibold text-gray-900">No invitations</h3>
-        <p class="mt-1 text-sm text-gray-500">You have no outstanding invitations</p>
+        <h3 class="mt-2 text-sm font-semibold text-content">No invitations</h3>
+        <p class="mt-1 text-sm text-content-tertiary">You have no outstanding invitations</p>
       </div>
     </div>
   </div>
@@ -165,32 +165,32 @@
         </div>
 
         <div>
-          <div class="text-sm/6 font-semibold text-gray-900">
+          <div class="text-sm/6 font-semibold text-content">
             {{showEditModal.user.name || showEditModal.user.githubUsername}}
           </div>
-          <div class="text-xs/5 text-gray-500">
+          <div class="text-xs/5 text-content-tertiary">
             {{showEditModal.user.email ?? 'No Email'}}
           </div>
         </div>
 
         <div>
-          <label for="editRole" class="block text-sm/6 font-medium text-gray-900">Role</label>
+          <label for="editRole" class="block text-sm/6 font-medium text-content">Role</label>
           <div class="mt-2 grid grid-cols-1">
             <select
               id="editRole"
               name="editRole"
               v-model="showEditModal.role"
-              class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-ultramarine-600 sm:text-sm/6">
+              class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-surface py-1.5 pl-3 pr-8 text-base text-content outline outline-1 -outline-offset-1 outline-edge-strong focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6">
               <option value="admin" :disabled="disableRoleOption('admin')">Admin</option>
               <option value="member" :disabled="disableRoleOption('member')">Member</option>
               <option value="readonly" :disabled="disableRoleOption('readonly')">Read-only</option>
               <option value="dashboards" :disabled="disableRoleOption('dashboards')">Dashboards Only</option>
             </select>
-            <svg class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" data-slot="icon">
+            <svg class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-content-tertiary sm:size-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" data-slot="icon">
               <path fill-rule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
             </svg>
           </div>
-          <div v-if="!workspace?.subscriptionTier" class="mt-2 text-sm text-gray-700">
+          <div v-if="!workspace?.subscriptionTier" class="mt-2 text-sm text-content-secondary">
             You can only assign the "Dashboards Only" role until you activate a subscription.
           </div>
         </div>
@@ -199,7 +199,7 @@
           <async-button
             @click="updateWorkspaceMember"
             :disabled="showEditModal.role === showEditModal.originalRole"
-            class="border-0 mt-0 flex w-full items-center justify-center gap-3 rounded-md bg-ultramarine-600 hover:bg-ultramarine-500 px-3 py-1.5 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-500">
+            class="border-0 mt-0 flex w-full items-center justify-center gap-3 rounded-md bg-primary hover:bg-primary-hover px-3 py-1.5 text-primary-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             <span class="text-sm font-semibold leading-6">Save</span>
           </async-button>
 

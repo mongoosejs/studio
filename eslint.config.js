@@ -43,7 +43,10 @@ module.exports = defineConfig([
         TextDecoder: true,
         AbortController: true,
         clearTimeout: true,
-        requestAnimationFrame: true
+        requestAnimationFrame: true,
+        localStorage: true,
+        getComputedStyle: true,
+        CustomEvent: true
       },
       sourceType: 'commonjs'
     },

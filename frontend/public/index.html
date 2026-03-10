@@ -6,9 +6,11 @@
     <meta name="msapplication-TileColor" />
     <meta name="theme-color" content="#ffffff"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter"/>
+    <link rel="stylesheet" href="theme-variables.css">
     <link rel="stylesheet" type="text/css" href="style.css"/>
     <link rel="stylesheet" href="https://unpkg.com/prismjs@1.29.0/themes/prism.css"/>
     <link rel="stylesheet" href="tw.css">
+    <link rel="stylesheet" href="dark-theme.css">
     <link rel="stylesheet" href="vanillatoasts/vanillatoasts.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="icon" href="images/logo.svg" type="image/svg+xml">
@@ -17,6 +19,27 @@
     <script src="https://unpkg.com/vue-router@4.0.10"></script>
     <script src="https://unpkg.com/chart.js@4.2.0/dist/chart.umd.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/codemirror@5.65.16/lib/codemirror.js"></script>
+    <script src="https://unpkg.com/codemirror@5.65.16/mode/javascript/javascript.js"></script>
+    <script>
+      (function() {
+        try {
+          var key = 'studio-theme';
+          var stored = localStorage.getItem(key);
+          var prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = stored === 'dark' || (!stored && prefersDark);
+          if (!stored) localStorage.setItem(key, isDark ? 'dark' : 'light');
+          if (isDark) document.documentElement.classList.add('dark');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', isDark ? '#0f0f0f' : '#ffffff');
+        } catch (err) {
+          var prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
+          if (prefersDark) document.documentElement.classList.add('dark');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', prefersDark ? '#0f0f0f' : '#ffffff');
+        }
+      })();
+    </script>
   </head>
 
   <body>

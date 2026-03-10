@@ -26,7 +26,7 @@ module.exports = app => app.component('chat-message-script', {
   },
   computed: {
     styleForMessage() {
-      return this.message.role === 'user' ? 'bg-gray-100' : '';
+      return this.message.role === 'user' ? 'bg-muted' : '';
     },
     canOverwriteDashboard() {
       return !!this.targetDashboardId;

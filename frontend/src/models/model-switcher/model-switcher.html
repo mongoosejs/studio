@@ -1,7 +1,7 @@
 <div v-if="show" class="fixed inset-0 z-[9999]">
   <div class="fixed inset-0 bg-black/40" @click="$emit('close')"></div>
   <div
-    class="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-lg bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden"
+    class="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-lg bg-surface rounded-lg shadow-2xl border border-edge overflow-hidden"
     role="dialog"
     aria-modal="true"
     aria-label="Model switcher"
@@ -13,7 +13,7 @@
         type="text"
         placeholder="Type a model name..."
         @keydown="handleKeydown"
-        class="w-full rounded-md border border-gray-200 bg-gray-50 py-2 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+        class="w-full rounded-md border border-edge bg-page py-2 px-3 text-sm text-content placeholder:text-gray-400 focus:border-edge-strong focus:outline-none focus:ring-1 focus:ring-gray-300"
       />
     </div>
     <div ref="list" class="max-h-80 overflow-y-auto">
@@ -29,18 +29,18 @@
           @click="selectModel(item.model)"
           @mouseenter="onMouseEnter(index)"
           class="flex items-center px-3 py-1.5 mx-2 rounded-md cursor-pointer text-sm"
-          :class="index === selectedIndex ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'"
+          :class="index === selectedIndex ? 'bg-muted text-content' : 'text-content-secondary hover:bg-page'"
         >
           <span class="truncate" v-html="highlightMatch(item.model)"></span>
           <span
             v-if="modelDocumentCounts && modelDocumentCounts[item.model] !== undefined"
-            class="ml-auto text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-[1px]"
+            class="ml-auto text-xs text-gray-400 bg-muted rounded px-1.5 py-[1px]"
           >
             {{ formatCompactCount(modelDocumentCounts[item.model]) }}
           </span>
         </div>
       </template>
-      <div v-if="items.length === 0" class="px-3 py-4 text-sm text-gray-500 text-center">
+      <div v-if="items.length === 0" class="px-3 py-4 text-sm text-content-tertiary text-center">
         No models match "{{ search }}"
       </div>
     </div>

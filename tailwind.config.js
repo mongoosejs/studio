@@ -2,6 +2,7 @@
 
 module.exports = {
   mode: 'jit',
+  darkMode: 'class',
   content: ['./frontend/src/**/*.html', './frontend/src/**/*.js', './frontend/src/**/**/*.html', './frontend/src/**/**/*.js'],
   corePlugins: {
     container: true
@@ -10,6 +11,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        /* Semantic tokens – swap automatically in .dark via CSS variables */
+        'primary': {
+          DEFAULT: 'var(--color-primary)',
+          'hover': 'var(--color-primary-hover)',
+          'subtle': 'var(--color-primary-subtle)',
+          'text': 'var(--color-primary-text)',
+        },
+        'surface': {
+          DEFAULT: 'var(--color-surface)',
+          'hover': 'var(--color-surface-hover)',
+        },
+        'page': 'var(--color-page)',
+        'muted': 'var(--color-muted)',
+        'subtle': 'var(--color-subtle)',
+        'content': {
+          DEFAULT: 'var(--color-content)',
+          'secondary': 'var(--color-content-secondary)',
+          'tertiary': 'var(--color-content-tertiary)',
+          'disabled': 'var(--color-content-disabled)',
+        },
+        'edge': {
+          DEFAULT: 'var(--color-edge)',
+          'strong': 'var(--color-edge-strong)',
+        },
         'puerto-rico': {
           '50': '#eefffb',
           '100': '#c6fff3',

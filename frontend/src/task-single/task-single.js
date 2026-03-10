@@ -25,7 +25,7 @@ module.exports = app => app.component('task-single', {
       const path = `/tasks/${encodeURIComponent(name || '')}`;
       const query = this.$route.query?.status ? { status: this.$route.query.status } : {};
       return { path, query };
-    },
+    }
   },
   watch: {
     '$route.params': {
@@ -82,11 +82,11 @@ module.exports = app => app.component('task-single', {
     async confirmRescheduleTask() {
       if (!this.newScheduledTime) return;
       await api.Task.rescheduleTask({ taskId: this.selectedTask.id, scheduledAt: this.newScheduledTime });
-        this.$toast.success({ title: 'Task Rescheduled', text: `Task ${this.selectedTask.id} has been rescheduled`,  });
-        this.showRescheduleModal = false;
-        this.selectedTask = null;
-        this.newScheduledTime = '';
-        await this.loadTask();
+      this.$toast.success({ title: 'Task Rescheduled', text: `Task ${this.selectedTask.id} has been rescheduled` });
+      this.showRescheduleModal = false;
+      this.selectedTask = null;
+      this.newScheduledTime = '';
+      await this.loadTask();
     },
     async confirmRunTask() {
       await api.Task.runTask({ taskId: this.selectedTask.id });
@@ -104,10 +104,10 @@ module.exports = app => app.component('task-single', {
     },
     async confirmCancelTask() {
       await api.Task.cancelTask({ taskId: this.selectedTask.id });
-        this.$toast.success({ title: 'Task Cancelled', text: `Task ${this.selectedTask.id} has been cancelled` });
-        this.showCancelModal = false;
-        this.selectedTask = null;
-        this.goBack();
+      this.$toast.success({ title: 'Task Cancelled', text: `Task ${this.selectedTask.id} has been cancelled` });
+      this.showCancelModal = false;
+      this.selectedTask = null;
+      this.goBack();
     }
   },
   mounted() {

@@ -1,0 +1,365 @@
+/*
+ * Dark-mode overrides for Mongoose Studio.
+ *
+ * Semantic Tailwind tokens (bg-primary, bg-surface, text-content, border-edge, etc.)
+ * swap automatically via CSS variables in theme-variables.css — no overrides needed here.
+ *
+ * This file only covers:
+ *   1. Remaining hard-coded Tailwind gray shades not yet converted to semantic tokens
+ *   2. Status / semantic colors (red, green, yellow, blue)
+ *   3. Component-specific overrides (CodeMirror, modals, chat, etc.)
+ *   4. Miscellaneous (JSON view, tooltips, scrollbars, placeholders)
+ */
+
+/* ---- Remaining gray backgrounds ---- */
+.dark .bg-gray-200 {
+  background-color: var(--studio-bg-subtle);
+}
+
+.dark .bg-gray-300 {
+  background-color: var(--studio-bg-subtle-hover);
+}
+
+.dark .bg-gray-600 {
+  background-color: var(--studio-bg-strong);
+}
+
+.dark .bg-gray-800 {
+  background-color: var(--studio-bg-stronger);
+}
+
+.dark .hover\:bg-gray-300:hover,
+.dark .hover\:bg-gray-400:hover {
+  background-color: var(--studio-bg-strong);
+}
+
+/* ---- Remaining gray text ---- */
+.dark .text-gray-300,
+.dark .text-gray-400 {
+  color: var(--studio-text-subtle);
+}
+
+.dark .text-gray-600 {
+  color: var(--studio-text-muted);
+}
+
+.dark .text-gray-800 {
+  color: var(--studio-text-primary);
+}
+
+/* ---- Status / semantic ---- */
+.dark .bg-red-50 {
+  background-color: var(--studio-bg-error);
+}
+
+.dark .bg-yellow-50 {
+  background-color: var(--studio-bg-warning);
+}
+
+.dark .bg-green-50 {
+  background-color: var(--studio-bg-success);
+}
+
+.dark .bg-blue-100 {
+  background-color: var(--studio-bg-info);
+}
+
+.dark .border-red-200 {
+  border-color: var(--studio-border-error);
+}
+
+.dark .border-yellow-200 {
+  border-color: var(--studio-border-warning);
+}
+
+.dark .border-green-200 {
+  border-color: var(--studio-border-success);
+}
+
+.dark .text-red-700 {
+  color: var(--studio-text-error);
+}
+
+.dark .text-green-700 {
+  color: var(--studio-text-success);
+}
+
+.dark .ring-green-600\/20 {
+  --tw-ring-color: var(--studio-ring-success);
+}
+
+.dark .ring-gray-600\/20 {
+  --tw-ring-color: var(--studio-ring-muted);
+}
+
+/* ---- Ring / shadow ---- */
+.dark .ring-black\/5,
+.dark .ring-opacity-5 {
+  --tw-ring-color: var(--studio-ring);
+}
+
+.dark .ring-gray-900\/5 {
+  --tw-ring-color: var(--studio-ring);
+}
+
+/* ---- Slate (documents area, filter bar) ---- */
+.dark .bg-slate-50 {
+  background-color: var(--studio-bg-muted);
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: var(--studio-bg-muted-hover);
+}
+
+.dark .bg-slate-100 {
+  background-color: var(--studio-bg-muted);
+}
+
+.dark .border-slate-100,
+.dark .border-slate-300 {
+  border-color: var(--studio-border);
+}
+
+.dark .text-slate-400 {
+  color: var(--studio-text-muted);
+}
+
+.dark .text-slate-500 {
+  color: var(--studio-text-muted);
+}
+
+.dark .text-slate-600 {
+  color: var(--studio-text-secondary);
+}
+
+.dark .text-slate-700 {
+  color: var(--studio-text-secondary);
+}
+
+.dark .text-slate-800 {
+  color: var(--studio-text-primary);
+}
+
+.dark .hover\:text-slate-700:hover {
+  color: var(--studio-text-primary);
+}
+
+/* ---- JSON view – high-contrast value colors ---- */
+.dark .text-blue-600 {
+  color: #93c5fd;
+}
+
+.dark .text-sky-700,
+.dark .text-sky-800 {
+  color: #7dd3fc;
+}
+
+.dark .text-emerald-600 {
+  color: #6ee7b7;
+}
+
+.dark .text-amber-600 {
+  color: #fcd34d;
+}
+
+.dark .text-violet-600 {
+  color: #c4b5fd;
+}
+
+/* ---- Selected document row ---- */
+.dark .bg-blue-200 {
+  background-color: rgba(127, 29, 43, 0.35);
+}
+
+/* ---- Tooltip ---- */
+.dark .tooltip .tooltiptext {
+  background-color: var(--studio-tooltip-bg);
+  color: var(--studio-tooltip-text);
+  border: 1px solid var(--studio-tooltip-border);
+}
+
+/* ---- Document layout ---- */
+.dark .document .document-menu {
+  background-color: var(--studio-bg-surface);
+}
+
+.dark .document-details .path-key {
+  background-color: var(--studio-bg-subtle);
+}
+
+.dark .document-details .path-type {
+  color: var(--studio-text-muted);
+}
+
+.dark .document-details .value {
+  color: var(--studio-text-secondary);
+}
+
+.dark .json-view pre {
+  background-color: var(--studio-bg-surface);
+  color: var(--studio-text-primary);
+}
+
+.dark .json-view pre::-webkit-scrollbar-track {
+  background: var(--studio-bg-subtle);
+}
+
+.dark .json-view pre::-webkit-scrollbar-thumb {
+  background: var(--studio-bg-strong);
+}
+
+.dark .json-view pre::-webkit-scrollbar-thumb:hover {
+  background: var(--studio-text-muted);
+}
+
+/* ---- Models table and sidebar ---- */
+.dark .models .documents table th,
+.dark .models .documents table td,
+.dark .models .documents table tr {
+  color: var(--studio-text-primary);
+  border-bottom-color: var(--studio-border);
+}
+
+.dark .models .documents table th::after {
+  border-bottom-color: var(--studio-border);
+}
+
+.dark .models .model-selector,
+.dark .models button.gray {
+  background-color: var(--studio-bg-muted);
+  color: var(--studio-text-primary);
+}
+
+.dark .models .path-type {
+  color: var(--studio-text-muted);
+}
+
+/* ---- Modal ---- */
+.dark .modal-container {
+  background-color: var(--studio-bg-surface);
+  color: var(--studio-text-primary);
+}
+
+.dark .modal-body {
+  color: inherit;
+}
+
+/* ---- Ace editor border in dark mode ---- */
+.dark .ace-editor-container {
+  border-color: var(--studio-border) !important;
+}
+
+/* ---- Prism.js syntax highlighting (dark) ---- */
+.dark code[class*="language-"],
+.dark pre[class*="language-"] {
+  color: #e8e8e8 !important;
+  text-shadow: none !important;
+  background: var(--studio-bg-muted) !important;
+}
+
+.dark .token.comment,
+.dark .token.prolog,
+.dark .token.doctype,
+.dark .token.cdata {
+  color: #6a9955 !important;
+}
+
+.dark .token.punctuation {
+  color: #b8b8bc !important;
+}
+
+.dark .token.property,
+.dark .token.tag,
+.dark .token.boolean,
+.dark .token.number,
+.dark .token.constant,
+.dark .token.symbol,
+.dark .token.deleted {
+  color: #d19a66 !important;
+}
+
+.dark .token.selector,
+.dark .token.attr-name,
+.dark .token.string,
+.dark .token.char,
+.dark .token.builtin,
+.dark .token.inserted {
+  color: #98c379 !important;
+}
+
+.dark .token.operator,
+.dark .token.entity,
+.dark .token.url,
+.dark .language-css .token.string,
+.dark .style .token.string {
+  color: #56b6c2 !important;
+  background: none !important;
+}
+
+.dark .token.atrule,
+.dark .token.attr-value,
+.dark .token.keyword {
+  color: #c678dd !important;
+}
+
+.dark .token.function,
+.dark .token.class-name {
+  color: #61afef !important;
+}
+
+.dark .token.regex,
+.dark .token.important,
+.dark .token.variable {
+  color: #d19a66 !important;
+}
+
+/* ---- Textarea (modal, dashboard editor) ---- */
+.dark .modal-container textarea,
+.dark .modal-body textarea,
+.dark .dashboard-editor textarea,
+.dark .dashboard-editor input {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.dark .modal-container textarea::placeholder,
+.dark .modal-body textarea::placeholder,
+.dark .dashboard-editor textarea::placeholder,
+.dark .dashboard-editor input::placeholder {
+  color: var(--studio-text-subtle) !important;
+}
+
+.dark .modal-container textarea:focus,
+.dark .modal-body textarea:focus,
+.dark .dashboard-editor textarea:focus,
+.dark .dashboard-editor input:focus {
+  border-color: var(--studio-focus-ring) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--studio-focus-ring-shadow) !important;
+}
+
+/* ---- Dashboard editor panel ---- */
+.dark .dashboard-editor {
+  background-color: var(--studio-bg-muted) !important;
+  color: var(--studio-text-primary);
+}
+
+/* ---- Chat message script block ---- */
+.dark .chat-message-script {
+  background-color: var(--studio-bg-surface) !important;
+  color: var(--studio-text-primary);
+  border-color: var(--studio-border) !important;
+}
+
+.dark .chat-message-script .flex.border-b {
+  background-color: var(--studio-bg-surface) !important;
+  border-color: var(--studio-border) !important;
+}
+
+
+/* ---- Input placeholder contrast ---- */
+.dark ::placeholder,
+.dark .placeholder\:text-gray-400::placeholder {
+  color: var(--studio-text-muted);
+}
