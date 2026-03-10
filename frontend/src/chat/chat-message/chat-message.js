@@ -9,7 +9,7 @@ module.exports = app => app.component('chat-message', {
   props: ['message', 'targetDashboardId'],
   computed: {
     styleForMessage() {
-      return this.message.role === 'user' ? 'p-3 bg-gray-100' : 'py-3 pr-3';
+      return this.message.role === 'user' ? 'p-3 bg-muted' : 'py-3 pr-3';
     },
     contentSplitByScripts() {
       const content = this.message.content;

@@ -10,10 +10,15 @@ module.exports = app => app.component('edit-dashboard', {
   data: function() {
     return {
       status: 'loaded',
-      editor: null,
       title: '',
-      description: ''
+      description: '',
+      editCode: ''
     };
+  },
+  mounted() {
+    this.editCode = this.code || '';
+    this.description = this.currentDescription;
+    this.title = this.currentTitle;
   },
   methods: {
     closeEditor() {
@@ -22,15 +27,19 @@ module.exports = app => app.component('edit-dashboard', {
     async updateCode() {
       this.status = 'loading';
       try {
+        const codeToSave = this.$refs.codeEditor ? this.$refs.codeEditor.getValue() : this.editCode;
         const { doc } = await api.Dashboard.updateDashboard({
           dashboardId: this.dashboardId,
-          code: this.editor.getValue(),
+          code: codeToSave,
           title: this.title,
           description: this.description,
           evaluate: false
         });
         this.$emit('update', { doc });
-        this.editor.setValue(doc.code);
+        this.editCode = doc.code;
+        if (this.$refs.codeEditor) {
+          this.$refs.codeEditor.setValue(doc.code);
+        }
         this.$toast.success('Dashboard updated!');
         this.closeEditor();
       } catch (err) {
@@ -39,22 +48,5 @@ module.exports = app => app.component('edit-dashboard', {
         this.status = 'loaded';
       }
     }
-  },
-  mounted: async function() {
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
-      mode: 'javascript',
-      lineNumbers: true,
-      indentUnit: 4,
-      smartIndent: true,
-      tabsize: 4,
-      indentWithTabs: true,
-      cursorBlinkRate: 300,
-      lineWrapping: true,
-      showCursorWhenSelecting: true
-    });
-    // this.editor.focus();
-    // this.editor.refresh(); // if anything weird happens on load, this usually fixes it. However, this breaks it in this case.
-    this.description = this.currentDescription;
-    this.title = this.currentTitle;
   }
 });

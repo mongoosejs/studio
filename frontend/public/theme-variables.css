@@ -78,6 +78,34 @@
 
   /* Browser chrome (theme-color meta is set in JS; this is for reference/fallback) */
   --studio-theme-color: #ffffff;
+
+  /* ---- Semantic Tailwind tokens ----
+   * These map to Tailwind color names so you can write bg-primary, text-content,
+   * border-edge, etc. Dark mode swaps the value automatically — zero dark: needed.
+   */
+
+  /* Primary action (buttons, active indicators) – merlot */
+  --color-primary: #7f1d2b;
+  --color-primary-hover: #931e2b;
+  --color-primary-subtle: #fde8e6;
+  --color-primary-text: #ffffff;
+
+  /* Surface / layout */
+  --color-surface: #ffffff;
+  --color-surface-hover: #f9fafb;
+  --color-page: #f9fafb;
+  --color-muted: #f3f4f6;
+  --color-subtle: #e5e7eb;
+
+  /* Text hierarchy */
+  --color-content: #111827;
+  --color-content-secondary: #374151;
+  --color-content-tertiary: #6b7280;
+  --color-content-disabled: #d1d5db;
+
+  /* Borders */
+  --color-edge: #e5e7eb;
+  --color-edge-strong: #d1d5db;
 }
 
 /* -----------------------------------------------------------------------------
@@ -152,6 +180,26 @@
   --studio-btn-text-shadow: #222222;
 
   --studio-theme-color: #0f0f0f;
+
+  /* ---- Semantic Tailwind tokens (dark) ---- */
+  --color-primary: #ef807d;
+  --color-primary-hover: #f6adab;
+  --color-primary-subtle: rgba(239, 128, 125, 0.15);
+  --color-primary-text: #1c1c1e;
+
+  --color-surface: #1c1c1e;
+  --color-surface-hover: #2c2c2e;
+  --color-page: #0f0f0f;
+  --color-muted: #252528;
+  --color-subtle: #3a3a3c;
+
+  --color-content: #ffffff;
+  --color-content-secondary: #e8e8e8;
+  --color-content-tertiary: #b8b8bc;
+  --color-content-disabled: #636366;
+
+  --color-edge: #3a3a3c;
+  --color-edge-strong: #48484a;
 }
 
 /* Dark mode when using data-theme (same colors as .dark) */
@@ -206,6 +254,26 @@
   --studio-btn-bg: #444444;
   --studio-btn-text-shadow: #222222;
   --studio-theme-color: #0f0f0f;
+
+  /* ---- Semantic Tailwind tokens (data-theme dark) ---- */
+  --color-primary: #ef807d;
+  --color-primary-hover: #f6adab;
+  --color-primary-subtle: rgba(239, 128, 125, 0.15);
+  --color-primary-text: #1c1c1e;
+
+  --color-surface: #1c1c1e;
+  --color-surface-hover: #2c2c2e;
+  --color-page: #0f0f0f;
+  --color-muted: #252528;
+  --color-subtle: #3a3a3c;
+
+  --color-content: #ffffff;
+  --color-content-secondary: #e8e8e8;
+  --color-content-tertiary: #b8b8bc;
+  --color-content-disabled: #636366;
+
+  --color-edge: #3a3a3c;
+  --color-edge-strong: #48484a;
 }
 
 /*

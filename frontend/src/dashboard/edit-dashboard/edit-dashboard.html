@@ -1,21 +1,27 @@
-<div class="dashboard-editor p-4 bg-gray-100 rounded-lg shadow-lg">
+<div class="dashboard-editor p-4 bg-muted rounded-lg shadow-lg">
     <div v-show="status === 'loading'" class="max-w-5xl mx-auto text-center">
         <img src="images/loader.gif" class="inline mt-10">
     </div>
     <div v-show="status !== 'loading'" class="flex flex-col gap-4">
         <div>
-          <input v-model="title" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Title"/>
+          <input v-model="title" class="w-full p-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Title"/>
         </div>
         <div>
-          <textarea v-model="description" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Description">{{description}}</textarea>
+          <textarea v-model="description" class="w-full p-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Description">{{description}}</textarea>
         </div>
-        <div class="border border-gray-300 rounded-md">
-          <textarea ref="codeEditor" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="6">{{code}}</textarea>
-          <textarea v-model="chatMessage" class="w-full p-2"></textarea>
+        <div class="border border-edge-strong rounded-md">
+          <ace-editor
+            ref="codeEditor"
+            v-model="editCode"
+            mode="javascript"
+            :line-numbers="true"
+            :wrap="true"
+            class="w-full min-h-[200px]"
+          />
         </div>
         <div class="flex space-x-2">
           <async-button @click="updateCode" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit</async-button>
-          <button @click="closeEditor" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
+          <button @click="closeEditor" class="px-4 py-2 bg-page0 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancel</button>
         </div>
     </div>
 </div>

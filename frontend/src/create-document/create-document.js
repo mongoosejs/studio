@@ -22,7 +22,6 @@ module.exports = app => app.component('create-document', {
   data: function() {
     return {
       documentData: '',
-      editor: null,
       errors: [],
       aiPrompt: '',
       aiSuggestion: '',
@@ -41,7 +40,7 @@ module.exports = app => app.component('create-document', {
         return;
       }
 
-      this.aiOriginalDocument = this.editor.getValue();
+      this.aiOriginalDocument = this.documentData;
       this.aiSuggestion = '';
       this.aiSuggestionReady = false;
       this.aiStreaming = true;
@@ -56,10 +55,10 @@ module.exports = app => app.component('create-document', {
             this.aiSuggestion += event.textPart;
           }
         }
-        this.editor.setValue(this.aiSuggestion);
+        this.$refs.codeEditor.setValue(this.aiSuggestion);
         this.aiSuggestionReady = true;
       } catch (err) {
-        this.editor.setValue(this.aiOriginalDocument);
+        this.$refs.codeEditor.setValue(this.aiOriginalDocument);
         this.$toast.error('Failed to generate a document suggestion.');
         throw err;
       } finally {
@@ -72,13 +71,13 @@ module.exports = app => app.component('create-document', {
       this.aiOriginalDocument = '';
     },
     rejectAiSuggestion() {
-      this.editor.setValue(this.aiOriginalDocument);
+      this.$refs.codeEditor.setValue(this.aiOriginalDocument);
       this.aiSuggestionReady = false;
       this.aiSuggestion = '';
       this.aiOriginalDocument = '';
     },
     async createDocument() {
-      const data = EJSON.serialize(eval(`(${this.editor.getValue()})`));
+      const data = EJSON.serialize(eval(`(${this.documentData})`));
       try {
         const { doc } = await api.Model.createDocument({ model: this.currentModel, data });
         this.errors.length = 0;
@@ -104,11 +103,5 @@ module.exports = app => app.component('create-document', {
       this.documentData += `  ${requiredPaths[i].path}: ${isLast ? '' : ','}\n`;
     }
     this.documentData += '}';
-    this.$refs.codeEditor.value = this.documentData;
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
-      mode: 'javascript',
-      lineNumbers: true,
-      smartIndent: false
-    });
   }
 });

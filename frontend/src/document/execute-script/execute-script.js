@@ -17,7 +17,6 @@ module.exports = app => app.component('execute-script', {
       scriptError: null,
       scriptHasRun: false,
       scriptRunning: false,
-      scriptEditor: null,
       isOpen: false,
       isClosing: false
     };
@@ -29,18 +28,10 @@ module.exports = app => app.component('execute-script', {
         this.isClosing = false;
       } else if (this.isOpen) {
         this.isClosing = true;
-        this.destroyScriptEditor();
         setTimeout(() => {
           this.isOpen = false;
           this.isClosing = false;
         }, 200);
-      }
-    },
-    isOpen(newVal) {
-      if (newVal) {
-        this.$nextTick(() => {
-          this.initializeScriptEditor();
-        });
       }
     }
   },
@@ -49,36 +40,9 @@ module.exports = app => app.component('execute-script', {
       this.isOpen = true;
     }
   },
-  beforeDestroy() {
-    this.destroyScriptEditor();
-  },
   methods: {
     close() {
       this.$emit('close');
-    },
-    initializeScriptEditor() {
-      if (!this.$refs.scriptEditor || this.scriptEditor || typeof CodeMirror === 'undefined') {
-        return;
-      }
-
-      this.$refs.scriptEditor.value = this.scriptText;
-      this.scriptEditor = CodeMirror.fromTextArea(this.$refs.scriptEditor, {
-        mode: 'javascript',
-        lineNumbers: true,
-        lineWrapping: true
-      });
-      this.scriptEditor.on('change', () => {
-        this.scriptText = this.scriptEditor.getValue();
-      });
-    },
-    destroyScriptEditor() {
-      if (this.scriptEditor) {
-        this.scriptEditor.toTextArea();
-        this.scriptEditor = null;
-      }
-    },
-    updateScriptText(event) {
-      this.scriptText = event.target.value;
     },
     clearScript() {
       this.scriptText = '';
@@ -86,9 +50,6 @@ module.exports = app => app.component('execute-script', {
       this.scriptLogs = '';
       this.scriptError = null;
       this.scriptHasRun = false;
-      if (this.scriptEditor) {
-        this.scriptEditor.setValue('');
-      }
     },
     formatScriptOutput(value) {
       if (value === undefined) {
@@ -107,7 +68,7 @@ module.exports = app => app.component('execute-script', {
       }
     },
     async runDocumentScript() {
-      const scriptToRun = (this.scriptEditor ? this.scriptEditor.getValue() : this.scriptText || '').trim();
+      const scriptToRun = (this.scriptText || '').trim();
       if (!scriptToRun) {
         this.$toast.error('Script cannot be empty.');
         return;
@@ -123,9 +84,6 @@ module.exports = app => app.component('execute-script', {
           script: scriptToRun
         });
         this.scriptText = scriptToRun;
-        if (this.scriptEditor) {
-          this.scriptEditor.setValue(scriptToRun);
-        }
         this.scriptResult = result;
         this.scriptLogs = logs;
         this.scriptHasRun = true;

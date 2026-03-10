@@ -135,6 +135,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
         yield { document: doc };
       }
     },
+    getEstimatedDocumentCounts: function getEstimatedDocumentCounts() {
+      return client.post('', { action: 'Model.getEstimatedDocumentCounts' }).then(res => res.data);
+    },
     streamDocumentChanges: async function* streamDocumentChanges(params, options = {}) {
       const pollIntervalMs = 5000;
       while (!options.signal?.aborted) {
@@ -384,6 +387,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
           }
         }
       }
+    },
+    getEstimatedDocumentCounts: function getEstimatedDocumentCounts() {
+      return client.post('/Model/getEstimatedDocumentCounts', {}).then(res => res.data);
     },
     streamDocumentChanges: async function* streamDocumentChanges(params, options = {}) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;

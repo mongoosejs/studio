@@ -22,13 +22,12 @@ module.exports = app => app.component('clone-document', {
   data: function() {
     return {
       documentData: '',
-      editor: null,
       errors: []
     };
   },
   methods: {
     async cloneDocument() {
-      const data = EJSON.serialize(eval(`(${this.editor.getValue()})`));
+      const data = EJSON.serialize(eval(`(${this.documentData})`));
       try {
         const { doc } = await api.Model.createDocument({ model: this.currentModel, data });
         this.errors.length = 0;
@@ -64,11 +63,5 @@ module.exports = app => app.component('clone-document', {
     }
 
     this.documentData = JSON.stringify(filteredDoc, null, 2);
-    this.$refs.codeEditor.value = this.documentData;
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
-      mode: 'javascript',
-      lineNumbers: true,
-      smartIndent: false
-    });
   }
 });
