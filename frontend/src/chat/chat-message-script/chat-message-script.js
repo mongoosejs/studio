@@ -30,9 +30,15 @@ module.exports = app => app.component('chat-message-script', {
     },
     canOverwriteDashboard() {
       return !!this.targetDashboardId;
+    },
+    isChartOutput() {
+      return !!this.message.executionResult?.output?.$chart;
     }
   },
   methods: {
+    exportChartPNG() {
+      this.$refs.chartOutput?.exportPNG?.();
+    },
     async executeScript() {
       const scriptToRun = this.isEditing ? this.editedScript : this.script;
       this.editedScript = scriptToRun;

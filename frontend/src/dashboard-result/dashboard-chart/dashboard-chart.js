@@ -15,9 +15,27 @@ function getThemeColors() {
   };
 }
 
+const SCALELESS_TYPES = ['pie', 'doughnut', 'polarArea', 'radar'];
+
 function applyThemeChartOptions(config) {
   const { tickColor, gridColor } = getThemeColors();
+  const type = config.type || '';
   const options = config.options || {};
+  const plugins = { ...options.plugins };
+  const legend = plugins.legend || {};
+  plugins.legend = {
+    ...legend,
+    labels: { ...legend.labels, color: tickColor }
+  };
+
+  // Pie/doughnut/polarArea/radar don't use cartesian scales
+  if (SCALELESS_TYPES.includes(type)) {
+    return {
+      ...config,
+      options: { ...options, plugins }
+    };
+  }
+
   const scales = { ...options.scales };
   const applyScaleTheme = (id) => {
     const scale = scales[id] || {};
@@ -34,12 +52,6 @@ function applyThemeChartOptions(config) {
   Object.keys(scales).forEach(id => {
     if (id !== 'x' && id !== 'y') applyScaleTheme(id);
   });
-  const plugins = { ...options.plugins };
-  const legend = plugins.legend || {};
-  plugins.legend = {
-    ...legend,
-    labels: { ...legend.labels, color: tickColor }
-  };
   return {
     ...config,
     options: {
@@ -114,6 +126,9 @@ module.exports = app => app.component('dashboard-chart', {
         return this.value.$chart.header;
       }
       return null;
+    },
+    showControls() {
+      return this.fullscreen !== undefined;
     }
   }
 });
