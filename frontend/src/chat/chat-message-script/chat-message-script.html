@@ -22,12 +22,19 @@
       @click="activeTab = 'output'">
       Output
     </button>
-    <div class="ml-auto mr-1 flex">
+    <div class="ml-auto mr-1 flex items-center">
+      <button
+        v-if="activeTab === 'output' && isChartOutput"
+        class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-primary-hover transition-colors flex items-center"
+        @click="exportChartPNG"
+        title="Export PNG">
+        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.2em;" viewBox="0 -960 960 960" fill="currentColor"><path d="M280-280h400v-80H280v80Zm200-120 160-160-56-56-64 62v-166h-80v166l-64-62-56 56 160 160Zm0 320q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
+      </button>
       <button
         v-if="activeTab === 'output'"
-        class="px-2 py-1 mr-1 text-xs bg-blue-500 text-white border-none rounded cursor-pointer hover:bg-blue-600 transition-colors flex items-center"
+        class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-primary-hover transition-colors flex items-center"
         @click="openDetailModal">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.2em;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
         </svg>
       </button>
@@ -41,7 +48,7 @@
       </button>
       <async-button
         v-if="!isEditing"
-        class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white border-none rounded cursor-pointer transition-colors disabled:bg-gray-400"
+        class="px-2 py-1 text-xs bg-primary hover:bg-primary-hover text-primary-text border-none rounded cursor-pointer transition-colors disabled:bg-gray-400"
         @click="executeScript">
         Run
       </async-button>
@@ -109,7 +116,7 @@
   </div>
 
   <div class="p-3 whitespace-pre-wrap max-h-[50vh] overflow-y-auto bg-surface border-t max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] relative" v-show="activeTab === 'output'">
-    <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" />
+    <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" ref="chartOutput" />
     <dashboard-map v-else-if="message.executionResult?.output?.$featureCollection" :value="message.executionResult?.output" />
     <pre v-else>{{ message.executionResult?.output || 'No output' }}</pre>
 
