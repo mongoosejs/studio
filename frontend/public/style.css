@@ -7,15 +7,6 @@ body {
   color: var(--studio-text-page);
 }
 
-a {
-  text-decoration: none;
-  color: var(--studio-link);
-}
-
-a:hover {
-  color: var(--studio-link-hover);
-}
-
 .bold {
   font-weight: bold !important;
 }
