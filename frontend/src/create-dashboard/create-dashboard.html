@@ -1,19 +1,24 @@
 <div>
-  <div class="mt-4 text-gray-900 font-semibold">
+  <div class="mt-4 text-content font-semibold">
     Create New Dashboard
   </div>
   <div class="mt-4">
-    <label class="block text-sm font-medium leading-6 text-gray-900">Title</label>
+    <label class="block text-sm font-medium leading-6 text-content">Title</label>
     <div class="mt-2">
       <div class="w-full flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-teal-600">
-        <input type="text" v-model="title" class="outline-none block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6" placeholder="ACME-123">
+        <input type="text" v-model="title" class="outline-none block flex-1 border-0 bg-transparent py-1.5 pl-1 text-content placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6" placeholder="ACME-123">
       </div>
     </div>
   </div>
   <div class="my-4">
-    <label class="block text-sm font-medium leading-6 text-gray-900">Code</label>
-    <div class="border border-gray-200">
-      <textarea class="p-2 h-[300px] w-full" ref="codeEditor"></textarea>
+    <label class="block text-sm font-medium leading-6 text-content">Code</label>
+    <div class="border border-edge">
+      <ace-editor
+        v-model="code"
+        mode="javascript"
+        :line-numbers="true"
+        class="h-[300px] w-full"
+      />
     </div>
   </div>
   <async-button

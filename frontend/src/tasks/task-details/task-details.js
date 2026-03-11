@@ -118,6 +118,10 @@ module.exports = app => app.component('task-details', {
         return;
       }
       try {
+        const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+        const legendColor = isDark
+          ? (getComputedStyle(document.documentElement).getPropertyValue('--studio-text-primary')?.trim() || 'rgba(255,255,255,0.9)')
+          : undefined;
         this.statusChart = new Chart(canvas, {
           type: 'doughnut',
           data,
@@ -137,7 +141,8 @@ module.exports = app => app.component('task-details', {
             plugins: {
               legend: {
                 display: true,
-                position: 'bottom'
+                position: 'bottom',
+                ...(legendColor && { labels: { color: legendColor } })
               }
             }
           }

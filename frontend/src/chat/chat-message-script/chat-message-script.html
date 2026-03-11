@@ -1,39 +1,46 @@
-<div class="relative border rounded bg-white my-1 text-black text-sm overflow-hidden">
-  <div class="flex border-b py-1 pl-1 text-xs font-medium bg-white">
+<div class="chat-message-script relative border rounded bg-surface my-1 text-content text-sm overflow-hidden">
+  <div class="flex border-b py-1 pl-1 text-xs font-medium bg-surface">
     <button
-      class="px-4 py-1 border-r border-gray-300 text-gray-700 font-semibold transition-colors duration-200 focus:outline-none"
+      class="px-4 py-1 border-r border-edge-strong text-content-secondary font-semibold transition-colors duration-200 focus:outline-none"
       :class="[
         'rounded-l-md',
         activeTab === 'code'
           ? 'bg-gray-700 text-white shadow'
-          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+          : 'bg-muted hover:bg-muted text-gray-600'
       ]"
       @click="activeTab = 'code'">
       Code
     </button>
     <button
-      class="px-4 py-1 text-gray-700 font-semibold transition-colors duration-200 focus:outline-none"
+      class="px-4 py-1 text-content-secondary font-semibold transition-colors duration-200 focus:outline-none"
       :class="[
         'rounded-r-md',
         activeTab === 'output'
           ? 'bg-gray-700 text-white shadow'
-          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+          : 'bg-muted hover:bg-muted text-gray-600'
       ]"
       @click="activeTab = 'output'">
       Output
     </button>
-    <div class="ml-auto mr-1 flex">
+    <div class="ml-auto mr-1 flex items-center">
+      <button
+        v-if="activeTab === 'output' && isChartOutput"
+        class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-primary-hover transition-colors flex items-center"
+        @click="exportChartPNG"
+        title="Export PNG">
+        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.2em;" viewBox="0 -960 960 960" fill="currentColor"><path d="M280-280h400v-80H280v80Zm200-120 160-160-56-56-64 62v-166h-80v166l-64-62-56 56 160 160Zm0 320q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
+      </button>
       <button
         v-if="activeTab === 'output'"
-        class="px-2 py-1 mr-1 text-xs bg-blue-500 text-white border-none rounded cursor-pointer hover:bg-blue-600 transition-colors flex items-center"
+        class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-primary-hover transition-colors flex items-center"
         @click="openDetailModal">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.2em;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
         </svg>
       </button>
       <button
         v-if="activeTab === 'code' && !isEditing"
-        class="px-2 py-1 mr-1 text-xs bg-gray-500 text-white border-none rounded cursor-pointer hover:bg-gray-600 transition-colors flex items-center"
+        class="px-2 py-1 mr-1 text-xs bg-page0 text-white border-none rounded cursor-pointer hover:bg-gray-600 transition-colors flex items-center"
         @click.stop="startEditing">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
           <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM4 13.5V16h2.5l7.086-7.086-2.828-2.828L4 13.5z" />
@@ -41,7 +48,7 @@
       </button>
       <async-button
         v-if="!isEditing"
-        class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white border-none rounded cursor-pointer transition-colors disabled:bg-gray-400"
+        class="px-2 py-1 text-xs bg-primary hover:bg-primary-hover text-primary-text border-none rounded cursor-pointer transition-colors disabled:bg-gray-400"
         @click="executeScript">
         Run
       </async-button>
@@ -55,25 +62,25 @@
         </button>
         <div
           v-if="showDropdown"
-          class="absolute right-0 z-10 mt-1 w-64 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5">
+          class="absolute right-0 z-10 mt-1 w-64 origin-top-right rounded-md bg-surface py-1 shadow-lg ring-1 ring-black/5">
           <button
-            class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+            class="block w-full text-left px-4 py-2 text-xs text-content-secondary hover:bg-muted"
             @click="openCreateDashboardModal(); showDropdown = false">
             Create Dashboard
           </button>
           <button
-            class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+            class="block w-full text-left px-4 py-2 text-xs text-content-secondary hover:bg-muted"
             @click="copyOutput(); showDropdown = false">
             Copy Output As Text
           </button>
           <button
             v-if="canOverwriteDashboard"
-            class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+            class="block w-full text-left px-4 py-2 text-xs text-content-secondary hover:bg-muted"
             @click="openOverwriteDashboardConfirmation(); showDropdown = false">
             Overwrite Dashboard
           </button>
           <button
-            class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+            class="block w-full text-left px-4 py-2 text-xs text-content-secondary hover:bg-muted"
             @click="$emit('copyMessage'); showDropdown = false">
             Copy Full Message
           </button>
@@ -83,9 +90,14 @@
   </div>
 
   <div class="p-0 max-h-[50vh] max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] overflow-y-auto" v-show="activeTab === 'code'">
-    <div v-if="isEditing" class="flex flex-col space-y-2">
-      <div class="border border-gray-200">
-        <textarea ref="scriptEditor" class="w-full h-[45vh]" @input="handleScriptInput"></textarea>
+    <div v-if="isEditing" class="flex flex-col space-y-2 chat-script-editor-wrap">
+      <div class="border border-edge">
+        <ace-editor
+          v-model="editedScript"
+          mode="javascript"
+          :line-numbers="true"
+          class="w-full h-[45vh] min-h-[200px]"
+        />
       </div>
       <div class="flex justify-end gap-2 pb-2">
         <button
@@ -100,17 +112,17 @@
         </async-button>
       </div>
     </div>
-    <pre v-else class="whitespace-pre-wrap !my-0 !bg-zinc-50"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
+    <pre v-else class="whitespace-pre-wrap !my-0 bg-muted"><code v-text="script" ref="code" :class="'language-' + language"></code></pre>
   </div>
 
-  <div class="p-3 whitespace-pre-wrap max-h-[50vh] overflow-y-auto bg-white border-t max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] relative" v-show="activeTab === 'output'">
-    <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" />
+  <div class="p-3 whitespace-pre-wrap max-h-[50vh] overflow-y-auto bg-surface border-t max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] relative" v-show="activeTab === 'output'">
+    <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" ref="chartOutput" />
     <dashboard-map v-else-if="message.executionResult?.output?.$featureCollection" :value="message.executionResult?.output" />
     <pre v-else>{{ message.executionResult?.output || 'No output' }}</pre>
 
-    <div v-if="message.executionResult?.logs?.length" class="mt-3 pt-3 border-t border-gray-200">
+    <div v-if="message.executionResult?.logs?.length" class="mt-3 pt-3 border-t border-edge">
       <div class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Console</div>
-      <pre class="mt-1 bg-gray-100 text-gray-900 p-3 rounded whitespace-pre-wrap overflow-x-auto max-h-[280px]">{{ message.executionResult.logs }}</pre>
+      <pre class="mt-1 bg-muted text-content p-3 rounded whitespace-pre-wrap overflow-x-auto max-h-[280px]">{{ message.executionResult.logs }}</pre>
     </div>
   </div>
 
@@ -131,19 +143,24 @@
     <template #body>
       <div class="modal-exit" @click="showCreateDashboardModal = false">&times;</div>
       <div>
-        <div class="mt-4 text-gray-900 font-semibold">Create Dashboard</div>
+        <div class="mt-4 text-content font-semibold">Create Dashboard</div>
         <div class="mt-4">
-          <label class="block text-sm font-medium leading-6 text-gray-900">Title</label>
+          <label class="block text-sm font-medium leading-6 text-content">Title</label>
           <div class="mt-2">
             <div class="w-full flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-teal-600">
-              <input type="text" v-model="newDashboardTitle" class="outline-none block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6" placeholder="My Dashboard">
+              <input type="text" v-model="newDashboardTitle" class="outline-none block flex-1 border-0 bg-transparent py-1.5 pl-1 text-content placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6" placeholder="My Dashboard">
             </div>
           </div>
         </div>
         <div class="my-4">
-          <label class="block text-sm font-medium leading-6 text-gray-900">Code</label>
-          <div class="border border-gray-200">
-            <textarea class="p-2 h-[300px] w-full" ref="dashboardCodeEditor"></textarea>
+          <label class="block text-sm font-medium leading-6 text-content">Code</label>
+          <div class="border border-edge">
+            <ace-editor
+              v-model="dashboardCode"
+              mode="javascript"
+              :line-numbers="true"
+              class="h-[300px] w-full"
+            />
           </div>
         </div>
         <async-button
@@ -173,14 +190,14 @@
     <template #body>
       <div class="modal-exit" @click="showOverwriteDashboardConfirmationModal = false">&times;</div>
       <div>
-        <div class="mt-4 text-gray-900 font-semibold">Overwrite Dashboard</div>
-        <p class="mt-2 text-sm text-gray-700">
+        <div class="mt-4 text-content font-semibold">Overwrite Dashboard</div>
+        <p class="mt-2 text-sm text-content-secondary">
           This will replace the linked dashboard's code with the script below.
         </p>
         <p class="mt-1 text-xs text-gray-600 break-all" v-if="targetDashboardId">
           Dashboard ID: {{ targetDashboardId }}
         </p>
-        <div class="my-4 border border-gray-200 bg-gray-50 rounded">
+        <div class="my-4 border border-edge bg-page rounded">
           <pre class="p-2 h-[300px] overflow-auto whitespace-pre-wrap text-xs">{{ overwriteDashboardCode }}</pre>
         </div>
         <div class="flex items-center gap-2">
@@ -190,7 +207,7 @@
             Confirm Overwrite
           </async-button>
           <button
-            class="px-2.5 py-1.5 rounded-md text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300"
+            class="px-2.5 py-1.5 rounded-md text-sm font-semibold text-content-secondary bg-gray-200 hover:bg-gray-300"
             @click="showOverwriteDashboardConfirmationModal = false">
             Cancel
           </button>

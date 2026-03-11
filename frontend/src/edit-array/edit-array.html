@@ -1,8 +1,9 @@
 <div class="w-full">
-  <!-- CodeMirror editor for the entire array -->
-  <textarea
-    ref="arrayEditor"
-    class="w-full border border-gray-300 p-2 font-mono"
-    :style="{ minHeight: '300px' }">
-  </textarea>
+  <ace-editor
+    :value="arrayStr"
+    @input="onEditorInput"
+    mode="json"
+    :line-numbers="true"
+    class="min-h-[300px]"
+  />
 </div>

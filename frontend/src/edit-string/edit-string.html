@@ -1,7 +1,7 @@
 <div>
   <div v-if="hasEnumValues" class="space-y-2">
     <select
-      class="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      class="w-full px-3 py-2 border border-edge-strong bg-surface rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       :value="selectedOption"
       @change="onSelectChange"
     >
@@ -14,7 +14,7 @@
     <input
       v-if="selectedOption === '__other'"
       type="text"
-      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       :value="otherValue"
       @input="onOtherInput"
       placeholder="Enter a value"
@@ -23,7 +23,7 @@
   <div v-else>
     <input
       type="text"
-      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       :value="value != null ? value : ''"
       @input="onTextInput"
       placeholder="Enter a value"

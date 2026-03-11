@@ -1,14 +1,14 @@
 <div class="p-4 space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <button v-if="showBackButton" @click="goBack" class="text-gray-500 hover:text-gray-700 mb-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-                {{ backLabel }}
-            </button>
-            <h1 class="text-2xl font-bold text-gray-700">{{ taskGroup.name }}</h1>
-            <p class="text-gray-500">Total: {{ taskGroup.totalCount }} tasks</p>
+          <button v-if="showBackButton" @click="goBack" class="text-content-tertiary hover:text-content-secondary mb-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            {{ backLabel }}
+          </button>
+          <h1 class="text-2xl font-bold text-content-secondary">{{ taskGroup.name }}</h1>
+          <p class="text-content-tertiary">Total: {{ taskGroup.totalCount }} tasks</p>
         </div>
 
       </div>
@@ -16,13 +16,13 @@
         <!-- Status Summary -->
        <div class="space-y-3">
          <div class="flex items-center justify-between">
-           <span class="text-sm font-medium text-gray-700">Status</span>
+           <span class="text-sm font-medium text-content-secondary">Status</span>
            <div class="flex rounded-md shadow-sm" role="group">
              <button
                type="button"
                @click="statusView = 'summary'"
                class="px-3 py-1.5 text-sm font-medium rounded-l-md border transition-colors"
-               :class="statusView === 'summary' ? 'bg-ultramarine-600 text-white border-ultramarine-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+               :class="statusView === 'summary' ? 'bg-primary text-primary-text border-primary' : 'bg-surface text-content-secondary border-edge-strong hover:bg-page'"
              >
                Summary
              </button>
@@ -30,7 +30,7 @@
                type="button"
                @click="statusView = 'chart'"
                class="px-3 py-1.5 text-sm font-medium rounded-r-md border border-l-0 transition-colors"
-               :class="statusView === 'chart' ? 'bg-ultramarine-600 text-white border-ultramarine-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+               :class="statusView === 'chart' ? 'bg-primary text-primary-text border-primary' : 'bg-surface text-content-secondary border-edge-strong hover:bg-page'"
              >
                Chart
              </button>
@@ -64,19 +64,19 @@
            </button>
            <button 
              @click="filterByStatus('cancelled')"
-             class="bg-gray-50 border border-gray-200 rounded-md p-3 text-center hover:bg-gray-100 transition-colors cursor-pointer"
+             class="bg-page border border-edge rounded-md p-3 text-center hover:bg-muted transition-colors cursor-pointer"
              :class="{ 'ring-2 ring-gray-400': currentFilter === 'cancelled' }"
            >
              <div class="text-xs text-gray-600 font-medium">Cancelled</div>
-             <div class="text-lg font-bold text-gray-700">{{ taskGroup.statusCounts.cancelled || 0 }}</div>
+             <div class="text-lg font-bold text-content-secondary">{{ taskGroup.statusCounts.cancelled || 0 }}</div>
            </button>
          </div>
          <!-- Chart view -->
-         <div v-show="statusView === 'chart'" class="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg p-4 gap-3" style="min-height: 280px;">
+         <div v-show="statusView === 'chart'" class="flex flex-col items-center justify-center bg-surface border border-edge rounded-lg p-4 gap-3" style="min-height: 280px;">
            <div v-if="taskGroup.totalCount > 0" class="w-[240px] h-[240px] shrink-0">
              <canvas ref="statusPieChart" width="240" height="240" class="block"></canvas>
            </div>
-           <p v-else class="text-gray-500 text-sm py-8">No tasks to display</p>
+           <p v-else class="text-content-tertiary text-sm py-8">No tasks to display</p>
            <!-- Selection labels: show which segment is selected (click to filter) -->
            <div v-if="taskGroup.totalCount > 0" class="flex flex-wrap justify-center gap-2">
              <button
@@ -84,7 +84,7 @@
                :key="status"
                type="button"
                class="text-xs px-2 py-1 rounded-full font-medium transition-all cursor-pointer"
-               :class="currentFilter === status ? getStatusPillClass(status) : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+               :class="currentFilter === status ? getStatusPillClass(status) : 'bg-muted text-content-tertiary hover:bg-muted'"
                @click="filterByStatus(status)"
              >
                {{ statusLabel(status) }}
@@ -94,18 +94,18 @@
        </div>
 
         <!-- Task List -->
-       <div class="bg-white rounded-lg shadow">
-        <div class="px-6 py-6 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-          <h2 class="text-xl font-bold text-gray-900">
+       <div class="bg-surface rounded-lg shadow">
+        <div class="px-6 py-6 border-b border-edge flex items-center justify-between bg-page">
+          <h2 class="text-xl font-bold text-content">
             Individual Tasks
-            <span v-if="currentFilter" class="ml-3 text-base font-semibold text-ultramarine-700">
+            <span v-if="currentFilter" class="ml-3 text-base font-semibold text-primary">
               (Filtered by {{ currentFilter }})
             </span>
           </h2>
           <button 
             v-if="currentFilter"
             @click="clearFilter"
-            class="text-sm font-semibold text-ultramarine-600 hover:text-ultramarine-700"
+            class="text-sm font-semibold text-primary hover:text-primary"
           >
             Show All
           </button>
@@ -115,11 +115,11 @@
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
-                  <span class="text-sm font-medium text-gray-900">Task ID: {{ task.id }}</span>
+                  <span class="text-sm font-medium text-content">Task ID: {{ task.id }}</span>
                   <router-link
                     v-if="backTo"
                     :to="taskDetailRoute(task)"
-                    class="text-sm text-ultramarine-600 hover:text-ultramarine-700 font-medium"
+                    class="text-sm text-primary hover:text-primary font-medium"
                   >
                     View details
                   </router-link>
@@ -133,27 +133,27 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Scheduled At</label>
-                    <div class="text-sm text-gray-900">{{ formatDate(task.scheduledAt) }}</div>
+                    <label class="block text-sm font-medium text-content-secondary mb-1">Scheduled At</label>
+                    <div class="text-sm text-content">{{ formatDate(task.scheduledAt) }}</div>
                   </div>
                   <div v-if="task.startedAt">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Started At</label>
-                    <div class="text-sm text-gray-900">{{ formatDate(task.startedAt) }}</div>
+                    <label class="block text-sm font-medium text-content-secondary mb-1">Started At</label>
+                    <div class="text-sm text-content">{{ formatDate(task.startedAt) }}</div>
                   </div>
                   <div v-if="task.completedAt">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Completed At</label>
-                    <div class="text-sm text-gray-900">{{ formatDate(task.completedAt) }}</div>
+                    <label class="block text-sm font-medium text-content-secondary mb-1">Completed At</label>
+                    <div class="text-sm text-content">{{ formatDate(task.completedAt) }}</div>
                   </div>
                   <div v-if="task.error">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Error</label>
+                    <label class="block text-sm font-medium text-content-secondary mb-1">Error</label>
                     <div class="text-sm text-red-600">{{ task.error }}</div>
                   </div>
                 </div>
 
                 <!-- Task Parameters -->
                 <div v-if="task.parameters && Object.keys(task.parameters).length > 0">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Parameters</label>
-                  <div class="bg-gray-50 rounded-md p-3">
+                  <label class="block text-sm font-medium text-content-secondary mb-2">Parameters</label>
+                  <div class="bg-page rounded-md p-3">
                     <pre class="text-sm text-gray-800 whitespace-pre-wrap">{{ JSON.stringify(task.parameters, null, 2) }}</pre>
                   </div>
                 </div>
@@ -208,26 +208,26 @@
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-lg font-medium text-gray-900">Reschedule Task</h3>
+                        <h3 class="text-lg font-medium text-content">Reschedule Task</h3>
                     </div>
                 </div>
                 <div class="mb-4">
                     <p class="text-sm text-gray-600">
                         Are you sure you want to reschedule task <strong>{{ selectedTask?.id }}</strong>?
                     </p>
-                    <p class="text-sm text-gray-500 mt-2">
+                    <p class="text-sm text-content-tertiary mt-2">
                         This will reset the task's status and schedule it to run again.
                     </p>
                     
                     <div class="mt-4">
-                        <label for="newScheduledTime" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="newScheduledTime" class="block text-sm font-medium text-content-secondary mb-2">
                             New Scheduled Time
                         </label>
                         <input
                             id="newScheduledTime"
                             v-model="newScheduledTime"
                             type="datetime-local"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            class="w-full px-3 py-2 border border-edge-strong rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
                     </div>
@@ -241,7 +241,7 @@
                     </button>
                     <button 
                         @click="showRescheduleModal = false"
-                        class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 font-medium"
+                        class="flex-1 bg-gray-300 text-content-secondary px-4 py-2 rounded-md hover:bg-gray-400 font-medium"
                     >
                         Cancel
                     </button>
@@ -262,14 +262,14 @@
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-lg font-medium text-gray-900">Run Task Now</h3>
+                        <h3 class="text-lg font-medium text-content">Run Task Now</h3>
                     </div>
                 </div>
                 <div class="mb-4">
                     <p class="text-sm text-gray-600">
                         Are you sure you want to run task <strong>{{ selectedTask?.id }}</strong> immediately?
                     </p>
-                    <p class="text-sm text-gray-500 mt-2">
+                    <p class="text-sm text-content-tertiary mt-2">
                         This will execute the task right away, bypassing its scheduled time.
                     </p>
                 </div>
@@ -282,7 +282,7 @@
                     </button>
                     <button 
                         @click="showRunModal = false"
-                        class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 font-medium"
+                        class="flex-1 bg-gray-300 text-content-secondary px-4 py-2 rounded-md hover:bg-gray-400 font-medium"
                     >
                         Cancel
                     </button>
@@ -303,14 +303,14 @@
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-lg font-medium text-gray-900">Cancel Task</h3>
+                        <h3 class="text-lg font-medium text-content">Cancel Task</h3>
                     </div>
                 </div>
                 <div class="mb-4">
                     <p class="text-sm text-gray-600">
                         Are you sure you want to cancel task <strong>{{ selectedTask?.id }}</strong>?
                     </p>
-                    <p class="text-sm text-gray-500 mt-2">
+                    <p class="text-sm text-content-tertiary mt-2">
                         This will permanently cancel the task and it cannot be undone.
                     </p>
                 </div>
@@ -323,7 +323,7 @@
                     </button>
                     <button 
                         @click="showCancelModal = false"
-                        class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 font-medium"
+                        class="flex-1 bg-gray-300 text-content-secondary px-4 py-2 rounded-md hover:bg-gray-400 font-medium"
                     >
                         Keep Task
                     </button>

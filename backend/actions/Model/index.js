@@ -13,6 +13,7 @@ exports.getDocuments = require('./getDocuments');
 exports.getDocumentsStream = require('./getDocumentsStream');
 exports.getCollectionInfo = require('./getCollectionInfo');
 exports.getIndexes = require('./getIndexes');
+exports.getEstimatedDocumentCounts = require('./getEstimatedDocumentCounts');
 exports.listModels = require('./listModels');
 exports.streamDocumentChanges = require('./streamDocumentChanges');
 exports.streamChatMessage = require('./streamChatMessage');

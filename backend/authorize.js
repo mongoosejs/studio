@@ -22,6 +22,7 @@ const actionsToRequiredRoles = {
   'Model.getDocument': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocuments': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocumentsStream': ['owner', 'admin', 'member', 'readonly'],
+  'Model.getEstimatedDocumentCounts': ['owner', 'admin', 'member', 'readonly'],
   'Model.getIndexes': ['owner', 'admin', 'member', 'readonly'],
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
   'Model.streamDocumentChanges': ['owner', 'admin', 'member', 'readonly'],

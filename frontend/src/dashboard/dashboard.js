@@ -37,14 +37,22 @@ module.exports = {
     async evaluateDashboard() {
       this.status = 'evaluating';
       try {
-        const { dashboard, dashboardResult } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
+        const { dashboard, dashboardResult, result, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
         this.dashboard = dashboard;
-        this.code = this.dashboard.code;
-        this.title = this.dashboard.title;
-        this.description = this.dashboard.description ?? '';
+        if (dashboard) {
+          this.code = this.dashboard.code;
+          this.title = this.dashboard.title;
+          this.description = this.dashboard.description ?? '';
+        }
         if (dashboardResult) {
           this.dashboardResults.unshift(dashboardResult);
+        } else if (result !== undefined) {
+          this.dashboardResults.unshift({ result, finishedEvaluatingAt: new Date() });
+        } else if (error) {
+          this.dashboardResults.unshift({ error: { message: error.message || 'Evaluation failed' }, finishedEvaluatingAt: new Date() });
         }
+      } catch (err) {
+        this.$toast.error(err?.response?.data?.message || err?.message || 'Dashboard evaluation failed');
       } finally {
         this.status = 'loaded';
       }
