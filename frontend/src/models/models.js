@@ -64,6 +64,7 @@ module.exports = app => app.component('models', {
   }),
   created() {
     this.currentModel = this.model;
+    this.setSearchTextFromRoute();
     this.loadOutputPreference();
     this.loadSelectedGeoField();
     this.loadRecentlyViewedModels();
@@ -97,6 +98,7 @@ module.exports = app => app.component('models', {
       }
     };
     document.addEventListener('keydown', this.onCtrlP, true);
+    this.query = Object.assign({}, this.$route.query);
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     await this.loadModelCounts();
@@ -462,14 +464,17 @@ module.exports = app => app.component('models', {
 
       return params;
     },
-    async initSearchFromUrl() {
-      this.status = 'loading';
-      this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
+    setSearchTextFromRoute() {
       if (this.$route.query?.search) {
         this.searchText = this.$route.query.search;
       } else {
         this.searchText = '';
       }
+    },
+    async initSearchFromUrl() {
+      this.status = 'loading';
+      this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
+      this.setSearchTextFromRoute();
       if (this.$route.query?.sort) {
         const sort = eval(`(${this.$route.query.sort})`);
         const path = Object.keys(sort)[0];
