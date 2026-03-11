@@ -1,14 +1,14 @@
 <div class="p-4 space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <button @click="goBack" class="text-content-tertiary hover:text-content-secondary mb-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-                {{ backLabel }}
-            </button>
-            <h1 class="text-2xl font-bold text-content-secondary">{{ taskGroup.name }}</h1>
-            <p class="text-content-tertiary">Total: {{ taskGroup.totalCount }} tasks</p>
+          <button v-if="showBackButton" @click="goBack" class="text-content-tertiary hover:text-content-secondary mb-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            {{ backLabel }}
+          </button>
+          <h1 class="text-2xl font-bold text-content-secondary">{{ taskGroup.name }}</h1>
+          <p class="text-content-tertiary">Total: {{ taskGroup.totalCount }} tasks</p>
         </div>
 
       </div>

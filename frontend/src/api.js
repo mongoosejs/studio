@@ -185,6 +185,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getTasks: function getTasks(params) {
       return client.post('', { action: 'Task.getTasks', ...params }).then(res => res.data);
     },
+    getTaskOverview: function getTaskOverview(params) {
+      return client.post('', { action: 'Task.getTaskOverview', ...params }).then(res => res.data);
+    },
     rescheduleTask: function rescheduleTask(params) {
       return client.post('', { action: 'Task.rescheduleTask', ...params }).then(res => res.data);
     },
@@ -518,6 +521,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getTasks: function getTasks(params) {
       return client.post('/Task/getTasks', params).then(res => res.data);
+    },
+    getTaskOverview: function getTaskOverview(params) {
+      return client.post('/Task/getTaskOverview', params).then(res => res.data);
     },
     rescheduleTask: function rescheduleTask(params) {
       return client.post('/Task/rescheduleTask', params).then(res => res.data);

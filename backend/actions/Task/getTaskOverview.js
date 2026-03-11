@@ -3,22 +3,15 @@
 const Archetype = require('archetype');
 const escape = require('regexp.escape');
 
-const GetTasksParams = new Archetype({
+const GetTaskOverviewParams = new Archetype({
   start: { $type: Date },
   end: { $type: Date },
   status: { $type: 'string' },
-  name: { $type: 'string' },
-  skip: { $type: 'number', $default: 0 },
-  limit: { $type: 'number', $default: 100 }
-}).compile('GetTasksParams');
+  name: { $type: 'string' }
+}).compile('GetTaskOverviewParams');
 
-const ALL_STATUSES = ['pending', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown'];
-
-/** Status keys for statusCounts (same shape as getTaskOverview). */
-const STATUS_COUNT_KEYS = ['pending', 'succeeded', 'failed', 'cancelled'];
-
-/** Max documents per request to avoid excessive memory and response size. */
-const MAX_LIMIT = 2000;
+/** Statuses shown on the Task overview page. */
+const OVERVIEW_STATUSES = ['pending', 'succeeded', 'failed', 'cancelled'];
 
 function buildMatch(params) {
   const { start, end, status, name } = params;
@@ -32,7 +25,7 @@ function buildMatch(params) {
   if (statusVal != null && statusVal !== '') {
     match.status = statusVal;
   } else {
-    match.status = { $in: ALL_STATUSES };
+    match.status = { $in: ['pending', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown'] };
   }
   if (name != null && name !== '') {
     const nameStr = typeof name === 'string' ? name.trim() : String(name);
@@ -41,43 +34,19 @@ function buildMatch(params) {
   return match;
 }
 
-/** Projection done in aggregation: only fields needed by frontend, payload → parameters, _id → id. */
-const TASK_PROJECT_STAGE = {
-  _id: 1,
-  id: '$_id',
-  name: 1,
-  status: 1,
-  scheduledAt: 1,
-  createdAt: 1,
-  startedAt: 1,
-  completedAt: 1,
-  error: 1,
-  parameters: '$payload'
-};
-
-module.exports = ({ db }) => async function getTasks(params) {
-  params = new GetTasksParams(params);
+module.exports = ({ db }) => async function getTaskOverview(params) {
+  params = new GetTaskOverviewParams(params);
   if (typeof params.status === 'string') params.status = params.status.trim();
   if (typeof params.name === 'string') params.name = params.name.trim();
-
-  const skip = Math.max(0, Number(params.skip) || 0);
-  const limit = Math.min(MAX_LIMIT, Math.max(1, Number(params.limit) || 100));
   const { Task } = db.models;
   const match = buildMatch(params);
 
-  const defaultCounts = STATUS_COUNT_KEYS.map(s => ({ k: s, v: 0 }));
+  const defaultCounts = OVERVIEW_STATUSES.map(s => ({ k: s, v: 0 }));
 
   const pipeline = [
     { $match: match },
     {
       $facet: {
-        tasks: [
-          { $sort: { scheduledAt: -1 } },
-          { $skip: skip },
-          { $limit: limit },
-          { $project: TASK_PROJECT_STAGE }
-        ],
-        count: [{ $count: 'total' }],
         statusCounts: [
           { $group: { _id: { $ifNull: ['$status', 'unknown'] }, count: { $sum: 1 } } },
           { $group: { _id: null, counts: { $push: { k: '$_id', v: '$count' } } } },
@@ -91,15 +60,43 @@ module.exports = ({ db }) => async function getTasks(params) {
             }
           },
           { $replaceRoot: { newRoot: '$statusCounts' } }
+        ],
+        tasksByName: [
+          {
+            $group: {
+              _id: '$name',
+              totalCount: { $sum: 1 },
+              lastRun: { $max: '$scheduledAt' },
+              pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+              succeeded: { $sum: { $cond: [{ $eq: ['$status', 'succeeded'] }, 1, 0] } },
+              failed: { $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] } },
+              cancelled: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              name: '$_id',
+              totalCount: 1,
+              lastRun: 1,
+              statusCounts: {
+                pending: '$pending',
+                succeeded: '$succeeded',
+                failed: '$failed',
+                cancelled: '$cancelled'
+              }
+            }
+          },
+          { $sort: { name: 1 } }
         ]
       }
     }
   ];
 
   const [result] = await Task.aggregate(pipeline);
-  const tasks = result.tasks || [];
-  const numDocs = (result.count && result.count[0] && result.count[0].total) || 0;
-  const statusCounts = result.statusCounts?.[0] ?? {};
 
-  return { tasks, numDocs, statusCounts };
+  return {
+    statusCounts: result.statusCounts?.[0] ?? {},
+    tasksByName: result.tasksByName || []
+  };
 };
