@@ -28,6 +28,13 @@ module.exports = {
       this.showEditor = !this.showEditor;
     },
     async updateCode(update) {
+      if (!update?.doc) {
+        const message = update?.error?.message || 'Dashboard update failed';
+        console.error(update?.error || new Error(message));
+        this.$toast.error(message);
+        return;
+      }
+
       this.code = update.doc.code;
       this.title = update.doc.title;
       this.description = update.doc.description;
@@ -52,7 +59,9 @@ module.exports = {
           this.dashboardResults.unshift({ error: { message: error.message || 'Evaluation failed' }, finishedEvaluatingAt: new Date() });
         }
       } catch (err) {
-        this.$toast.error(err?.response?.data?.message || err?.message || 'Dashboard evaluation failed');
+        const message = err?.response?.data?.message || err?.message || 'Dashboard evaluation failed';
+        console.error(err || new Error(message));
+        this.$toast.error(message);
       } finally {
         this.status = 'loaded';
       }

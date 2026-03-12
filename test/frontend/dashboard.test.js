@@ -13,6 +13,30 @@ describe('dashboard component', function() {
   afterEach(function () {
     sinon.restore();
   });
+
+  it('does not throw when edit-dashboard emits an error payload', async function() {
+    const toast = { error: sinon.spy() };
+    const consoleError = sinon.stub(console, 'error');
+    const ctx = {
+      $toast: toast,
+      evaluateDashboard: sinon.stub().resolves(),
+      code: 'before',
+      title: 'before',
+      description: 'before'
+    };
+
+    await dashboard.methods.updateCode.call(ctx, {
+      error: { message: 'Update failed' }
+    });
+
+    assert.strictEqual(ctx.code, 'before');
+    assert.strictEqual(ctx.title, 'before');
+    assert.strictEqual(ctx.description, 'before');
+    assert.strictEqual(ctx.evaluateDashboard.called, false);
+    assert.strictEqual(toast.error.calledOnceWithExactly('Update failed'), true);
+    assert.strictEqual(consoleError.calledOnce, true);
+  });
+
   it('handles missing dashboardResults in API response', async function () {
     const dashboardId = '1'.repeat(24);
     sinon.stub(api.Dashboard, 'getDashboard').callsFake(() => Promise.resolve({
