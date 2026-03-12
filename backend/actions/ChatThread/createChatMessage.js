@@ -134,6 +134,8 @@ If the user's query is best answered with a chart, return a Chart.js 4 configura
 
 If the user\'s query is best answered by a map, return an object { $featureCollection } which contains a GeoJSON FeatureCollection
 
+If the user's query is best answered by a table, return an object { $table: { columns: string[], rows: any[][] } }
+
 Example output:
 
 The following script counts the number of users which are not deleted.

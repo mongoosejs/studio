@@ -24,13 +24,6 @@
     </button>
     <div class="ml-auto mr-1 flex items-center">
       <button
-        v-if="activeTab === 'output' && isChartOutput"
-        class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-primary-hover transition-colors flex items-center"
-        @click="exportChartPNG"
-        title="Export PNG">
-        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.2em;" viewBox="0 -960 960 960" fill="currentColor"><path d="M280-280h400v-80H280v80Zm200-120 160-160-56-56-64 62v-166h-80v166l-64-62-56 56 160 160Zm0 320q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
-      </button>
-      <button
         v-if="activeTab === 'output'"
         class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-primary-hover transition-colors flex items-center"
         @click="openDetailModal">
@@ -116,9 +109,11 @@
   </div>
 
   <div class="p-3 whitespace-pre-wrap max-h-[50vh] overflow-y-auto bg-surface border-t max-w-[calc(100vw-4rem)] lg:max-w-[calc(100vw-20rem)] relative" v-show="activeTab === 'output'">
-    <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" ref="chartOutput" />
-    <dashboard-map v-else-if="message.executionResult?.output?.$featureCollection" :value="message.executionResult?.output" />
-    <pre v-else>{{ message.executionResult?.output || 'No output' }}</pre>
+    <dashboard-result
+      v-if="message.executionResult?.output != null"
+      :result="message.executionResult.output">
+    </dashboard-result>
+    <pre v-else>No output</pre>
 
     <div v-if="message.executionResult?.logs?.length" class="mt-3 pt-3 border-t border-edge">
       <div class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Console</div>
@@ -130,12 +125,12 @@
     <template #body>
       <div class="absolute font-mono right-1 top-1 cursor-pointer text-xl" @click="showDetailModal = false;">&times;</div>
       <div class="h-full overflow-auto">
-        <dashboard-chart v-if="message.executionResult?.output?.$chart" :value="message.executionResult?.output" :responsive="true" />
-        <dashboard-map
-          v-else-if="message.executionResult?.output?.$featureCollection"
-          :value="message.executionResult?.output"
-          height="80vh" />
-        <pre v-else class="whitespace-pre-wrap">{{ message.executionResult?.output || 'No output' }}</pre>
+        <dashboard-result
+          v-if="message.executionResult?.output != null"
+          :result="message.executionResult.output"
+          :fullscreen="true">
+        </dashboard-result>
+        <pre v-else class="whitespace-pre-wrap">No output</pre>
       </div>
     </template>
   </modal>
