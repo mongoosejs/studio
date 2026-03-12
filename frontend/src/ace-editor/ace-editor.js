@@ -80,6 +80,12 @@ module.exports = app => app.component('ace-editor', {
     }
   },
   methods: {
+    getValue() {
+      if (this.editor) {
+        return this.editor.getValue();
+      }
+      return this.modelValue !== '' ? this.modelValue : this.value;
+    },
     setValue(val) {
       if (this.editor) {
         this.editor.setValue(val ?? '', -1);
