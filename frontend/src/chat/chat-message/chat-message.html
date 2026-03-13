@@ -3,7 +3,7 @@
     class="min-w-0 max-w-[calc(100vw-3rem)] lg:max-w-[calc(100vw-15rem)]"
     :class="{'text-right': message.role === 'user'}">
 
-    <div class="text-sm text-gray-900 rounded-md inline-block relative" :class="styleForMessage">
+    <div class="text-sm text-content rounded-md inline-block relative" :class="styleForMessage">
       <div v-for="part in contentSplitByScripts">
         <div v-if="part.type === 'text'" v-html="marked(part.content)">
         </div>

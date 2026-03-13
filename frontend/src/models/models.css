@@ -11,7 +11,6 @@
 }
 
 .models .model-selector {
-  background-color: #eee;
   flex-grow: 0;
   padding: 15px;
   padding-top: 0px;
@@ -336,17 +335,11 @@
 }
 
 .models .documents-menu {
-  position: fixed;
-  z-index: 1;
+  position: sticky;
+  top: 0;
+  z-index: 2;
   padding: 4px;
   display: flex;
-  width: 100vw;
-}
-
-@media (min-width: 1024px) {
-  .models .documents-menu {
-    width: calc(100vw - 12rem);
-  }
 }
 
 .models .documents-menu .search-input {

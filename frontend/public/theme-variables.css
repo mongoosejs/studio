@@ -1,0 +1,294 @@
+/*
+ * Theme variables for Mongoose Studio.
+ * Use these variables in component CSS and in theme overrides so we can add
+ * more themes (e.g. .theme-ocean) or role-based themes (e.g. data-theme="admin") later.
+ *
+ * Default theme: light. Switch by adding .dark on <html> (or future .theme-* classes).
+ */
+
+/* -----------------------------------------------------------------------------
+ * Light theme (default)
+ * ----------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* Page */
+  --studio-bg-page: #ffffff;
+  --studio-text-page: #111827;
+
+  /* Surfaces (cards, panels, nav) */
+  --studio-bg-surface: #ffffff;
+  --studio-bg-surface-hover: #f9fafb;
+  --studio-bg-muted: #f9fafb;
+  --studio-bg-muted-hover: #f3f4f6;
+  --studio-bg-subtle: #e5e7eb;
+  --studio-bg-subtle-hover: #d1d5db;
+  --studio-bg-strong: #374151;
+  --studio-bg-stronger: #1f2937;
+
+  /* Text */
+  --studio-text-primary: #111827;
+  --studio-text-secondary: #374151;
+  --studio-text-muted: #6b7280;
+  --studio-text-subtle: #9ca3af;
+
+  /* Borders */
+  --studio-border: #e5e7eb;
+  --studio-border-strong: #d1d5db;
+  --studio-ring: rgba(17, 24, 39, 0.05);
+  --studio-ring-strong: rgba(75, 85, 99, 0.4);
+
+  /* Links */
+  --studio-link: #0e5887;
+  --studio-link-hover: #0c4a6f;
+
+  /* Semantic (status) */
+  --studio-bg-error: #fef2f2;
+  --studio-bg-warning: #fefce8;
+  --studio-bg-success: #f0fdf4;
+  --studio-bg-info: #eff6ff;
+  --studio-border-error: #fecaca;
+  --studio-border-warning: #fde047;
+  --studio-border-success: #bbf7d0;
+  --studio-border-info: #bfdbfe;
+  --studio-text-error: #b91c1c;
+  --studio-text-success: #15803d;
+  --studio-ring-success: rgba(34, 197, 94, 0.2);
+  --studio-ring-muted: rgba(75, 85, 99, 0.2);
+
+  /* Tooltip */
+  --studio-tooltip-bg: #000000;
+  --studio-tooltip-text: #ffffff;
+  --studio-tooltip-border: transparent;
+
+  /* Extended (code, menu, focus, brand, buttons) */
+  --studio-code-bg: #f3f4f6;
+  --studio-code-text: #111827;
+  --studio-menu-bg: #ffffff;
+  --studio-menu-hover: rgba(0, 0, 0, 0.05);
+  --studio-menu-selected: rgba(0, 0, 0, 0.08);
+  --studio-shadow: rgba(0, 0, 0, 0.1);
+  --studio-focus-ring: #3b82f6;
+  --studio-focus-ring-shadow: rgba(59, 130, 246, 0.2);
+  --studio-brand-primary: #0e5887;
+  --studio-brand-primary-hover: #0c4a6f;
+  --studio-brand-primary-subtle: rgba(14, 88, 135, 0.1);
+  --studio-btn-bg: #e5e7eb;
+  --studio-btn-text-shadow: transparent;
+
+  /* Browser chrome (theme-color meta is set in JS; this is for reference/fallback) */
+  --studio-theme-color: #ffffff;
+
+  /* ---- Semantic Tailwind tokens ----
+   * These map to Tailwind color names so you can write bg-primary, text-content,
+   * border-edge, etc. Dark mode swaps the value automatically — zero dark: needed.
+   */
+
+  /* Primary action (buttons, active indicators) – merlot */
+  --color-primary: #7f1d2b;
+  --color-primary-hover: #931e2b;
+  --color-primary-subtle: #fde8e6;
+  --color-primary-text: #ffffff;
+
+  /* Surface / layout */
+  --color-surface: #ffffff;
+  --color-surface-hover: #f9fafb;
+  --color-page: #f9fafb;
+  --color-muted: #f3f4f6;
+  --color-subtle: #e5e7eb;
+
+  /* Text hierarchy */
+  --color-content: #111827;
+  --color-content-secondary: #374151;
+  --color-content-tertiary: #6b7280;
+  --color-content-disabled: #d1d5db;
+
+  /* Borders */
+  --color-edge: #e5e7eb;
+  --color-edge-strong: #d1d5db;
+}
+
+/* -----------------------------------------------------------------------------
+ * Dark theme (your preferred dark mode colors)
+ * Add class "dark" on <html> to enable.
+ * ----------------------------------------------------------------------------- */
+.dark {
+  color-scheme: dark;
+
+  /* Page – darker base for clear hierarchy */
+  --studio-bg-page: #0f0f0f;
+  --studio-text-page: #f5f5f5;
+
+  /* Surfaces – stepped contrast so nav/sidebar/content read clearly */
+  --studio-bg-surface: #1c1c1e;
+  --studio-bg-surface-hover: #2c2c2e;
+  --studio-bg-muted: #252528;
+  --studio-bg-muted-hover: #2c2c2e;
+  --studio-bg-subtle: #3a3a3c;
+  --studio-bg-subtle-hover: #48484a;
+  --studio-bg-strong: #636366;
+  --studio-bg-stronger: #1c1c1e;
+
+  /* Text – high contrast for readability */
+  --studio-text-primary: #ffffff;
+  --studio-text-secondary: #e8e8e8;
+  --studio-text-muted: #b8b8bc;
+  --studio-text-subtle: #a0a0a5;
+
+  /* Borders */
+  --studio-border: #3a3a3c;
+  --studio-border-strong: #48484a;
+  --studio-ring: rgba(0, 0, 0, 0.4);
+  --studio-ring-strong: rgba(99, 99, 102, 0.5);
+
+  /* Links */
+  --studio-link: #64b5f6;
+  --studio-link-hover: #90caf9;
+
+  /* Semantic (status) */
+  --studio-bg-error: #450a0a;
+  --studio-bg-warning: #422006;
+  --studio-bg-success: #052e16;
+  --studio-bg-info: #1e3a8a;
+  --studio-border-error: #7f1d1d;
+  --studio-border-warning: #854d0e;
+  --studio-border-success: #14532d;
+  --studio-border-info: #1e40af;
+  --studio-text-error: #fca5a5;
+  --studio-text-success: #86efac;
+  --studio-ring-success: rgba(34, 197, 94, 0.3);
+  --studio-ring-muted: rgba(75, 85, 99, 0.4);
+
+  /* Tooltip */
+  --studio-tooltip-bg: #2c2c2e;
+  --studio-tooltip-text: #f5f5f5;
+  --studio-tooltip-border: #3a3a3c;
+
+  /* Extended (for nav, code, buttons, focus, brand) */
+  --studio-code-bg: #252525;
+  --studio-code-text: #e8e8e8;
+  --studio-menu-bg: #252525;
+  --studio-menu-hover: rgba(255, 255, 255, 0.1);
+  --studio-menu-selected: rgba(255, 255, 255, 0.15);
+  --studio-shadow: rgba(0, 0, 0, 0.3);
+  --studio-focus-ring: #FFB4B4;
+  --studio-focus-ring-shadow: rgba(255, 180, 180, 0.2);
+  --studio-brand-primary: #FF5E5E;
+  --studio-brand-primary-hover: #FF5555;
+  --studio-brand-primary-subtle: rgba(255, 180, 180, 0.1);
+  --studio-btn-bg: #444444;
+  --studio-btn-text-shadow: #222222;
+
+  --studio-theme-color: #0f0f0f;
+
+  /* ---- Semantic Tailwind tokens (dark) ---- */
+  --color-primary: #ef807d;
+  --color-primary-hover: #f6adab;
+  --color-primary-subtle: rgba(239, 128, 125, 0.15);
+  --color-primary-text: #1c1c1e;
+
+  --color-surface: #1c1c1e;
+  --color-surface-hover: #2c2c2e;
+  --color-page: #0f0f0f;
+  --color-muted: #252528;
+  --color-subtle: #3a3a3c;
+
+  --color-content: #ffffff;
+  --color-content-secondary: #e8e8e8;
+  --color-content-tertiary: #b8b8bc;
+  --color-content-disabled: #636366;
+
+  --color-edge: #3a3a3c;
+  --color-edge-strong: #48484a;
+}
+
+/* Dark mode when using data-theme (same colors as .dark) */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --studio-bg-page: #0f0f0f;
+  --studio-text-page: #f5f5f5;
+  --studio-bg-surface: #1c1c1e;
+  --studio-bg-surface-hover: #2c2c2e;
+  --studio-bg-muted: #252528;
+  --studio-bg-muted-hover: #2c2c2e;
+  --studio-bg-subtle: #3a3a3c;
+  --studio-bg-subtle-hover: #48484a;
+  --studio-bg-strong: #636366;
+  --studio-bg-stronger: #1c1c1e;
+  --studio-text-primary: #ffffff;
+  --studio-text-secondary: #e8e8e8;
+  --studio-text-muted: #b8b8bc;
+  --studio-text-subtle: #a0a0a5;
+  --studio-border: #3a3a3c;
+  --studio-border-strong: #48484a;
+  --studio-ring: rgba(0, 0, 0, 0.3);
+  --studio-ring-strong: rgba(75, 85, 99, 0.4);
+  --studio-link: #7BC3FF;
+  --studio-link-hover: #8AD0FF;
+  --studio-bg-error: #450a0a;
+  --studio-bg-warning: #422006;
+  --studio-bg-success: #052e16;
+  --studio-bg-info: #1e3a8a;
+  --studio-border-error: #7f1d1d;
+  --studio-border-warning: #854d0e;
+  --studio-border-success: #14532d;
+  --studio-border-info: #1e40af;
+  --studio-text-error: #fca5a5;
+  --studio-text-success: #86efac;
+  --studio-ring-success: rgba(34, 197, 94, 0.3);
+  --studio-ring-muted: rgba(75, 85, 99, 0.4);
+  --studio-tooltip-bg: #252525;
+  --studio-tooltip-text: #e8e8e8;
+  --studio-tooltip-border: #444444;
+  --studio-code-bg: #252525;
+  --studio-code-text: #e8e8e8;
+  --studio-menu-bg: #252525;
+  --studio-menu-hover: rgba(255, 255, 255, 0.1);
+  --studio-menu-selected: rgba(255, 255, 255, 0.15);
+  --studio-shadow: rgba(0, 0, 0, 0.3);
+  --studio-focus-ring: #FFB4B4;
+  --studio-focus-ring-shadow: rgba(255, 180, 180, 0.2);
+  --studio-brand-primary: #FF5E5E;
+  --studio-brand-primary-hover: #FF5555;
+  --studio-brand-primary-subtle: rgba(255, 180, 180, 0.1);
+  --studio-btn-bg: #444444;
+  --studio-btn-text-shadow: #222222;
+  --studio-theme-color: #0f0f0f;
+
+  /* ---- Semantic Tailwind tokens (data-theme dark) ---- */
+  --color-primary: #ef807d;
+  --color-primary-hover: #f6adab;
+  --color-primary-subtle: rgba(239, 128, 125, 0.15);
+  --color-primary-text: #1c1c1e;
+
+  --color-surface: #1c1c1e;
+  --color-surface-hover: #2c2c2e;
+  --color-page: #0f0f0f;
+  --color-muted: #252528;
+  --color-subtle: #3a3a3c;
+
+  --color-content: #ffffff;
+  --color-content-secondary: #e8e8e8;
+  --color-content-tertiary: #b8b8bc;
+  --color-content-disabled: #636366;
+
+  --color-edge: #3a3a3c;
+  --color-edge-strong: #48484a;
+}
+
+/*
+ * Future: add more themes the same way, e.g.:
+ *
+ * .theme-ocean {
+ *   --studio-bg-page: #f0f9ff;
+ *   --studio-link: #0369a1;
+ *   ...
+ * }
+ *
+ * Or role-based (set class or data-theme from backend):
+ *
+ * [data-theme="admin"] {
+ *   --studio-link: #7c3aed;
+ *   ...
+ * }
+ */

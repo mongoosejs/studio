@@ -15,7 +15,6 @@ module.exports = app => app.component('create-dashboard', {
   },
   methods: {
     async createDashboard() {
-      this.code = this._editor.getValue();
       const { dashboard } = await api.Dashboard.createDashboard({ code: this.code, title: this.title }).catch(err => {
         if (err.response?.data?.message) {
           console.log(err.response.data);
@@ -31,11 +30,5 @@ module.exports = app => app.component('create-dashboard', {
       this.$toast.success('Dashboard created!');
       this.$emit('close', dashboard);
     }
-  },
-  mounted: function() {
-    this._editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
-      mode: 'javascript',
-      lineNumbers: true
-    });
   }
 });

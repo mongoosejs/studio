@@ -135,6 +135,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
         yield { document: doc };
       }
     },
+    getEstimatedDocumentCounts: function getEstimatedDocumentCounts() {
+      return client.post('', { action: 'Model.getEstimatedDocumentCounts' }).then(res => res.data);
+    },
     streamDocumentChanges: async function* streamDocumentChanges(params, options = {}) {
       const pollIntervalMs = 5000;
       while (!options.signal?.aborted) {
@@ -181,6 +184,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getTasks: function getTasks(params) {
       return client.post('', { action: 'Task.getTasks', ...params }).then(res => res.data);
+    },
+    getTaskOverview: function getTaskOverview(params) {
+      return client.post('', { action: 'Task.getTaskOverview', ...params }).then(res => res.data);
     },
     rescheduleTask: function rescheduleTask(params) {
       return client.post('', { action: 'Task.rescheduleTask', ...params }).then(res => res.data);
@@ -385,6 +391,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
         }
       }
     },
+    getEstimatedDocumentCounts: function getEstimatedDocumentCounts() {
+      return client.post('/Model/getEstimatedDocumentCounts', {}).then(res => res.data);
+    },
     streamDocumentChanges: async function* streamDocumentChanges(params, options = {}) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/streamDocumentChanges?' + new URLSearchParams(params).toString();
@@ -512,6 +521,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getTasks: function getTasks(params) {
       return client.post('/Task/getTasks', params).then(res => res.data);
+    },
+    getTaskOverview: function getTaskOverview(params) {
+      return client.post('/Task/getTaskOverview', params).then(res => res.data);
     },
     rescheduleTask: function rescheduleTask(params) {
       return client.post('/Task/rescheduleTask', params).then(res => res.data);

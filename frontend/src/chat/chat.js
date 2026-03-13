@@ -14,7 +14,8 @@ module.exports = {
     chatThreads: [],
     chatMessages: [],
     hideSidebar: null,
-    sharingThread: false
+    sharingThread: false,
+    threadSearch: ''
   }),
   methods: {
     async sendMessage() {
@@ -125,12 +126,28 @@ module.exports = {
       this.$router.push('/chat/' + threadId);
     },
     styleForMessage(message) {
-      return message.role === 'user' ? 'bg-gray-100' : '';
+      return message.role === 'user' ? 'bg-muted' : '';
     },
     async createNewThread() {
       const { chatThread } = await api.ChatThread.createChatThread();
       this.$toast.success('Chat thread created!');
       this.$router.push('/chat/' + chatThread._id);
+    },
+    formatThreadDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = now - date;
+      const oneDay = 24 * 60 * 60 * 1000;
+      const isToday = date.toDateString() === now.toDateString();
+      const isYesterday = new Date(now - oneDay).toDateString() === date.toDateString();
+      const timeStr = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      if (isToday) return 'Today, ' + timeStr;
+      if (isYesterday) return 'Yesterday, ' + timeStr;
+      if (diff < 7 * oneDay) {
+        return date.toLocaleDateString(undefined, { weekday: 'long' }) + ', ' + timeStr;
+      }
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' + timeStr;
     },
     async toggleShareThread() {
       if (!this.chatThreadId || !this.hasWorkspace) {
@@ -165,9 +182,18 @@ module.exports = {
     },
     sharedWithWorkspace() {
       return !!this.currentThread?.sharingOptions?.sharedWithWorkspace;
+    },
+    filteredThreads() {
+      const search = this.threadSearch.trim().toLowerCase();
+      if (!search) {
+        return this.chatThreads;
+      }
+      return this.chatThreads.filter(t => (t.title || 'Untitled Thread').toLowerCase().includes(search));
     }
   },
   async mounted() {
+    window.pageState = this;
+
     this.chatThreadId = this.threadId;
     const { chatThreads } = await api.ChatThread.listChatThreads();
     this.chatThreads = chatThreads;

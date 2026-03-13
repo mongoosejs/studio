@@ -1,6 +1,6 @@
 <div class="document-details">
   <!-- View Toggle and Search/Filter Bar -->
-  <div class="sticky top-[60px] z-40 bg-white rounded-md p-4 border-b border-gray-200 shadow-sm">
+  <div class="sticky top-[60px] z-40 bg-surface rounded-md p-4 border-b border-edge shadow-sm">
 
     <!-- Search and Filter Bar (only show in fields view) -->
     <div v-if="viewMode === 'fields'" class="flex md:gap-3">
@@ -11,7 +11,7 @@
           v-model="searchQuery"
           type="text"
           placeholder="Search fields..."
-          class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-edge-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <div class="absolute inset-y-0 left-0 flex items-center pl-3">
           <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -24,7 +24,7 @@
       <div class="relative hidden md:block">
         <select
           v-model="selectedType"
-          class="px-4 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px] appearance-none"
+          class="px-4 py-2 pr-8 text-sm border border-edge-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-surface min-w-[140px] appearance-none"
         >
           <option value="">All Types</option>
           <option v-for="type in availableTypes" :key="type" :value="type">
@@ -62,24 +62,24 @@
     <div
       v-for="path in matchedVirtuals"
       :key="path.name"
-      class="border border-gray-200 rounded-lg mb-2 transition-all duration-200 ease-in-out mt-4"
+      class="border border-edge rounded-lg mb-2 transition-all duration-200 ease-in-out mt-4"
     >
     <!-- Virtual Field Header (Always Visible) -->
     <div
       @click="toggleVirtualField(path.name)"
-      class="p-3 bg-amber-100 hover:bg-amber-200 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
+      class="p-3 bg-amber-100 hover:bg-amber-200 cursor-pointer flex items-center justify-between border-b border-edge transition-colors duration-200 ease-in-out"
     >
       <div class="flex items-center">
         <svg
           :class="isVirtualFieldCollapsed(path.name) ? 'rotate-0' : 'rotate-90'"
-          class="w-4 h-4 text-gray-500 mr-2 transition-transform duration-200"
+          class="w-4 h-4 text-content-tertiary mr-2 transition-transform duration-200"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
-        <span class="font-medium text-gray-900">{{path.name}}</span>
+        <span class="font-medium text-content">{{path.name}}</span>
         <span v-if="path.isVirtual" class="ml-2 text-sm text-purple-600">(virtual - {{getVirtualFieldType(path)}})</span>
         <span v-else class="ml-2 text-sm text-blue-600">(user-added - {{getVirtualFieldType(path)}})</span>
       </div>
@@ -116,24 +116,24 @@
     <div
       v-for="path in unmatchedVirtuals"
       :key="path.name"
-      class="border border-gray-200 rounded-lg mb-2 transition-all duration-200 ease-in-out"
+      class="border border-edge rounded-lg mb-2 transition-all duration-200 ease-in-out"
     >
     <!-- Virtual Field Header (Always Visible) -->
     <div
       @click="toggleVirtualField(path.name)"
-      class="p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
+      class="p-3 bg-page hover:bg-muted cursor-pointer flex items-center justify-between border-b border-edge transition-colors duration-200 ease-in-out"
     >
       <div class="flex items-center">
         <svg
           :class="isVirtualFieldCollapsed(path.name) ? 'rotate-0' : 'rotate-90'"
-          class="w-4 h-4 text-gray-500 mr-2 transition-transform duration-200"
+          class="w-4 h-4 text-content-tertiary mr-2 transition-transform duration-200"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
-        <span class="font-medium text-gray-900">{{path.name}}</span>
+        <span class="font-medium text-content">{{path.name}}</span>
         <span v-if="path.isVirtual" class="ml-2 text-sm text-purple-600">(virtual - {{getVirtualFieldType(path)}})</span>
         <span v-else class="ml-2 text-sm text-blue-600">(user-added - {{getVirtualFieldType(path)}})</span>
       </div>
@@ -151,7 +151,7 @@
   </div>
 
     <!-- No Results Message -->
-    <div v-if="searchQuery.trim() && !hasSearchMatches" class="text-center py-8 text-gray-500">
+    <div v-if="searchQuery.trim() && !hasSearchMatches" class="text-center py-8 text-content-tertiary">
       <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.709M15 6.291A7.962 7.962 0 0012 5c-2.34 0-4.29 1.009-5.824 2.709"></path>
       </svg>
@@ -161,7 +161,7 @@
 
   <!-- JSON View -->
   <div v-if="viewMode === 'json'" class="json-view">
-    <div class="border border-gray-300 rounded-lg bg-gray-50 p-4 overflow-auto">
+    <div class="border border-edge-strong rounded-lg bg-page p-4 overflow-auto">
       <pre class="text-sm font-mono text-gray-800 whitespace-pre">{{formattedJson}}</pre>
     </div>
   </div>
@@ -172,14 +172,14 @@
       <div class="modal-exit" @click="closeAddFieldModal">&times;</div>
       <div class="add-field-modal">
         <div class="mb-6">
-          <h2 class="text-xl font-semibold text-gray-900 mb-2">Add New Field</h2>
+          <h2 class="text-xl font-semibold text-content mb-2">Add New Field</h2>
           <p class="text-sm text-gray-600">Create a new field for this document</p>
         </div>
 
         <form @submit.prevent="handleAddFieldSubmit" class="space-y-4">
           <!-- Field Name -->
           <div>
-            <label for="fieldName" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="fieldName" class="block text-sm font-medium text-content-secondary mb-1">
               Field Name *
             </label>
             <input
@@ -188,7 +188,7 @@
               type="text"
               required
               placeholder="Enter field name..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               :class="{ 'border-red-500': fieldErrors.name }"
             />
             <p v-if="fieldErrors.name" class="mt-1 text-sm text-red-600">{{fieldErrors.name}}</p>
@@ -199,14 +199,14 @@
 
           <!-- Field Type -->
           <div>
-            <label for="fieldType" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="fieldType" class="block text-sm font-medium text-content-secondary mb-1">
               Field Type *
             </label>
             <select
               id="fieldType"
               v-model="fieldData.type"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               :class="{ 'border-red-500': fieldErrors.type }"
             >
               <option value="">Select field type...</option>
@@ -219,7 +219,7 @@
 
           <!-- Field Value -->
           <div>
-            <label for="fieldValue" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="fieldValue" class="block text-sm font-medium text-content-secondary mb-1">
               Initial Value
             </label>
 
@@ -229,47 +229,48 @@
               v-model="fieldData.value"
               type="date"
               id="fieldValue"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               :class="{ 'border-red-500': fieldErrors.value }"
             />
 
             <!-- Simple input for basic types -->
             <input
-              v-else-if="!shouldUseCodeMirror"
+              v-else-if="!shouldUseAce"
               v-model="fieldData.value"
               type="text"
               id="fieldValue"
               placeholder="Enter initial value (optional)..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               :class="{ 'border-red-500': fieldErrors.value }"
             />
 
-            <!-- CodeMirror textarea for complex types -->
-            <textarea
+            <!-- Ace editor for complex types (Array/Object/Embedded) -->
+            <ace-editor
               v-else
-              ref="fieldValueEditor"
               id="fieldValue"
-              rows="3"
-              placeholder="Enter initial value (optional)..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              v-model="fieldData.value"
+              mode="json"
+              :line-numbers="true"
+              :min-lines="3"
+              class="add-field-ace-editor w-full min-h-[100px]"
               :class="{ 'border-red-500': fieldErrors.value }"
-            ></textarea>
+            />
 
             <p v-if="fieldErrors.value" class="mt-1 text-sm text-red-600">{{fieldErrors.value}}</p>
-            <p class="mt-1 text-xs text-gray-500">
+            <p class="mt-1 text-xs text-content-tertiary">
               <span v-if="shouldUseDatePicker">Select a date or leave empty for null/undefined values.</span>
-              <span v-else-if="shouldUseCodeMirror">Leave empty for null/undefined values. Use valid JSON format.</span>
+              <span v-else-if="shouldUseAce">Leave empty for null/undefined values. Use valid JSON format.</span>
               <span v-else>Leave empty for null/undefined values.</span>
             </p>
           </div>
 
 
           <!-- Action Buttons -->
-          <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div class="flex justify-end gap-3 pt-4 border-t border-edge">
             <button
               type="button"
               @click="closeAddFieldModal"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              class="px-4 py-2 text-sm font-medium text-content-secondary bg-surface border border-edge-strong rounded-md hover:bg-page focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Cancel
             </button>

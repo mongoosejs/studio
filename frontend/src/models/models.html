@@ -1,42 +1,107 @@
 <div class="models flex" style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
-  <div class="fixed top-[65px] cursor-pointer bg-gray-100 rounded-r-md z-10" @click="hideSidebar = false">
-    <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" class="w-5" fill="#5f6368"><path d="M360-120v-720h80v720h-80Zm160-160v-400l200 200-200 200Z"/></svg>
-  </div>
-  <aside class="bg-white border-r overflow-y-auto overflow-x-hidden h-full transition-all duration-300 ease-in-out z-20 w-0 lg:w-48 fixed lg:relative shrink-0" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-48' : ''">
-    <div class="flex items-center border-b border-gray-100 w-48 overflow-x-hidden">
-      <div class="p-1 ml-2 font-bold">Models</div>
-      <button
-        @click="hideSidebar = true"
-        class="ml-auto mr-2 p-2 rounded hover:bg-gray-200 focus:outline-none"
-        aria-label="Close sidebar"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" class="w-5" fill="currentColor"><path d="M660-320v-320L500-480l160 160ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm120-80v-560H200v560h120Zm80 0h360v-560H400v560Zm-80 0H200h120Z"/></svg>
-      </button>
+  <aside class="bg-page border-r overflow-hidden transition-all duration-300 ease-in-out z-20 w-0 lg:w-64 fixed lg:relative shrink-0 flex flex-col top-[55px] bottom-0 lg:top-auto lg:bottom-auto lg:h-full" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-64' : ''">
+    <!-- Search -->
+    <div class="p-3 shrink-0">
+      <div class="relative">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input
+          v-model="modelSearch"
+          type="text"
+          placeholder="Find model..."
+          @keydown.esc="modelSearch = ''"
+          class="w-full rounded-md border border-edge bg-surface py-1.5 pl-8 pr-3 text-sm text-content placeholder:text-gray-400 focus:border-edge-strong focus:outline-none focus:ring-1 focus:ring-gray-300"
+        />
+      </div>
     </div>
-    <nav class="flex flex-1 flex-col">
-      <ul role="list" class="flex flex-1 flex-col gap-y-7 p-1">
-        <li>
-          <ul role="list">
-            <li v-for="model in models">
-              <router-link
-                :to="'/model/' + model"
-                class="block truncate rounded-md py-2 pr-2 pl-2 text-sm text-gray-700"
-                :class="model === currentModel ? 'bg-ultramarine-100 font-bold text-gray-900' : 'hover:bg-ultramarine-50'">
-                {{model}}
-              </router-link>
-            </li>
-          </ul>
+    <!-- Model list (scrollable) -->
+    <nav class="flex-1 overflow-y-auto px-2 pb-2">
+      <!-- Recently Viewed -->
+      <div v-if="filteredRecentModels.length > 0 && !modelSearch.trim()">
+        <div class="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Recently Viewed</div>
+        <ul role="list">
+          <li v-for="model in filteredRecentModels" :key="'recent-' + model">
+            <router-link
+              :to="'/model/' + model"
+              class="flex items-center rounded-md py-1.5 px-2 text-sm text-content-secondary"
+              :class="model === currentModel ? 'bg-gray-200 font-semibold text-content' : 'hover:bg-muted'">
+              <span class="truncate" v-html="highlightMatch(model)"></span>
+              <span
+                v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined && model !== currentModel"
+                class="ml-auto text-xs text-gray-400 bg-muted rounded px-1.5 py-[1px]"
+              >
+                {{formatCompactCount(modelDocumentCounts[model])}}
+              </span>
+            </router-link>
+          </li>
+        </ul>
+        <div class="border-b border-edge my-2"></div>
+      </div>
+      <!-- All Models / Search Results -->
+      <div class="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ modelSearch.trim() ? 'Search Results' : 'All Models' }}</div>
+      <ul role="list">
+        <li v-for="model in filteredModels" :key="'all-' + model">
+          <router-link
+            :to="'/model/' + model"
+            class="flex items-center rounded-md py-1.5 px-2 text-sm text-content-secondary"
+            :class="model === currentModel ? 'bg-gray-200 font-semibold text-content' : 'hover:bg-muted'">
+            <span class="truncate" v-html="highlightMatch(model)"></span>
+            <span
+              v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined && model !== currentModel"
+              class="ml-auto text-xs text-gray-400 bg-muted rounded px-1.5 py-[1px]"
+            >
+              {{formatCompactCount(modelDocumentCounts[model])}}
+            </span>
+          </router-link>
         </li>
       </ul>
-      <div v-if="models.length === 0 && status === 'loaded'" class="p-2 bg-red-100">
+      <div v-if="filteredModels.length === 0 && modelSearch.trim()" class="px-2 py-2 text-sm text-content-tertiary">
+        No models match "{{modelSearch}}"
+      </div>
+      <div v-if="models.length === 0 && status === 'loaded'" class="p-2 bg-red-100 rounded-md">
         No models found
       </div>
     </nav>
+    <!-- Bottom toolbar -->
+    <div class="shrink-0 border-t border-edge bg-page px-2 py-1.5 flex items-center gap-1">
+      <button
+        type="button"
+        @click="hideSidebar = true"
+        class="rounded p-1.5 text-gray-400 hover:text-gray-600 hover:bg-muted"
+        title="Hide sidebar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        @click="openModelSwitcher"
+        class="rounded p-1.5 text-gray-400 hover:text-gray-600 hover:bg-muted"
+        title="Quick switch (Ctrl+P)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+      </button>
+    </div>
   </aside>
-  <div class="documents bg-slate-50" ref="documentsList">
-    <div class="relative min-h-[50px]" style="z-index: 1000">
+  <div class="documents bg-slate-50 min-w-0" ref="documentsList">
       <div class="documents-menu bg-slate-50">
-        <div class="flex flex-row items-center w-full gap-2 flex-wrap">
+        <div class="flex flex-row items-center w-full gap-2">
+          <button
+            v-if="hideSidebar === true || hideSidebar === null"
+            type="button"
+            @click="hideSidebar = false"
+            class="shrink-0 rounded-md p-1.5 text-gray-400 hover:text-gray-600 hover:bg-muted"
+            :class="hideSidebar === null ? 'lg:hidden' : ''"
+            title="Show sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
           <document-search
             ref="documentSearch"
             :value="searchText"
@@ -51,8 +116,8 @@
           <button
             @click="stagingSelect"
             type="button"
-            :class="{ 'bg-gray-500 ring-inset ring-2 ring-gray-300 hover:bg-gray-600': selectMultiple, 'bg-ultramarine-600 hover:bg-ultramarine-500' : !selectMultiple }"
-            class="rounded px-2 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            :class="{ 'bg-page0 ring-inset ring-2 ring-gray-300 hover:bg-gray-600': selectMultiple, 'bg-primary hover:bg-primary-hover' : !selectMultiple }"
+            class="rounded px-2 py-2 text-sm font-semibold text-primary-text shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {{ selectMultiple ? 'Cancel' : 'Select' }}
           </button>
@@ -77,48 +142,55 @@
               @click="toggleActionsMenu"
               type="button"
               aria-label="More actions"
-              class="rounded bg-white px-2 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
+              class="rounded bg-surface px-2 py-2 text-sm font-semibold text-content-secondary shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-page focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
               </svg>
             </button>
             <div
               v-if="showActionsMenu"
-              class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20"
+              class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-surface shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20"
             >
               <div class="py-1">
                 <button
                   @click="shouldShowExportModal = true; showActionsMenu = false"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Export
                 </button>
                 <button
                   @click="shouldShowCreateModal = true; showActionsMenu = false"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Create
                 </button>
                 <button
+                  @click="openFieldSelection(); showActionsMenu = false"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Projection
+                </button>
+                <button
                   @click="openIndexModal"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Indexes
                 </button>
                 <button
                   @click="openCollectionInfo"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Collection Info
                 </button>
                 <button
                   @click="findOldestDocument"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Find oldest document
                 </button>
@@ -129,15 +201,15 @@
             <button
               @click="setOutputType('table')"
               type="button"
-              class="relative inline-flex items-center rounded-none rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
-              :class="outputType === 'table' ? 'bg-gray-200' : 'bg-white'">
+              class="relative inline-flex items-center rounded-none rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-page focus:z-10"
+              :class="outputType === 'table' ? 'bg-gray-200' : 'bg-surface'">
               <img class="h-5 w-5" src="images/table.svg">
             </button>
             <button
               @click="setOutputType('json')"
               type="button"
-              class="relative -ml-px inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
-              :class="outputType === 'json' ? 'bg-gray-200' : 'bg-white'">
+              class="relative -ml-px inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-page focus:z-10"
+              :class="outputType === 'json' ? 'bg-gray-200' : 'bg-surface'">
               <img class="h-5 w-5" src="images/json.svg">
             </button>
             <button
@@ -147,8 +219,8 @@
               :title="geoJsonFields.length > 0 ? 'Map view' : 'No GeoJSON fields detected'"
               class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 focus:z-10"
               :class="[
-                geoJsonFields.length === 0 ? 'text-gray-300 cursor-not-allowed bg-gray-100' : 'text-gray-400 hover:bg-gray-50',
-                outputType === 'map' ? 'bg-gray-200' : (geoJsonFields.length > 0 ? 'bg-white' : '')
+                geoJsonFields.length === 0 ? 'text-gray-300 cursor-not-allowed bg-muted' : 'text-gray-400 hover:bg-page',
+                outputType === 'map' ? 'bg-gray-200' : (geoJsonFields.length > 0 ? 'bg-surface' : '')
               ]">
               <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
@@ -157,7 +229,6 @@
           </span>
         </div>
       </div>
-    </div>
     <div class="documents-container relative">
       <div v-if="error">
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 relative m-4 rounded-md" role="alert">
@@ -165,144 +236,42 @@
           <span class="block">{{ error }}</span>
         </div>
       </div>
-      <div v-else-if="outputType === 'table'" class="projection-view">
-        <form class="projection-input-row" @submit.prevent="applyProjectionFromInput">
-          <input
-            ref="projectionInput"
-            v-model="projectionText"
-            type="text"
-            placeholder="Projection (e.g. { _id: 1, name: 1 } or name age)"
-            class="projection-input"
-            @click="initProjection"
-            @blur="applyProjectionFromInput"
-          />
-          <button
-            type="button"
-            class="projection-action-btn"
-            title="Add all fields to projection"
-            @click="addAllFields"
-          >
-            Add all
-          </button>
-          <button
-            type="button"
-            class="projection-action-btn"
-            title="Reset to default (_id only)"
-            @click="resetProjection"
-          >
-            Reset
-          </button>
-        </form>
-        <div class="table-wrapper">
-          <table class="projection-table">
-            <thead>
-              <tr>
-                <th
-                  v-for="schemaPath in filteredPaths"
-                  :key="schemaPath.path"
-                  class="table-header-cell"
-                >
-                  <div class="projection-column-def">
-                    <span v-if="schemaPath.ref" class="column-ref-icon" title="Reference" aria-hidden="true">↗</span>
-                    <span
-                      class="column-name cursor-pointer truncate"
-                      @click="addPathFilter(schemaPath.path)"
-                      :title="schemaPath.path"
-                    >
-                      {{ schemaPath.path }}
-                    </span>
-                    <span class="column-type">{{ schemaPath.instance || 'unknown' }}</span>
-                    <span class="column-sort cursor-pointer" @click.stop="sortDocs(1, schemaPath.path)" title="Sort ascending">↑</span>
-                    <span class="column-sort cursor-pointer" @click.stop="sortDocs(-1, schemaPath.path)" title="Sort descending">↓</span>
-                    <button
-                      type="button"
-                      class="column-remove"
-                      :title="'Remove ' + schemaPath.path"
-                      @click.stop="removeField(schemaPath)"
-                      aria-label="Remove field"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </th>
-                <th class="table-header-add">
-                  <div class="projection-add-column" ref="addFieldContainer">
-                    <button
-                      type="button"
-                      class="add-column-btn"
-                      @click="toggleAddFieldDropdown"
-                      aria-label="Add field"
-                    >
-                      +
-                    </button>
-                    <div
-                      v-if="showAddFieldDropdown"
-                      class="add-field-dropdown"
-                      @click.stop
-                    >
-                      <input
-                        ref="addFieldFilterInput"
-                        v-model="addFieldFilterText"
-                        type="text"
-                        placeholder="Search fields..."
-                        class="add-field-filter-input"
-                        @click.stop
-                      />
-                      <ul class="add-field-list">
-                        <li
-                          v-for="path in filteredPathsToAdd"
-                          :key="path.path"
-                          class="add-field-option"
-                          @click="addField(path)"
-                        >
-                          {{ path.path }}
-                        </li>
-                        <li v-if="filteredPathsToAdd.length === 0" class="add-field-option add-field-empty">
-                          {{ addFieldFilterText.trim() ? 'No matching fields' : 'No more fields to add' }}
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="document in documents"
-                :key="document._id"
-                :class="{ 'table-row-selected': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
-                @click="handleDocumentClick(document, $event)"
-              >
-                <td
-                  v-for="schemaPath in filteredPaths"
-                  :key="schemaPath.path"
-                  class="table-cell"
-                >
-                  <component
-                    :is="getComponentForPath(schemaPath)"
-                    :value="getValueForPath(document, schemaPath.path)"
-                    :allude="getReferenceModel(schemaPath)">
-                  </component>
-                </td>
-                <td class="table-cell-add"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div v-else-if="outputType === 'json'" class="json-view flex flex-col space-y-2">
+      <table v-else-if="outputType === 'table'">
+        <thead class="bg-slate-50">
+          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="bg-slate-50 cursor-pointer p-3">
+            {{path.path}}
+            <span class="path-type">
+              ({{(path.instance || 'unknown')}})
+            </span>
+            <span class="sort-arrow" @click="sortDocs(1, path.path)">{{sortBy[path.path] == 1 ? 'X' : '↑'}}</span>
+            <span class="sort-arrow" @click="sortDocs(-1, path.path)">{{sortBy[path.path] == -1 ? 'X' : '↓'}}</span>
+          </th>
+        </thead>
+        <tbody>
+          <tr v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id" class="bg-surface hover:bg-slate-50">
+            <td v-for="schemaPath in filteredPaths" class="p-3 cursor-pointer" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
+              <component
+                :is="getComponentForPath(schemaPath)"
+                :value="getValueForPath(document, schemaPath.path)"
+                :allude="getReferenceModel(schemaPath)">
+              </component>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else-if="outputType === 'json'" class="flex flex-col space-y-2 p-1 mt-1">
         <div
           v-for="document in documents"
           :key="document._id"
           @click="handleDocumentContainerClick(document, $event)"
           :class="[
             'group relative transition-colors rounded-md border border-slate-100',
-            selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:shadow-sm hover:border-slate-300 bg-white'
+            selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:shadow-sm hover:border-slate-300 bg-surface'
           ]"
         >
           <button
             type="button"
-            class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-ultramarine-600 px-2 py-1 text-xs font-semibold text-white shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-text shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             @click.stop="openDocument(document)"
           >
             Open this Document
@@ -312,12 +281,12 @@
         </div>
       </div>
       <div v-else-if="outputType === 'map'" class="flex flex-col h-full">
-        <div class="p-2 bg-white border-b flex items-center gap-2">
-          <label class="text-sm font-medium text-gray-700">GeoJSON Field:</label>
+        <div class="p-2 bg-surface border-b flex items-center gap-2">
+          <label class="text-sm font-medium text-content-secondary">GeoJSON Field:</label>
           <select
             :value="selectedGeoField"
             @change="setSelectedGeoField($event.target.value)"
-            class="rounded-md border border-gray-300 py-1 px-2 text-sm focus:border-ultramarine-500 focus:ring-ultramarine-500"
+            class="rounded-md border border-edge-strong py-1 px-2 text-sm focus:border-primary focus:ring-primary"
           >
             <option v-for="field in geoJsonFields" :key="field.path" :value="field.path">
               {{ field.label }}
@@ -327,8 +296,8 @@
             @click="loadMoreDocuments"
             :disabled="loadedAllDocs"
             type="button"
-            class="rounded px-2 py-1 text-xs font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
-            :class="loadedAllDocs ? 'bg-gray-400 cursor-not-allowed' : 'bg-ultramarine-600 hover:bg-ultramarine-500'"
+            class="rounded px-2 py-1 text-xs font-semibold text-primary-text shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            :class="loadedAllDocs ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'"
           >
             Load more
           </async-button>
@@ -360,7 +329,7 @@
           <div>
             <div class="font-bold flex items-center gap-2">
               <div>{{ index.name }}</div>
-              <div v-if="isTTLIndex(index)" class="rounded-full bg-ultramarine-100 px-2 py-0.5 text-xs font-semibold text-ultramarine-700">
+              <div v-if="isTTLIndex(index)" class="rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-semibold text-primary">
                 TTL: {{ formatTTL(index.expireAfterSeconds) }}
               </div>
             </div>
@@ -385,34 +354,51 @@
       <div v-if="!collectionInfo" class="text-gray-600">Loading collection details...</div>
       <div v-else class="space-y-3">
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Documents</div>
-          <div class="text-gray-900">{{ formatNumber(collectionInfo.documentCount) }}</div>
+          <div class="font-semibold text-content-secondary">Documents</div>
+          <div class="text-content">{{ formatNumber(collectionInfo.documentCount) }}</div>
         </div>
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Indexes</div>
-          <div class="text-gray-900">{{ formatNumber(collectionInfo.indexCount) }}</div>
+          <div class="font-semibold text-content-secondary">Indexes</div>
+          <div class="text-content">{{ formatNumber(collectionInfo.indexCount) }}</div>
         </div>
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Total Index Size</div>
-          <div class="text-gray-900">{{ formatCollectionSize(collectionInfo.totalIndexSize) }}</div>
+          <div class="font-semibold text-content-secondary">Total Index Size</div>
+          <div class="text-content">{{ formatCollectionSize(collectionInfo.totalIndexSize) }}</div>
         </div>
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Total Storage Size</div>
-          <div class="text-gray-900">{{ formatCollectionSize(collectionInfo.size) }}</div>
+          <div class="font-semibold text-content-secondary">Total Storage Size</div>
+          <div class="text-content">{{ formatCollectionSize(collectionInfo.size) }}</div>
         </div>
         <div class="flex flex-col gap-1">
           <div class="flex justify-between gap-4">
-            <div class="font-semibold text-gray-700">Collation</div>
-            <div class="text-gray-900">{{ collectionInfo.hasCollation ? 'Yes' : 'No' }}</div>
+            <div class="font-semibold text-content-secondary">Collation</div>
+            <div class="text-content">{{ collectionInfo.hasCollation ? 'Yes' : 'No' }}</div>
           </div>
-          <div v-if="collectionInfo.hasCollation" class="rounded bg-gray-100 p-3 text-sm text-gray-800 overflow-x-auto">
+          <div v-if="collectionInfo.hasCollation" class="rounded bg-muted p-3 text-sm text-gray-800 overflow-x-auto">
             <pre class="whitespace-pre-wrap">{{ JSON.stringify(collectionInfo.collation, null, 2) }}</pre>
           </div>
         </div>
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Capped</div>
-          <div class="text-gray-900">{{ collectionInfo.capped ? 'Yes' : 'No' }}</div>
+          <div class="font-semibold text-content-secondary">Capped</div>
+          <div class="text-content">{{ collectionInfo.capped ? 'Yes' : 'No' }}</div>
         </div>
+      </div>
+    </template>
+  </modal>
+  <modal v-if="shouldShowFieldModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
+      <div v-for="(path, index) in schemaPaths" :key="index" class="w-5 flex items-center">
+        <input  class="mt-0 h-4 w-4 rounded border-edge-strong text-sky-600 focus:ring-sky-600 accent-sky-600" type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)" />
+        <div class="ml-2 text-content-secondary grow shrink text-left">
+          <label :for="'path.path' + index">{{path.path}}</label>
+        </div>
+      </div>
+      <div class="mt-4 flex gap-2">
+        <button type="button" @click="filterDocuments()" class="rounded-md bg-primary px-2.5 py-1.5 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Filter Selection</button>
+        <button type="button" @click="selectAll()" class="rounded-md bg-forest-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">Select All</button>
+        <button type="button" @click="deselectAll()" class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">Deselect All</button>
+        <button type="button" @click="resetDocuments()" class="rounded-md bg-gray-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-page0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600" >Cancel</button>
       </div>
     </template>
   </modal>
@@ -439,10 +425,18 @@
         <async-button @click="deleteDocuments" class="rounded bg-red-500 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
           Confirm
         </async-button>
-        <button @click="shouldShowDeleteMultipleModal = false;" class="rounded bg-gray-400 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500">
+        <button @click="shouldShowDeleteMultipleModal = false;" class="rounded bg-gray-400 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-page0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500">
           Cancel
         </button>
       </div>
     </template>
   </modal>
+  <model-switcher
+    :show="showModelSwitcher"
+    :models="models"
+    :recently-viewed-models="recentlyViewedModels"
+    :model-document-counts="modelDocumentCounts"
+    @close="showModelSwitcher = false"
+    @select="selectSwitcherModel"
+  ></model-switcher>
 </div>

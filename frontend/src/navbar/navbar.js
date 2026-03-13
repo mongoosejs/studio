@@ -13,23 +13,30 @@ module.exports = app => app.component('navbar', {
   template: template,
   props: ['user', 'roles'],
   inject: ['state'],
-  data: () => ({ showFlyout: false }),
-  mounted: function() {
+  data: () => ({
+    showFlyout: false,
+    darkMode: typeof localStorage !== 'undefined' && localStorage.getItem('studio-theme') === 'dark'
+  }),
+  mounted: function () {
+    window.navbar = this;
     const mobileMenuMask = document.querySelector('#mobile-menu-mask');
     const mobileMenu = document.querySelector('#mobile-menu');
+    const openBtn = document.querySelector('#open-mobile-menu');
 
-    document.querySelector('#open-mobile-menu').addEventListener('click', (event) => {
-      event.stopPropagation();
-      mobileMenuMask.style.display = 'block';
-      mobileMenu.classList.remove('translate-x-full');
-      mobileMenu.classList.add('translate-x-0');
-    });
+    if (openBtn && mobileMenuMask && mobileMenu) {
+      openBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        mobileMenuMask.style.display = 'block';
+        mobileMenu.classList.remove('translate-x-full');
+        mobileMenu.classList.add('translate-x-0');
+      });
 
-    document.querySelector('body').addEventListener('click', () => {
-      mobileMenuMask.style.display = 'none';
-      mobileMenu.classList.remove('translate-x-0');
-      mobileMenu.classList.add('translate-x-full');
-    });
+      document.querySelector('body').addEventListener('click', () => {
+        mobileMenuMask.style.display = 'none';
+        mobileMenu.classList.remove('translate-x-0');
+        mobileMenu.classList.add('translate-x-full');
+      });
+    }
   },
   computed: {
     dashboardView() {
@@ -42,7 +49,7 @@ module.exports = app => app.component('navbar', {
       return ['chat index', 'chat'].includes(this.$route.name);
     },
     taskView() {
-      return ['tasks'].includes(this.$route.name);
+      return ['tasks', 'taskByName', 'taskSingle'].includes(this.$route.name);
     },
     routeName() {
       return this.$route.name;
@@ -65,7 +72,7 @@ module.exports = app => app.component('navbar', {
       } else {
         return 'https://www.npmjs.com/package/@mongoosejs/task';
       }
-     
+
     }
   },
   methods: {
@@ -82,6 +89,19 @@ module.exports = app => app.component('navbar', {
     logout() {
       window.localStorage.setItem('_mongooseStudioAccessToken', '');
       window.location.reload();
+    },
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+      const theme = this.darkMode ? 'dark' : 'light';
+      window.localStorage.setItem('studio-theme', theme);
+      if (this.darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', this.darkMode ? '#0f0f0f' : '#ffffff');
+      document.documentElement.dispatchEvent(new CustomEvent('studio-theme-changed', { detail: { dark: this.darkMode } }));
     }
   },
   directives: {

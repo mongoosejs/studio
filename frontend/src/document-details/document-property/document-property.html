@@ -1,29 +1,29 @@
-<div class="border border-gray-200 bg-white rounded-lg mb-2" style="overflow: visible;">
+<div class="border border-edge bg-surface rounded-lg mb-2" style="overflow: visible;">
   <!-- Collapsible Header -->
   <div
     @click="toggleCollapse"
-    class="p-1 cursor-pointer flex items-center justify-between border-b border-gray-200 transition-colors duration-200 ease-in-out"
-    :class="{ 'bg-amber-100 hover:bg-amber-200': highlight, 'bg-slate-100 hover:bg-gray-100': !highlight }"
+    class="p-1 cursor-pointer flex items-center justify-between border-b border-edge transition-colors duration-200 ease-in-out"
+    :class="{ 'bg-amber-100 hover:bg-amber-200': highlight, 'bg-slate-100 hover:bg-muted': !highlight }"
     style="overflow: visible; position: relative;"
   >
     <div class="flex items-center" >
       <svg
         :class="isCollapsed ? 'rotate-0' : 'rotate-90'"
-        class="w-4 h-4 text-gray-500 mr-2 transition-transform duration-200"
+        class="w-4 h-4 text-content-tertiary mr-2 transition-transform duration-200"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
       >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
       </svg>
-      <span class="font-medium text-gray-900">{{path.path}}</span>
-      <span class="ml-2 text-sm text-gray-500">({{(path.instance || 'unknown').toLowerCase()}})</span>
+      <span class="font-medium text-content">{{path.path}}</span>
+      <span class="ml-2 text-sm text-content-tertiary">({{(path.instance || 'unknown').toLowerCase()}})</span>
       <div v-if="isGeoJsonGeometry" class="ml-3 inline-flex items-center gap-2">
         <div class="inline-flex items-center rounded-full bg-gray-200 p-0.5 text-xs font-semibold">
           <button
             type="button"
             class="rounded-full px-2.5 py-0.5 transition"
-            :class="detailViewMode === 'text' ? 'bg-blue-600 text-white shadow' : 'text-gray-700 hover:text-gray-900'"
+            :class="detailViewMode === 'text' ? 'bg-blue-600 text-white shadow' : 'text-content-secondary hover:text-content'"
             :style="detailViewMode === 'text' ? 'color: white !important; background-color: #2563eb !important;' : ''"
             @click.stop="setDetailViewMode('text')">
             Text
@@ -31,7 +31,7 @@
           <button
             type="button"
             class="rounded-full px-2.5 py-0.5 transition"
-            :class="detailViewMode === 'map' ? 'bg-blue-600 text-white shadow' : 'text-gray-700 hover:text-gray-900'"
+            :class="detailViewMode === 'map' ? 'bg-blue-600 text-white shadow' : 'text-content-secondary hover:text-content'"
             :style="detailViewMode === 'map' ? 'color: white !important; background-color: #2563eb !important;' : ''"
             @click.stop="setDetailViewMode('map')">
             Map
@@ -72,7 +72,7 @@
     <div class="flex items-center gap-2">
       <button
         type="button"
-        class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded-md border border-transparent hover:border-gray-300 bg-white"
+        class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded-md border border-transparent hover:border-edge-strong bg-surface"
         @click.stop.prevent="copyPropertyValue"
         title="Copy value"
         aria-label="Copy property value"
@@ -85,7 +85,7 @@
       <router-link
         v-if="path.ref && getValueForPath(path.path)"
         :to="`/model/${path.ref}/document/${getValueForPath(path.path)}`"
-        class="bg-ultramarine-600 hover:bg-ultramarine-500 text-white px-2 py-1 text-sm rounded-md"
+        class="bg-primary hover:bg-primary-hover text-primary-text px-2 py-1 text-sm rounded-md"
         @click.stop
         >View Document
       </router-link>
@@ -163,7 +163,7 @@
             <div v-else class="text-xs py-1.5 px-2 font-mono text-gray-800 break-words whitespace-pre-wrap mt-1">{{ arrayUtils.formatValue(item) }}</div>
           </div>
           <div class="mb-1.5 py-2.5 px-3 pl-4 bg-transparent border-none border-l-[3px] border-l-blue-500 rounded-none transition-all duration-200 cursor-pointer relative opacity-70 hover:opacity-100">
-            <div class="text-xs py-1.5 px-2 font-mono text-gray-500 italic break-words whitespace-pre-wrap mt-1">
+            <div class="text-xs py-1.5 px-2 font-mono text-content-tertiary italic break-words whitespace-pre-wrap mt-1">
               ... and {{ remainingArrayCount }} more item{{ remainingArrayCount !== 1 ? 's' : '' }}
             </div>
           </div>
@@ -180,7 +180,7 @@
       </div>
       <!-- Non-array truncated view -->
       <div v-else-if="shouldShowTruncated && !isArray" class="relative">
-        <div class="text-gray-700 whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>
+        <div class="text-content-secondary whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>
         <button
           @click="toggleValueExpansion"
           class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"

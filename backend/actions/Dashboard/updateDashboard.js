@@ -32,11 +32,11 @@ module.exports = ({ db }) => async function updateDashboard(params) {
 
   const updateObj = { code };
 
-  if (title) {
+  if (title != null) {
     updateObj.title = title;
   }
 
-  if (description) {
+  if (description != null) {
     updateObj.description = description;
   }
 

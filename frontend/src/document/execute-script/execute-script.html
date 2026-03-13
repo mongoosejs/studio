@@ -1,10 +1,10 @@
 <div v-if="isOpen" class="fixed inset-0 z-50 execute-script-drawer" :class="{ 'is-closing': isClosing }">
   <div class="execute-script-backdrop absolute inset-0 bg-black/40" @click="close"></div>
-  <div class="execute-script-panel absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-xl flex flex-col">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+  <div class="execute-script-panel absolute right-0 top-0 h-full w-full max-w-xl bg-surface shadow-xl flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-edge">
       <div>
-        <h2 class="text-lg font-semibold text-gray-900">Run Script</h2>
-        <p class="text-xs text-gray-500">Use <code class="bg-gray-100 px-1 rounded">doc</code> for this document.</p>
+        <h2 class="text-lg font-semibold text-content">Run Script</h2>
+        <p class="text-xs text-content-tertiary">Use <code class="bg-muted px-1 rounded">doc</code> for this document.</p>
       </div>
       <button
         type="button"
@@ -17,16 +17,15 @@
     </div>
     <div class="flex-1 overflow-auto p-5 space-y-4">
       <div class="space-y-2">
-        <label class="text-sm font-medium text-gray-700">Script</label>
-        <textarea
-          ref="scriptEditor"
-          :value="scriptText"
-          @input="updateScriptText"
-          rows="8"
-          placeholder="await doc.updateName('new name')&#10;return doc"
-          class="w-full rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-        ></textarea>
-        <p class="text-xs text-gray-500">Return a value to see it in the output panel.</p>
+        <label class="text-sm font-medium text-content-secondary">Script</label>
+        <ace-editor
+          v-model="scriptText"
+          mode="javascript"
+          :line-numbers="true"
+          :wrap="true"
+          class="min-h-[200px]"
+        />
+        <p class="text-xs text-content-tertiary">Return a value to see it in the output panel.</p>
       </div>
       <div class="flex items-center gap-3">
         <button
@@ -41,7 +40,7 @@
         <button
           type="button"
           @click="clearScript"
-          class="text-sm text-gray-500 hover:text-gray-700"
+          class="text-sm text-content-tertiary hover:text-content-secondary"
         >
           Clear
         </button>
@@ -50,17 +49,17 @@
         <div v-if="scriptError" class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {{scriptError}}
         </div>
-        <div v-if="scriptHasRun" class="rounded-md border border-gray-200 bg-gray-50 p-3">
-          <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Output</div>
+        <div v-if="scriptHasRun" class="rounded-md border border-edge bg-page p-3">
+          <div class="text-xs uppercase tracking-wide text-content-tertiary mb-2">Output</div>
           <pre class="whitespace-pre-wrap text-sm text-gray-800">{{formatScriptOutput(scriptResult)}}</pre>
         </div>
-        <div v-if="scriptLogs" class="rounded-md border border-gray-200 bg-white p-3">
-          <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Logs</div>
-          <pre class="whitespace-pre-wrap text-xs text-gray-700">{{scriptLogs}}</pre>
+        <div v-if="scriptLogs" class="rounded-md border border-edge bg-surface p-3">
+          <div class="text-xs uppercase tracking-wide text-content-tertiary mb-2">Logs</div>
+          <pre class="whitespace-pre-wrap text-xs text-content-secondary">{{scriptLogs}}</pre>
         </div>
       </div>
     </div>
-    <div class="border-t border-gray-200 px-5 py-3 text-xs text-gray-500">
+    <div class="border-t border-edge px-5 py-3 text-xs text-content-tertiary">
       Scripts run on the server with access to the Mongoose document instance.
     </div>
   </div>
