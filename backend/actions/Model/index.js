@@ -11,6 +11,7 @@ exports.exportQueryResults = require('./exportQueryResults');
 exports.getDocument = require('./getDocument');
 exports.getDocuments = require('./getDocuments');
 exports.getDocumentsStream = require('./getDocumentsStream');
+exports.getSuggestedProjection = require('./getSuggestedProjection');
 exports.getCollectionInfo = require('./getCollectionInfo');
 exports.getIndexes = require('./getIndexes');
 exports.getEstimatedDocumentCounts = require('./getEstimatedDocumentCounts');

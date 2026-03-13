@@ -149,7 +149,7 @@
             </button>
             <div
               v-if="showActionsMenu"
-              class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-surface shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20"
+              class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-surface shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
             >
               <div class="py-1">
                 <button
@@ -197,22 +197,6 @@
               </div>
             </div>
           </div>
-          <div v-if="outputType === 'table'" class="flex items-center gap-1.5 min-w-0 flex-1 max-w-md">
-            <input
-              v-model="projectionText"
-              type="text"
-              placeholder="Projection: { name: 1, email: 1 } or name, email"
-              class="flex-1 min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              @keydown.enter="applyProjectionFromInput()"
-            />
-            <button
-              type="button"
-              @click="applyProjectionFromInput()"
-              class="shrink-0 rounded px-2 py-1.5 text-sm font-semibold bg-primary text-primary-text hover:bg-primary-hover focus:outline focus:ring-2 focus:ring-primary focus:ring-offset-1"
-            >
-              Apply
-            </button>
-          </div>
           <span class="isolate inline-flex rounded-md shadow-sm">
             <button
               @click="setOutputType('table')"
@@ -244,6 +228,37 @@
             </button>
           </span>
         </div>
+        <div v-if="outputType === 'table' || outputType === 'json'" class="flex items-center gap-2 w-full mt-2 flex-shrink-0">
+          <input
+            v-model="projectionText"
+            type="text"
+            placeholder="Projection: { name: 1, email: 1 } or name, email"
+            class="flex-1 min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            @keydown.enter="applyProjectionFromInput()"
+          />
+          <button
+            type="button"
+            @click="applyProjectionFromInput()"
+            class="shrink-0 rounded px-2 py-1.5 text-sm font-semibold bg-primary text-primary-text hover:bg-primary-hover focus:outline focus:ring-2 focus:ring-primary focus:ring-offset-1"
+          >
+            Apply
+          </button>
+          <button
+            type="button"
+            @click="clearProjection()"
+            class="shrink-0 rounded px-2 py-1.5 text-sm font-semibold bg-surface text-content border border-edge hover:bg-muted focus:outline focus:ring-2 focus:ring-edge focus:ring-offset-1"
+          >
+            Reset
+          </button>
+          <async-button
+            type="button"
+            @click="applySuggestedProjection"
+            class="shrink-0 rounded px-2 py-1.5 text-sm font-semibold bg-surface text-content border border-edge hover:bg-muted focus:outline focus:ring-2 focus:ring-edge focus:ring-offset-1"
+            title="Apply projection from scoring (required, indexed, query fields, etc.)"
+          >
+            Suggest
+          </async-button>
+        </div>
       </div>
     <div class="documents-container relative">
       <div v-if="error">
@@ -262,7 +277,7 @@
             <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-shark-800 border-b border-edge">
               <tr>
                 <th
-                  v-for="path in filteredPaths"
+                  v-for="path in tableDisplayPaths"
                   :key="path.path"
                   class="px-3 py-2.5 text-left font-medium text-content border-r border-edge last:border-r-0 whitespace-nowrap align-middle"
                 >
@@ -295,6 +310,7 @@
                         ↓
                       </button>
                       <button
+                        v-if="filteredPaths.length > 0"
                         type="button"
                         @click.stop="removeField(path)"
                         class="p-0.5 rounded text-content-tertiary hover:text-valencia-600 hover:bg-valencia-50"
@@ -306,7 +322,7 @@
                     </span>
                   </div>
                 </th>
-                <th class="px-2 py-2.5 border-r border-edge last:border-r-0 align-middle w-0 bg-slate-50 dark:bg-shark-800/80">
+                <th v-if="filteredPaths.length > 0" class="px-2 py-2.5 border-r border-edge last:border-r-0 align-middle w-0 bg-slate-50 dark:bg-shark-800/80">
                   <div class="relative" ref="addFieldContainer">
                     <button
                       type="button"
@@ -356,7 +372,7 @@
                 :class="{ 'bg-primary-subtle/50 hover:bg-primary-subtle/70': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
               >
                 <td
-                  v-for="schemaPath in filteredPaths"
+                  v-for="schemaPath in tableDisplayPaths"
                   :key="schemaPath.path"
                   class="px-3 py-2 border-r border-edge last:border-r-0 align-top max-w-[280px]"
                 >
@@ -380,7 +396,7 @@
                     </button>
                   </div>
                 </td>
-                <td class="w-0 px-0 py-0 border-r border-edge last:border-r-0 bg-slate-50/50 dark:bg-shark-800/30"></td>
+                <td v-if="filteredPaths.length > 0" class="w-0 px-0 py-0 border-r border-edge last:border-r-0 bg-slate-50/50 dark:bg-shark-800/30"></td>
               </tr>
             </tbody>
           </table>
@@ -410,7 +426,7 @@
           >
             Open this Document
           </button>
-          <list-json :value="document" :references="referenceMap">
+          <list-json :value="filterDocument(document)" :references="referenceMap">
           </list-json>
         </div>
         <div v-if="outputType === 'json' && loadingMore" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary">

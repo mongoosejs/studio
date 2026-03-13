@@ -1,7 +1,7 @@
 'use strict';
 
 /** Max number of paths to suggest by default. */
-const DEFAULT_SUGGESTED_LIMIT = 8;
+const DEFAULT_SUGGESTED_LIMIT = 6;
 
 /** Required fields: highest priority. String gets full bonus only when required or has default. */
 const SCORE_REQUIRED = 80;

@@ -265,6 +265,9 @@ module.exports = app => app.component('models', {
       const query = (this.addFieldFilterText || '').trim().toLowerCase();
       if (!query) return available;
       return available.filter(p => p.path.toLowerCase().includes(query));
+    },
+    tableDisplayPaths() {
+      return this.filteredPaths.length > 0 ? this.filteredPaths : this.schemaPaths;
     }
   },
   methods: {
@@ -589,6 +592,7 @@ module.exports = app => app.component('models', {
       this.shouldShowCreateModal = true;
     },
     filterDocument(doc) {
+      if (this.filteredPaths.length === 0) return doc;
       const filteredDoc = {};
       for (let i = 0; i < this.filteredPaths.length; i++) {
         const path = this.filteredPaths[i].path;
@@ -829,7 +833,14 @@ module.exports = app => app.component('models', {
             this.shouldExport[path] = true;
           }
           const savedPaths = this.loadProjectionPreference();
-          if (savedPaths && savedPaths.length > 0) {
+          if (savedPaths === null) {
+            this.applyDefaultProjection(event.suggestedFields);
+            this.saveProjectionPreference();
+          } else if (Array.isArray(savedPaths) && savedPaths.length === 0) {
+            this.filteredPaths = [];
+            this.projectionText = '';
+            this.saveProjectionPreference();
+          } else if (savedPaths && savedPaths.length > 0) {
             this.filteredPaths = savedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
             if (this.filteredPaths.length === 0) {
               this.applyDefaultProjection(event.suggestedFields);
@@ -917,15 +928,14 @@ module.exports = app => app.component('models', {
       }
       const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
       const stored = window.localStorage.getItem(key);
-      if (stored) {
-        try {
-          const paths = stored.split(',').map(s => s.trim()).filter(Boolean);
-          return paths.length > 0 ? paths : null;
-        } catch (e) {
-          return null;
-        }
+      if (stored === null || stored === undefined) return null;
+      if (stored === '') return [];
+      try {
+        const paths = stored.split(',').map(s => s.trim()).filter(Boolean);
+        return paths.length > 0 ? paths : [];
+      } catch (e) {
+        return null;
       }
-      return null;
     },
     saveProjectionPreference() {
       if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
@@ -953,6 +963,31 @@ module.exports = app => app.component('models', {
       this.syncProjectionFromPaths();
       this.updateProjectionQuery();
       this.saveProjectionPreference();
+    },
+    clearProjection() {
+      this.filteredPaths = [];
+      this.selectedPaths = [];
+      this.projectionText = '';
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+      this.getDocuments();
+    },
+    async applySuggestedProjection() {
+      if (!this.currentModel) return;
+      try {
+        const { suggestedFields } = await api.Model.getSuggestedProjection({
+          model: this.currentModel,
+          searchText: this.searchText
+        });
+        this.applyDefaultProjection(suggestedFields);
+        this.selectedPaths = [...this.filteredPaths];
+        this.syncProjectionFromPaths();
+        this.updateProjectionQuery();
+        this.saveProjectionPreference();
+        await this.getDocuments();
+      } catch (err) {
+        this.$toast.error(err.message || 'Failed to get suggested projection');
+      }
     },
     openFieldSelection() {
       this.shouldShowFieldModal = true;
@@ -1013,7 +1048,7 @@ module.exports = app => app.component('models', {
     },
     syncProjectionFromPaths() {
       if (this.filteredPaths.length === 0) {
-        this.projectionText = '{}';
+        this.projectionText = '';
         return;
       }
       this.projectionText = '{ ' + this.filteredPaths.map(p => p.path + ': 1').join(', ') + ' }';
