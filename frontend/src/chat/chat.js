@@ -192,6 +192,8 @@ module.exports = {
     }
   },
   async mounted() {
+    window.pageState = this;
+
     this.chatThreadId = this.threadId;
     const { chatThreads } = await api.ChatThread.listChatThreads();
     this.chatThreads = chatThreads;

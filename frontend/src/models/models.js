@@ -79,6 +79,7 @@ module.exports = app => app.component('models', {
     this.destroyMap();
   },
   async mounted() {
+    window.pageState = this;
     this.onScroll = () => this.checkIfScrolledToBottom();
     document.addEventListener('scroll', this.onScroll, true);
     this.onPopState = () => this.initSearchFromUrl();
