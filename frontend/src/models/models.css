@@ -394,12 +394,7 @@
   min-width: 100px;
 }
 
-/* Table cell: click to copy indicator */
-.models .table-cell-content {
-  cursor: copy;
-}
-.models .table-cell-content:hover {
-  outline: 1px dotted var(--color-edge);
-  outline-offset: -1px;
-  border-radius: 2px;
+/* Table cell: copy icon only copies; rest of cell opens document */
+.models .table-cell-copy {
+  cursor: pointer;
 }

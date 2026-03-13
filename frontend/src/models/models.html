@@ -360,11 +360,7 @@
                   :key="schemaPath.path"
                   class="px-3 py-2 border-r border-edge last:border-r-0 align-top max-w-[280px]"
                 >
-                  <div
-                    class="table-cell-content flex items-center gap-1.5 min-w-0 group"
-                    @click.stop="copyCellValue(getValueForPath(document, schemaPath.path))"
-                    title="Click to copy"
-                  >
+                  <div class="table-cell-content flex items-center gap-1.5 min-w-0 group">
                     <span class="min-w-0 overflow-hidden text-ellipsis flex-1">
                       <component
                         :is="getComponentForPath(schemaPath)"
@@ -372,7 +368,16 @@
                         :allude="getReferenceModel(schemaPath)"
                       />
                     </span>
-                    <span class="shrink-0 text-content-tertiary opacity-0 group-hover:opacity-100 transition-opacity text-xs" aria-hidden="true">Copy</span>
+                    <button
+                      type="button"
+                      class="table-cell-copy shrink-0 p-1 rounded text-content-tertiary hover:text-content hover:bg-muted focus:outline-none focus:ring-1 focus:ring-edge"
+                      aria-label="Copy cell value"
+                      @click.stop="copyCellValue(getValueForPath(document, schemaPath.path))"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1M8 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M8 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m0 0h2a2 2 0 0 1 2 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                      </svg>
+                    </button>
                   </div>
                 </td>
                 <td class="w-0 px-0 py-0 border-r border-edge last:border-r-0 bg-slate-50/50 dark:bg-shark-800/30"></td>
