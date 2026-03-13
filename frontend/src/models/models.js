@@ -11,7 +11,7 @@ const appendCSS = require('../appendCSS');
 appendCSS(require('./models.css'));
 
 const limit = 20;
-const DEFAULT_FIRST_N_FIELDS = 8;
+const DEFAULT_FIRST_N_FIELDS = 6;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
 const PROJECTION_STORAGE_KEY_PREFIX = 'studio:model-projection:';
