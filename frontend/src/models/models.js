@@ -43,6 +43,7 @@ module.exports = app => app.component('models', {
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
+    fieldModalFilterText: '',
     projectionText: '',
     addFieldFilterText: '',
     showAddFieldDropdown: false,
@@ -268,6 +269,11 @@ module.exports = app => app.component('models', {
     },
     tableDisplayPaths() {
       return this.filteredPaths.length > 0 ? this.filteredPaths : this.schemaPaths;
+    },
+    filteredSchemaPathsForModal() {
+      const q = (this.fieldModalFilterText || '').trim().toLowerCase();
+      if (!q) return this.schemaPaths;
+      return this.schemaPaths.filter(p => (p.path || '').toLowerCase().includes(q));
     }
   },
   methods: {
@@ -990,6 +996,7 @@ module.exports = app => app.component('models', {
       }
     },
     openFieldSelection() {
+      this.fieldModalFilterText = '';
       this.shouldShowFieldModal = true;
       this.selectedPaths = [...this.filteredPaths];
     },
