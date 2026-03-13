@@ -46,6 +46,8 @@
   },
   "scripts": {
     "lint": "eslint .",
+    "seed": "node seed/index.js",
+    "start": "node ./local.js",
     "tailwind": "tailwindcss -o ./frontend/public/tw.css",
     "tailwind:watch": "tailwindcss -o ./frontend/public/tw.css --watch",
     "test": "mocha test/*.test.js",
