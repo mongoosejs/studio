@@ -369,6 +369,17 @@
   height: 4em;
 }
 
+.models .loader-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-page);
+  opacity: 0.9;
+}
+
 .models .documents .buttons {
   display: inline-flex;
   justify-content: space-around;
@@ -381,4 +392,14 @@
 
 .models .projection-tab-add .add-field-btn {
   min-width: 100px;
+}
+
+/* Table cell: click to copy indicator */
+.models .table-cell-content {
+  cursor: copy;
+}
+.models .table-cell-content:hover {
+  outline: 1px dotted var(--color-edge);
+  outline-offset: -1px;
+  border-radius: 2px;
 }

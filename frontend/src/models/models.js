@@ -11,6 +11,7 @@ const appendCSS = require('../appendCSS');
 appendCSS(require('./models.css'));
 
 const limit = 20;
+const DEFAULT_FIRST_N_FIELDS = 8;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
 const PROJECTION_STORAGE_KEY_PREFIX = 'studio:model-projection:';
@@ -32,6 +33,7 @@ module.exports = app => app.component('models', {
     mongoDBIndexes: [],
     schemaIndexes: [],
     status: 'loading',
+    loadingMore: false,
     loadedAllDocs: false,
     edittingDoc: null,
     docEdits: null,
@@ -40,6 +42,7 @@ module.exports = app => app.component('models', {
     searchText: '',
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
+    shouldShowFieldModal: false,
     projectionText: '',
     addFieldFilterText: '',
     showAddFieldDropdown: false,
@@ -74,7 +77,8 @@ module.exports = app => app.component('models', {
     this.loadRecentlyViewedModels();
   },
   beforeDestroy() {
-    document.removeEventListener('scroll', this.onScroll, true);
+    const el = this.$refs.documentsList;
+    if (el) el.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
     document.removeEventListener('click', this.onOutsideAddFieldDropdownClick, true);
@@ -85,7 +89,10 @@ module.exports = app => app.component('models', {
   async mounted() {
     window.pageState = this;
     this.onScroll = () => this.checkIfScrolledToBottom();
-    document.addEventListener('scroll', this.onScroll, true);
+    this.$nextTick(() => {
+      const el = this.$refs.documentsList;
+      if (el) el.addEventListener('scroll', this.onScroll);
+    });
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
     this.onOutsideActionsMenuClick = event => {
@@ -517,6 +524,13 @@ module.exports = app => app.component('models', {
         params.searchText = this.searchText;
       }
 
+      const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
+        ? this.filteredPaths.map(p => p.path).filter(Boolean)
+        : null;
+      if (fieldPaths && fieldPaths.length > 0) {
+        params.fields = fieldPaths.join(',');
+      }
+
       return params;
     },
     setSearchTextFromRoute() {
@@ -587,17 +601,35 @@ module.exports = app => app.component('models', {
       if (this.status === 'loading' || this.loadedAllDocs) {
         return;
       }
-      const container = this.$refs.documentsList;
-      if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
-        this.status = 'loading';
-        const params = this.buildDocumentFetchParams({ skip: this.documents.length });
+      if (this.documents.length === 0) {
+        return;
+      }
+      const container = this.outputType === 'table' && this.$refs.documentsScrollContainer
+        ? this.$refs.documentsScrollContainer
+        : this.$refs.documentsList;
+      if (!container || container.scrollHeight <= 0) {
+        return;
+      }
+      const threshold = 150;
+      const nearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - threshold;
+      if (!nearBottom) {
+        return;
+      }
+      this.loadingMore = true;
+      this.status = 'loading';
+      try {
+        const skip = this.documents.length;
+        const params = this.buildDocumentFetchParams({ skip });
         const { docs } = await api.Model.getDocuments(params);
         if (docs.length < limit) {
           this.loadedAllDocs = true;
         }
         this.documents.push(...docs);
+      } finally {
+        this.loadingMore = false;
         this.status = 'loaded';
       }
+      this.$nextTick(() => this.checkIfScrolledToBottom());
     },
     async sortDocs(num, path) {
       let sorted = false;
@@ -762,8 +794,11 @@ module.exports = app => app.component('models', {
       }
     },
     async getDocuments() {
-      // Track recently viewed model
-      this.trackRecentModel(this.currentModel);
+      this.loadingMore = false;
+      this.status = 'loading';
+      try {
+        // Track recently viewed model
+        this.trackRecentModel(this.currentModel);
 
       // Clear previous data
       this.documents = [];
@@ -797,10 +832,12 @@ module.exports = app => app.component('models', {
           if (savedPaths && savedPaths.length > 0) {
             this.filteredPaths = savedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
             if (this.filteredPaths.length === 0) {
-              this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+              this.applyDefaultProjection(event.suggestedFields);
+              this.saveProjectionPreference();
             }
           } else {
-            this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+            this.applyDefaultProjection(event.suggestedFields);
+            this.saveProjectionPreference();
           }
           this.selectedPaths = [...this.filteredPaths];
           this.syncProjectionFromPaths();
@@ -814,38 +851,64 @@ module.exports = app => app.component('models', {
           docsCount++;
         }
         if (event.message) {
-          this.status = 'loaded';
           throw new Error(event.message);
         }
       }
 
-      if (docsCount < limit) {
-        this.loadedAllDocs = true;
+        if (docsCount < limit) {
+          this.loadedAllDocs = true;
+        }
+      } finally {
+        this.status = 'loaded';
       }
+      this.$nextTick(() => this.checkIfScrolledToBottom());
     },
     async loadMoreDocuments() {
-      let docsCount = 0;
-      let numDocsReceived = false;
-
-      // Use async generator to stream SSEs
-      const params = this.buildDocumentFetchParams({ skip: this.documents.length });
-      for await (const event of api.Model.getDocumentsStream(params)) {
-        if (event.numDocs !== undefined && !numDocsReceived) {
-          this.numDocuments = event.numDocs;
-          numDocsReceived = true;
-        }
-        if (event.document) {
-          this.documents.push(event.document);
-          docsCount++;
-        }
-        if (event.message) {
-          this.status = 'loaded';
-          throw new Error(event.message);
-        }
+      const isLoadingMore = this.documents.length > 0;
+      if (isLoadingMore) {
+        this.loadingMore = true;
       }
+      this.status = 'loading';
+      try {
+        let docsCount = 0;
+        let numDocsReceived = false;
 
-      if (docsCount < limit) {
-        this.loadedAllDocs = true;
+        // Use async generator to stream SSEs
+        const params = this.buildDocumentFetchParams({ skip: this.documents.length });
+        for await (const event of api.Model.getDocumentsStream(params)) {
+          if (event.numDocs !== undefined && !numDocsReceived) {
+            this.numDocuments = event.numDocs;
+            numDocsReceived = true;
+          }
+          if (event.document) {
+            this.documents.push(event.document);
+            docsCount++;
+          }
+          if (event.message) {
+            throw new Error(event.message);
+          }
+        }
+
+        if (docsCount < limit) {
+          this.loadedAllDocs = true;
+        }
+      } finally {
+        this.loadingMore = false;
+        this.status = 'loaded';
+      }
+      this.$nextTick(() => this.checkIfScrolledToBottom());
+    },
+    applyDefaultProjection(suggestedFields) {
+      if (Array.isArray(suggestedFields) && suggestedFields.length > 0) {
+        this.filteredPaths = suggestedFields
+          .map(path => this.schemaPaths.find(p => p.path === path))
+          .filter(Boolean);
+      }
+      if (!this.filteredPaths || this.filteredPaths.length === 0) {
+        this.filteredPaths = this.schemaPaths.slice(0, DEFAULT_FIRST_N_FIELDS);
+      }
+      if (this.filteredPaths.length === 0) {
+        this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
       }
     },
     loadProjectionPreference() {
@@ -890,6 +953,53 @@ module.exports = app => app.component('models', {
       this.syncProjectionFromPaths();
       this.updateProjectionQuery();
       this.saveProjectionPreference();
+    },
+    openFieldSelection() {
+      this.shouldShowFieldModal = true;
+      this.selectedPaths = [...this.filteredPaths];
+    },
+    isSelected(pathPath) {
+      return this.selectedPaths.some(p => p.path === pathPath);
+    },
+    addOrRemove(path) {
+      const idx = this.selectedPaths.findIndex(p => p.path === path.path);
+      if (idx !== -1) {
+        this.selectedPaths.splice(idx, 1);
+      } else {
+        this.selectedPaths.push(path);
+        this.selectedPaths.sort((a, b) => {
+          if (a.path === '_id') return -1;
+          if (b.path === '_id') return 1;
+          return 0;
+        });
+      }
+    },
+    filterDocuments() {
+      if (this.selectedPaths.length === 0) {
+        const idPath = this.schemaPaths.find(p => p.path === '_id');
+        this.filteredPaths = idPath ? [idPath] : (this.schemaPaths.length > 0 ? [this.schemaPaths[0]] : []);
+      } else {
+        this.filteredPaths = [...this.selectedPaths];
+      }
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+      this.shouldShowFieldModal = false;
+      this.getDocuments();
+    },
+    selectAll() {
+      this.selectedPaths = [...this.schemaPaths].sort((a, b) => {
+        if (a.path === '_id') return -1;
+        if (b.path === '_id') return 1;
+        return 0;
+      });
+    },
+    deselectAll() {
+      this.selectedPaths = [];
+    },
+    resetDocuments() {
+      this.resetProjection();
+      this.shouldShowFieldModal = false;
     },
     initProjection(ev) {
       if (!this.projectionText || !this.projectionText.trim()) {
@@ -964,6 +1074,7 @@ module.exports = app => app.component('models', {
       this.syncProjectionFromPaths();
       this.updateProjectionQuery();
       this.saveProjectionPreference();
+      this.getDocuments();
     },
     updateProjectionQuery() {
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
@@ -985,6 +1096,7 @@ module.exports = app => app.component('models', {
         this.syncProjectionFromPaths();
         this.updateProjectionQuery();
         this.saveProjectionPreference();
+        this.getDocuments();
       }
     },
     addField(schemaPath) {
@@ -1000,6 +1112,7 @@ module.exports = app => app.component('models', {
         this.saveProjectionPreference();
         this.showAddFieldDropdown = false;
         this.addFieldFilterText = '';
+        this.getDocuments();
       }
     },
     toggleAddFieldDropdown() {
@@ -1010,16 +1123,19 @@ module.exports = app => app.component('models', {
       }
     },
     getComponentForPath(schemaPath) {
+      if (!schemaPath || typeof schemaPath !== 'object') {
+        return 'list-mixed';
+      }
       if (schemaPath.instance === 'Array') {
         return 'list-array';
       }
       if (schemaPath.instance === 'String') {
         return 'list-string';
       }
-      if (schemaPath.instance == 'Embedded') {
+      if (schemaPath.instance === 'Embedded') {
         return 'list-subdocument';
       }
-      if (schemaPath.instance == 'Mixed') {
+      if (schemaPath.instance === 'Mixed') {
         return 'list-mixed';
       }
       return 'list-default';
@@ -1043,6 +1159,31 @@ module.exports = app => app.component('models', {
       }
       this.edittingDoc = null;
       this.$toast.success('Document updated!');
+    },
+    copyCellValue(value) {
+      const text = value == null ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.$toast.success('Copied to clipboard');
+        }).catch(() => {
+          this.fallbackCopyText(text);
+        });
+      } else {
+        this.fallbackCopyText(text);
+      }
+    },
+    fallbackCopyText(text) {
+      try {
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        this.$toast.success('Copied to clipboard');
+      } catch (err) {
+        this.$toast.error('Copy failed');
+      }
     },
     handleDocumentClick(document, event) {
       if (this.selectMultiple) {

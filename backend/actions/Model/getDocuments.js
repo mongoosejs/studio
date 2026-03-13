@@ -4,6 +4,7 @@ const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const evaluateFilter = require('../../helpers/evaluateFilter');
 const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
+const getSuggestedProjection = require('../../helpers/getSuggestedProjection');
 const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
@@ -30,6 +31,9 @@ const GetDocumentsParams = new Archetype({
   sortDirection: {
     $type: 'number'
   },
+  fields: {
+    $type: 'string'
+  },
   roles: {
     $type: ['string']
   }
@@ -40,7 +44,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
   const { roles } = params;
   await authorize('Model.getDocuments', roles);
 
-  const { model, limit, skip, sortKey, sortDirection, searchText } = params;
+  const { model, limit, skip, sortKey, sortDirection, searchText, fields } = params;
 
   const Model = db.models[model];
   if (Model == null) {
@@ -61,12 +65,15 @@ module.exports = ({ db }) => async function getDocuments(params) {
   if (!sortObj.hasOwnProperty('_id')) {
     sortObj._id = -1;
   }
-  const cursor = await Model.
-    find(filter).
-    limit(limit).
-    skip(skip).
-    sort(sortObj).
-    cursor();
+
+  let query = Model.find(filter).limit(limit).skip(skip).sort(sortObj);
+  if (typeof fields === 'string' && fields.trim().length > 0) {
+    const projection = fields.split(',').map(s => s.trim()).filter(Boolean).join(' ');
+    if (projection.length > 0) {
+      query = query.select(projection);
+    }
+  }
+  const cursor = await query.cursor();
   const docs = [];
   for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
     docs.push(doc);
@@ -101,9 +108,12 @@ module.exports = ({ db }) => async function getDocuments(params) {
     await Model.estimatedDocumentCount() :
     await Model.countDocuments(filter);
 
+  const suggestedFields = getSuggestedProjection(Model, { filter });
+
   return {
     docs: docs.map(doc => doc.toJSON({ virtuals: false, getters: false, transform: false })),
     schemaPaths,
+    suggestedFields,
     numDocs: numDocuments
   };
 };
