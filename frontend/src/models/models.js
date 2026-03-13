@@ -11,8 +11,10 @@ const appendCSS = require('../appendCSS');
 appendCSS(require('./models.css'));
 
 const limit = 20;
+const DEFAULT_FIRST_N_FIELDS = 6;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
+const PROJECTION_STORAGE_KEY_PREFIX = 'studio:model-projection:';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
 
@@ -31,6 +33,7 @@ module.exports = app => app.component('models', {
     mongoDBIndexes: [],
     schemaIndexes: [],
     status: 'loading',
+    loadingMore: false,
     loadedAllDocs: false,
     edittingDoc: null,
     docEdits: null,
@@ -40,6 +43,10 @@ module.exports = app => app.component('models', {
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
     shouldShowFieldModal: false,
+    fieldModalFilterText: '',
+    projectionText: '',
+    addFieldFilterText: '',
+    showAddFieldDropdown: false,
     shouldShowIndexModal: false,
     shouldShowCollectionInfoModal: false,
     shouldShowUpdateMultipleModal: false,
@@ -71,9 +78,11 @@ module.exports = app => app.component('models', {
     this.loadRecentlyViewedModels();
   },
   beforeDestroy() {
-    document.removeEventListener('scroll', this.onScroll, true);
+    const el = this.$refs.documentsList;
+    if (el) el.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
+    document.removeEventListener('click', this.onOutsideAddFieldDropdownClick, true);
     document.documentElement.removeEventListener('studio-theme-changed', this.onStudioThemeChanged);
     document.removeEventListener('keydown', this.onCtrlP, true);
     this.destroyMap();
@@ -81,7 +90,10 @@ module.exports = app => app.component('models', {
   async mounted() {
     window.pageState = this;
     this.onScroll = () => this.checkIfScrolledToBottom();
-    document.addEventListener('scroll', this.onScroll, true);
+    this.$nextTick(() => {
+      const el = this.$refs.documentsList;
+      if (el) el.addEventListener('scroll', this.onScroll);
+    });
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
     this.onOutsideActionsMenuClick = event => {
@@ -93,7 +105,18 @@ module.exports = app => app.component('models', {
         this.closeActionsMenu();
       }
     };
+    this.onOutsideAddFieldDropdownClick = event => {
+      if (!this.showAddFieldDropdown) {
+        return;
+      }
+      const container = this.$refs.addFieldContainer;
+      if (container && !container.contains(event.target)) {
+        this.showAddFieldDropdown = false;
+        this.addFieldFilterText = '';
+      }
+    };
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
+    document.addEventListener('click', this.onOutsideAddFieldDropdownClick, true);
     this.onStudioThemeChanged = () => this.updateMapTileLayer();
     document.documentElement.addEventListener('studio-theme-changed', this.onStudioThemeChanged);
     this.onCtrlP = (event) => {
@@ -121,6 +144,14 @@ module.exports = app => app.component('models', {
     await this.initSearchFromUrl();
   },
   watch: {
+    model(newModel) {
+      if (newModel !== this.currentModel) {
+        this.currentModel = newModel;
+        if (this.currentModel != null) {
+          this.initSearchFromUrl();
+        }
+      }
+    },
     documents: {
       handler() {
         if (this.outputType === 'map' && this.mapInstance) {
@@ -225,6 +256,24 @@ module.exports = app => app.component('models', {
       }
 
       return geoFields;
+    },
+    availablePathsToAdd() {
+      const currentPaths = new Set(this.filteredPaths.map(p => p.path));
+      return this.schemaPaths.filter(p => !currentPaths.has(p.path));
+    },
+    filteredPathsToAdd() {
+      const available = this.availablePathsToAdd;
+      const query = (this.addFieldFilterText || '').trim().toLowerCase();
+      if (!query) return available;
+      return available.filter(p => p.path.toLowerCase().includes(query));
+    },
+    tableDisplayPaths() {
+      return this.filteredPaths.length > 0 ? this.filteredPaths : this.schemaPaths;
+    },
+    filteredSchemaPathsForModal() {
+      const q = (this.fieldModalFilterText || '').trim().toLowerCase();
+      if (!q) return this.schemaPaths;
+      return this.schemaPaths.filter(p => (p.path || '').toLowerCase().includes(q));
     }
   },
   methods: {
@@ -484,6 +533,13 @@ module.exports = app => app.component('models', {
         params.searchText = this.searchText;
       }
 
+      const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
+        ? this.filteredPaths.map(p => p.path).filter(Boolean)
+        : null;
+      if (fieldPaths && fieldPaths.length > 0) {
+        params.fields = fieldPaths.join(',');
+      }
+
       return params;
     },
     setSearchTextFromRoute() {
@@ -501,16 +557,24 @@ module.exports = app => app.component('models', {
         const sort = eval(`(${this.$route.query.sort})`);
         const path = Object.keys(sort)[0];
         const num = Object.values(sort)[0];
-        this.sortDocs(num, path);
+        for (const key in this.sortBy) {
+          delete this.sortBy[key];
+        }
+        this.sortBy[path] = num;
+        this.query.sort = `{${path}:${num}}`;
       }
-
-
       if (this.currentModel != null) {
         await this.getDocuments();
       }
       if (this.$route.query?.fields) {
-        const filter = this.$route.query.fields.split(',');
-        this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path));
+        const urlPaths = this.$route.query.fields.split(',').map(s => s.trim()).filter(Boolean);
+        if (urlPaths.length > 0) {
+          this.filteredPaths = urlPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+          if (this.filteredPaths.length > 0) {
+            this.syncProjectionFromPaths();
+            this.saveProjectionPreference();
+          }
+        }
       }
       this.status = 'loaded';
 
@@ -534,6 +598,7 @@ module.exports = app => app.component('models', {
       this.shouldShowCreateModal = true;
     },
     filterDocument(doc) {
+      if (this.filteredPaths.length === 0) return doc;
       const filteredDoc = {};
       for (let i = 0; i < this.filteredPaths.length; i++) {
         const path = this.filteredPaths[i].path;
@@ -546,17 +611,35 @@ module.exports = app => app.component('models', {
       if (this.status === 'loading' || this.loadedAllDocs) {
         return;
       }
-      const container = this.$refs.documentsList;
-      if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
-        this.status = 'loading';
-        const params = this.buildDocumentFetchParams({ skip: this.documents.length });
+      if (this.documents.length === 0) {
+        return;
+      }
+      const container = this.outputType === 'table' && this.$refs.documentsScrollContainer
+        ? this.$refs.documentsScrollContainer
+        : this.$refs.documentsList;
+      if (!container || container.scrollHeight <= 0) {
+        return;
+      }
+      const threshold = 150;
+      const nearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - threshold;
+      if (!nearBottom) {
+        return;
+      }
+      this.loadingMore = true;
+      this.status = 'loading';
+      try {
+        const skip = this.documents.length;
+        const params = this.buildDocumentFetchParams({ skip });
         const { docs } = await api.Model.getDocuments(params);
         if (docs.length < limit) {
           this.loadedAllDocs = true;
         }
         this.documents.push(...docs);
+      } finally {
+        this.loadingMore = false;
         this.status = 'loaded';
       }
+      this.$nextTick(() => this.checkIfScrolledToBottom());
     },
     async sortDocs(num, path) {
       let sorted = false;
@@ -573,6 +656,8 @@ module.exports = app => app.component('models', {
         this.query.sort = `{${path}:${num}}`;
         this.$router.push({ query: this.query });
       }
+      this.documents = [];
+      this.loadedAllDocs = false;
       await this.loadMoreDocuments();
     },
     async search(searchText) {
@@ -719,8 +804,11 @@ module.exports = app => app.component('models', {
       }
     },
     async getDocuments() {
-      // Track recently viewed model
-      this.trackRecentModel(this.currentModel);
+      this.loadingMore = false;
+      this.status = 'loading';
+      try {
+        // Track recently viewed model
+        this.trackRecentModel(this.currentModel);
 
       // Clear previous data
       this.documents = [];
@@ -750,8 +838,26 @@ module.exports = app => app.component('models', {
           for (const { path } of this.schemaPaths) {
             this.shouldExport[path] = true;
           }
-          this.filteredPaths = [...this.schemaPaths];
-          this.selectedPaths = [...this.schemaPaths];
+          const savedPaths = this.loadProjectionPreference();
+          if (savedPaths === null) {
+            this.applyDefaultProjection(event.suggestedFields);
+            this.saveProjectionPreference();
+          } else if (Array.isArray(savedPaths) && savedPaths.length === 0) {
+            this.filteredPaths = [];
+            this.projectionText = '';
+            this.saveProjectionPreference();
+          } else if (savedPaths && savedPaths.length > 0) {
+            this.filteredPaths = savedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+            if (this.filteredPaths.length === 0) {
+              this.applyDefaultProjection(event.suggestedFields);
+              this.saveProjectionPreference();
+            }
+          } else {
+            this.applyDefaultProjection(event.suggestedFields);
+            this.saveProjectionPreference();
+          }
+          this.selectedPaths = [...this.filteredPaths];
+          this.syncProjectionFromPaths();
           schemaPathsReceived = true;
         }
         if (event.numDocs !== undefined) {
@@ -762,107 +868,316 @@ module.exports = app => app.component('models', {
           docsCount++;
         }
         if (event.message) {
-          this.status = 'loaded';
           throw new Error(event.message);
         }
       }
 
-      if (docsCount < limit) {
-        this.loadedAllDocs = true;
+        if (docsCount < limit) {
+          this.loadedAllDocs = true;
+        }
+      } finally {
+        this.status = 'loaded';
       }
+      this.$nextTick(() => this.checkIfScrolledToBottom());
     },
     async loadMoreDocuments() {
-      let docsCount = 0;
-      let numDocsReceived = false;
-
-      // Use async generator to stream SSEs
-      const params = this.buildDocumentFetchParams({ skip: this.documents.length });
-      for await (const event of api.Model.getDocumentsStream(params)) {
-        if (event.numDocs !== undefined && !numDocsReceived) {
-          this.numDocuments = event.numDocs;
-          numDocsReceived = true;
-        }
-        if (event.document) {
-          this.documents.push(event.document);
-          docsCount++;
-        }
-        if (event.message) {
-          this.status = 'loaded';
-          throw new Error(event.message);
-        }
+      const isLoadingMore = this.documents.length > 0;
+      if (isLoadingMore) {
+        this.loadingMore = true;
       }
+      this.status = 'loading';
+      try {
+        let docsCount = 0;
+        let numDocsReceived = false;
 
-      if (docsCount < limit) {
-        this.loadedAllDocs = true;
+        // Use async generator to stream SSEs
+        const params = this.buildDocumentFetchParams({ skip: this.documents.length });
+        for await (const event of api.Model.getDocumentsStream(params)) {
+          if (event.numDocs !== undefined && !numDocsReceived) {
+            this.numDocuments = event.numDocs;
+            numDocsReceived = true;
+          }
+          if (event.document) {
+            this.documents.push(event.document);
+            docsCount++;
+          }
+          if (event.message) {
+            throw new Error(event.message);
+          }
+        }
+
+        if (docsCount < limit) {
+          this.loadedAllDocs = true;
+        }
+      } finally {
+        this.loadingMore = false;
+        this.status = 'loaded';
+      }
+      this.$nextTick(() => this.checkIfScrolledToBottom());
+    },
+    applyDefaultProjection(suggestedFields) {
+      if (Array.isArray(suggestedFields) && suggestedFields.length > 0) {
+        this.filteredPaths = suggestedFields
+          .map(path => this.schemaPaths.find(p => p.path === path))
+          .filter(Boolean);
+      }
+      if (!this.filteredPaths || this.filteredPaths.length === 0) {
+        this.filteredPaths = this.schemaPaths.slice(0, DEFAULT_FIRST_N_FIELDS);
+      }
+      if (this.filteredPaths.length === 0) {
+        this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
       }
     },
-    addOrRemove(path) {
-      const exists = this.selectedPaths.findIndex(x => x.path == path.path);
-      if (exists > 0) { // remove
-        this.selectedPaths.splice(exists, 1);
-      } else { // add
-        this.selectedPaths.push(path);
-        this.selectedPaths = Object.keys(this.selectedPaths).sort((k1, k2) => {
-          if (k1 === '_id' && k2 !== '_id') {
-            return -1;
-          }
-          if (k1 !== '_id' && k2 === '_id') {
-            return 1;
-          }
-          return 0;
-        }).map(key => this.selectedPaths[key]);
+    loadProjectionPreference() {
+      if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
+        return null;
+      }
+      const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
+      const stored = window.localStorage.getItem(key);
+      if (stored === null || stored === undefined) return null;
+      if (stored === '') return [];
+      try {
+        const paths = stored.split(',').map(s => s.trim()).filter(Boolean);
+        return paths.length > 0 ? paths : [];
+      } catch (e) {
+        return null;
+      }
+    },
+    saveProjectionPreference() {
+      if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
+        return;
+      }
+      const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
+      const paths = this.filteredPaths.map(p => p.path).join(',');
+      window.localStorage.setItem(key, paths);
+    },
+    addAllFields() {
+      this.filteredPaths = [...this.schemaPaths].sort((a, b) => {
+        if (a.path === '_id') return -1;
+        if (b.path === '_id') return 1;
+        return 0;
+      });
+      this.selectedPaths = [...this.filteredPaths];
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+    },
+    resetProjection() {
+      const idPath = this.schemaPaths.find(p => p.path === '_id');
+      this.filteredPaths = idPath ? [idPath] : (this.schemaPaths.length > 0 ? [this.schemaPaths[0]] : []);
+      this.selectedPaths = [...this.filteredPaths];
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+    },
+    clearProjection() {
+      this.filteredPaths = [];
+      this.selectedPaths = [];
+      this.projectionText = '';
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+      this.getDocuments();
+    },
+    async applySuggestedProjection() {
+      if (!this.currentModel) return;
+      try {
+        const { suggestedFields } = await api.Model.getSuggestedProjection({
+          model: this.currentModel,
+          searchText: this.searchText
+        });
+        this.applyDefaultProjection(suggestedFields);
+        this.selectedPaths = [...this.filteredPaths];
+        this.syncProjectionFromPaths();
+        this.updateProjectionQuery();
+        this.saveProjectionPreference();
+        await this.getDocuments();
+      } catch (err) {
+        this.$toast.error(err.message || 'Failed to get suggested projection');
       }
     },
     openFieldSelection() {
-      if (this.$route.query?.fields) {
-        this.selectedPaths.length = 0;
-        console.log('there are fields in play', this.$route.query.fields);
-        const fields = this.$route.query.fields.split(',');
-        for (let i = 0; i < fields.length; i++) {
-          this.selectedPaths.push({ path: fields[i] });
-        }
-      } else {
-        this.selectedPaths = [{ path: '_id' }];
-      }
+      this.fieldModalFilterText = '';
       this.shouldShowFieldModal = true;
+      this.selectedPaths = [...this.filteredPaths];
+    },
+    isSelected(pathPath) {
+      return this.selectedPaths.some(p => p.path === pathPath);
+    },
+    addOrRemove(path) {
+      const idx = this.selectedPaths.findIndex(p => p.path === path.path);
+      if (idx !== -1) {
+        this.selectedPaths.splice(idx, 1);
+      } else {
+        this.selectedPaths.push(path);
+        this.selectedPaths.sort((a, b) => {
+          if (a.path === '_id') return -1;
+          if (b.path === '_id') return 1;
+          return 0;
+        });
+      }
     },
     filterDocuments() {
-      if (this.selectedPaths.length > 0) {
-        this.filteredPaths = [...this.selectedPaths];
+      if (this.selectedPaths.length === 0) {
+        const idPath = this.schemaPaths.find(p => p.path === '_id');
+        this.filteredPaths = idPath ? [idPath] : (this.schemaPaths.length > 0 ? [this.schemaPaths[0]] : []);
       } else {
-        this.filteredPaths.length = 0;
+        this.filteredPaths = [...this.selectedPaths];
       }
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
       this.shouldShowFieldModal = false;
-      const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-      this.query.fields = selectedParams;
-      this.$router.push({ query: this.query });
+      this.getDocuments();
     },
-    resetDocuments() {
-      this.selectedPaths = [...this.filteredPaths];
-      this.query.fields = {};
-      this.$router.push({ query: this.query });
-      this.shouldShowFieldModal = false;
+    selectAll() {
+      this.selectedPaths = [...this.schemaPaths].sort((a, b) => {
+        if (a.path === '_id') return -1;
+        if (b.path === '_id') return 1;
+        return 0;
+      });
     },
     deselectAll() {
       this.selectedPaths = [];
     },
-    selectAll() {
-      this.selectedPaths = [...this.schemaPaths];
+    resetDocuments() {
+      this.resetProjection();
+      this.shouldShowFieldModal = false;
     },
-    isSelected(path) {
-      return this.selectedPaths.find(x => x.path == path);
+    initProjection(ev) {
+      if (!this.projectionText || !this.projectionText.trim()) {
+        this.projectionText = '{}';
+        this.$nextTick(() => {
+          if (ev && ev.target) {
+            ev.target.setSelectionRange(1, 1);
+          }
+        });
+      }
+    },
+    syncProjectionFromPaths() {
+      if (this.filteredPaths.length === 0) {
+        this.projectionText = '';
+        return;
+      }
+      this.projectionText = '{ ' + this.filteredPaths.map(p => p.path + ': 1').join(', ') + ' }';
+    },
+    parseProjectionInput(text) {
+      if (!text || typeof text !== 'string') {
+        return [];
+      }
+      const trimmed = text.trim();
+      if (!trimmed) {
+        return [];
+      }
+      let paths = [];
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          const obj = eval('(' + trimmed + ')');
+          const inclusionKeys = Object.keys(obj).filter(k => obj[k]);
+          const exclusionKeys = Object.keys(obj).filter(k => !obj[k]);
+          if (exclusionKeys.length > 0 && inclusionKeys.length === 0) {
+            const excludeSet = new Set(exclusionKeys);
+            paths = this.schemaPaths.map(p => p.path).filter(p => !excludeSet.has(p));
+          } else {
+            paths = inclusionKeys;
+          }
+        } catch (e) {
+          return null;
+        }
+      } else {
+        paths = trimmed.split(/\s+/).filter(Boolean);
+      }
+      return paths;
+    },
+    applyProjectionFromInput() {
+      const paths = this.parseProjectionInput(this.projectionText);
+      if (paths === null) {
+        this.syncProjectionFromPaths();
+        return;
+      }
+      if (paths.length === 0) {
+        this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+        if (this.filteredPaths.length === 0 && this.schemaPaths.length > 0) {
+          const idPath = this.schemaPaths.find(p => p.path === '_id');
+          this.filteredPaths = idPath ? [idPath] : [this.schemaPaths[0]];
+        }
+      } else {
+        this.filteredPaths = paths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+        const validPaths = new Set(this.schemaPaths.map(p => p.path));
+        for (const path of paths) {
+          if (validPaths.has(path) && !this.filteredPaths.find(p => p.path === path)) {
+            this.filteredPaths.push(this.schemaPaths.find(p => p.path === path));
+          }
+        }
+        if (this.filteredPaths.length === 0) {
+          this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+        }
+      }
+      this.selectedPaths = [...this.filteredPaths];
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+      this.getDocuments();
+    },
+    updateProjectionQuery() {
+      const selectedParams = this.filteredPaths.map(x => x.path).join(',');
+      if (selectedParams) {
+        this.query.fields = selectedParams;
+      } else {
+        delete this.query.fields;
+      }
+      this.$router.push({ query: this.query });
+    },
+    removeField(schemaPath) {
+      const index = this.filteredPaths.findIndex(p => p.path === schemaPath.path);
+      if (index !== -1) {
+        this.filteredPaths.splice(index, 1);
+        if (this.filteredPaths.length === 0) {
+          const idPath = this.schemaPaths.find(p => p.path === '_id');
+          this.filteredPaths = idPath ? [idPath] : [];
+        }
+        this.syncProjectionFromPaths();
+        this.updateProjectionQuery();
+        this.saveProjectionPreference();
+        this.getDocuments();
+      }
+    },
+    addField(schemaPath) {
+      if (!this.filteredPaths.find(p => p.path === schemaPath.path)) {
+        this.filteredPaths.push(schemaPath);
+        this.filteredPaths.sort((a, b) => {
+          if (a.path === '_id') return -1;
+          if (b.path === '_id') return 1;
+          return 0;
+        });
+        this.syncProjectionFromPaths();
+        this.updateProjectionQuery();
+        this.saveProjectionPreference();
+        this.showAddFieldDropdown = false;
+        this.addFieldFilterText = '';
+        this.getDocuments();
+      }
+    },
+    toggleAddFieldDropdown() {
+      this.showAddFieldDropdown = !this.showAddFieldDropdown;
+      if (this.showAddFieldDropdown) {
+        this.addFieldFilterText = '';
+        this.$nextTick(() => this.$refs.addFieldFilterInput?.focus());
+      }
     },
     getComponentForPath(schemaPath) {
+      if (!schemaPath || typeof schemaPath !== 'object') {
+        return 'list-mixed';
+      }
       if (schemaPath.instance === 'Array') {
         return 'list-array';
       }
       if (schemaPath.instance === 'String') {
         return 'list-string';
       }
-      if (schemaPath.instance == 'Embedded') {
+      if (schemaPath.instance === 'Embedded') {
         return 'list-subdocument';
       }
-      if (schemaPath.instance == 'Mixed') {
+      if (schemaPath.instance === 'Mixed') {
         return 'list-mixed';
       }
       return 'list-default';
@@ -886,6 +1201,31 @@ module.exports = app => app.component('models', {
       }
       this.edittingDoc = null;
       this.$toast.success('Document updated!');
+    },
+    copyCellValue(value) {
+      const text = value == null ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.$toast.success('Copied to clipboard');
+        }).catch(() => {
+          this.fallbackCopyText(text);
+        });
+      } else {
+        this.fallbackCopyText(text);
+      }
+    },
+    fallbackCopyText(text) {
+      try {
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        this.$toast.success('Copied to clipboard');
+      } catch (err) {
+        this.$toast.error('Copy failed');
+      }
     },
     handleDocumentClick(document, event) {
       if (this.selectMultiple) {
