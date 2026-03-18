@@ -37,7 +37,8 @@ module.exports = ({ db, options }) => async function createChatMessage(params) {
     modelDescriptions,
     'Current draft document:\n' + (documentData || '')
   ].join('\n\n');
-  const system = systemPrompt + '\n\n' + context + (options?.context ? '\n\n' + options.context : '');
+  const currentDateContext = `Current date: ${new Date().toISOString().slice(0, 10)}`;
+  const system = [systemPrompt, currentDateContext, context, options?.context].filter(Boolean).join('\n\n');
 
   const llmMessages = [{ role: 'user', content: [{ type: 'text', text: content }] }];
   const res = await callLLM(llmMessages, system, options);

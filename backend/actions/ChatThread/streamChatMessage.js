@@ -76,7 +76,8 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
   }
 
   const modelDescriptions = getModelDescriptions(db);
-  const system = systemPrompt + '\n\n' + modelDescriptions + (options?.context ? '\n\n' + options.context : '');
+  const currentDateContext = `Current date: ${new Date().toISOString().slice(0, 10)}`;
+  const system = [systemPrompt, currentDateContext, modelDescriptions, options?.context].filter(Boolean).join('\n\n');
 
   const userChatMessage = await ChatMessage.create({
     chatThreadId,
