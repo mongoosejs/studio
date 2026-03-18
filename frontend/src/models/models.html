@@ -167,12 +167,33 @@
                   Create
                 </button>
                 <button
-                  @click="openFieldSelection(); showActionsMenu = false"
+                  @click="toggleProjectionMenu(); showActionsMenu = false"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm hover:bg-muted"
+                  :class="isProjectionMenuSelected ? 'text-primary font-semibold' : 'text-content-secondary'"
+                >
+                  {{ isProjectionMenuSelected ? 'Projection (On)' : 'Projection' }}
+                </button>
+                <button
+                  v-if="isProjectionMenuSelected"
+                  @click="clearProjection()"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                  :disabled="outputType === 'map'"
+                  :class="outputType === 'map' ? 'cursor-not-allowed opacity-50' : ''"
                 >
-                  Projection
+                  Reset
                 </button>
+                <async-button
+                  v-if="isProjectionMenuSelected"
+                  type="button"
+                  @click="applySuggestedProjection()"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                  :disabled="outputType === 'map'"
+                  :class="outputType === 'map' ? 'cursor-not-allowed opacity-50' : ''"
+                >
+                  Suggest
+                </async-button>
                 <button
                   @click="openIndexModal"
                   type="button"
@@ -228,36 +249,16 @@
             </button>
           </span>
         </div>
-        <div v-if="outputType === 'table' || outputType === 'json'" class="flex items-center gap-2 w-full mt-2 flex-shrink-0">
+        <div v-if="isProjectionMenuSelected && (outputType === 'table' || outputType === 'json')" class="flex items-center gap-2 w-full mt-2 flex-shrink-0">
           <input
+            ref="projectionInput"
             v-model="projectionText"
             type="text"
             placeholder="Projection: { name: 1, email: 1 } or name, email"
             class="flex-1 min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            @focus="initProjection($event)"
             @keydown.enter="applyProjectionFromInput()"
           />
-          <button
-            type="button"
-            @click="applyProjectionFromInput()"
-            class="shrink-0 rounded px-2 py-1.5 text-sm font-semibold bg-primary text-primary-text hover:bg-primary-hover focus:outline focus:ring-2 focus:ring-primary focus:ring-offset-1"
-          >
-            Apply
-          </button>
-          <button
-            type="button"
-            @click="clearProjection()"
-            class="shrink-0 rounded px-2 py-1.5 text-sm font-semibold bg-surface text-content border border-edge hover:bg-muted focus:outline focus:ring-2 focus:ring-edge focus:ring-offset-1"
-          >
-            Reset
-          </button>
-          <async-button
-            type="button"
-            @click="applySuggestedProjection"
-            class="shrink-0 rounded px-2 py-1.5 text-sm font-semibold bg-surface text-content border border-edge hover:bg-muted focus:outline focus:ring-2 focus:ring-edge focus:ring-offset-1"
-            title="Apply projection from scoring (required, indexed, query fields, etc.)"
-          >
-            Suggest
-          </async-button>
         </div>
       </div>
     <div class="documents-container relative">
@@ -536,77 +537,6 @@
           <div class="font-semibold text-content-secondary">Capped</div>
           <div class="text-content">{{ collectionInfo.capped ? 'Yes' : 'No' }}</div>
         </div>
-      </div>
-    </template>
-  </modal>
-  <modal v-if="shouldShowFieldModal">
-    <template v-slot:body>
-      <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
-      <h2 class="text-lg font-semibold text-content mb-3 pr-8">Choose fields for projection</h2>
-      <input
-        v-model="fieldModalFilterText"
-        type="text"
-        placeholder="Filter fields..."
-        class="w-full rounded border border-edge bg-surface px-2 py-1.5 text-sm placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary mb-3"
-      />
-      <div class="max-h-64 overflow-y-auto border border-edge rounded-lg mb-4">
-        <div
-          v-for="(path, index) in filteredSchemaPathsForModal"
-          :key="path.path"
-          class="flex items-center gap-2 px-3 py-2 border-b border-edge last:border-b-0 hover:bg-muted/50"
-        >
-          <input
-            :id="'proj-field-' + path.path.replace(/\./g, '_')"
-            type="checkbox"
-            class="h-4 w-4 rounded border-edge-strong text-primary focus:ring-primary accent-primary"
-            :checked="isSelected(path.path)"
-            @change="addOrRemove(path)"
-          />
-          <label :for="'proj-field-' + path.path.replace(/\./g, '_')" class="flex-1 min-w-0 cursor-pointer text-sm text-content truncate">
-            {{ path.path }}
-          </label>
-          <span class="text-xs text-content-tertiary shrink-0">{{ path.instance || 'unknown' }}</span>
-        </div>
-        <p v-if="filteredSchemaPathsForModal.length === 0" class="px-3 py-4 text-sm text-content-tertiary">
-          No fields match "{{ fieldModalFilterText.trim() }}"
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-2 justify-end">
-        <button
-          type="button"
-          @click="filterDocuments()"
-          class="rounded px-2.5 py-1.5 text-sm font-semibold bg-primary text-primary-text hover:bg-primary-hover focus:outline focus:ring-2 focus:ring-primary focus:ring-offset-1"
-        >
-          Apply
-        </button>
-        <button
-          type="button"
-          @click="selectAll()"
-          class="rounded px-2.5 py-1.5 text-sm font-semibold bg-surface text-content border border-edge hover:bg-muted focus:outline focus:ring-2 focus:ring-edge focus:ring-offset-1"
-        >
-          Select All
-        </button>
-        <button
-          type="button"
-          @click="deselectAll()"
-          class="rounded px-2.5 py-1.5 text-sm font-semibold bg-surface text-content border border-edge hover:bg-muted focus:outline focus:ring-2 focus:ring-edge focus:ring-offset-1"
-        >
-          Deselect All
-        </button>
-        <button
-          type="button"
-          @click="resetDocuments()"
-          class="rounded px-2.5 py-1.5 text-sm font-semibold bg-surface text-content border border-edge hover:bg-muted focus:outline focus:ring-2 focus:ring-edge focus:ring-offset-1"
-        >
-          Reset to default
-        </button>
-        <button
-          type="button"
-          @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];"
-          class="rounded px-2.5 py-1.5 text-sm font-semibold bg-surface text-content border border-edge hover:bg-muted focus:outline focus:ring-2 focus:ring-edge focus:ring-offset-1"
-        >
-          Cancel
-        </button>
       </div>
     </template>
   </modal>

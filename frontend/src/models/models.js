@@ -15,6 +15,7 @@ const DEFAULT_FIRST_N_FIELDS = 6;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
 const PROJECTION_STORAGE_KEY_PREFIX = 'studio:model-projection:';
+const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
 
@@ -45,6 +46,7 @@ module.exports = app => app.component('models', {
     shouldShowFieldModal: false,
     fieldModalFilterText: '',
     projectionText: '',
+    isProjectionMenuSelected: false,
     addFieldFilterText: '',
     showAddFieldDropdown: false,
     shouldShowIndexModal: false,
@@ -76,6 +78,7 @@ module.exports = app => app.component('models', {
     this.loadOutputPreference();
     this.loadSelectedGeoField();
     this.loadRecentlyViewedModels();
+    this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
   },
   beforeDestroy() {
     const el = this.$refs.documentsList;
@@ -127,6 +130,8 @@ module.exports = app => app.component('models', {
     };
     document.addEventListener('keydown', this.onCtrlP, true);
     this.query = Object.assign({}, this.$route.query);
+    // Keep UI mode in sync with the URL on remounts.
+    this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     await this.loadModelCounts();
@@ -142,6 +147,17 @@ module.exports = app => app.component('models', {
     }
 
     await this.initSearchFromUrl();
+    if (this.isProjectionMenuSelected && this.outputType === 'map') {
+      // Projection input is not rendered in map view.
+      this.setOutputType('json');
+    }
+    this.$nextTick(() => {
+      if (!this.isProjectionMenuSelected) return;
+      const input = this.$refs.projectionInput;
+      if (input && typeof input.focus === 'function') {
+        input.focus();
+      }
+    });
   },
   watch: {
     model(newModel) {
@@ -693,6 +709,23 @@ module.exports = app => app.component('models', {
     },
     closeActionsMenu() {
       this.showActionsMenu = false;
+    },
+    toggleProjectionMenu() {
+      const next = !this.isProjectionMenuSelected;
+      this.isProjectionMenuSelected = next;
+
+      // Because the route-view is keyed on `$route.fullPath`, query changes remount this component.
+      // Persist projection UI state in the URL so Reset/Suggest don't turn the mode off.
+      if (next) {
+        this.query[PROJECTION_MODE_QUERY_KEY] = '1';
+        if (this.outputType === 'map') {
+          this.setOutputType('json');
+        }
+      } else {
+        delete this.query[PROJECTION_MODE_QUERY_KEY];
+      }
+
+      this.$router.push({ query: this.query });
     },
     async openCollectionInfo() {
       this.closeActionsMenu();
