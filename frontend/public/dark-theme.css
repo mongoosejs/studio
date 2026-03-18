@@ -115,6 +115,31 @@
   border-color: var(--studio-border-success);
 }
 
+/* Hover/other status borders (200-level is handled above) */
+.dark .border-yellow-300 {
+  border-color: var(--studio-border-warning);
+}
+
+.dark .border-green-300 {
+  border-color: var(--studio-border-success);
+}
+
+.dark .border-red-300 {
+  border-color: var(--studio-border-error);
+}
+
+.dark .hover\:border-yellow-300:hover {
+  border-color: var(--studio-border-warning);
+}
+
+.dark .hover\:border-green-300:hover {
+  border-color: var(--studio-border-success);
+}
+
+.dark .hover\:border-red-300:hover {
+  border-color: var(--studio-border-error);
+}
+
 /* Status text colors – label (600-level) and value (700–900-level) */
 .dark .text-yellow-600,
 .dark .text-yellow-700,
@@ -152,6 +177,28 @@
 }
 
 .dark .ring-gray-600\/20 {
+  --tw-ring-color: var(--studio-ring-muted);
+}
+
+/* Status ring colors in dark mode */
+.dark .ring-yellow-400,
+.dark .ring-yellow-500 {
+  --tw-ring-color: var(--studio-ring-warning);
+}
+
+.dark .ring-green-400,
+.dark .ring-green-500 {
+  --tw-ring-color: var(--studio-ring-success);
+}
+
+.dark .ring-red-400,
+.dark .ring-red-500 {
+  --tw-ring-color: var(--studio-ring-error);
+}
+
+.dark .ring-gray-400,
+.dark .ring-gray-500,
+.dark .ring-slate-500 {
   --tw-ring-color: var(--studio-ring-muted);
 }
 
@@ -456,6 +503,25 @@
 
 .dark .hover\:to-green-700:hover {
   --tw-gradient-to: #15803d;
+}
+
+/* Red action buttons: pending cancel (dark mode) */
+.dark .from-red-500 {
+  --tw-gradient-from: #b91c1c;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgb(185 28 28 / 0));
+}
+
+.dark .to-red-600 {
+  --tw-gradient-to: #991b1b;
+}
+
+.dark .hover\:from-red-600:hover {
+  --tw-gradient-from: #dc2626;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgb(220 38 38 / 0));
+}
+
+.dark .hover\:to-red-700:hover {
+  --tw-gradient-to: #b91c1c;
 }
 
 /* ---- Input placeholder contrast ---- */
