@@ -302,11 +302,6 @@ module.exports = app => app.component('models', {
     tableDisplayPaths() {
       return this.filteredPaths.length > 0 ? this.filteredPaths : this.schemaPaths;
     },
-    filteredSchemaPathsForModal() {
-      const q = (this.fieldModalFilterText || '').trim().toLowerCase();
-      if (!q) return this.schemaPaths;
-      return this.schemaPaths.filter(p => (p.path || '').toLowerCase().includes(q));
-    }
   },
   methods: {
     highlightMatch(model) {
@@ -626,9 +621,6 @@ module.exports = app => app.component('models', {
       this.shouldShowCreateModal = false;
       await this.getDocuments();
     },
-    initializeDocumentData() {
-      this.shouldShowCreateModal = true;
-    },
     filterDocument(doc) {
       if (this.filteredPaths.length === 0) return doc;
       const filteredDoc = {};
@@ -843,15 +835,6 @@ module.exports = app => app.component('models', {
       }
       return formatValue(value / 1000000000, 'B');
     },
-    checkIndexLocation(indexName) {
-      if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
-        return 'text-gray-500';
-      } else if (this.schemaIndexes.find(x => x.name == indexName)) {
-        return 'text-forest-green-500';
-      } else {
-        return 'text-valencia-500';
-      }
-    },
     async getDocuments() {
       this.loadingMore = false;
       this.status = 'loading';
@@ -1006,25 +989,6 @@ module.exports = app => app.component('models', {
       const paths = this.filteredPaths.map(p => p.path).join(',');
       window.localStorage.setItem(key, paths);
     },
-    addAllFields() {
-      this.filteredPaths = [...this.schemaPaths].sort((a, b) => {
-        if (a.path === '_id') return -1;
-        if (b.path === '_id') return 1;
-        return 0;
-      });
-      this.selectedPaths = [...this.filteredPaths];
-      this.syncProjectionFromPaths();
-      this.updateProjectionQuery();
-      this.saveProjectionPreference();
-    },
-    resetProjection() {
-      const idPath = this.schemaPaths.find(p => p.path === '_id');
-      this.filteredPaths = idPath ? [idPath] : (this.schemaPaths.length > 0 ? [this.schemaPaths[0]] : []);
-      this.selectedPaths = [...this.filteredPaths];
-      this.syncProjectionFromPaths();
-      this.updateProjectionQuery();
-      this.saveProjectionPreference();
-    },
     clearProjection() {
       // Keep current filter input in sync with the URL so projection reset
       // does not unintentionally wipe the filter on remount.
@@ -1063,54 +1027,6 @@ module.exports = app => app.component('models', {
       } catch (err) {
         this.$toast.error(err.message || 'Failed to get suggested projection');
       }
-    },
-    openFieldSelection() {
-      this.fieldModalFilterText = '';
-      this.shouldShowFieldModal = true;
-      this.selectedPaths = [...this.filteredPaths];
-    },
-    isSelected(pathPath) {
-      return this.selectedPaths.some(p => p.path === pathPath);
-    },
-    addOrRemove(path) {
-      const idx = this.selectedPaths.findIndex(p => p.path === path.path);
-      if (idx !== -1) {
-        this.selectedPaths.splice(idx, 1);
-      } else {
-        this.selectedPaths.push(path);
-        this.selectedPaths.sort((a, b) => {
-          if (a.path === '_id') return -1;
-          if (b.path === '_id') return 1;
-          return 0;
-        });
-      }
-    },
-    filterDocuments() {
-      if (this.selectedPaths.length === 0) {
-        const idPath = this.schemaPaths.find(p => p.path === '_id');
-        this.filteredPaths = idPath ? [idPath] : (this.schemaPaths.length > 0 ? [this.schemaPaths[0]] : []);
-      } else {
-        this.filteredPaths = [...this.selectedPaths];
-      }
-      this.syncProjectionFromPaths();
-      this.updateProjectionQuery();
-      this.saveProjectionPreference();
-      this.shouldShowFieldModal = false;
-      this.getDocuments();
-    },
-    selectAll() {
-      this.selectedPaths = [...this.schemaPaths].sort((a, b) => {
-        if (a.path === '_id') return -1;
-        if (b.path === '_id') return 1;
-        return 0;
-      });
-    },
-    deselectAll() {
-      this.selectedPaths = [];
-    },
-    resetDocuments() {
-      this.resetProjection();
-      this.shouldShowFieldModal = false;
     },
     initProjection(ev) {
       if (!this.projectionText || !this.projectionText.trim()) {
