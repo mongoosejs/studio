@@ -1015,8 +1015,7 @@ module.exports = app => app.component('models', {
       if (!this.currentModel) return;
       try {
         const { suggestedFields } = await api.Model.getSuggestedProjection({
-          model: this.currentModel,
-          searchText: this.searchText
+          model: this.currentModel
         });
         this.applyDefaultProjection(suggestedFields);
         this.selectedPaths = [...this.filteredPaths];

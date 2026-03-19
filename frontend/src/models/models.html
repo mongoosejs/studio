@@ -116,8 +116,11 @@
           <button
             @click="stagingSelect"
             type="button"
-            :class="{ 'bg-page0 ring-inset ring-2 ring-gray-300 hover:bg-gray-600': selectMultiple, 'bg-primary hover:bg-primary-hover' : !selectMultiple }"
-            class="rounded px-2 py-2 text-sm font-semibold text-primary-text shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            :class="{
+              'bg-page0 ring-inset ring-2 ring-gray-300 hover:bg-gray-200 text-content-secondary': selectMultiple,
+              'bg-primary hover:bg-primary-hover text-primary-text': !selectMultiple
+            }"
+            class="rounded px-2 py-2 text-sm font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {{ selectMultiple ? 'Cancel' : 'Select' }}
           </button>
@@ -188,6 +191,13 @@
                   Find oldest document
                 </button>
                 <button
+                  @click="resetFilter()"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Reset Filter
+                </button>
+                <button
                   @click="toggleProjectionMenu(); showActionsMenu = false"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm hover:bg-muted"
@@ -202,14 +212,6 @@
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Reset Projection
-                </button>
-                <button
-                  v-if="isProjectionMenuSelected"
-                  @click="resetFilter()"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
-                >
-                  Reset Filter
                 </button>
                 <async-button
                   v-if="isProjectionMenuSelected"
