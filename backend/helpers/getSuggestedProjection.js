@@ -37,6 +37,8 @@ function schemaOrderTiebreaker(index, total) {
  * - Arrays, Mixed, nested (Embedded): penalties (subtract points)
  * - Number, Date, Boolean, ObjectId: small positive
  * - schema order: tiebreaker
+ * Then groups the fields by their type so instead of it being String, Number, String, ObjectId
+ * It becomes String, String, Number, ObjectId
  *
  * @param {import('mongoose').Model} Model - Mongoose model
  * @param {{ limit?: number }} options - limit max paths returned
