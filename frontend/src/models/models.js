@@ -638,9 +638,14 @@ module.exports = app => app.component('models', {
       if (this.documents.length === 0) {
         return;
       }
-      const container = this.outputType === 'table' && this.$refs.documentsScrollContainer
-        ? this.$refs.documentsScrollContainer
-        : this.$refs.documentsList;
+      let container;
+      if (this.outputType === 'table') {
+        container = this.$refs.documentsScrollContainer || this.$refs.documentsList;
+      } else {
+        // For non-table views, the actual scrolling may occur on an inner
+        // container (e.g. `.documents-container`), so prefer that ref if present.
+        container = this.$refs.documentsContainer || this.$refs.documentsList;
+      }
       if (!container || container.scrollHeight <= 0) {
         return;
       }
