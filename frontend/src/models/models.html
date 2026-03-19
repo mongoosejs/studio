@@ -167,34 +167,6 @@
                   Create
                 </button>
                 <button
-                  @click="toggleProjectionMenu(); showActionsMenu = false"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm hover:bg-muted"
-                  :class="isProjectionMenuSelected ? 'text-primary font-semibold' : 'text-content-secondary'"
-                >
-                  {{ isProjectionMenuSelected ? 'Projection (On)' : 'Projection' }}
-                </button>
-                <button
-                  v-if="isProjectionMenuSelected"
-                  @click="clearProjection()"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
-                  :disabled="outputType === 'map'"
-                  :class="outputType === 'map' ? 'cursor-not-allowed opacity-50' : ''"
-                >
-                  Reset
-                </button>
-                <async-button
-                  v-if="isProjectionMenuSelected"
-                  type="button"
-                  @click="applySuggestedProjection()"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
-                  :disabled="outputType === 'map'"
-                  :class="outputType === 'map' ? 'cursor-not-allowed opacity-50' : ''"
-                >
-                  Suggest
-                </async-button>
-                <button
                   @click="openIndexModal"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
@@ -215,6 +187,38 @@
                 >
                   Find oldest document
                 </button>
+                <button
+                  @click="toggleProjectionMenu(); showActionsMenu = false"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm hover:bg-muted"
+                  :class="isProjectionMenuSelected ? 'text-primary font-semibold' : 'text-content-secondary'"
+                >
+                  {{ isProjectionMenuSelected ? 'Projection (On)' : 'Projection' }}
+                </button>
+                <button
+                  v-if="isProjectionMenuSelected"
+                  @click="clearProjection()"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Reset Projection
+                </button>
+                <button
+                  v-if="isProjectionMenuSelected"
+                  @click="resetFilter()"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Reset Filter
+                </button>
+                <async-button
+                  v-if="isProjectionMenuSelected"
+                  type="button"
+                  @click="applySuggestedProjection()"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Suggest
+                </async-button>
               </div>
             </div>
           </div>
@@ -254,7 +258,7 @@
             ref="projectionInput"
             v-model="projectionText"
             type="text"
-            placeholder="Projection: { name: 1, email: 1 } or name, email"
+            placeholder="Projection: name email, or -password"
             class="flex-1 min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             @focus="initProjection($event)"
             @keydown.enter="applyProjectionFromInput()"
@@ -314,11 +318,13 @@
                         v-if="filteredPaths.length > 0"
                         type="button"
                         @click.stop="removeField(path)"
-                        class="p-0.5 rounded text-content-tertiary hover:text-valencia-600 hover:bg-valencia-50"
+                        class="p-1.5 rounded-md border border-transparent text-content-tertiary hover:text-valencia-600 hover:bg-valencia-50 hover:border-valencia-200 focus:outline-none focus:ring-2 focus:ring-valencia-500/30"
                         title="Remove column"
                         aria-label="Remove column"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"> <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /> </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
                       </button>
                     </span>
                   </div>

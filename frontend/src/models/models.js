@@ -70,7 +70,9 @@ module.exports = app => app.component('models', {
     collectionInfo: null,
     modelSearch: '',
     recentlyViewedModels: [],
-    showModelSwitcher: false
+    showModelSwitcher: false,
+    suppressScrollCheck: false,
+    scrollTopToRestore: null
   }),
   created() {
     this.currentModel = this.model;
@@ -91,6 +93,20 @@ module.exports = app => app.component('models', {
     this.destroyMap();
   },
   async mounted() {
+    // Persist scroll restoration across remounts.
+    // This component is keyed by `$route.fullPath`, so query changes (e.g. projection updates)
+    // recreate the component and reset scroll position.
+    if (typeof window !== 'undefined') {
+      if (typeof window.__studioModelsScrollTopToRestore === 'number') {
+        this.scrollTopToRestore = window.__studioModelsScrollTopToRestore;
+      }
+      if (window.__studioModelsSuppressScrollCheck === true) {
+        this.suppressScrollCheck = true;
+      }
+      delete window.__studioModelsScrollTopToRestore;
+      delete window.__studioModelsSuppressScrollCheck;
+    }
+
     window.pageState = this;
     this.onScroll = () => this.checkIfScrolledToBottom();
     this.$nextTick(() => {
@@ -911,7 +927,13 @@ module.exports = app => app.component('models', {
       } finally {
         this.status = 'loaded';
       }
-      this.$nextTick(() => this.checkIfScrolledToBottom());
+      this.$nextTick(() => {
+        this.restoreScrollPosition();
+        if (!this.suppressScrollCheck) {
+          this.checkIfScrolledToBottom();
+        }
+        this.suppressScrollCheck = false;
+      });
     },
     async loadMoreDocuments() {
       const isLoadingMore = this.documents.length > 0;
@@ -1004,12 +1026,26 @@ module.exports = app => app.component('models', {
       this.saveProjectionPreference();
     },
     clearProjection() {
+      // Keep current filter input in sync with the URL so projection reset
+      // does not unintentionally wipe the filter on remount.
+      this.syncFilterToQuery();
       this.filteredPaths = [];
       this.selectedPaths = [];
       this.projectionText = '';
       this.updateProjectionQuery();
       this.saveProjectionPreference();
       this.getDocuments();
+    },
+    resetFilter() {
+      // Reuse the existing "apply filter + update URL" flow.
+      this.search('');
+    },
+    syncFilterToQuery() {
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        this.query.search = this.searchText;
+      } else {
+        delete this.query.search;
+      }
     },
     async applySuggestedProjection() {
       if (!this.currentModel) return;
@@ -1078,10 +1114,10 @@ module.exports = app => app.component('models', {
     },
     initProjection(ev) {
       if (!this.projectionText || !this.projectionText.trim()) {
-        this.projectionText = '{}';
+        this.projectionText = '';
         this.$nextTick(() => {
           if (ev && ev.target) {
-            ev.target.setSelectionRange(1, 1);
+            ev.target.setSelectionRange(0, 0);
           }
         });
       }
@@ -1091,7 +1127,9 @@ module.exports = app => app.component('models', {
         this.projectionText = '';
         return;
       }
-      this.projectionText = '{ ' + this.filteredPaths.map(p => p.path + ': 1').join(', ') + ' }';
+      // String-only projection syntax: `field1 field2` and `-field` for exclusions.
+      // Since `filteredPaths` represents the final include set, we serialize as space-separated fields.
+      this.projectionText = this.filteredPaths.map(p => p.path).join(' ');
     },
     parseProjectionInput(text) {
       if (!text || typeof text !== 'string') {
@@ -1101,25 +1139,53 @@ module.exports = app => app.component('models', {
       if (!trimmed) {
         return [];
       }
-      let paths = [];
-      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-        try {
-          const obj = eval('(' + trimmed + ')');
-          const inclusionKeys = Object.keys(obj).filter(k => obj[k]);
-          const exclusionKeys = Object.keys(obj).filter(k => !obj[k]);
-          if (exclusionKeys.length > 0 && inclusionKeys.length === 0) {
-            const excludeSet = new Set(exclusionKeys);
-            paths = this.schemaPaths.map(p => p.path).filter(p => !excludeSet.has(p));
-          } else {
-            paths = inclusionKeys;
-          }
-        } catch (e) {
-          return null;
-        }
-      } else {
-        paths = trimmed.split(/\s+/).filter(Boolean);
+      const normalizeKey = (key) => String(key).trim();
+
+      // String-only projection syntax:
+      //   name email
+      //   -password   (exclusion-only)
+      //   +email      (inclusion-only)
+      //
+      // Brace/object syntax is intentionally NOT supported.
+      if (trimmed.startsWith('{') || trimmed.endsWith('}')) {
+        return null;
       }
-      return paths;
+
+      const tokens = trimmed.split(/[,\s]+/).filter(Boolean);
+      if (tokens.length === 0) return [];
+
+      const includeKeys = [];
+      const excludeKeys = [];
+
+      for (const rawToken of tokens) {
+        const token = rawToken.trim();
+        if (!token) continue;
+
+        const prefix = token[0];
+        if (prefix === '-') {
+          const path = token.slice(1).trim();
+          if (!path) return null;
+          excludeKeys.push(path);
+        } else if (prefix === '+') {
+          const path = token.slice(1).trim();
+          if (!path) return null;
+          includeKeys.push(path);
+        } else {
+          includeKeys.push(token);
+        }
+      }
+
+      // Reject mixed include/exclude usage.
+      if (includeKeys.length > 0 && excludeKeys.length > 0) {
+        return null;
+      }
+
+      if (excludeKeys.length > 0) {
+        const excludeSet = new Set(excludeKeys.map(normalizeKey));
+        return this.schemaPaths.map(p => p.path).filter(p => !excludeSet.has(p));
+      }
+
+      return includeKeys.map(normalizeKey);
     },
     applyProjectionFromInput() {
       const paths = this.parseProjectionInput(this.projectionText);
@@ -1161,6 +1227,15 @@ module.exports = app => app.component('models', {
       this.$router.push({ query: this.query });
     },
     removeField(schemaPath) {
+      if (this.outputType === 'table' && this.$refs.documentsScrollContainer) {
+        this.scrollTopToRestore = this.$refs.documentsScrollContainer.scrollTop;
+        this.suppressScrollCheck = true;
+        // Persist for remount caused by query changes.
+        if (typeof window !== 'undefined') {
+          window.__studioModelsScrollTopToRestore = this.scrollTopToRestore;
+          window.__studioModelsSuppressScrollCheck = true;
+        }
+      }
       const index = this.filteredPaths.findIndex(p => p.path === schemaPath.path);
       if (index !== -1) {
         this.filteredPaths.splice(index, 1);
@@ -1176,6 +1251,15 @@ module.exports = app => app.component('models', {
     },
     addField(schemaPath) {
       if (!this.filteredPaths.find(p => p.path === schemaPath.path)) {
+        if (this.outputType === 'table' && this.$refs.documentsScrollContainer) {
+          this.scrollTopToRestore = this.$refs.documentsScrollContainer.scrollTop;
+          this.suppressScrollCheck = true;
+          // Persist for remount caused by query changes.
+          if (typeof window !== 'undefined') {
+            window.__studioModelsScrollTopToRestore = this.scrollTopToRestore;
+            window.__studioModelsSuppressScrollCheck = true;
+          }
+        }
         this.filteredPaths.push(schemaPath);
         this.filteredPaths.sort((a, b) => {
           if (a.path === '_id') return -1;
@@ -1189,6 +1273,14 @@ module.exports = app => app.component('models', {
         this.addFieldFilterText = '';
         this.getDocuments();
       }
+    },
+    restoreScrollPosition() {
+      if (this.outputType !== 'table') return;
+      if (this.scrollTopToRestore == null) return;
+      const container = this.$refs.documentsScrollContainer;
+      if (!container) return;
+      container.scrollTop = this.scrollTopToRestore;
+      this.scrollTopToRestore = null;
     },
     toggleAddFieldDropdown() {
       this.showAddFieldDropdown = !this.showAddFieldDropdown;
