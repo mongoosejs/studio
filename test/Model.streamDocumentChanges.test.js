@@ -7,6 +7,10 @@ describe('Model.streamDocumentChanges()', function () {
   it('streams a change event for a matching document', async function () {
     this.timeout(10000);
 
+    if (!global.__TEST_CHANGE_STREAM_SUPPORTED__) {
+      this.skip();
+    }
+
     const { Test } = connection.models;
 
     const doc = await Test.create({ name: 'before' });

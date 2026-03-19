@@ -81,7 +81,11 @@ function getSuggestedProjection(Model, options = {}) {
     ? options.limit
     : DEFAULT_SUGGESTED_LIMIT;
 
-  const pathNames = Object.keys(Model.schema.paths).filter(key => !key.includes('.$*'));
+  const pathNames = Object.keys(Model.schema.paths).filter(key =>
+    !key.includes('.$*') &&
+    // Ignore Mongoose internal version key; it should never be shown as a document field.
+    key !== '__v'
+  );
   if (pathNames.length === 0) {
     return [];
   }
