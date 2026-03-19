@@ -22,42 +22,9 @@ const SCORE_DATE = 12;
 const SCORE_BOOLEAN = 12;
 const SCORE_OBJECT_ID = 10;
 
-/** Fields referenced in the user's query/filter: include in projection. */
-const SCORE_QUERY_FIELD = 70;
-
-/** MongoDB operator prefix: keys starting with $ are not field names. */
-const MONGO_OPERATOR_PREFIX = '$';
-
 /** Tiebreaker: prefer earlier schema order. */
 function schemaOrderTiebreaker(index, total) {
   return (total - index) / Math.max(total, 1);
-}
-
-/**
- * Recursively collect field paths from a MongoDB filter object.
- * Skips keys that are operators (start with $).
- * @param {object} obj - Filter or sub-filter
- * @param {string} [prefix] - Path prefix for nested keys
- * @returns {Set<string>} Set of field paths (e.g. 'name', 'address.city')
- */
-function getFieldsFromFilter(obj, prefix = '') {
-  const paths = new Set();
-  if (obj == null || typeof obj !== 'object' || Array.isArray(obj)) {
-    return paths;
-  }
-  for (const key of Object.keys(obj)) {
-    if (key.startsWith(MONGO_OPERATOR_PREFIX)) {
-      continue;
-    }
-    const path = prefix ? `${prefix}.${key}` : key;
-    paths.add(path);
-    const value = obj[key];
-    if (value != null && typeof value === 'object' && !Array.isArray(value) &&
-        Object.getPrototypeOf(value) === Object.prototype) {
-      getFieldsFromFilter(value, path).forEach(p => paths.add(p));
-    }
-  }
-  return paths;
 }
 
 /**
@@ -66,14 +33,13 @@ function getFieldsFromFilter(obj, prefix = '') {
  *
  * Scoring (higher = earlier in list):
  * - required: most points. String gets full bonus only when required or has default
- * - fields in the query/filter: bonus so they appear in projection
  * - unique + indexed: next
  * - Arrays, Mixed, nested (Embedded): penalties (subtract points)
  * - Number, Date, Boolean, ObjectId: small positive
  * - schema order: tiebreaker
  *
  * @param {import('mongoose').Model} Model - Mongoose model
- * @param {{ limit?: number, filter?: object }} options - limit max paths returned; filter = parsed query to boost fields from
+ * @param {{ limit?: number }} options - limit max paths returned
  * @returns {string[]} Ordered array of path names
  */
 function getSuggestedProjection(Model, options = {}) {
@@ -89,12 +55,6 @@ function getSuggestedProjection(Model, options = {}) {
   if (pathNames.length === 0) {
     return [];
   }
-
-  const pathSet = new Set(pathNames);
-  const queryFields = options.filter != null && typeof options.filter === 'object'
-    ? getFieldsFromFilter(options.filter)
-    : new Set();
-  const queryFieldPaths = new Set([...queryFields].filter(p => pathSet.has(p)));
 
   const indexFields = new Set();
   try {
@@ -120,7 +80,6 @@ function getSuggestedProjection(Model, options = {}) {
     if (instance === 'String' && (opts.required || opts.default !== undefined)) score += SCORE_STRING;
     if (opts.unique) score += SCORE_UNIQUE;
     if (indexFields.has(path)) score += SCORE_INDEXED;
-    if (queryFieldPaths.has(path)) score += SCORE_QUERY_FIELD;
 
     if (instance === 'Array') score -= PENALTY_ARRAY;
     else if (instance === 'Mixed') score -= PENALTY_MIXED;

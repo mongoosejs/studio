@@ -99,7 +99,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
 
-  const suggestedFields = getSuggestedProjection(Model, { filter });
+  const suggestedFields = getSuggestedProjection(Model);
 
   yield { schemaPaths, suggestedFields };
 

@@ -108,7 +108,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
     await Model.estimatedDocumentCount() :
     await Model.countDocuments(filter);
 
-  const suggestedFields = getSuggestedProjection(Model, { filter });
+  const suggestedFields = getSuggestedProjection(Model);
 
   return {
     docs: docs.map(doc => doc.toJSON({ virtuals: false, getters: false, transform: false })),
