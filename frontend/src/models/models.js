@@ -83,11 +83,6 @@ module.exports = app => app.component('models', {
     this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
   },
   beforeDestroy() {
-    const tableEl = this.$refs.documentsScrollContainer;
-    const jsonEl = this.$refs.documentsContainerScroll;
-    // Remove listener from both possible scroll containers.
-    if (tableEl) tableEl.removeEventListener('scroll', this.onScroll);
-    if (jsonEl) jsonEl.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
     document.removeEventListener('click', this.onOutsideAddFieldDropdownClick, true);
@@ -111,14 +106,6 @@ module.exports = app => app.component('models', {
     }
 
     window.pageState = this;
-    this.onScroll = () => this.checkIfScrolledToBottom();
-    this.$nextTick(() => {
-      // Attach to the correct scroll container for the current output type.
-      const el = this.outputType === 'table'
-        ? this.$refs.documentsScrollContainer
-        : this.$refs.documentsContainerScroll;
-      if (el) el.addEventListener('scroll', this.onScroll);
-    });
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
     this.onOutsideActionsMenuClick = event => {
@@ -189,22 +176,6 @@ module.exports = app => app.component('models', {
           this.initSearchFromUrl();
         }
       }
-    },
-    outputType() {
-      // Output mode swaps which container is scrollable; update listener accordingly.
-      this.$nextTick(() => {
-        const tableEl = this.$refs.documentsScrollContainer;
-        const jsonEl = this.$refs.documentsContainerScroll;
-        if (tableEl) tableEl.removeEventListener('scroll', this.onScroll);
-        if (jsonEl) jsonEl.removeEventListener('scroll', this.onScroll);
-
-        const el = this.outputType === 'table'
-          ? this.$refs.documentsScrollContainer
-          : this.outputType === 'json'
-            ? this.$refs.documentsContainerScroll
-            : null;
-        if (el) el.addEventListener('scroll', this.onScroll);
-      });
     },
     documents: {
       handler() {
@@ -582,11 +553,21 @@ module.exports = app => app.component('models', {
         params.searchText = this.searchText;
       }
 
-      const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
-        ? this.filteredPaths.map(p => p.path).filter(Boolean)
+      // Prefer explicit URL projection (`query.fields`) so the first fetch after
+      // mount/remount respects deep-linked projections before `filteredPaths`
+      // is rehydrated from schema paths.
+      const queryFields = typeof this.query?.fields === 'string'
+        ? this.query.fields.split(',').map(s => s.trim()).filter(Boolean)
         : null;
-      if (fieldPaths && fieldPaths.length > 0) {
-        params.fields = fieldPaths.join(',');
+      if (queryFields && queryFields.length > 0) {
+        params.fields = queryFields.join(',');
+      } else {
+        const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
+          ? this.filteredPaths.map(p => p.path).filter(Boolean)
+          : null;
+        if (fieldPaths && fieldPaths.length > 0) {
+          params.fields = fieldPaths.join(',');
+        }
       }
 
       return params;

@@ -267,7 +267,7 @@
           />
         </div>
       </div>
-    <div class="documents-container relative" ref="documentsContainerScroll">
+    <div class="documents-container relative" ref="documentsContainerScroll" @scroll="checkIfScrolledToBottom">
       <div v-if="error">
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 relative m-4 rounded-md" role="alert">
           <span class="block font-bold">Error</span>
@@ -278,7 +278,6 @@
         <div
           ref="documentsScrollContainer"
           class="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-edge rounded-lg bg-surface"
-          @scroll="checkIfScrolledToBottom"
         >
           <table class="min-w-full border-collapse text-sm">
             <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-shark-800 border-b border-edge">
