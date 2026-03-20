@@ -1125,9 +1125,14 @@ module.exports = app => app.component('models', {
         }
       }
 
-      // Reject mixed include/exclude usage.
       if (includeKeys.length > 0 && excludeKeys.length > 0) {
-        return null;
+        // Support subtractive edits on an existing projection string, e.g.
+        // `name email createdAt -email` -> `name createdAt`.
+        const includeSet = new Set(includeKeys.map(normalizeKey));
+        for (const path of excludeKeys) {
+          includeSet.delete(normalizeKey(path));
+        }
+        return Array.from(includeSet);
       }
 
       if (excludeKeys.length > 0) {
