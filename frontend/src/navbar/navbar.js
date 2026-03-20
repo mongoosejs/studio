@@ -17,7 +17,7 @@ module.exports = app => app.component('navbar', {
     showFlyout: false,
     darkMode: typeof localStorage !== 'undefined' && localStorage.getItem('studio-theme') === 'dark'
   }),
-  mounted: function () {
+  mounted: function() {
     window.navbar = this;
     const mobileMenuMask = document.querySelector('#mobile-menu-mask');
     const mobileMenu = document.querySelector('#mobile-menu');

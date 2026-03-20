@@ -297,7 +297,7 @@ module.exports = app => app.component('models', {
     },
     tableDisplayPaths() {
       return this.filteredPaths.length > 0 ? this.filteredPaths : this.schemaPaths;
-    },
+    }
   },
   methods: {
     highlightMatch(model) {
@@ -881,67 +881,67 @@ module.exports = app => app.component('models', {
         // Track recently viewed model
         this.trackRecentModel(this.currentModel);
 
-      // Clear previous data
-      this.documents = [];
-      this.schemaPaths = [];
-      this.numDocuments = null;
-      this.loadedAllDocs = false;
-      this.lastSelectedIndex = null;
+        // Clear previous data
+        this.documents = [];
+        this.schemaPaths = [];
+        this.numDocuments = null;
+        this.loadedAllDocs = false;
+        this.lastSelectedIndex = null;
 
-      let docsCount = 0;
-      let schemaPathsReceived = false;
+        let docsCount = 0;
+        let schemaPathsReceived = false;
 
-      // Use async generator to stream SSEs
-      const params = this.buildDocumentFetchParams();
-      for await (const event of api.Model.getDocumentsStream(params)) {
-        if (event.schemaPaths && !schemaPathsReceived) {
+        // Use async generator to stream SSEs
+        const params = this.buildDocumentFetchParams();
+        for await (const event of api.Model.getDocumentsStream(params)) {
+          if (event.schemaPaths && !schemaPathsReceived) {
           // Sort schemaPaths with _id first
-          this.schemaPaths = Object.keys(event.schemaPaths).sort((k1, k2) => {
-            if (k1 === '_id' && k2 !== '_id') {
-              return -1;
+            this.schemaPaths = Object.keys(event.schemaPaths).sort((k1, k2) => {
+              if (k1 === '_id' && k2 !== '_id') {
+                return -1;
+              }
+              if (k1 !== '_id' && k2 === '_id') {
+                return 1;
+              }
+              return 0;
+            }).map(key => event.schemaPaths[key]);
+            this.shouldExport = {};
+            for (const { path } of this.schemaPaths) {
+              this.shouldExport[path] = true;
             }
-            if (k1 !== '_id' && k2 === '_id') {
-              return 1;
-            }
-            return 0;
-          }).map(key => event.schemaPaths[key]);
-          this.shouldExport = {};
-          for (const { path } of this.schemaPaths) {
-            this.shouldExport[path] = true;
-          }
-          const savedPaths = this.loadProjectionPreference();
-          if (savedPaths === null) {
-            this.applyDefaultProjection(event.suggestedFields);
-            this.saveProjectionPreference();
-          } else if (Array.isArray(savedPaths) && savedPaths.length === 0) {
-            this.filteredPaths = [];
-            this.projectionText = '';
-            this.saveProjectionPreference();
-          } else if (savedPaths && savedPaths.length > 0) {
-            this.filteredPaths = savedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
-            if (this.filteredPaths.length === 0) {
+            const savedPaths = this.loadProjectionPreference();
+            if (savedPaths === null) {
+              this.applyDefaultProjection(event.suggestedFields);
+              this.saveProjectionPreference();
+            } else if (Array.isArray(savedPaths) && savedPaths.length === 0) {
+              this.filteredPaths = [];
+              this.projectionText = '';
+              this.saveProjectionPreference();
+            } else if (savedPaths && savedPaths.length > 0) {
+              this.filteredPaths = savedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+              if (this.filteredPaths.length === 0) {
+                this.applyDefaultProjection(event.suggestedFields);
+                this.saveProjectionPreference();
+              }
+            } else {
               this.applyDefaultProjection(event.suggestedFields);
               this.saveProjectionPreference();
             }
-          } else {
-            this.applyDefaultProjection(event.suggestedFields);
-            this.saveProjectionPreference();
+            this.selectedPaths = [...this.filteredPaths];
+            this.syncProjectionFromPaths();
+            schemaPathsReceived = true;
           }
-          this.selectedPaths = [...this.filteredPaths];
-          this.syncProjectionFromPaths();
-          schemaPathsReceived = true;
+          if (event.numDocs !== undefined) {
+            this.numDocuments = event.numDocs;
+          }
+          if (event.document) {
+            this.documents.push(event.document);
+            docsCount++;
+          }
+          if (event.message) {
+            throw new Error(event.message);
+          }
         }
-        if (event.numDocs !== undefined) {
-          this.numDocuments = event.numDocs;
-        }
-        if (event.document) {
-          this.documents.push(event.document);
-          docsCount++;
-        }
-        if (event.message) {
-          throw new Error(event.message);
-        }
-      }
 
         if (docsCount < limit) {
           this.loadedAllDocs = true;
