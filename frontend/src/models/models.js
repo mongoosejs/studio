@@ -1035,7 +1035,6 @@ module.exports = app => app.component('models', {
       this.projectionText = '';
       this.updateProjectionQuery();
       this.saveProjectionPreference();
-      this.getDocuments();
     },
     resetFilter() {
       // Reuse the existing "apply filter + update URL" flow.
@@ -1059,7 +1058,6 @@ module.exports = app => app.component('models', {
         this.syncProjectionFromPaths();
         this.updateProjectionQuery();
         this.saveProjectionPreference();
-        await this.getDocuments();
       } catch (err) {
         this.$toast.error(err.message || 'Failed to get suggested projection');
       }
@@ -1167,7 +1165,6 @@ module.exports = app => app.component('models', {
       this.syncProjectionFromPaths();
       this.updateProjectionQuery();
       this.saveProjectionPreference();
-      this.getDocuments();
     },
     updateProjectionQuery() {
       const selectedParams = this.filteredPaths.map(x => x.path).join(',');
@@ -1198,7 +1195,6 @@ module.exports = app => app.component('models', {
         this.syncProjectionFromPaths();
         this.updateProjectionQuery();
         this.saveProjectionPreference();
-        this.getDocuments();
       }
     },
     addField(schemaPath) {
@@ -1223,7 +1219,6 @@ module.exports = app => app.component('models', {
         this.saveProjectionPreference();
         this.showAddFieldDropdown = false;
         this.addFieldFilterText = '';
-        this.getDocuments();
       }
     },
     restoreScrollPosition() {
