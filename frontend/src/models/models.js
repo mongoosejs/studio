@@ -83,8 +83,11 @@ module.exports = app => app.component('models', {
     this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
   },
   beforeDestroy() {
-    const el = this.$refs.documentsList;
-    if (el) el.removeEventListener('scroll', this.onScroll);
+    const tableEl = this.$refs.documentsScrollContainer;
+    const jsonEl = this.$refs.documentsContainerScroll;
+    // Remove listener from both possible scroll containers.
+    if (tableEl) tableEl.removeEventListener('scroll', this.onScroll);
+    if (jsonEl) jsonEl.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
     document.removeEventListener('click', this.onOutsideAddFieldDropdownClick, true);
@@ -110,7 +113,10 @@ module.exports = app => app.component('models', {
     window.pageState = this;
     this.onScroll = () => this.checkIfScrolledToBottom();
     this.$nextTick(() => {
-      const el = this.$refs.documentsList;
+      // Attach to the correct scroll container for the current output type.
+      const el = this.outputType === 'table'
+        ? this.$refs.documentsScrollContainer
+        : this.$refs.documentsContainerScroll;
       if (el) el.addEventListener('scroll', this.onScroll);
     });
     this.onPopState = () => this.initSearchFromUrl();
@@ -183,6 +189,22 @@ module.exports = app => app.component('models', {
           this.initSearchFromUrl();
         }
       }
+    },
+    outputType() {
+      // Output mode swaps which container is scrollable; update listener accordingly.
+      this.$nextTick(() => {
+        const tableEl = this.$refs.documentsScrollContainer;
+        const jsonEl = this.$refs.documentsContainerScroll;
+        if (tableEl) tableEl.removeEventListener('scroll', this.onScroll);
+        if (jsonEl) jsonEl.removeEventListener('scroll', this.onScroll);
+
+        const el = this.outputType === 'table'
+          ? this.$refs.documentsScrollContainer
+          : this.outputType === 'json'
+            ? this.$refs.documentsContainerScroll
+            : null;
+        if (el) el.addEventListener('scroll', this.onScroll);
+      });
     },
     documents: {
       handler() {
@@ -580,15 +602,22 @@ module.exports = app => app.component('models', {
       this.status = 'loading';
       this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
       this.setSearchTextFromRoute();
-      if (this.$route.query?.sort) {
-        const sort = eval(`(${this.$route.query.sort})`);
-        const path = Object.keys(sort)[0];
-        const num = Object.values(sort)[0];
+      // Avoid eval() on user-controlled query params.
+      // Use explicit sortKey + sortDirection query params.
+      const sortKey = this.$route.query?.sortKey;
+      const sortDirectionRaw = this.$route.query?.sortDirection;
+      const sortDirection = typeof sortDirectionRaw === 'string' ? Number(sortDirectionRaw) : sortDirectionRaw;
+
+      if (typeof sortKey === 'string' && sortKey.trim().length > 0 &&
+        (sortDirection === 1 || sortDirection === -1)) {
         for (const key in this.sortBy) {
           delete this.sortBy[key];
         }
-        this.sortBy[path] = num;
-        this.query.sort = `{${path}:${num}}`;
+        this.sortBy[sortKey] = sortDirection;
+        // Normalize to new params and remove legacy key if present.
+        this.query.sortKey = sortKey;
+        this.query.sortDirection = sortDirection;
+        delete this.query.sort;
       }
       if (this.currentModel != null) {
         await this.getDocuments();
@@ -635,17 +664,16 @@ module.exports = app => app.component('models', {
       if (this.status === 'loading' || this.loadedAllDocs) {
         return;
       }
+      // Infinite scroll only applies to table/json views.
+      if (this.outputType !== 'table' && this.outputType !== 'json') {
+        return;
+      }
       if (this.documents.length === 0) {
         return;
       }
-      let container;
-      if (this.outputType === 'table') {
-        container = this.$refs.documentsScrollContainer || this.$refs.documentsList;
-      } else {
-        // For non-table views, the actual scrolling may occur on an inner
-        // container (e.g. `.documents-container`), so prefer that ref if present.
-        container = this.$refs.documentsContainer || this.$refs.documentsList;
-      }
+      const container = this.outputType === 'table'
+        ? this.$refs.documentsScrollContainer
+        : this.$refs.documentsContainerScroll;
       if (!container || container.scrollHeight <= 0) {
         return;
       }
@@ -675,6 +703,8 @@ module.exports = app => app.component('models', {
       if (this.sortBy[path] == num) {
         sorted = true;
         delete this.query.sort;
+        delete this.query.sortKey;
+        delete this.query.sortDirection;
         this.$router.push({ query: this.query });
       }
       for (const key in this.sortBy) {
@@ -682,7 +712,9 @@ module.exports = app => app.component('models', {
       }
       if (!sorted) {
         this.sortBy[path] = num;
-        this.query.sort = `{${path}:${num}}`;
+        this.query.sortKey = path;
+        this.query.sortDirection = num;
+        delete this.query.sort;
         this.$router.push({ query: this.query });
       }
       this.documents = [];
