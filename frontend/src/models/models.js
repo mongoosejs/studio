@@ -533,12 +533,37 @@ module.exports = app => app.component('models', {
     initializeDocumentData() {
       this.shouldShowCreateModal = true;
     },
+    setPathValue(target, path, value) {
+      if (typeof path !== 'string' || path.length === 0) {
+        return;
+      }
+
+      const parts = path.split('.');
+      let current = target;
+
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isLast = i === parts.length - 1;
+
+        if (isLast) {
+          current[part] = value;
+          return;
+        }
+
+        const nextPart = parts[i + 1];
+        const shouldCreateArray = /^\d+$/.test(nextPart);
+        if (current[part] == null || typeof current[part] !== 'object') {
+          current[part] = shouldCreateArray ? [] : {};
+        }
+        current = current[part];
+      }
+    },
     filterDocument(doc) {
       const filteredDoc = {};
       for (let i = 0; i < this.filteredPaths.length; i++) {
         const path = this.filteredPaths[i].path;
         const value = mpath.get(path, doc);
-        mpath.set(path, value, filteredDoc);
+        this.setPathValue(filteredDoc, path, value);
       }
       return filteredDoc;
     },
