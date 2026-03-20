@@ -15,6 +15,7 @@ const DEFAULT_FIRST_N_FIELDS = 6;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
 const PROJECTION_STORAGE_KEY_PREFIX = 'studio:model-projection:';
+const SHOW_ROW_NUMBERS_STORAGE_KEY = 'studio:model-show-row-numbers';
 const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
@@ -71,6 +72,7 @@ module.exports = app => app.component('models', {
     modelSearch: '',
     recentlyViewedModels: [],
     showModelSwitcher: false,
+    showRowNumbers: true,
     suppressScrollCheck: false,
     scrollTopToRestore: null
   }),
@@ -79,6 +81,7 @@ module.exports = app => app.component('models', {
     this.setSearchTextFromRoute();
     this.loadOutputPreference();
     this.loadSelectedGeoField();
+    this.loadShowRowNumbersPreference();
     this.loadRecentlyViewedModels();
     this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
   },
@@ -357,6 +360,24 @@ module.exports = app => app.component('models', {
       if (storedField) {
         this.selectedGeoField = storedField;
       }
+    },
+    loadShowRowNumbersPreference() {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const stored = window.localStorage.getItem(SHOW_ROW_NUMBERS_STORAGE_KEY);
+      if (stored === '0') {
+        this.showRowNumbers = false;
+      } else if (stored === '1') {
+        this.showRowNumbers = true;
+      }
+    },
+    toggleRowNumbers() {
+      this.showRowNumbers = !this.showRowNumbers;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(SHOW_ROW_NUMBERS_STORAGE_KEY, this.showRowNumbers ? '1' : '0');
+      }
+      this.showActionsMenu = false;
     },
     setOutputType(type) {
       if (type !== 'json' && type !== 'table' && type !== 'map') {

@@ -191,6 +191,13 @@
                   Find oldest document
                 </button>
                 <button
+                  @click="toggleRowNumbers()"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  {{ showRowNumbers ? 'Hide row numbers' : 'Show row numbers' }}
+                </button>
+                <button
                   @click="resetFilter()"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
@@ -284,6 +291,9 @@
           <table class="min-w-full border-collapse text-sm">
             <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-shark-800 border-b border-edge">
               <tr>
+                <th v-if="showRowNumbers" class="px-3 py-2.5 text-left font-medium text-content border-r border-edge whitespace-nowrap align-middle w-0">
+                  #
+                </th>
                 <th
                   v-for="path in tableDisplayPaths"
                   :key="path.path"
@@ -375,12 +385,15 @@
             </thead>
             <tbody class="bg-surface">
               <tr
-                v-for="document in documents"
+                v-for="(document, docIndex) in documents"
                 :key="document._id"
                 @click="handleDocumentClick(document, $event)"
                 class="border-b border-edge cursor-pointer transition-colors hover:bg-muted/60"
                 :class="{ 'bg-primary-subtle/50 hover:bg-primary-subtle/70': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
               >
+                <td v-if="showRowNumbers" class="px-3 py-2 border-r border-edge align-top text-content-tertiary whitespace-nowrap">
+                  {{ docIndex + 1 }}
+                </td>
                 <td
                   v-for="schemaPath in tableDisplayPaths"
                   :key="schemaPath.path"
