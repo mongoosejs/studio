@@ -156,4 +156,32 @@ describe('chat component', function() {
     assert.strictEqual(instance.chatMessages[1].role, 'assistant');
     assert.strictEqual(instance.chatMessages[1].content, 'Hi there!');
   });
+
+  it('passes the user current date time when streaming a chat message', async function() {
+    const streamStub = sinon.stub(api.ChatThread, 'streamChatMessage').callsFake(async function* () {
+      yield {
+        chatMessage: {
+          _id: '2'.repeat(24),
+          content: 'Hello',
+          role: 'user'
+        }
+      };
+    });
+
+    const state = {
+      sendingMessage: false,
+      newMessage: 'Hello',
+      chatThreadId: '1'.repeat(24),
+      chatMessages: [],
+      chatThreads: [],
+      $refs: {},
+      $toast: { success: () => {} },
+      $nextTick: fn => fn && fn()
+    };
+
+    await chat.methods.sendMessage.call(state);
+
+    const params = streamStub.firstCall.args[0];
+    assert.match(params.currentDateTime, /^\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2}$/);
+  });
 });

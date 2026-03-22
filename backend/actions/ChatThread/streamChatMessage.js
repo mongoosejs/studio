@@ -17,13 +17,17 @@ const CreateChatMessageParams = new Archetype({
   content: {
     $type: 'string'
   },
+  currentDateTime: {
+    $type: 'string',
+    $match: /^\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2}$/
+  },
   roles: {
     $type: ['string']
   }
 }).compile('CreateChatMessageParams');
 
 module.exports = ({ db, studioConnection, options }) => async function* createChatMessage(params) {
-  const { chatThreadId, initiatedById, content, script, roles } = new CreateChatMessageParams(params);
+  const { chatThreadId, initiatedById, content, currentDateTime, script, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -76,7 +80,7 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
   }
 
   const modelDescriptions = getModelDescriptions(db);
-  const currentDateContext = `Current date: ${new Date().toISOString().slice(0, 10)}`;
+  const currentDateContext = currentDateTime ? `Current date: ${currentDateTime}` : null;
   const system = [systemPrompt, currentDateContext, modelDescriptions, options?.context].filter(Boolean).join('\n\n');
 
   const userChatMessage = await ChatMessage.create({

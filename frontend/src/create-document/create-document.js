@@ -11,6 +11,7 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 });
 
 const appendCSS = require('../appendCSS');
+const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 
 appendCSS(require('./create-document.css'));
 
@@ -49,7 +50,8 @@ module.exports = app => app.component('create-document', {
         for await (const event of api.Model.streamChatMessage({
           model: this.currentModel,
           content: prompt,
-          documentData: this.aiOriginalDocument
+          documentData: this.aiOriginalDocument,
+          currentDateTime: getCurrentDateTimeContext()
         })) {
           if (event?.textPart) {
             this.aiSuggestion += event.textPart;

@@ -17,13 +17,17 @@ const StreamChatMessageParams = new Archetype({
   documentData: {
     $type: 'string'
   },
+  currentDateTime: {
+    $type: 'string',
+    $match: /^\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2}$/
+  },
   roles: {
     $type: ['string']
   }
 }).compile('StreamChatMessageParams');
 
 module.exports = ({ db, options }) => async function* streamChatMessage(params) {
-  const { model, content, documentData, roles } = new StreamChatMessageParams(params);
+  const { model, content, documentData, currentDateTime, roles } = new StreamChatMessageParams(params);
 
   await authorize('Model.streamChatMessage', roles);
 
@@ -37,7 +41,7 @@ module.exports = ({ db, options }) => async function* streamChatMessage(params) 
     modelDescriptions,
     'Current draft document:\n' + (documentData || '')
   ].join('\n\n');
-  const currentDateContext = `Current date: ${new Date().toISOString().slice(0, 10)}`;
+  const currentDateContext = currentDateTime ? `Current date: ${currentDateTime}` : null;
   const system = [systemPrompt, currentDateContext, context, options?.context].filter(Boolean).join('\n\n');
 
   const llmMessages = [{ role: 'user', content: [{ type: 'text', text: content }] }];

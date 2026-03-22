@@ -1,11 +1,18 @@
 'use strict';
 
 const assert = require('assert');
+const sinon = require('sinon');
 
 require('./setup');
 const documentComponent = require('../../frontend/src/document/document');
+const createDocumentComponent = require('../../frontend/src/create-document/create-document');
+const api = require('../../frontend/src/api');
 
 describe('document component keyboard shortcuts', function() {
+  afterEach(function() {
+    sinon.restore();
+  });
+
   it('opens save confirmation on ctrl+s while editing', function() {
     const componentDef = documentComponent({ component: (_name, def) => def });
     const state = {
@@ -48,5 +55,34 @@ describe('document component keyboard shortcuts', function() {
 
     assert.strictEqual(prevented, false);
     assert.strictEqual(state.shouldShowConfirmModal, false);
+  });
+
+  it('passes the user current date time when requesting an AI document suggestion', async function() {
+    const componentDef = createDocumentComponent({ component: (_name, def) => def });
+    const streamStub = sinon.stub(api.Model, 'streamChatMessage').callsFake(async function* () {
+      yield { textPart: '{ name: "test" }' };
+    });
+
+    const state = {
+      aiStreaming: false,
+      aiPrompt: 'Add a name field',
+      documentData: '{\n}',
+      aiSuggestion: '',
+      aiOriginalDocument: '',
+      aiSuggestionReady: false,
+      currentModel: 'User',
+      $refs: {
+        codeEditor: {
+          setValue: () => {}
+        }
+      },
+      $toast: {
+        error: () => {}
+      }
+    };
+
+    await componentDef.methods.requestAiSuggestion.call(state);
+    const params = streamStub.firstCall.args[0];
+    assert.match(params.currentDateTime, /^\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2}$/);
   });
 });
