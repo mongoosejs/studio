@@ -158,6 +158,7 @@ describe('chat component', function() {
   });
 
   it('passes the user current date time when streaming a chat message', async function() {
+    const clock = sinon.useFakeTimers(new Date('2026-03-22T15:04:05Z'));
     const streamStub = sinon.stub(api.ChatThread, 'streamChatMessage').callsFake(async function* () {
       yield {
         chatMessage: {
@@ -179,9 +180,13 @@ describe('chat component', function() {
       $nextTick: fn => fn && fn()
     };
 
-    await chat.methods.sendMessage.call(state);
+    try {
+      await chat.methods.sendMessage.call(state);
 
-    const params = streamStub.firstCall.args[0];
-    assert.match(params.currentDateTime, /^\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2}$/);
+      const params = streamStub.firstCall.args[0];
+      assert.strictEqual(params.currentDateTime, new Date().toString());
+    } finally {
+      clock.restore();
+    }
   });
 });

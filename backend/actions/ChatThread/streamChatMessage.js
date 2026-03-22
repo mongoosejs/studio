@@ -18,8 +18,7 @@ const CreateChatMessageParams = new Archetype({
     $type: 'string'
   },
   currentDateTime: {
-    $type: 'string',
-    $match: /^\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2}$/
+    $type: 'string'
   },
   roles: {
     $type: ['string']
