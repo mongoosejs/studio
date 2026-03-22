@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const MongooseStudioChartColors = require('../../constants/mongooseStudioChartColors');
 const mongoose = require('mongoose');
 const vm = require('vm');
 
@@ -43,10 +44,6 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
   if (!db.Types) {
     db.Types = mongoose.Types;
   }
-  const MongooseStudioChartColors = [
-    '#4e79a7', '#e15759', '#59a14f', '#9c755f',
-    '#f28e2b', '#b07aa1', '#76b7b2', '#edc948'
-  ];
   const sandbox = { db, mongoose, console: {}, ObjectId: mongoose.Types.ObjectId, MongooseStudioChartColors };
 
   // Capture console logs
