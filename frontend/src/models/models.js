@@ -538,7 +538,16 @@ module.exports = app => app.component('models', {
       for (let i = 0; i < this.filteredPaths.length; i++) {
         const path = this.filteredPaths[i].path;
         const value = mpath.get(path, doc);
-        mpath.set(path, value, filteredDoc);
+        mpath.set(path, value, filteredDoc, function(cur, path, val) {
+          if (arguments.length === 2) {
+            if (cur[path] == null) {
+              cur[path] = {};
+            }
+            return cur[path];
+          }
+          cur[path] = val;
+          return val;
+        });
       }
       return filteredDoc;
     },

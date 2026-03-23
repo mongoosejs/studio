@@ -15,6 +15,11 @@ module.exports = async function connect() {
     status: String,
     isDeleted: Boolean,
     lastLoginAt: Date,
+    picture: {
+      url: String,
+      uploadedAt: String,
+      verified: Boolean
+    },
     createdAt: Date,
     updatedAt: Date
   }, { collection: 'User' }));
