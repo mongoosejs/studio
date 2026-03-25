@@ -31,22 +31,22 @@
     </div>
     <div
       v-if="numDocs > 0"
-      class="fixed bottom-0 left-0 right-0 z-10 px-4 py-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
+      class="fixed bottom-0 left-0 right-0 z-10 px-4 py-4 bg-surface border-t border-edge shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
     >
       <div class="flex flex-wrap items-center justify-between gap-4 max-w-6xl mx-auto">
         <div class="flex items-center gap-6">
-          <p class="text-sm text-gray-600">
-            <span class="font-medium text-gray-900">{{ Math.min((page - 1) * pageSize + 1, numDocs) }}–{{ Math.min(page * pageSize, numDocs) }}</span>
+          <p class="text-sm text-content-tertiary">
+            <span class="font-medium text-content">{{ Math.min((page - 1) * pageSize + 1, numDocs) }}–{{ Math.min(page * pageSize, numDocs) }}</span>
             <span class="mx-1">of</span>
-            <span class="font-medium text-gray-900">{{ numDocs }}</span>
-            <span class="ml-1 text-gray-500">tasks</span>
+            <span class="font-medium text-content">{{ numDocs }}</span>
+            <span class="ml-1 text-content-tertiary">tasks</span>
           </p>
           <div class="flex items-center gap-2">
-            <label class="text-sm font-medium text-gray-700">Per page</label>
+            <label class="text-sm font-medium text-content-secondary">Per page</label>
             <select
               v-model.number="pageSize"
               @change="onPageSizeChange"
-              class="border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm text-gray-700 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-ultramarine-500 focus:border-ultramarine-500"
+              class="border border-edge rounded-md shadow-sm px-3 py-2 text-sm text-content-secondary bg-surface hover:border-edge-strong focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             >
               <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
             </select>
@@ -57,21 +57,21 @@
             type="button"
             :disabled="page <= 1"
             @click="goToPage(page - 1)"
-            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface bg-surface text-content-secondary border-edge hover:bg-page hover:border-edge-strong"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
             Previous
           </button>
-          <span class="px-4 py-2 text-sm text-gray-600 min-w-[7rem] text-center">
-            Page <span class="font-semibold text-gray-900">{{ page }}</span> of <span class="font-semibold text-gray-900">{{ Math.max(1, Math.ceil(numDocs / pageSize)) }}</span>
+          <span class="px-4 py-2 text-sm text-content-tertiary min-w-[7rem] text-center">
+            Page <span class="font-semibold text-content">{{ page }}</span> of <span class="font-semibold text-content">{{ Math.max(1, Math.ceil(numDocs / pageSize)) }}</span>
           </span>
           <button
             type="button"
             :disabled="page >= Math.ceil(numDocs / pageSize)"
             @click="goToPage(page + 1)"
-            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface bg-surface text-content-secondary border-edge hover:bg-page hover:border-edge-strong"
           >
             Next
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
