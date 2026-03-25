@@ -5,6 +5,7 @@ const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const evaluateFilter = require('../../helpers/evaluateFilter');
 const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const getSuggestedProjection = require('../../helpers/getSuggestedProjection');
+const parseFieldsParam = require('../../helpers/parseFieldsParam');
 const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
@@ -67,11 +68,9 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   }
 
   let query = Model.find(filter).limit(limit).skip(skip).sort(sortObj).batchSize(1);
-  if (typeof fields === 'string' && fields.trim().length > 0) {
-    const projection = fields.split(',').map(s => s.trim()).filter(Boolean).join(' ');
-    if (projection.length > 0) {
-      query = query.select(projection);
-    }
+  const projection = parseFieldsParam(fields);
+  if (projection != null) {
+    query = query.select(projection);
   }
 
   const schemaPaths = {};

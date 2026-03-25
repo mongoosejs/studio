@@ -29,7 +29,7 @@ describe('Model.getDocuments() projection (fields)', function() {
 
     const res = await actions.Model.getDocuments({
       model: 'ProjectionFieldsTest',
-      fields: 'name,email',
+      fields: JSON.stringify(['name', 'email']),
       roles: ['admin']
     });
 

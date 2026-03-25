@@ -20,6 +20,57 @@ const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
 
+/** Parse `fields` from the route (JSON array or inclusion projection object only). */
+function parseFieldsQueryParam(fields) {
+  if (fields == null || fields === '') {
+    return [];
+  }
+  const s = typeof fields === 'string' ? fields : String(fields);
+  const trimmed = s.trim();
+  if (!trimmed) {
+    return [];
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch (e) {
+    return [];
+  }
+  if (Array.isArray(parsed)) {
+    return parsed.map(x => String(x).trim()).filter(Boolean);
+  }
+  if (parsed != null && typeof parsed === 'object') {
+    return Object.keys(parsed).filter(k =>
+      Object.prototype.hasOwnProperty.call(parsed, k) && parsed[k]
+    );
+  }
+  return [];
+}
+
+/** Pass through a valid JSON `fields` string for Model.getDocuments / getDocumentsStream. */
+function normalizeFieldsParamForApi(fieldsStr) {
+  if (fieldsStr == null || fieldsStr === '') {
+    return null;
+  }
+  const s = typeof fieldsStr === 'string' ? fieldsStr : String(fieldsStr);
+  const trimmed = s.trim();
+  if (!trimmed) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) {
+      return trimmed;
+    }
+    if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return trimmed;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
 module.exports = app => app.component('models', {
   template: template,
   props: ['model', 'user', 'roles'],
@@ -577,18 +628,17 @@ module.exports = app => app.component('models', {
       // Prefer explicit URL projection (`query.fields`) so the first fetch after
       // mount/remount respects deep-linked projections before `filteredPaths`
       // is rehydrated from schema paths.
-      const queryFields = typeof this.query?.fields === 'string'
-        ? this.query.fields.split(',').map(s => s.trim()).filter(Boolean)
-        : null;
-      if (queryFields && queryFields.length > 0) {
-        params.fields = queryFields.join(',');
-      } else {
+      let fieldsParam = normalizeFieldsParamForApi(this.query?.fields);
+      if (!fieldsParam) {
         const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
           ? this.filteredPaths.map(p => p.path).filter(Boolean)
           : null;
         if (fieldPaths && fieldPaths.length > 0) {
-          params.fields = fieldPaths.join(',');
+          fieldsParam = JSON.stringify(fieldPaths);
         }
+      }
+      if (fieldsParam) {
+        params.fields = fieldsParam;
       }
 
       return params;
@@ -625,7 +675,7 @@ module.exports = app => app.component('models', {
         await this.getDocuments();
       }
       if (this.$route.query?.fields) {
-        const urlPaths = this.$route.query.fields.split(',').map(s => s.trim()).filter(Boolean);
+        const urlPaths = parseFieldsQueryParam(this.$route.query.fields);
         if (urlPaths.length > 0) {
           this.filteredPaths = urlPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
           if (this.filteredPaths.length > 0) {
@@ -1011,22 +1061,29 @@ module.exports = app => app.component('models', {
       }
       const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
       const stored = window.localStorage.getItem(key);
-      if (stored === null || stored === undefined) return null;
-      if (stored === '') return [];
+      if (stored === null || stored === undefined) {
+        return null;
+      }
+      if (stored === '') {
+        return [];
+      }
       try {
-        const paths = stored.split(',').map(s => s.trim()).filter(Boolean);
-        return paths.length > 0 ? paths : [];
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.map(x => String(x).trim()).filter(Boolean);
+        }
       } catch (e) {
         return null;
       }
+      return null;
     },
     saveProjectionPreference() {
       if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
         return;
       }
       const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
-      const paths = this.filteredPaths.map(p => p.path).join(',');
-      window.localStorage.setItem(key, paths);
+      const paths = this.filteredPaths.map(p => p.path);
+      window.localStorage.setItem(key, JSON.stringify(paths));
     },
     clearProjection() {
       // Keep current filter input in sync with the URL so projection reset
@@ -1168,9 +1225,9 @@ module.exports = app => app.component('models', {
       this.saveProjectionPreference();
     },
     updateProjectionQuery() {
-      const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-      if (selectedParams) {
-        this.query.fields = selectedParams;
+      const paths = this.filteredPaths.map(x => x.path).filter(Boolean);
+      if (paths.length > 0) {
+        this.query.fields = JSON.stringify(paths);
       } else {
         delete this.query.fields;
       }
