@@ -157,7 +157,7 @@ module.exports = {
       return this.dashboardResults.length > 0 ? this.dashboardResults[0] : null;
     }
   },
-  mounted: async function () {
+  mounted: async function() {
     window.pageState = this;
 
     document.addEventListener('click', this.handleDocumentClick);

@@ -4,6 +4,8 @@ const Archetype = require('archetype');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const evaluateFilter = require('../../helpers/evaluateFilter');
 const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
+const getSuggestedProjection = require('../../helpers/getSuggestedProjection');
+const parseFieldsParam = require('../../helpers/parseFieldsParam');
 const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
@@ -30,6 +32,9 @@ const GetDocumentsParams = new Archetype({
   sortDirection: {
     $type: 'number'
   },
+  fields: {
+    $type: 'string'
+  },
   roles: {
     $type: ['string']
   }
@@ -40,7 +45,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   const { roles } = params;
   await authorize('Model.getDocumentsStream', roles);
 
-  const { model, limit, skip, sortKey, sortDirection, searchText } = params;
+  const { model, limit, skip, sortKey, sortDirection, searchText, fields } = params;
 
   const Model = db.models[model];
   if (Model == null) {
@@ -60,6 +65,12 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   }
   if (!sortObj.hasOwnProperty('_id')) {
     sortObj._id = -1;
+  }
+
+  let query = Model.find(filter).limit(limit).skip(skip).sort(sortObj).batchSize(1);
+  const projection = parseFieldsParam(fields);
+  if (projection != null) {
+    query = query.select(projection);
   }
 
   const schemaPaths = {};
@@ -87,20 +98,16 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
 
-  yield { schemaPaths };
+  const suggestedFields = getSuggestedProjection(Model);
+
+  yield { schemaPaths, suggestedFields };
 
   // Start counting documents in parallel with streaming documents
   const numDocsPromise = (parsedFilter == null)
     ? Model.estimatedDocumentCount().exec()
     : Model.countDocuments(filter).exec();
 
-  const cursor = await Model.
-    find(filter).
-    limit(limit).
-    skip(skip).
-    sort(sortObj).
-    batchSize(1).
-    cursor();
+  const cursor = await query.cursor();
 
   let numDocsYielded = false;
   let numDocumentsPromiseResolved = false;

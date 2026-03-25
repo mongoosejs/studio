@@ -5,105 +5,30 @@
   min-height: calc(100% - 56px);
 }
 
-.models button.gray {
-  color: black;
-  background-color: #eee;
-}
-
-.models .model-selector {
-  flex-grow: 0;
-  padding: 15px;
-  padding-top: 0px;
-}
-
-.models h1 {
-  margin-top: 0px;
-}
-
 .models .documents {
   flex-grow: 1;
-  overflow: scroll;
+  overflow: visible;
   max-height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
 }
 
-.models .documents table {
-  /* max-width: -moz-fit-content;
-  max-width: fit-content; */
-  width: 100%;
-  table-layout: auto;
-  font-size: small;
-  padding: 0;
-  margin-right: 1em;
-  white-space: nowrap;
-  z-index: -1;
-  border-collapse: collapse;
-  line-height: 1.5em;
-}
-
-.models .documents table th {
-  position: sticky;
-  top: 42px;
-  z-index: 1;
-}
-
-.models .documents table th:after {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 100%;
-  bottom: -1px;
-  border-bottom: thin solid rgba(0, 0, 0, 0.12);
-}
-
-.models .documents table tr {
-  color: black;
-  border-spacing: 0px 0px;
-}
-
-.models .documents table th {
-  border-bottom: thin solid rgba(0, 0, 0, 0.12);
-  text-align: left;
-  height: 48px;
-}
-
-.models .documents table td {
-  border-bottom: thin solid rgba(0, 0, 0, 0.12);
-  text-align: left;
-}
-
-.models textarea {
-  font-size: 1.2em;
-}
-
-.models .path-type {
-  color: rgba(0, 0, 0, 0.36);
-  font-size: 0.8em;
+.models .documents-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .models .documents-menu {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 30;
   padding: 4px;
   display: flex;
-}
-
-.models .documents-menu .search-input {
-  flex-grow: 1;
-  align-items: center;
-}
-
-.models .search-input input {
-  padding: 0.25em 0.5em;
-  font-size: 1.1em;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  width: calc(100% - 1em);
-}
-
-.models .sort-arrow {
-  padding-left: 10px;
-  padding-right: 10px;
+  flex-direction: column;
+  flex-shrink: 0;
 }
 
 .models .loader {
@@ -115,8 +40,18 @@
   height: 4em;
 }
 
-.models .documents .buttons {
-  display: inline-flex;
-  justify-content: space-around;
+.models .loader-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  background: var(--color-page);
+  opacity: 0.9;
+}
+
+/* Table cell: copy icon only copies; rest of cell opens document */
+.models .table-cell-copy {
+  cursor: pointer;
 }

@@ -11,10 +11,65 @@ const appendCSS = require('../appendCSS');
 appendCSS(require('./models.css'));
 
 const limit = 20;
+const DEFAULT_FIRST_N_FIELDS = 6;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
+const PROJECTION_STORAGE_KEY_PREFIX = 'studio:model-projection:';
+const SHOW_ROW_NUMBERS_STORAGE_KEY = 'studio:model-show-row-numbers';
+const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
+
+/** Parse `fields` from the route (JSON array or inclusion projection object only). */
+function parseFieldsQueryParam(fields) {
+  if (fields == null || fields === '') {
+    return [];
+  }
+  const s = typeof fields === 'string' ? fields : String(fields);
+  const trimmed = s.trim();
+  if (!trimmed) {
+    return [];
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch (e) {
+    return [];
+  }
+  if (Array.isArray(parsed)) {
+    return parsed.map(x => String(x).trim()).filter(Boolean);
+  }
+  if (parsed != null && typeof parsed === 'object') {
+    return Object.keys(parsed).filter(k =>
+      Object.prototype.hasOwnProperty.call(parsed, k) && parsed[k]
+    );
+  }
+  return [];
+}
+
+/** Pass through a valid JSON `fields` string for Model.getDocuments / getDocumentsStream. */
+function normalizeFieldsParamForApi(fieldsStr) {
+  if (fieldsStr == null || fieldsStr === '') {
+    return null;
+  }
+  const s = typeof fieldsStr === 'string' ? fieldsStr : String(fieldsStr);
+  const trimmed = s.trim();
+  if (!trimmed) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) {
+      return trimmed;
+    }
+    if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return trimmed;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
 
 module.exports = app => app.component('models', {
   template: template,
@@ -31,6 +86,7 @@ module.exports = app => app.component('models', {
     mongoDBIndexes: [],
     schemaIndexes: [],
     status: 'loading',
+    loadingMore: false,
     loadedAllDocs: false,
     edittingDoc: null,
     docEdits: null,
@@ -39,7 +95,10 @@ module.exports = app => app.component('models', {
     searchText: '',
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
-    shouldShowFieldModal: false,
+    projectionText: '',
+    isProjectionMenuSelected: false,
+    addFieldFilterText: '',
+    showAddFieldDropdown: false,
     shouldShowIndexModal: false,
     shouldShowCollectionInfoModal: false,
     shouldShowUpdateMultipleModal: false,
@@ -61,27 +120,44 @@ module.exports = app => app.component('models', {
     collectionInfo: null,
     modelSearch: '',
     recentlyViewedModels: [],
-    showModelSwitcher: false
+    showModelSwitcher: false,
+    showRowNumbers: true,
+    suppressScrollCheck: false,
+    scrollTopToRestore: null
   }),
   created() {
     this.currentModel = this.model;
     this.setSearchTextFromRoute();
     this.loadOutputPreference();
     this.loadSelectedGeoField();
+    this.loadShowRowNumbersPreference();
     this.loadRecentlyViewedModels();
+    this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
   },
   beforeDestroy() {
-    document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
+    document.removeEventListener('click', this.onOutsideAddFieldDropdownClick, true);
     document.documentElement.removeEventListener('studio-theme-changed', this.onStudioThemeChanged);
     document.removeEventListener('keydown', this.onCtrlP, true);
     this.destroyMap();
   },
   async mounted() {
+    // Persist scroll restoration across remounts.
+    // This component is keyed by `$route.fullPath`, so query changes (e.g. projection updates)
+    // recreate the component and reset scroll position.
+    if (typeof window !== 'undefined') {
+      if (typeof window.__studioModelsScrollTopToRestore === 'number') {
+        this.scrollTopToRestore = window.__studioModelsScrollTopToRestore;
+      }
+      if (window.__studioModelsSuppressScrollCheck === true) {
+        this.suppressScrollCheck = true;
+      }
+      delete window.__studioModelsScrollTopToRestore;
+      delete window.__studioModelsSuppressScrollCheck;
+    }
+
     window.pageState = this;
-    this.onScroll = () => this.checkIfScrolledToBottom();
-    document.addEventListener('scroll', this.onScroll, true);
     this.onPopState = () => this.initSearchFromUrl();
     window.addEventListener('popstate', this.onPopState, true);
     this.onOutsideActionsMenuClick = event => {
@@ -93,7 +169,18 @@ module.exports = app => app.component('models', {
         this.closeActionsMenu();
       }
     };
+    this.onOutsideAddFieldDropdownClick = event => {
+      if (!this.showAddFieldDropdown) {
+        return;
+      }
+      const container = this.$refs.addFieldContainer;
+      if (container && !container.contains(event.target)) {
+        this.showAddFieldDropdown = false;
+        this.addFieldFilterText = '';
+      }
+    };
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
+    document.addEventListener('click', this.onOutsideAddFieldDropdownClick, true);
     this.onStudioThemeChanged = () => this.updateMapTileLayer();
     document.documentElement.addEventListener('studio-theme-changed', this.onStudioThemeChanged);
     this.onCtrlP = (event) => {
@@ -104,6 +191,8 @@ module.exports = app => app.component('models', {
     };
     document.addEventListener('keydown', this.onCtrlP, true);
     this.query = Object.assign({}, this.$route.query);
+    // Keep UI mode in sync with the URL on remounts.
+    this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
     const { models, readyState } = await api.Model.listModels();
     this.models = models;
     await this.loadModelCounts();
@@ -119,8 +208,27 @@ module.exports = app => app.component('models', {
     }
 
     await this.initSearchFromUrl();
+    if (this.isProjectionMenuSelected && this.outputType === 'map') {
+      // Projection input is not rendered in map view.
+      this.setOutputType('json');
+    }
+    this.$nextTick(() => {
+      if (!this.isProjectionMenuSelected) return;
+      const input = this.$refs.projectionInput;
+      if (input && typeof input.focus === 'function') {
+        input.focus();
+      }
+    });
   },
   watch: {
+    model(newModel) {
+      if (newModel !== this.currentModel) {
+        this.currentModel = newModel;
+        if (this.currentModel != null) {
+          this.initSearchFromUrl();
+        }
+      }
+    },
     documents: {
       handler() {
         if (this.outputType === 'map' && this.mapInstance) {
@@ -225,6 +333,19 @@ module.exports = app => app.component('models', {
       }
 
       return geoFields;
+    },
+    availablePathsToAdd() {
+      const currentPaths = new Set(this.filteredPaths.map(p => p.path));
+      return this.schemaPaths.filter(p => !currentPaths.has(p.path));
+    },
+    filteredPathsToAdd() {
+      const available = this.availablePathsToAdd;
+      const query = (this.addFieldFilterText || '').trim().toLowerCase();
+      if (!query) return available;
+      return available.filter(p => p.path.toLowerCase().includes(query));
+    },
+    tableDisplayPaths() {
+      return this.filteredPaths.length > 0 ? this.filteredPaths : this.schemaPaths;
     }
   },
   methods: {
@@ -288,6 +409,24 @@ module.exports = app => app.component('models', {
       if (storedField) {
         this.selectedGeoField = storedField;
       }
+    },
+    loadShowRowNumbersPreference() {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const stored = window.localStorage.getItem(SHOW_ROW_NUMBERS_STORAGE_KEY);
+      if (stored === '0') {
+        this.showRowNumbers = false;
+      } else if (stored === '1') {
+        this.showRowNumbers = true;
+      }
+    },
+    toggleRowNumbers() {
+      this.showRowNumbers = !this.showRowNumbers;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(SHOW_ROW_NUMBERS_STORAGE_KEY, this.showRowNumbers ? '1' : '0');
+      }
+      this.showActionsMenu = false;
     },
     setOutputType(type) {
       if (type !== 'json' && type !== 'table' && type !== 'map') {
@@ -484,6 +623,22 @@ module.exports = app => app.component('models', {
         params.searchText = this.searchText;
       }
 
+      // Prefer explicit URL projection (`query.fields`) so the first fetch after
+      // mount/remount respects deep-linked projections before `filteredPaths`
+      // is rehydrated from schema paths.
+      let fieldsParam = normalizeFieldsParamForApi(this.query?.fields);
+      if (!fieldsParam) {
+        const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
+          ? this.filteredPaths.map(p => p.path).filter(Boolean)
+          : null;
+        if (fieldPaths && fieldPaths.length > 0) {
+          fieldsParam = JSON.stringify(fieldPaths);
+        }
+      }
+      if (fieldsParam) {
+        params.fields = fieldsParam;
+      }
+
       return params;
     },
     setSearchTextFromRoute() {
@@ -497,20 +652,35 @@ module.exports = app => app.component('models', {
       this.status = 'loading';
       this.query = Object.assign({}, this.$route.query); // important that this is here before the if statements
       this.setSearchTextFromRoute();
-      if (this.$route.query?.sort) {
-        const sort = eval(`(${this.$route.query.sort})`);
-        const path = Object.keys(sort)[0];
-        const num = Object.values(sort)[0];
-        this.sortDocs(num, path);
+      // Avoid eval() on user-controlled query params.
+      // Use explicit sortKey + sortDirection query params.
+      const sortKey = this.$route.query?.sortKey;
+      const sortDirectionRaw = this.$route.query?.sortDirection;
+      const sortDirection = typeof sortDirectionRaw === 'string' ? Number(sortDirectionRaw) : sortDirectionRaw;
+
+      if (typeof sortKey === 'string' && sortKey.trim().length > 0 &&
+        (sortDirection === 1 || sortDirection === -1)) {
+        for (const key in this.sortBy) {
+          delete this.sortBy[key];
+        }
+        this.sortBy[sortKey] = sortDirection;
+        // Normalize to new params and remove legacy key if present.
+        this.query.sortKey = sortKey;
+        this.query.sortDirection = sortDirection;
+        delete this.query.sort;
       }
-
-
       if (this.currentModel != null) {
         await this.getDocuments();
       }
       if (this.$route.query?.fields) {
-        const filter = this.$route.query.fields.split(',');
-        this.filteredPaths = this.filteredPaths.filter(x => filter.includes(x.path));
+        const urlPaths = parseFieldsQueryParam(this.$route.query.fields);
+        if (urlPaths.length > 0) {
+          this.filteredPaths = urlPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+          if (this.filteredPaths.length > 0) {
+            this.syncProjectionFromPaths();
+            this.saveProjectionPreference();
+          }
+        }
       }
       this.status = 'loaded';
 
@@ -530,10 +700,8 @@ module.exports = app => app.component('models', {
       this.shouldShowCreateModal = false;
       await this.getDocuments();
     },
-    initializeDocumentData() {
-      this.shouldShowCreateModal = true;
-    },
     filterDocument(doc) {
+      if (this.filteredPaths.length === 0) return doc;
       const filteredDoc = {};
       for (let i = 0; i < this.filteredPaths.length; i++) {
         const path = this.filteredPaths[i].path;
@@ -555,23 +723,47 @@ module.exports = app => app.component('models', {
       if (this.status === 'loading' || this.loadedAllDocs) {
         return;
       }
-      const container = this.$refs.documentsList;
-      if (container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
-        this.status = 'loading';
-        const params = this.buildDocumentFetchParams({ skip: this.documents.length });
+      // Infinite scroll only applies to table/json views.
+      if (this.outputType !== 'table' && this.outputType !== 'json') {
+        return;
+      }
+      if (this.documents.length === 0) {
+        return;
+      }
+      const container = this.outputType === 'table'
+        ? this.$refs.documentsScrollContainer
+        : this.$refs.documentsContainerScroll;
+      if (!container || container.scrollHeight <= 0) {
+        return;
+      }
+      const threshold = 150;
+      const nearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - threshold;
+      if (!nearBottom) {
+        return;
+      }
+      this.loadingMore = true;
+      this.status = 'loading';
+      try {
+        const skip = this.documents.length;
+        const params = this.buildDocumentFetchParams({ skip });
         const { docs } = await api.Model.getDocuments(params);
         if (docs.length < limit) {
           this.loadedAllDocs = true;
         }
         this.documents.push(...docs);
+      } finally {
+        this.loadingMore = false;
         this.status = 'loaded';
       }
+      this.$nextTick(() => this.checkIfScrolledToBottom());
     },
     async sortDocs(num, path) {
       let sorted = false;
       if (this.sortBy[path] == num) {
         sorted = true;
         delete this.query.sort;
+        delete this.query.sortKey;
+        delete this.query.sortDirection;
         this.$router.push({ query: this.query });
       }
       for (const key in this.sortBy) {
@@ -579,9 +771,13 @@ module.exports = app => app.component('models', {
       }
       if (!sorted) {
         this.sortBy[path] = num;
-        this.query.sort = `{${path}:${num}}`;
+        this.query.sortKey = path;
+        this.query.sortDirection = num;
+        delete this.query.sort;
         this.$router.push({ query: this.query });
       }
+      this.documents = [];
+      this.loadedAllDocs = false;
       await this.loadMoreDocuments();
     },
     async search(searchText) {
@@ -617,6 +813,23 @@ module.exports = app => app.component('models', {
     },
     closeActionsMenu() {
       this.showActionsMenu = false;
+    },
+    toggleProjectionMenu() {
+      const next = !this.isProjectionMenuSelected;
+      this.isProjectionMenuSelected = next;
+
+      // Because the route-view is keyed on `$route.fullPath`, query changes remount this component.
+      // Persist projection UI state in the URL so Reset/Suggest don't turn the mode off.
+      if (next) {
+        this.query[PROJECTION_MODE_QUERY_KEY] = '1';
+        if (this.outputType === 'map') {
+          this.setOutputType('json');
+        }
+      } else {
+        delete this.query[PROJECTION_MODE_QUERY_KEY];
+      }
+
+      this.$router.push({ query: this.query });
     },
     async openCollectionInfo() {
       this.closeActionsMenu();
@@ -718,160 +931,401 @@ module.exports = app => app.component('models', {
       }
       return formatValue(value / 1000000000, 'B');
     },
-    checkIndexLocation(indexName) {
-      if (this.schemaIndexes.find(x => x.name == indexName) && this.mongoDBIndexes.find(x => x.name == indexName)) {
-        return 'text-gray-500';
-      } else if (this.schemaIndexes.find(x => x.name == indexName)) {
-        return 'text-forest-green-500';
-      } else {
-        return 'text-valencia-500';
-      }
-    },
     async getDocuments() {
-      // Track recently viewed model
-      this.trackRecentModel(this.currentModel);
+      this.loadingMore = false;
+      this.status = 'loading';
+      try {
+        // Track recently viewed model
+        this.trackRecentModel(this.currentModel);
 
-      // Clear previous data
-      this.documents = [];
-      this.schemaPaths = [];
-      this.numDocuments = null;
-      this.loadedAllDocs = false;
-      this.lastSelectedIndex = null;
+        // Clear previous data
+        this.documents = [];
+        this.schemaPaths = [];
+        this.numDocuments = null;
+        this.loadedAllDocs = false;
+        this.lastSelectedIndex = null;
 
-      let docsCount = 0;
-      let schemaPathsReceived = false;
+        let docsCount = 0;
+        let schemaPathsReceived = false;
 
-      // Use async generator to stream SSEs
-      const params = this.buildDocumentFetchParams();
-      for await (const event of api.Model.getDocumentsStream(params)) {
-        if (event.schemaPaths && !schemaPathsReceived) {
+        // Use async generator to stream SSEs
+        const params = this.buildDocumentFetchParams();
+        for await (const event of api.Model.getDocumentsStream(params)) {
+          if (event.schemaPaths && !schemaPathsReceived) {
           // Sort schemaPaths with _id first
-          this.schemaPaths = Object.keys(event.schemaPaths).sort((k1, k2) => {
-            if (k1 === '_id' && k2 !== '_id') {
-              return -1;
+            this.schemaPaths = Object.keys(event.schemaPaths).sort((k1, k2) => {
+              if (k1 === '_id' && k2 !== '_id') {
+                return -1;
+              }
+              if (k1 !== '_id' && k2 === '_id') {
+                return 1;
+              }
+              return 0;
+            }).map(key => event.schemaPaths[key]);
+            this.shouldExport = {};
+            for (const { path } of this.schemaPaths) {
+              this.shouldExport[path] = true;
             }
-            if (k1 !== '_id' && k2 === '_id') {
-              return 1;
+            const shouldUseSavedProjection = this.isProjectionMenuSelected === true;
+            const savedPaths = shouldUseSavedProjection ? this.loadProjectionPreference() : null;
+            if (savedPaths === null) {
+              this.applyDefaultProjection(event.suggestedFields);
+              if (shouldUseSavedProjection) {
+                this.saveProjectionPreference();
+              }
+            } else if (Array.isArray(savedPaths) && savedPaths.length === 0) {
+              this.filteredPaths = [];
+              this.projectionText = '';
+              if (shouldUseSavedProjection) {
+                this.saveProjectionPreference();
+              }
+            } else if (savedPaths && savedPaths.length > 0) {
+              this.filteredPaths = savedPaths
+                .map(path => this.schemaPaths.find(p => p.path === path))
+                .filter(Boolean);
+              if (this.filteredPaths.length === 0) {
+                this.applyDefaultProjection(event.suggestedFields);
+                if (shouldUseSavedProjection) {
+                  this.saveProjectionPreference();
+                }
+              }
+            } else {
+              this.applyDefaultProjection(event.suggestedFields);
+              if (shouldUseSavedProjection) {
+                this.saveProjectionPreference();
+              }
             }
-            return 0;
-          }).map(key => event.schemaPaths[key]);
-          this.shouldExport = {};
-          for (const { path } of this.schemaPaths) {
-            this.shouldExport[path] = true;
+            this.selectedPaths = [...this.filteredPaths];
+            this.syncProjectionFromPaths();
+            schemaPathsReceived = true;
           }
-          this.filteredPaths = [...this.schemaPaths];
-          this.selectedPaths = [...this.schemaPaths];
-          schemaPathsReceived = true;
+          if (event.numDocs !== undefined) {
+            this.numDocuments = event.numDocs;
+          }
+          if (event.document) {
+            this.documents.push(event.document);
+            docsCount++;
+          }
+          if (event.message) {
+            throw new Error(event.message);
+          }
         }
-        if (event.numDocs !== undefined) {
-          this.numDocuments = event.numDocs;
-        }
-        if (event.document) {
-          this.documents.push(event.document);
-          docsCount++;
-        }
-        if (event.message) {
-          this.status = 'loaded';
-          throw new Error(event.message);
-        }
-      }
 
-      if (docsCount < limit) {
-        this.loadedAllDocs = true;
+        if (docsCount < limit) {
+          this.loadedAllDocs = true;
+        }
+      } finally {
+        this.status = 'loaded';
       }
+      this.$nextTick(() => {
+        this.restoreScrollPosition();
+        if (!this.suppressScrollCheck) {
+          this.checkIfScrolledToBottom();
+        }
+        this.suppressScrollCheck = false;
+      });
     },
     async loadMoreDocuments() {
-      let docsCount = 0;
-      let numDocsReceived = false;
+      const isLoadingMore = this.documents.length > 0;
+      if (isLoadingMore) {
+        this.loadingMore = true;
+      }
+      this.status = 'loading';
+      try {
+        let docsCount = 0;
+        let numDocsReceived = false;
 
-      // Use async generator to stream SSEs
-      const params = this.buildDocumentFetchParams({ skip: this.documents.length });
-      for await (const event of api.Model.getDocumentsStream(params)) {
-        if (event.numDocs !== undefined && !numDocsReceived) {
-          this.numDocuments = event.numDocs;
-          numDocsReceived = true;
+        // Use async generator to stream SSEs
+        const params = this.buildDocumentFetchParams({ skip: this.documents.length });
+        for await (const event of api.Model.getDocumentsStream(params)) {
+          if (event.numDocs !== undefined && !numDocsReceived) {
+            this.numDocuments = event.numDocs;
+            numDocsReceived = true;
+          }
+          if (event.document) {
+            this.documents.push(event.document);
+            docsCount++;
+          }
+          if (event.message) {
+            throw new Error(event.message);
+          }
         }
-        if (event.document) {
-          this.documents.push(event.document);
-          docsCount++;
-        }
-        if (event.message) {
-          this.status = 'loaded';
-          throw new Error(event.message);
-        }
-      }
 
-      if (docsCount < limit) {
-        this.loadedAllDocs = true;
-      }
-    },
-    addOrRemove(path) {
-      const exists = this.selectedPaths.findIndex(x => x.path == path.path);
-      if (exists > 0) { // remove
-        this.selectedPaths.splice(exists, 1);
-      } else { // add
-        this.selectedPaths.push(path);
-        this.selectedPaths = Object.keys(this.selectedPaths).sort((k1, k2) => {
-          if (k1 === '_id' && k2 !== '_id') {
-            return -1;
-          }
-          if (k1 !== '_id' && k2 === '_id') {
-            return 1;
-          }
-          return 0;
-        }).map(key => this.selectedPaths[key]);
-      }
-    },
-    openFieldSelection() {
-      if (this.$route.query?.fields) {
-        this.selectedPaths.length = 0;
-        console.log('there are fields in play', this.$route.query.fields);
-        const fields = this.$route.query.fields.split(',');
-        for (let i = 0; i < fields.length; i++) {
-          this.selectedPaths.push({ path: fields[i] });
+        if (docsCount < limit) {
+          this.loadedAllDocs = true;
         }
-      } else {
-        this.selectedPaths = [{ path: '_id' }];
+      } finally {
+        this.loadingMore = false;
+        this.status = 'loaded';
       }
-      this.shouldShowFieldModal = true;
+      this.$nextTick(() => this.checkIfScrolledToBottom());
     },
-    filterDocuments() {
-      if (this.selectedPaths.length > 0) {
-        this.filteredPaths = [...this.selectedPaths];
-      } else {
-        this.filteredPaths.length = 0;
+    applyDefaultProjection(suggestedFields) {
+      if (Array.isArray(suggestedFields) && suggestedFields.length > 0) {
+        this.filteredPaths = suggestedFields
+          .map(path => this.schemaPaths.find(p => p.path === path))
+          .filter(Boolean);
       }
-      this.shouldShowFieldModal = false;
-      const selectedParams = this.filteredPaths.map(x => x.path).join(',');
-      this.query.fields = selectedParams;
-      this.$router.push({ query: this.query });
+      if (!this.filteredPaths || this.filteredPaths.length === 0) {
+        this.filteredPaths = this.schemaPaths.slice(0, DEFAULT_FIRST_N_FIELDS);
+      }
+      if (this.filteredPaths.length === 0) {
+        this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+      }
     },
-    resetDocuments() {
-      this.selectedPaths = [...this.filteredPaths];
-      this.query.fields = {};
-      this.$router.push({ query: this.query });
-      this.shouldShowFieldModal = false;
+    loadProjectionPreference() {
+      if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
+        return null;
+      }
+      const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
+      const stored = window.localStorage.getItem(key);
+      if (stored === null || stored === undefined) {
+        return null;
+      }
+      if (stored === '') {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.map(x => String(x).trim()).filter(Boolean);
+        }
+      } catch (e) {
+        return null;
+      }
+      return null;
     },
-    deselectAll() {
+    saveProjectionPreference() {
+      if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
+        return;
+      }
+      const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
+      const paths = this.filteredPaths.map(p => p.path);
+      window.localStorage.setItem(key, JSON.stringify(paths));
+    },
+    clearProjection() {
+      // Keep current filter input in sync with the URL so projection reset
+      // does not unintentionally wipe the filter on remount.
+      this.syncFilterToQuery();
+      this.filteredPaths = [];
       this.selectedPaths = [];
+      this.projectionText = '';
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
     },
-    selectAll() {
-      this.selectedPaths = [...this.schemaPaths];
+    resetFilter() {
+      // Reuse the existing "apply filter + update URL" flow.
+      this.search('');
     },
-    isSelected(path) {
-      return this.selectedPaths.find(x => x.path == path);
+    syncFilterToQuery() {
+      if (typeof this.searchText === 'string' && this.searchText.trim().length > 0) {
+        this.query.search = this.searchText;
+      } else {
+        delete this.query.search;
+      }
+    },
+    applyDefaultProjectionColumns() {
+      if (!this.schemaPaths || this.schemaPaths.length === 0) return;
+      const pathNames = this.schemaPaths.map(p => p.path);
+      this.applyDefaultProjection(pathNames.slice(0, DEFAULT_FIRST_N_FIELDS));
+      this.selectedPaths = [...this.filteredPaths];
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+    },
+    initProjection(ev) {
+      if (!this.projectionText || !this.projectionText.trim()) {
+        this.projectionText = '';
+        this.$nextTick(() => {
+          if (ev && ev.target) {
+            ev.target.setSelectionRange(0, 0);
+          }
+        });
+      }
+    },
+    syncProjectionFromPaths() {
+      if (this.filteredPaths.length === 0) {
+        this.projectionText = '';
+        return;
+      }
+      // String-only projection syntax: `field1 field2` and `-field` for exclusions.
+      // Since `filteredPaths` represents the final include set, we serialize as space-separated fields.
+      this.projectionText = this.filteredPaths.map(p => p.path).join(' ');
+    },
+    parseProjectionInput(text) {
+      if (!text || typeof text !== 'string') {
+        return [];
+      }
+      const trimmed = text.trim();
+      if (!trimmed) {
+        return [];
+      }
+      const normalizeKey = (key) => String(key).trim();
+
+      // String-only projection syntax:
+      //   name email
+      //   -password   (exclusion-only)
+      //   +email      (inclusion-only)
+      //
+      // Brace/object syntax is intentionally NOT supported.
+      if (trimmed.startsWith('{') || trimmed.endsWith('}')) {
+        return null;
+      }
+
+      const tokens = trimmed.split(/[,\s]+/).filter(Boolean);
+      if (tokens.length === 0) return [];
+
+      const includeKeys = [];
+      const excludeKeys = [];
+
+      for (const rawToken of tokens) {
+        const token = rawToken.trim();
+        if (!token) continue;
+
+        const prefix = token[0];
+        if (prefix === '-') {
+          const path = token.slice(1).trim();
+          if (!path) return null;
+          excludeKeys.push(path);
+        } else if (prefix === '+') {
+          const path = token.slice(1).trim();
+          if (!path) return null;
+          includeKeys.push(path);
+        } else {
+          includeKeys.push(token);
+        }
+      }
+
+      if (includeKeys.length > 0 && excludeKeys.length > 0) {
+        // Support subtractive edits on an existing projection string, e.g.
+        // `name email createdAt -email` -> `name createdAt`.
+        const includeSet = new Set(includeKeys.map(normalizeKey));
+        for (const path of excludeKeys) {
+          includeSet.delete(normalizeKey(path));
+        }
+        return Array.from(includeSet);
+      }
+
+      if (excludeKeys.length > 0) {
+        const excludeSet = new Set(excludeKeys.map(normalizeKey));
+        return this.schemaPaths.map(p => p.path).filter(p => !excludeSet.has(p));
+      }
+
+      return includeKeys.map(normalizeKey);
+    },
+    applyProjectionFromInput() {
+      const paths = this.parseProjectionInput(this.projectionText);
+      if (paths === null) {
+        this.syncProjectionFromPaths();
+        return;
+      }
+      if (paths.length === 0) {
+        this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+        if (this.filteredPaths.length === 0 && this.schemaPaths.length > 0) {
+          const idPath = this.schemaPaths.find(p => p.path === '_id');
+          this.filteredPaths = idPath ? [idPath] : [this.schemaPaths[0]];
+        }
+      } else {
+        this.filteredPaths = paths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+        const validPaths = new Set(this.schemaPaths.map(p => p.path));
+        for (const path of paths) {
+          if (validPaths.has(path) && !this.filteredPaths.find(p => p.path === path)) {
+            this.filteredPaths.push(this.schemaPaths.find(p => p.path === path));
+          }
+        }
+        if (this.filteredPaths.length === 0) {
+          this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+        }
+      }
+      this.selectedPaths = [...this.filteredPaths];
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
+    },
+    updateProjectionQuery() {
+      const paths = this.filteredPaths.map(x => x.path).filter(Boolean);
+      if (paths.length > 0) {
+        this.query.fields = JSON.stringify(paths);
+      } else {
+        delete this.query.fields;
+      }
+      this.$router.push({ query: this.query });
+    },
+    removeField(schemaPath) {
+      if (this.outputType === 'table' && this.$refs.documentsScrollContainer) {
+        this.scrollTopToRestore = this.$refs.documentsScrollContainer.scrollTop;
+        this.suppressScrollCheck = true;
+        // Persist for remount caused by query changes.
+        if (typeof window !== 'undefined') {
+          window.__studioModelsScrollTopToRestore = this.scrollTopToRestore;
+          window.__studioModelsSuppressScrollCheck = true;
+        }
+      }
+      const index = this.filteredPaths.findIndex(p => p.path === schemaPath.path);
+      if (index !== -1) {
+        this.filteredPaths.splice(index, 1);
+        if (this.filteredPaths.length === 0) {
+          const idPath = this.schemaPaths.find(p => p.path === '_id');
+          this.filteredPaths = idPath ? [idPath] : [];
+        }
+        this.syncProjectionFromPaths();
+        this.updateProjectionQuery();
+        this.saveProjectionPreference();
+      }
+    },
+    addField(schemaPath) {
+      if (!this.filteredPaths.find(p => p.path === schemaPath.path)) {
+        if (this.outputType === 'table' && this.$refs.documentsScrollContainer) {
+          this.scrollTopToRestore = this.$refs.documentsScrollContainer.scrollTop;
+          this.suppressScrollCheck = true;
+          // Persist for remount caused by query changes.
+          if (typeof window !== 'undefined') {
+            window.__studioModelsScrollTopToRestore = this.scrollTopToRestore;
+            window.__studioModelsSuppressScrollCheck = true;
+          }
+        }
+        this.filteredPaths.push(schemaPath);
+        this.filteredPaths.sort((a, b) => {
+          if (a.path === '_id') return -1;
+          if (b.path === '_id') return 1;
+          return 0;
+        });
+        this.syncProjectionFromPaths();
+        this.updateProjectionQuery();
+        this.saveProjectionPreference();
+        this.showAddFieldDropdown = false;
+        this.addFieldFilterText = '';
+      }
+    },
+    restoreScrollPosition() {
+      if (this.outputType !== 'table') return;
+      if (this.scrollTopToRestore == null) return;
+      const container = this.$refs.documentsScrollContainer;
+      if (!container) return;
+      container.scrollTop = this.scrollTopToRestore;
+      this.scrollTopToRestore = null;
+    },
+    toggleAddFieldDropdown() {
+      this.showAddFieldDropdown = !this.showAddFieldDropdown;
+      if (this.showAddFieldDropdown) {
+        this.addFieldFilterText = '';
+        this.$nextTick(() => this.$refs.addFieldFilterInput?.focus());
+      }
     },
     getComponentForPath(schemaPath) {
+      if (!schemaPath || typeof schemaPath !== 'object') {
+        return 'list-mixed';
+      }
       if (schemaPath.instance === 'Array') {
         return 'list-array';
       }
       if (schemaPath.instance === 'String') {
         return 'list-string';
       }
-      if (schemaPath.instance == 'Embedded') {
+      if (schemaPath.instance === 'Embedded') {
         return 'list-subdocument';
       }
-      if (schemaPath.instance == 'Mixed') {
+      if (schemaPath.instance === 'Mixed') {
         return 'list-mixed';
       }
       return 'list-default';
@@ -895,6 +1349,31 @@ module.exports = app => app.component('models', {
       }
       this.edittingDoc = null;
       this.$toast.success('Document updated!');
+    },
+    copyCellValue(value) {
+      const text = value == null ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.$toast.success('Copied to clipboard');
+        }).catch(() => {
+          this.fallbackCopyText(text);
+        });
+      } else {
+        this.fallbackCopyText(text);
+      }
+    },
+    fallbackCopyText(text) {
+      try {
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        this.$toast.success('Copied to clipboard');
+      } catch (err) {
+        this.$toast.error('Copy failed');
+      }
     },
     handleDocumentClick(document, event) {
       if (this.selectMultiple) {

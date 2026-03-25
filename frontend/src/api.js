@@ -127,9 +127,12 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getDocuments: function getDocuments(params) {
       return client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
     },
+    getSuggestedProjection: function getSuggestedProjection(params) {
+      return client.post('', { action: 'Model.getSuggestedProjection', ...params }).then(res => res.data);
+    },
     getDocumentsStream: async function* getDocumentsStream(params) {
       const data = await client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
-      yield { schemaPaths: data.schemaPaths };
+      yield { schemaPaths: data.schemaPaths, suggestedFields: data.suggestedFields };
       yield { numDocs: data.numDocs };
       for (const doc of data.docs) {
         yield { document: doc };
@@ -341,6 +344,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getDocuments: function getDocuments(params) {
       return client.post('/Model/getDocuments', params).then(res => res.data);
+    },
+    getSuggestedProjection: function getSuggestedProjection(params) {
+      return client.post('/Model/getSuggestedProjection', params).then(res => res.data);
     },
     getDocumentsStream: async function* getDocumentsStream(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
