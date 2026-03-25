@@ -95,8 +95,6 @@ module.exports = app => app.component('models', {
     searchText: '',
     shouldShowExportModal: false,
     shouldShowCreateModal: false,
-    shouldShowFieldModal: false,
-    fieldModalFilterText: '',
     projectionText: '',
     isProjectionMenuSelected: false,
     addFieldFilterText: '',
