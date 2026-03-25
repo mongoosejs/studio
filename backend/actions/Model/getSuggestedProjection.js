@@ -26,7 +26,7 @@ module.exports = ({ db }) => async function getSuggestedProjectionAction(params)
     throw new Error(`Model ${model} not found`);
   }
 
-  // Suggestions are schema-based only.
+  // Default columns: first N schema paths (no scoring).
   const suggestedFields = getSuggestedProjection(Model);
 
   return { suggestedFields };

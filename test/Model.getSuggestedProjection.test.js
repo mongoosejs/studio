@@ -21,7 +21,7 @@ describe('Model.getSuggestedProjection()', function() {
     await SuggestedProjectionTest.deleteMany();
   });
 
-  it('returns schema-based suggested fields (no searchText boosting)', async function() {
+  it('returns the first N schema paths in definition order', async function() {
     const res = await actions.Model.getSuggestedProjection({
       model: 'SuggestedProjectionTest',
       roles: ['admin']

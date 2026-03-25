@@ -1049,20 +1049,14 @@ module.exports = app => app.component('models', {
         delete this.query.search;
       }
     },
-    async applySuggestedProjection() {
-      if (!this.currentModel) return;
-      try {
-        const { suggestedFields } = await api.Model.getSuggestedProjection({
-          model: this.currentModel
-        });
-        this.applyDefaultProjection(suggestedFields);
-        this.selectedPaths = [...this.filteredPaths];
-        this.syncProjectionFromPaths();
-        this.updateProjectionQuery();
-        this.saveProjectionPreference();
-      } catch (err) {
-        this.$toast.error(err.message || 'Failed to get suggested projection');
-      }
+    applyDefaultProjectionColumns() {
+      if (!this.schemaPaths || this.schemaPaths.length === 0) return;
+      const pathNames = this.schemaPaths.map(p => p.path);
+      this.applyDefaultProjection(pathNames.slice(0, DEFAULT_FIRST_N_FIELDS));
+      this.selectedPaths = [...this.filteredPaths];
+      this.syncProjectionFromPaths();
+      this.updateProjectionQuery();
+      this.saveProjectionPreference();
     },
     initProjection(ev) {
       if (!this.projectionText || !this.projectionText.trim()) {
