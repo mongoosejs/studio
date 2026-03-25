@@ -959,23 +959,34 @@ module.exports = app => app.component('models', {
             for (const { path } of this.schemaPaths) {
               this.shouldExport[path] = true;
             }
-            const savedPaths = this.loadProjectionPreference();
+            const shouldUseSavedProjection = this.isProjectionMenuSelected === true;
+            const savedPaths = shouldUseSavedProjection ? this.loadProjectionPreference() : null;
             if (savedPaths === null) {
               this.applyDefaultProjection(event.suggestedFields);
-              this.saveProjectionPreference();
+              if (shouldUseSavedProjection) {
+                this.saveProjectionPreference();
+              }
             } else if (Array.isArray(savedPaths) && savedPaths.length === 0) {
               this.filteredPaths = [];
               this.projectionText = '';
-              this.saveProjectionPreference();
+              if (shouldUseSavedProjection) {
+                this.saveProjectionPreference();
+              }
             } else if (savedPaths && savedPaths.length > 0) {
-              this.filteredPaths = savedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+              this.filteredPaths = savedPaths
+                .map(path => this.schemaPaths.find(p => p.path === path))
+                .filter(Boolean);
               if (this.filteredPaths.length === 0) {
                 this.applyDefaultProjection(event.suggestedFields);
-                this.saveProjectionPreference();
+                if (shouldUseSavedProjection) {
+                  this.saveProjectionPreference();
+                }
               }
             } else {
               this.applyDefaultProjection(event.suggestedFields);
-              this.saveProjectionPreference();
+              if (shouldUseSavedProjection) {
+                this.saveProjectionPreference();
+              }
             }
             this.selectedPaths = [...this.filteredPaths];
             this.syncProjectionFromPaths();
