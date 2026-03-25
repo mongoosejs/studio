@@ -424,9 +424,9 @@
             </tbody>
           </table>
         </div>
-        <div v-if="outputType === 'table' && loadingMore" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary border-t border-edge bg-surface">
+        <div v-if="outputType === 'table' && (loadingMore || (status === 'loading' && documents.length > 0))" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary border-t border-edge bg-surface">
           <img src="images/loader.gif" alt="" class="h-5 w-5">
-          <span>Loading more documents…</span>
+          <span>Loading documents…</span>
         </div>
         <p v-if="outputType === 'table' && documents.length === 0 && status === 'loaded'" class="mt-2 text-sm text-content-tertiary px-1">
           No documents to show. Use Projection in the menu to choose columns.
@@ -452,9 +452,9 @@
           <list-json :value="filterDocument(document)" :references="referenceMap">
           </list-json>
         </div>
-        <div v-if="outputType === 'json' && loadingMore" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary">
+        <div v-if="outputType === 'json' && (loadingMore || (status === 'loading' && documents.length > 0))" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary">
           <img src="images/loader.gif" alt="" class="h-5 w-5">
-          <span>Loading more documents…</span>
+          <span>Loading documents…</span>
         </div>
       </div>
       <div v-else-if="outputType === 'map'" class="flex flex-col h-full">
@@ -481,7 +481,7 @@
         </div>
         <div class="flex-1 min-h-[400px]" ref="modelsMap"></div>
       </div>
-      <div v-if="status === 'loading' && !loadingMore" class="loader loader-overlay" aria-busy="true">
+      <div v-if="status === 'loading' && !loadingMore && documents.length === 0" class="loader loader-overlay" aria-busy="true">
         <img src="images/loader.gif" alt="Loading">
       </div>
     </div>
