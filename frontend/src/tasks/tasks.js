@@ -67,10 +67,19 @@ module.exports = app => app.component('tasks', {
     },
     // Chart over time
     overTimeChart: null,
-    overTimeBuckets: []
+    overTimeBuckets: [],
+    // Toggled with v-if on the canvas so Chart.js is torn down and remounted on
+    // filter changes. Updating Chart.js in place during a big Vue re-render was
+    // freezing the page (dropdowns unresponsive, chart stale).
+    showOverTimeChart: true
   }),
   methods: {
     async getTasks() {
+      // Hide chart canvas + teardown Chart.js immediately on filter changes
+      // (see showOverTimeChart + v-if on the canvas in tasks.html).
+      this.showOverTimeChart = false;
+      this.destroyOverTimeChart();
+
       const params = {};
       if (this.selectedStatus == 'all') {
         params.status = null;
@@ -102,9 +111,12 @@ module.exports = app => app.component('tasks', {
       this.tasksByName = overviewResult.tasksByName || [];
       this.overTimeBuckets = overTimeResult || [];
       if (this.overTimeBuckets.length === 0) {
+        this.showOverTimeChart = false;
         this.destroyOverTimeChart();
       } else {
-        this.$nextTick(() => this.renderOverTimeChart());
+        this.showOverTimeChart = true;
+        await this.$nextTick();
+        this.renderOverTimeChart();
       }
     },
 

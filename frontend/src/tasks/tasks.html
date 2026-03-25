@@ -81,10 +81,16 @@
             </div>
 
             <!-- Tasks Over Time Chart -->
+            <!--
+              Canvas is gated by showOverTimeChart (v-if) so Chart.js is destroyed
+              and the DOM node is removed before each refresh. In-place Chart.js
+              updates during Vue re-renders from filter changes could freeze the UI
+              (dropdowns stuck, chart not updating). See tasks.js getTasks().
+            -->
             <div class="mt-6">
                 <h2 class="text-lg font-semibold text-content-secondary mb-3">Tasks Over Time</h2>
                 <div class="bg-page border border-edge rounded-lg p-4" style="height: 260px;">
-                    <canvas v-if="overTimeBuckets.length > 0" ref="overTimeChart" style="width:100%;height:100%;"></canvas>
+                    <canvas v-if="showOverTimeChart && overTimeBuckets.length > 0" ref="overTimeChart" style="width:100%;height:100%;"></canvas>
                     <div v-else class="flex items-center justify-center h-full text-content-tertiary text-sm">
                         No task activity in the selected window
                     </div>
