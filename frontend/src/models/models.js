@@ -14,7 +14,6 @@ const limit = 20;
 const DEFAULT_FIRST_N_FIELDS = 6;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
-const PROJECTION_STORAGE_KEY_PREFIX = 'studio:model-projection:';
 const SHOW_ROW_NUMBERS_STORAGE_KEY = 'studio:model-show-row-numbers';
 const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
@@ -627,7 +626,7 @@ module.exports = app => app.component('models', {
       // mount/remount respects deep-linked projections before `filteredPaths`
       // is rehydrated from schema paths.
       let fieldsParam = normalizeFieldsParamForApi(this.query?.fields);
-      if (!fieldsParam) {
+      if (!fieldsParam && this.isProjectionMenuSelected === true) {
         const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
           ? this.filteredPaths.map(p => p.path).filter(Boolean)
           : null;
@@ -678,7 +677,6 @@ module.exports = app => app.component('models', {
           this.filteredPaths = urlPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
           if (this.filteredPaths.length > 0) {
             this.syncProjectionFromPaths();
-            this.saveProjectionPreference();
           }
         }
       }
@@ -827,6 +825,10 @@ module.exports = app => app.component('models', {
         }
       } else {
         delete this.query[PROJECTION_MODE_QUERY_KEY];
+        delete this.query.fields;
+        this.filteredPaths = [];
+        this.selectedPaths = [];
+        this.projectionText = '';
       }
 
       this.$router.push({ query: this.query });
@@ -966,34 +968,13 @@ module.exports = app => app.component('models', {
             for (const { path } of this.schemaPaths) {
               this.shouldExport[path] = true;
             }
-            const shouldUseSavedProjection = this.isProjectionMenuSelected === true;
-            const savedPaths = shouldUseSavedProjection ? this.loadProjectionPreference() : null;
-            if (savedPaths === null) {
+            const isProjectionModeOn = this.isProjectionMenuSelected === true;
+            if (isProjectionModeOn) {
               this.applyDefaultProjection(event.suggestedFields);
-              if (shouldUseSavedProjection) {
-                this.saveProjectionPreference();
-              }
-            } else if (Array.isArray(savedPaths) && savedPaths.length === 0) {
-              this.filteredPaths = [];
-              this.projectionText = '';
-              if (shouldUseSavedProjection) {
-                this.saveProjectionPreference();
-              }
-            } else if (savedPaths && savedPaths.length > 0) {
-              this.filteredPaths = savedPaths
-                .map(path => this.schemaPaths.find(p => p.path === path))
-                .filter(Boolean);
-              if (this.filteredPaths.length === 0) {
-                this.applyDefaultProjection(event.suggestedFields);
-                if (shouldUseSavedProjection) {
-                  this.saveProjectionPreference();
-                }
-              }
             } else {
-              this.applyDefaultProjection(event.suggestedFields);
-              if (shouldUseSavedProjection) {
-                this.saveProjectionPreference();
-              }
+              this.filteredPaths = [];
+              this.selectedPaths = [];
+              this.projectionText = '';
             }
             this.selectedPaths = [...this.filteredPaths];
             this.syncProjectionFromPaths();
@@ -1073,36 +1054,6 @@ module.exports = app => app.component('models', {
         this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
       }
     },
-    loadProjectionPreference() {
-      if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
-        return null;
-      }
-      const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
-      const stored = window.localStorage.getItem(key);
-      if (stored === null || stored === undefined) {
-        return null;
-      }
-      if (stored === '') {
-        return [];
-      }
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed.map(x => String(x).trim()).filter(Boolean);
-        }
-      } catch (e) {
-        return null;
-      }
-      return null;
-    },
-    saveProjectionPreference() {
-      if (typeof window === 'undefined' || !window.localStorage || !this.currentModel) {
-        return;
-      }
-      const key = PROJECTION_STORAGE_KEY_PREFIX + this.currentModel;
-      const paths = this.filteredPaths.map(p => p.path);
-      window.localStorage.setItem(key, JSON.stringify(paths));
-    },
     clearProjection() {
       // Keep current filter input in sync with the URL so projection reset
       // does not unintentionally wipe the filter on remount.
@@ -1111,7 +1062,6 @@ module.exports = app => app.component('models', {
       this.selectedPaths = [];
       this.projectionText = '';
       this.updateProjectionQuery();
-      this.saveProjectionPreference();
     },
     resetFilter() {
       // Reuse the existing "apply filter + update URL" flow.
@@ -1131,7 +1081,6 @@ module.exports = app => app.component('models', {
       this.selectedPaths = [...this.filteredPaths];
       this.syncProjectionFromPaths();
       this.updateProjectionQuery();
-      this.saveProjectionPreference();
     },
     initProjection(ev) {
       if (!this.projectionText || !this.projectionText.trim()) {
@@ -1240,7 +1189,6 @@ module.exports = app => app.component('models', {
       this.selectedPaths = [...this.filteredPaths];
       this.syncProjectionFromPaths();
       this.updateProjectionQuery();
-      this.saveProjectionPreference();
     },
     updateProjectionQuery() {
       const paths = this.filteredPaths.map(x => x.path).filter(Boolean);
@@ -1270,7 +1218,6 @@ module.exports = app => app.component('models', {
         }
         this.syncProjectionFromPaths();
         this.updateProjectionQuery();
-        this.saveProjectionPreference();
       }
     },
     addField(schemaPath) {
@@ -1292,7 +1239,6 @@ module.exports = app => app.component('models', {
         });
         this.syncProjectionFromPaths();
         this.updateProjectionQuery();
-        this.saveProjectionPreference();
         this.showAddFieldDropdown = false;
         this.addFieldFilterText = '';
       }
