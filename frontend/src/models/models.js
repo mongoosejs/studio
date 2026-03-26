@@ -673,7 +673,7 @@ module.exports = app => app.component('models', {
       }
       if (this.$route.query?.fields) {
         const urlPaths = parseFieldsQueryParam(this.$route.query.fields);
-          if (urlPaths.length > 0) {
+        if (urlPaths.length > 0) {
           this.filteredPaths = urlPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
           if (this.filteredPaths.length > 0) {
             this.syncProjectionFromPaths();
