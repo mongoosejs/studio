@@ -17,13 +17,21 @@ const StreamChatMessageParams = new Archetype({
   documentData: {
     $type: 'string'
   },
+  createDraftScript: {
+    $type: 'string'
+  },
+  aiTarget: {
+    $type: 'string',
+    $default: 'document'
+  },
   roles: {
     $type: ['string']
   }
 }).compile('StreamChatMessageParams');
 
 module.exports = ({ db, options }) => async function* streamChatMessage(params) {
-  const { model, content, documentData, roles } = new StreamChatMessageParams(params);
+  let { model, content, documentData, createDraftScript, aiTarget, roles } = new StreamChatMessageParams(params);
+  aiTarget = aiTarget === 'script' ? 'script' : 'document';
 
   await authorize('Model.streamChatMessage', roles);
 
@@ -33,11 +41,21 @@ module.exports = ({ db, options }) => async function* streamChatMessage(params) 
   }
 
   const modelDescriptions = getModelDescriptions({ models: { [Model.modelName]: Model } });
-  const context = [
-    modelDescriptions,
-    'Current draft document:\n' + (documentData || '')
-  ].join('\n\n');
-  const system = systemPrompt + '\n\n' + context + (options?.context ? '\n\n' + options.context : '');
+  let context;
+  if (aiTarget === 'script') {
+    context = [
+      modelDescriptions,
+      'Current draft document (this becomes `draft` in the VM):\n' + (documentData || ''),
+      'Current server script (may be empty, for context):\n' + (createDraftScript || '')
+    ].join('\n\n');
+  } else {
+    context = [
+      modelDescriptions,
+      'Current draft document:\n' + (documentData || '')
+    ].join('\n\n');
+  }
+  const systemPromptForTarget = aiTarget === 'script' ? scriptSystemPrompt : documentSystemPrompt;
+  const system = systemPromptForTarget + '\n\n' + context + (options?.context ? '\n\n' + options.context : '');
 
   const llmMessages = [{ role: 'user', content: [{ type: 'text', text: content }] }];
   const textStream = streamLLM(llmMessages, system, options);
@@ -49,10 +67,25 @@ module.exports = ({ db, options }) => async function* streamChatMessage(params) 
   return {};
 };
 
-const systemPrompt = `
+const documentSystemPrompt = `
   You are a helpful assistant that drafts MongoDB documents for the user.
 
   Use the model description and the current draft document to refine the user's intent.
 
   Return only the updated document body as a JavaScript object literal. Do not use Markdown or code fences.
+`.trim();
+
+const scriptSystemPrompt = `
+  You write server-side JavaScript for Mongoose Studio's create-document sandbox.
+
+  The script runs on Node inside an async IIFE: (async () => { /* your code */ })().
+  Bindings: draft (mutable object — the document being created), db (Mongoose connection with db.models), mongoose, Model (Mongoose model for this collection), ObjectId.
+
+  Rules:
+  - Output ONLY executable script body (statements only). No markdown, no code fences, no surrounding explanation.
+  - Use await for database calls, e.g. const x = await db.models.SomeModel.findById(draft.someRef).lean();
+  - Mutate draft to add or change fields. Do not return draft.
+  - console.log is captured and shown to the user.
+
+  Use the model description plus the current draft and existing script (if any) to fulfill the user's request.
 `.trim();

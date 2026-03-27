@@ -137,8 +137,11 @@ module.exports = app => app.component('create-document', {
       aiPrompt: '',
       aiSuggestion: '',
       aiOriginalDocument: '',
+      aiOriginalScript: '',
+      lastAiTarget: 'document',
       aiStreaming: false,
       aiSuggestionReady: false,
+      createModalTab: 'manual',
       pullMappings: [{ refFieldPath: '', sourcePath: '', targetPath: '' }],
       pullPathAutocomplete: {
         rowIndex: null,
@@ -187,7 +190,7 @@ module.exports = app => app.component('create-document', {
     }
   },
   methods: {
-    async requestAiSuggestion() {
+    async requestAiSuggestion(mode) {
       if (this.aiStreaming) {
         return;
       }
@@ -195,8 +198,10 @@ module.exports = app => app.component('create-document', {
       if (!prompt) {
         return;
       }
+      const target = mode === 'script' ? 'script' : 'document';
 
       this.aiOriginalDocument = this.documentData;
+      this.aiOriginalScript = this.createDraftScript || '';
       this.aiSuggestion = '';
       this.aiSuggestionReady = false;
       this.aiStreaming = true;
@@ -205,17 +210,35 @@ module.exports = app => app.component('create-document', {
         for await (const event of api.Model.streamChatMessage({
           model: this.currentModel,
           content: prompt,
-          documentData: this.aiOriginalDocument
+          documentData: this.aiOriginalDocument,
+          createDraftScript: target === 'script' ? this.aiOriginalScript : undefined,
+          aiTarget: target
         })) {
           if (event?.textPart) {
             this.aiSuggestion += event.textPart;
+            if (target === 'script') {
+              this.createDraftScript = this.aiSuggestion;
+            }
           }
         }
-        this.$refs.codeEditor.setValue(this.aiSuggestion);
+        if (target === 'document') {
+          this.$refs.codeEditor.setValue(this.aiSuggestion);
+        } else {
+          this.createDraftScript = this.aiSuggestion;
+        }
+        this.lastAiTarget = target;
         this.aiSuggestionReady = true;
       } catch (err) {
-        this.$refs.codeEditor.setValue(this.aiOriginalDocument);
-        this.$toast.error('Failed to generate a document suggestion.');
+        if (target === 'document') {
+          this.$refs.codeEditor.setValue(this.aiOriginalDocument);
+        } else {
+          this.createDraftScript = this.aiOriginalScript;
+        }
+        this.$toast.error(
+          target === 'script'
+            ? 'Failed to generate a script suggestion.'
+            : 'Failed to generate a document suggestion.'
+        );
         throw err;
       } finally {
         this.aiStreaming = false;
@@ -225,12 +248,18 @@ module.exports = app => app.component('create-document', {
       this.aiSuggestionReady = false;
       this.aiSuggestion = '';
       this.aiOriginalDocument = '';
+      this.aiOriginalScript = '';
     },
     rejectAiSuggestion() {
-      this.$refs.codeEditor.setValue(this.aiOriginalDocument);
+      if (this.lastAiTarget === 'script') {
+        this.createDraftScript = this.aiOriginalScript;
+      } else {
+        this.$refs.codeEditor.setValue(this.aiOriginalDocument);
+      }
       this.aiSuggestionReady = false;
       this.aiSuggestion = '';
       this.aiOriginalDocument = '';
+      this.aiOriginalScript = '';
     },
     sourcePathChoices(refFieldPath) {
       const meta = (this.paths || []).find(p => p.path === refFieldPath);

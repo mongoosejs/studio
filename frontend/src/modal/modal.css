@@ -50,6 +50,19 @@
   overflow: auto;
 }
 
+/* Create document: more width + horizontal inset so the scrollbar is not flush with content */
+.modal-container.create-document-modal {
+  width: min(92vw, 42rem);
+  max-width: 42rem;
+}
+
+.modal-container.create-document-modal .modal-body {
+  margin: 16px 0;
+  padding-left: 0.75rem;
+  padding-right: 1.125rem;
+  scrollbar-gutter: stable;
+}
+
 .modal__button--default {
   float: right;
 }
