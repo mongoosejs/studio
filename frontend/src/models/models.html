@@ -280,6 +280,26 @@
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 relative m-4 rounded-md" role="alert">
           <span class="block font-bold">Error</span>
           <span class="block">{{ error }}</span>
+          <span class="block mt-2">
+            Need help?
+            <a
+              href="https://discord.gg/mongoose-analytics"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline font-medium text-red-800 hover:text-red-900"
+            >
+              Ask in Discord
+            </a>
+            or
+            <a
+              href="https://github.com/mongoosejs/studio/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline font-medium text-red-800 hover:text-red-900"
+            >
+              open a GitHub issue
+            </a>.
+          </span>
         </div>
       </div>
       <div v-else-if="outputType === 'table'" class="flex-1 min-h-0 flex flex-col overflow-hidden">
