@@ -33,6 +33,156 @@
       </button>
     </div>
   </div>
+  <div class="mb-4 rounded-md border border-edge-strong bg-page0 p-3">
+    <label class="block text-sm font-bold text-content">Pull from another document</label>
+    <p class="mt-1 text-xs text-content-tertiary">For each row, type or pick a <strong>related field</strong> (its <code class="text-xs">ref</code> selects the source model). Suggestions match the filter field picker: arrow keys, Tab/Enter to accept, click to select. The related document id is read from your draft in the editor below.</p>
+    <p v-if="refFieldOptions.length === 0" class="mt-2 text-xs text-amber-700">This model has no reference fields, so pulling from related documents is not available.</p>
+    <div class="mt-3 space-y-2">
+      <div v-for="(row, idx) in pullMappings" :key="idx" class="flex flex-wrap items-end gap-2">
+        <div class="min-w-[9rem] flex-1">
+          <label class="block text-xs font-medium text-content-secondary">Related field (draft)</label>
+          <div class="relative mt-1">
+            <input
+              v-model="row.refFieldPath"
+              type="text"
+              autocomplete="off"
+              placeholder="Schema path with ref"
+              :disabled="refFieldOptions.length === 0"
+              class="w-full rounded-md border border-edge-strong px-2 py-1.5 font-mono text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              @focus="onPullPathFocus(idx, 'ref')"
+              @input="onPullPathInput(idx, 'ref')"
+              @keydown="onPullPathKeydown($event, idx, 'ref')"
+              @blur="onPullRefFieldBlur(row)"
+            />
+            <ul
+              v-if="pullPathAutocompleteOpen(idx, 'ref')"
+              class="absolute z-[9999] mt-1 max-h-40 w-full overflow-y-auto rounded border border-edge-strong bg-surface shadow"
+            >
+              <li
+                v-for="(suggestion, sIdx) in pullPathAutocomplete.suggestions"
+                :key="'ref-' + idx + '-' + suggestion"
+                class="cursor-pointer px-2 py-1 text-sm"
+                :class="{ 'bg-primary-subtle': sIdx === pullPathAutocomplete.index }"
+                @mousedown.prevent="applyPullPathSuggestion(idx, 'ref', suggestion)"
+              >
+                <span class="font-mono">{{ suggestion }}</span>
+                <span v-if="refMetaForPath(suggestion)" class="text-content-tertiary"> → {{ refMetaForPath(suggestion).ref }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="min-w-0 flex-1">
+          <label class="block text-xs font-medium text-content-secondary">Source field (related model)</label>
+          <div class="relative mt-1">
+            <input
+              v-model="row.sourcePath"
+              type="text"
+              autocomplete="off"
+              placeholder="Field on related document"
+              :disabled="refFieldOptions.length === 0 || sourcePathChoices(row.refFieldPath).length === 0"
+              class="w-full rounded-md border border-edge-strong px-2 py-1.5 font-mono text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              @focus="onPullPathFocus(idx, 'source')"
+              @input="onPullPathInput(idx, 'source')"
+              @keydown="onPullPathKeydown($event, idx, 'source')"
+              @blur="onPullPathBlur"
+            />
+            <ul
+              v-if="pullPathAutocompleteOpen(idx, 'source')"
+              class="absolute z-[9999] mt-1 max-h-40 w-full overflow-y-auto rounded border border-edge-strong bg-surface shadow"
+            >
+              <li
+                v-for="(suggestion, sIdx) in pullPathAutocomplete.suggestions"
+                :key="'src-' + idx + '-' + suggestion"
+                class="cursor-pointer px-2 py-1 font-mono text-sm"
+                :class="{ 'bg-primary-subtle': sIdx === pullPathAutocomplete.index }"
+                @mousedown.prevent="applyPullPathSuggestion(idx, 'source', suggestion)"
+              >
+                {{ suggestion }}
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="min-w-0 flex-1">
+          <label class="block text-xs font-medium text-content-secondary">Target field (new doc)</label>
+          <div class="relative mt-1">
+            <input
+              v-model="row.targetPath"
+              type="text"
+              autocomplete="off"
+              placeholder="Field on new document"
+              :disabled="targetPathChoices.length === 0"
+              class="w-full rounded-md border border-edge-strong px-2 py-1.5 font-mono text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              @focus="onPullPathFocus(idx, 'target')"
+              @input="onPullPathInput(idx, 'target')"
+              @keydown="onPullPathKeydown($event, idx, 'target')"
+              @blur="onPullPathBlur"
+            />
+            <ul
+              v-if="pullPathAutocompleteOpen(idx, 'target')"
+              class="absolute z-[9999] mt-1 max-h-40 w-full overflow-y-auto rounded border border-edge-strong bg-surface shadow"
+            >
+              <li
+                v-for="(suggestion, sIdx) in pullPathAutocomplete.suggestions"
+                :key="'tgt-' + idx + '-' + suggestion"
+                class="cursor-pointer px-2 py-1 font-mono text-sm"
+                :class="{ 'bg-primary-subtle': sIdx === pullPathAutocomplete.index }"
+                @mousedown.prevent="applyPullPathSuggestion(idx, 'target', suggestion)"
+              >
+                {{ suggestion }}
+              </li>
+            </ul>
+          </div>
+        </div>
+        <button
+          type="button"
+          @click="removePullMappingRow(idx)"
+          :disabled="pullMappings.length <= 1"
+          class="rounded-md border border-edge-strong px-2 py-1.5 text-xs font-medium text-content-secondary hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button
+        type="button"
+        @click="addPullMappingRow()"
+        :disabled="refFieldOptions.length === 0"
+        class="rounded-md border border-edge-strong px-2.5 py-1.5 text-xs font-semibold text-content shadow-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Add mapping
+      </button>
+      <button
+        type="button"
+        @click="pullFromDocument()"
+        :disabled="pulling || refFieldOptions.length === 0"
+        class="inline-flex items-center justify-center rounded-md bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {{ pulling ? 'Pulling...' : 'Pull into editor' }}
+      </button>
+    </div>
+  </div>
+  <div class="mb-4 rounded-md border border-edge-strong bg-page0 p-3">
+    <label class="block text-sm font-bold text-content">Create draft script (server)</label>
+    <p class="mt-1 text-xs text-content-tertiary">Async JavaScript runs on the server with <code class="text-xs">draft</code> (mutable), <code class="text-xs">db</code>, <code class="text-xs">mongoose</code>, <code class="text-xs">Model</code> (target schema), and <code class="text-xs">ObjectId</code>. Use this to query other collections and populate the draft before submit.</p>
+    <textarea
+      v-model="createDraftScript"
+      rows="5"
+      placeholder="// Example: draft.status = 'open';&#10;// const other = await db.models.Other.findOne({ _id: draft.refId }).orFail();&#10;// draft.copied = other.title;"
+      class="mt-2 w-full rounded-md border border-edge-strong px-2 py-1.5 font-mono text-xs shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+    ></textarea>
+    <div class="mt-2 flex flex-wrap gap-2">
+      <button
+        type="button"
+        @click="runCreateDraftScript()"
+        :disabled="runningCreateScript"
+        class="inline-flex items-center justify-center rounded-md bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {{ runningCreateScript ? 'Running...' : 'Run script on draft' }}
+      </button>
+    </div>
+    <pre v-if="createDraftScriptLogs" class="mt-2 max-h-32 overflow-auto rounded border border-edge-muted bg-muted/30 p-2 font-mono text-xs text-content-secondary whitespace-pre-wrap">{{ createDraftScriptLogs }}</pre>
+  </div>
   <div class="mb-2">
     <label class="block text-sm font-bold text-content">Document to Create</label>
     <ace-editor
