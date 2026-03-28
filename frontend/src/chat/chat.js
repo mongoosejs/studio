@@ -156,7 +156,7 @@ module.exports = {
     },
     async toggleShareThread() {
       if (!this.chatThreadId || !this.hasWorkspace) {
-        return;
+        throw new Error('Cannot share thread: chatThreadId or hasWorkspace is missing');
       }
       this.sharingThread = true;
       try {
