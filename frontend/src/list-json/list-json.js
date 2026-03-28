@@ -28,13 +28,6 @@ module.exports = app => app.component('list-json', {
       topLevelExpanded: false
     };
   },
-  watch: {
-    value: {
-      handler() {
-        this.resetCollapse();
-      }
-    }
-  },
   created() {
     this.resetCollapse();
     for (const field of this.expandedFields) {
