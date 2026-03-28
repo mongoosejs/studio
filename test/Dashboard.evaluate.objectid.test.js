@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('assert');
+const MongooseStudioChartColors = require('../backend/constants/mongooseStudioChartColors');
 const { connection } = require('./setup.test');
 const dashboardSchema = require('../backend/db/dashboardSchema');
 
@@ -17,5 +18,13 @@ describe('Dashboard.evaluate() ObjectId', function() {
     assert.ok(res.id);
     assert.strictEqual(res.id.constructor.name, 'ObjectId');
   });
-});
 
+  it('exposes MongooseStudioChartColors in sandbox', async function() {
+    const doc = await Dashboard.create({
+      title: 'test',
+      code: 'return { colors: MongooseStudioChartColors };'
+    });
+    const res = await doc.evaluate();
+    assert.deepStrictEqual(res.colors, MongooseStudioChartColors);
+  });
+});

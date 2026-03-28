@@ -158,6 +158,8 @@ module.exports = {
     }
   },
   mounted: async function() {
+    window.pageState = this;
+
     document.addEventListener('click', this.handleDocumentClick);
     this.showEditor = this.$route.query.edit;
     await this.loadInitial();
