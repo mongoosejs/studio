@@ -1209,6 +1209,16 @@ module.exports = app => app.component('models', {
           window.__studioModelsSuppressScrollCheck = true;
         }
       }
+
+      // If projection mode is off, convert current table columns into an explicit
+      // projection first so removing a field both enables projection mode and
+      // hides only the selected field.
+      if (!this.isProjectionMenuSelected) {
+        this.isProjectionMenuSelected = true;
+        this.query[PROJECTION_MODE_QUERY_KEY] = '1';
+        this.filteredPaths = [...this.tableDisplayPaths];
+      }
+
       const index = this.filteredPaths.findIndex(p => p.path === schemaPath.path);
       if (index !== -1) {
         this.filteredPaths.splice(index, 1);
