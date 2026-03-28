@@ -1,7 +1,9 @@
 'use strict';
 
+const time = require('time-commando');
+
 module.exports = function getCurrentDateTimeContext() {
-  const date = new Date();
+  const date = time.now();
   const components = [
     date.getFullYear(),
     date.getMonth() + 1,

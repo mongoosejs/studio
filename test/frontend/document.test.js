@@ -7,6 +7,7 @@ require('./setup');
 const documentComponent = require('../../frontend/src/document/document');
 const createDocumentComponent = require('../../frontend/src/create-document/create-document');
 const api = require('../../frontend/src/api');
+const time = require('time-commando');
 
 describe('document component keyboard shortcuts', function() {
   afterEach(function() {
@@ -58,7 +59,7 @@ describe('document component keyboard shortcuts', function() {
   });
 
   it('passes the user current date time when requesting an AI document suggestion', async function() {
-    const clock = sinon.useFakeTimers(new Date('2026-03-22T15:04:05Z'));
+    sinon.stub(time, 'now').returns(new Date(2026, 2, 22, 15, 4, 5));
     const componentDef = createDocumentComponent({ component: (_name, def) => def });
     const streamStub = sinon.stub(api.Model, 'streamChatMessage').callsFake(async function* () {
       yield { textPart: '{ name: "test" }' };
@@ -82,12 +83,8 @@ describe('document component keyboard shortcuts', function() {
       }
     };
 
-    try {
-      await componentDef.methods.requestAiSuggestion.call(state);
-      const params = streamStub.firstCall.args[0];
-      assert.strictEqual(params.currentDateTime, new Date().toString());
-    } finally {
-      clock.restore();
-    }
+    await componentDef.methods.requestAiSuggestion.call(state);
+    const params = streamStub.firstCall.args[0];
+    assert.strictEqual(params.currentDateTime, '2026-03-22T15:04:05');
   });
 });
