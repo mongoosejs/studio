@@ -67,12 +67,7 @@ module.exports = app => app.component('navbar', {
       return this.roles && this.roles[0] === 'dashboards' ? 'dashboards' : 'root';
     },
     hasTaskVisualizer() {
-      if (window.MONGOOSE_STUDIO_CONFIG.enableTaskVisualizer) {
-        return '#/tasks';
-      } else {
-        return 'https://www.npmjs.com/package/@mongoosejs/task';
-      }
-
+      return !!window.MONGOOSE_STUDIO_CONFIG.enableTaskVisualizer;
     }
   },
   methods: {
