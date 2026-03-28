@@ -1,6 +1,7 @@
 'use strict';
 
 const api = require('../api');
+const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 const template = require('./chat.html');
 
 module.exports = {
@@ -44,7 +45,11 @@ module.exports = {
           }
         });
 
-        const params = { chatThreadId: this.chatThreadId, content };
+        const params = {
+          chatThreadId: this.chatThreadId,
+          content,
+          currentDateTime: getCurrentDateTimeContext()
+        };
         let userChatMessage = null;
         let assistantChatMessage = null;
         for await (const event of api.ChatThread.streamChatMessage(params)) {
