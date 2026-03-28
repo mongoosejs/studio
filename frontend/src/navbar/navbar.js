@@ -72,7 +72,9 @@ module.exports = app => app.component('navbar', {
       } else {
         return 'https://www.npmjs.com/package/@mongoosejs/task';
       }
-
+    },
+    showDashboardsProOnly() {
+      return !this.hasAccess(this.roles, 'dashboards') && !window.MONGOOSE_STUDIO_CONFIG.workspace?._id;
     }
   },
   methods: {

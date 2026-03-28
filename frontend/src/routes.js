@@ -61,6 +61,14 @@ module.exports = {
       }
     },
     {
+      path: '/pro-only/dashboards',
+      name: 'proOnlyDashboards',
+      component: 'pro-only-dashboards',
+      meta: {
+        authorized: true
+      }
+    },
+    {
       path: '/team',
       name: 'team',
       component: 'team',
