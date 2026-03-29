@@ -75,10 +75,10 @@
       </button>
       <button
         type="button"
-        @click="toggleShareThread"
+        @click="hasWorkspace ? toggleShareThread() : (showProUpgradeModal = true)"
         class="rounded p-1.5"
-        :class="hasWorkspace && chatThreadId ? 'text-gray-400 hover:text-gray-600 hover:bg-muted' : 'text-gray-300 cursor-not-allowed'"
-        :disabled="!hasWorkspace || !chatThreadId"
+        :class="hasWorkspace && chatThreadId ? 'text-gray-400 hover:text-gray-600 hover:bg-muted' : !hasWorkspace ? 'text-gray-400 hover:text-gray-600 hover:bg-muted' : 'text-gray-300 cursor-not-allowed'"
+        :disabled="hasWorkspace && !chatThreadId"
         aria-label="Share thread with workspace"
         :title="'Share thread with workspace' + (!hasWorkspace ? ' (requires a pro workspace)' : !chatThreadId ? ': Open a thread first!' : '')"
       >
@@ -119,7 +119,7 @@
           @input="adjustTextareaHeight"
           @keydown.enter.exact.prevent="handleEnter"
         ></textarea>
-        <button class="bg-blue-600 text-white px-4 h-[42px] rounded disabled:bg-gray-600" :disabled="sendingMessage">
+        <button class="bg-primary hover:bg-primary-hover text-white px-4 h-[42px] rounded disabled:bg-gray-600" :disabled="sendingMessage">
           <svg v-if="sendingMessage" style="height: 1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <g>
               <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3" />
@@ -133,4 +133,10 @@
       </form>
     </div>
   </main>
+
+  <pro-upgrade-modal
+    :show="showProUpgradeModal"
+    feature-description="Sharing threads lets you collaborate with your team by sharing chat threads within your workspace."
+    @close="showProUpgradeModal = false"
+  ></pro-upgrade-modal>
 </div>

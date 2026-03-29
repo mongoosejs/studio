@@ -16,7 +16,8 @@ module.exports = {
     chatMessages: [],
     hideSidebar: null,
     sharingThread: false,
-    threadSearch: ''
+    threadSearch: '',
+    showProUpgradeModal: false
   }),
   methods: {
     async sendMessage() {
