@@ -7,6 +7,7 @@ const actionsToRequiredRoles = {
   'ChatThread.getChatThread': ['owner', 'admin', 'member'],
   'ChatThread.listChatThreads': ['owner', 'admin', 'member'],
   'ChatThread.shareChatThread': ['owner', 'admin', 'member'],
+  'ChatThread.toggleAgentMode': ['owner', 'admin', 'member'],
   'Dashboard.createDashboard': ['owner', 'admin', 'member'],
   'Dashboard.deleteDashboard': ['owner', 'admin', 'member'],
   'Dashboard.getDashboard': ['owner', 'admin', 'member', 'readonly', 'dashboards'],

@@ -131,6 +131,18 @@ module.exports = {
         this.sendingMessage = false;
       }
     },
+    async toggleAgentMode() {
+      if (!this.chatThreadId) return;
+      const newValue = !this.currentThread?.agentMode;
+      const { chatThread } = await api.ChatThread.toggleAgentMode({
+        chatThreadId: this.chatThreadId,
+        agentMode: newValue
+      });
+      const idx = this.chatThreads.findIndex(t => t._id === chatThread._id);
+      if (idx !== -1) {
+        this.chatThreads.splice(idx, 1, chatThread);
+      }
+    },
     scrollToBottom() {
       this.$nextTick(() => {
         if (this.$refs.messagesContainer) {

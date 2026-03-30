@@ -19,10 +19,6 @@ const CreateChatMessageParams = new Archetype({
   content: {
     $type: 'string'
   },
-  agentMode: {
-    $type: 'boolean',
-    $default: true
-  },
   currentDateTime: {
     $type: 'string',
     $validate: v => assert.ok(v == null || v.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/))
@@ -33,7 +29,7 @@ const CreateChatMessageParams = new Archetype({
 }).compile('CreateChatMessageParams');
 
 module.exports = ({ db, studioConnection, options }) => async function* createChatMessage(params) {
-  const { chatThreadId, initiatedById, content, currentDateTime, agentMode, script, roles } = new CreateChatMessageParams(params);
+  const { chatThreadId, initiatedById, content, currentDateTime, script, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -87,7 +83,7 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
 
   const modelDescriptions = getModelDescriptions(db);
   const system = [
-    agentMode ? agentSystemPrompt : systemPrompt,
+    chatThread.agentMode ? agentSystemPrompt : systemPrompt,
     currentDateTime ? `Current date: ${currentDateTime}` : null,
     modelDescriptions,
     options?.context
@@ -110,7 +106,7 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
     script: null,
     executionResult: null
   });
-  const llmOptions = agentMode ? { ...options, tools: getAgentTools(db) } : options;
+  const llmOptions = chatThread.agentMode ? { ...options, tools: getAgentTools(db) } : options;
   const textStream = streamLLM(llmMessages, system, llmOptions);
   const toolCalls = [];
   let count = 0;
