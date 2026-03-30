@@ -49,7 +49,7 @@ module.exports = {
         };
         let userChatMessage = null;
         let assistantChatMessage = null;
-        let toolCalls = [];
+        const toolCalls = [];
         for await (const event of api.ChatThread.streamChatMessage(params)) {
           if (event.chatMessage) {
             if (!userChatMessage) {

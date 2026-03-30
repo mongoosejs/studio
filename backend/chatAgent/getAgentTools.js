@@ -18,7 +18,7 @@ module.exports = function getAgentTools(db) {
         },
         required: ['modelName']
       }),
-      execute: async ({ modelName }) => {
+      execute: async({ modelName }) => {
         console.log(`estimatedDocumentCount: modelName=${modelName}`);
         const Model = db.models[modelName];
         if (Model == null) {
@@ -39,7 +39,7 @@ module.exports = function getAgentTools(db) {
         },
         required: ['modelName']
       }),
-      execute: async ({ modelName, filter = {}, limit = 10 }) => {
+      execute: async({ modelName, filter = {}, limit = 10 }) => {
         console.log(`find: modelName=${modelName}, filter=${JSON.stringify(filter)}, limit=${limit}`);
         const Model = db.models[modelName];
         if (Model == null) {
@@ -59,7 +59,7 @@ module.exports = function getAgentTools(db) {
         },
         required: ['modelName']
       }),
-      execute: async ({ modelName, filter = {} }) => {
+      execute: async({ modelName, filter = {} }) => {
         console.log(`findOne: modelName=${modelName}, filter=${JSON.stringify(filter)}`);
         const Model = db.models[modelName];
         if (Model == null) {
@@ -78,7 +78,7 @@ module.exports = function getAgentTools(db) {
         },
         required: ['script']
       }),
-      execute: async ({ script }) => {
+      execute: async({ script }) => {
         const wrapped = wrapScriptForTypeCheck(script);
         const fileName = '__check.ts';
         const compilerOptions = {

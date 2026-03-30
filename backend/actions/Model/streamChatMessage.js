@@ -3,7 +3,7 @@
 const Archetype = require('archetype');
 const assert = require('assert');
 const authorize = require('../../authorize');
-const getAgentTools = require('../../helpers/getAgentTools');
+const getAgentTools = require('../../chatAgent/getAgentTools');
 const streamLLM = require('../../integrations/streamLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
 
@@ -21,7 +21,7 @@ const StreamChatMessageParams = new Archetype({
   },
   agentMode: {
     $type: 'boolean',
-    $default: true,
+    $default: true
   },
   currentDateTime: {
     $type: 'string',

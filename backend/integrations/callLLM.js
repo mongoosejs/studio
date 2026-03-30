@@ -3,7 +3,7 @@
 const { createAnthropic } = require('@ai-sdk/anthropic');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
-const { generateText } = require('ai');
+const { generateText, stepCountIs } = require('ai');
 
 module.exports = async function callLLM(messages, system, options) {
   let provider = null;
@@ -45,7 +45,9 @@ module.exports = async function callLLM(messages, system, options) {
     return generateText({
       model: provider(model),
       system,
-      messages
+      messages,
+      tools: options?.tools,
+      stopWhen: options?.tools ? stepCountIs(10) : undefined
     });
   }
 
