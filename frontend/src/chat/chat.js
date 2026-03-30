@@ -40,11 +40,7 @@ module.exports = {
           role: 'user'
         });
 
-        this.$nextTick(() => {
-          if (this.$refs.messagesContainer) {
-            this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
-          }
-        });
+        this.scrollToBottom();
 
         const params = {
           chatThreadId: this.chatThreadId,
@@ -53,6 +49,7 @@ module.exports = {
         };
         let userChatMessage = null;
         let assistantChatMessage = null;
+        let toolCalls = [];
         for await (const event of api.ChatThread.streamChatMessage(params)) {
           if (event.chatMessage) {
             if (!userChatMessage) {
@@ -61,6 +58,7 @@ module.exports = {
             } else {
               const assistantChatMessageIndex = this.chatMessages.indexOf(assistantChatMessage);
               assistantChatMessage = event.chatMessage;
+              assistantChatMessage.toolCalls = toolCalls;
               if (assistantChatMessageIndex !== -1) {
                 this.chatMessages.splice(assistantChatMessageIndex, 1, assistantChatMessage);
               } else {
@@ -73,27 +71,44 @@ module.exports = {
                 thread.title = event.chatThread.title;
               }
             }
+          } else if (event.toolCall) {
+            toolCalls.push({ toolName: event.toolCall.toolName, input: event.toolCall.input, status: 'running' });
+            if (!assistantChatMessage) {
+              assistantChatMessage = {
+                _id: Math.random().toString(36).substr(2, 9),
+                content: '',
+                role: 'assistant',
+                toolCalls: [...toolCalls]
+              };
+              this.chatMessages.push(assistantChatMessage);
+              assistantChatMessage = this.chatMessages[this.chatMessages.length - 1];
+            } else {
+              assistantChatMessage.toolCalls = [...toolCalls];
+            }
+            this.scrollToBottom();
+          } else if (event.toolResult) {
+            const tc = toolCalls.find(t => t.toolName === event.toolResult.toolName && t.status === 'running');
+            if (tc) {
+              tc.status = 'done';
+            }
+            if (assistantChatMessage) {
+              assistantChatMessage.toolCalls = [...toolCalls];
+            }
+            this.scrollToBottom();
           } else if (event.textPart) {
             if (!assistantChatMessage) {
               assistantChatMessage = {
                 _id: Math.random().toString(36).substr(2, 9),
                 content: event.textPart,
-                role: 'assistant'
+                role: 'assistant',
+                toolCalls: [...toolCalls]
               };
               this.chatMessages.push(assistantChatMessage);
               assistantChatMessage = this.chatMessages[this.chatMessages.length - 1];
-              this.$nextTick(() => {
-                if (this.$refs.messagesContainer) {
-                  this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
-                }
-              });
+              this.scrollToBottom();
             } else {
               assistantChatMessage.content += event.textPart;
-              this.$nextTick(() => {
-                if (this.$refs.messagesContainer) {
-                  this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
-                }
-              });
+              this.scrollToBottom();
             }
           } else if (event.message) {
             throw new Error(event.message);
@@ -115,6 +130,13 @@ module.exports = {
       } finally {
         this.sendingMessage = false;
       }
+    },
+    scrollToBottom() {
+      this.$nextTick(() => {
+        if (this.$refs.messagesContainer) {
+          this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+        }
+      });
     },
     handleEnter(ev) {
       if (!ev.shiftKey) {
