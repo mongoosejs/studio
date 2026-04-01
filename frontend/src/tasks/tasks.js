@@ -123,7 +123,9 @@ module.exports = app => app.component('tasks', {
     /** Build or update the stacked bar chart showing tasks over time. */
     renderOverTimeChart() {
       const Chart = typeof window !== 'undefined' && window.Chart;
-      if (!Chart) return;
+      if (!Chart) {
+        throw new Error('Chart.js not found');
+      }
       const canvas = this.$refs.overTimeChart;
       if (!canvas || typeof canvas.getContext !== 'function') return;
 
@@ -153,51 +155,46 @@ module.exports = app => app.component('tasks', {
           this.overTimeChart.data.datasets[1].data = failed;
           this.overTimeChart.data.datasets[2].data = cancelled;
           this.overTimeChart.update('none');
-          return;
-        } catch (_) {
+        } finally {
           this.destroyOverTimeChart();
         }
       }
 
-      try {
-        this.overTimeChart = new Chart(canvas, {
-          type: 'bar',
-          data: chartData,
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            scales: {
-              x: {
-                stacked: true,
-                ticks: { color: tickColor, maxRotation: 45, minRotation: 0 },
-                grid: { color: gridColor }
-              },
-              y: {
-                stacked: true,
-                beginAtZero: true,
-                ticks: { color: tickColor, precision: 0 },
-                grid: { color: gridColor }
-              }
+      this.overTimeChart = new Chart(canvas, {
+        type: 'bar',
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { color: tickColor, maxRotation: 45, minRotation: 0 },
+              grid: { color: gridColor }
             },
-            plugins: {
-              legend: {
-                display: true,
-                position: 'top',
-                labels: { color: tickColor }
-              },
-              tooltip: { mode: 'index', intersect: false }
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              ticks: { color: tickColor, precision: 0 },
+              grid: { color: gridColor }
             }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: { color: tickColor }
+            },
+            tooltip: { mode: 'index', intersect: false }
           }
-        });
-      } catch (_) {
-        this.overTimeChart = null;
-      }
+        }
+      });
     },
 
     destroyOverTimeChart() {
       if (this.overTimeChart) {
-        try { this.overTimeChart.destroy(); } catch (_) {}
+        this.overTimeChart.destroy();
         this.overTimeChart = null;
       }
     },
@@ -375,8 +372,18 @@ module.exports = app => app.component('tasks', {
     }
   },
   mounted: async function() {
+    // Load initial data while showing the loader state.
     await this.updateDateRange();
+
+    // Once data is loaded, switch to the main view.
     this.status = 'loaded';
+    await this.$nextTick();
+
+    // Ensure the chart renders now that the canvas exists in the DOM.
+    if (this.showOverTimeChart && this.overTimeBuckets.length > 0) {
+      this.renderOverTimeChart();
+    }
+
     this.setDefaultCreateTaskValues();
   },
   beforeUnmount() {
