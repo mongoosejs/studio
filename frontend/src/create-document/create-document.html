@@ -59,6 +59,17 @@
       </div>
       <p class="mt-2 text-xs text-content-tertiary">AI updates the <strong class="text-content-secondary">document JSON</strong> below when you generate here. Accept or reject appears under the tabs.</p>
     </div>
+    <div class="document-to-create-section mb-2 mt-2 border border-edge-strong bg-page0 p-3">
+      <label class="block text-sm font-bold text-content">Document to create</label>
+      <p class="mt-1 text-xs text-content-tertiary">This is the draft JSON for the new document. Submit creates this document after applying any configured pull-from-related merge.</p>
+      <ace-editor
+        ref="codeEditor"
+        v-model="documentData"
+        mode="javascript"
+        :line-numbers="true"
+        class="h-[300px] w-full mt-2"
+      />
+    </div>
     <div class="rounded-md border border-edge-strong bg-page0 p-3">
       <label class="block text-sm font-bold text-content">Pull from another document</label>
       <p class="mt-1 text-xs text-content-tertiary">For each row, type or pick a <strong>related field</strong> (its <code class="text-xs">ref</code> selects the source model). Suggestions match the filter field picker: arrow keys, Tab/Enter to accept, click to select. The related document id is read from your draft in the editor below.</p>
@@ -215,6 +226,16 @@
       </div>
       <p class="mt-2 text-xs text-content-tertiary">AI writes JavaScript into the server script field. Use <strong class="text-content-secondary">Run script on draft</strong> to execute it.</p>
     </div>
+    <div class="document-to-create-section mb-2 mt-2 border border-edge-strong bg-page0 p-3">
+      <label class="block text-sm font-bold text-content">Document to create</label>
+      <p class="mt-1 text-xs text-content-tertiary">This is the draft JSON for the new document. Submit creates this document after applying any configured pull-from-related merge.</p>
+      <ace-editor
+        v-model="documentData"
+        mode="javascript"
+        :line-numbers="true"
+        class="h-[300px] w-full mt-2"
+      />
+    </div>
     <div class="rounded-md border border-edge-strong bg-page0 p-3">
       <label class="block text-sm font-bold text-content">Server script</label>
       <p class="mt-1 text-xs text-content-tertiary">
@@ -222,13 +243,14 @@
         <code class="text-xs">mongoose</code>, <code class="text-xs">Model</code> (this collection), and <code class="text-xs">ObjectId</code>.
         <strong class="text-content-secondary">Run script on draft</strong> merges the result into the editor; then use <strong class="text-content-secondary">Submit</strong> to create the document.
       </p>
-    <textarea
-      v-model="createDraftScript"
-      rows="10"
-      placeholder="// draft = object in the editor below. Example:&#10;// const b = await db.models.Booking.findById(draft.bookingId).lean();&#10;// if (b) draft.notes = b.reference;"
-      class="mt-2 w-full rounded-md border border-edge-strong px-2 py-1.5 font-mono text-xs shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-    ></textarea>
-    <div class="mt-2 flex flex-wrap gap-2">
+      <ace-editor
+        ref="scriptEditor"
+        v-model="createDraftScript"
+        mode="javascript"
+        :line-numbers="true"
+        class="mt-2 h-[260px] w-full"
+      />
+      <div class="mt-2 flex flex-wrap gap-2">
       <button
         type="button"
         @click="runCreateDraftScript()"
@@ -237,7 +259,7 @@
       >
         {{ runningCreateScript ? 'Running...' : 'Run script on draft' }}
       </button>
-    </div>
+      </div>
     <pre v-if="createDraftScriptLogs" class="mt-2 max-h-32 overflow-auto rounded border border-edge-muted bg-muted/30 p-2 font-mono text-xs text-content-secondary whitespace-pre-wrap">{{ createDraftScriptLogs }}</pre>
     </div>
   </div>
@@ -267,17 +289,6 @@
     </div>
   </div>
 
-  <div class="document-to-create-section mb-2 mt-2 border-t border-edge-strong pt-4">
-    <label class="block text-sm font-bold text-content">Document to create</label>
-    <p class="mt-1 text-xs text-content-tertiary">Shared by both tabs. Submit creates this document after applying any configured pull-from-related merge.</p>
-    <ace-editor
-      ref="codeEditor"
-      v-model="documentData"
-      mode="javascript"
-      :line-numbers="true"
-      class="h-[300px] w-full mt-2"
-    />
-  </div>
   <button @click="createDocument()" class="rounded-md bg-primary px-2.5 py-1.5 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Submit</button>
   <div v-if="errors.length > 0" class="rounded-md bg-red-50 p-4 mt-1">
     <div class="flex">
