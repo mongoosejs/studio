@@ -41,6 +41,9 @@ module.exports = app => app.component('document-search', {
   created() {
     this.buildAutocompleteTrie();
   },
+  mounted() {
+    this.$refs.searchInput.focus();
+  },
   methods: {
     emitSearch() {
       this.$emit('input', this.searchText);

@@ -11,6 +11,7 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 });
 
 const appendCSS = require('../appendCSS');
+const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 
 appendCSS(require('./create-document.css'));
 
@@ -22,13 +23,63 @@ module.exports = app => app.component('create-document', {
   data: function() {
     return {
       documentData: '',
-      editor: null,
-      errors: []
+      errors: [],
+      aiPrompt: '',
+      aiSuggestion: '',
+      aiOriginalDocument: '',
+      aiStreaming: false,
+      aiSuggestionReady: false
     };
   },
   methods: {
+    async requestAiSuggestion() {
+      if (this.aiStreaming) {
+        return;
+      }
+      const prompt = this.aiPrompt.trim();
+      if (!prompt) {
+        return;
+      }
+
+      this.aiOriginalDocument = this.documentData;
+      this.aiSuggestion = '';
+      this.aiSuggestionReady = false;
+      this.aiStreaming = true;
+
+      try {
+        for await (const event of api.Model.streamChatMessage({
+          model: this.currentModel,
+          content: prompt,
+          documentData: this.aiOriginalDocument,
+          currentDateTime: getCurrentDateTimeContext()
+        })) {
+          if (event?.textPart) {
+            this.aiSuggestion += event.textPart;
+          }
+        }
+        this.$refs.codeEditor.setValue(this.aiSuggestion);
+        this.aiSuggestionReady = true;
+      } catch (err) {
+        this.$refs.codeEditor.setValue(this.aiOriginalDocument);
+        this.$toast.error('Failed to generate a document suggestion.');
+        throw err;
+      } finally {
+        this.aiStreaming = false;
+      }
+    },
+    acceptAiSuggestion() {
+      this.aiSuggestionReady = false;
+      this.aiSuggestion = '';
+      this.aiOriginalDocument = '';
+    },
+    rejectAiSuggestion() {
+      this.$refs.codeEditor.setValue(this.aiOriginalDocument);
+      this.aiSuggestionReady = false;
+      this.aiSuggestion = '';
+      this.aiOriginalDocument = '';
+    },
     async createDocument() {
-      const data = EJSON.serialize(eval(`(${this.editor.getValue()})`));
+      const data = EJSON.serialize(eval(`(${this.documentData})`));
       try {
         const { doc } = await api.Model.createDocument({ model: this.currentModel, data });
         this.errors.length = 0;
@@ -54,11 +105,5 @@ module.exports = app => app.component('create-document', {
       this.documentData += `  ${requiredPaths[i].path}: ${isLast ? '' : ','}\n`;
     }
     this.documentData += '}';
-    this.$refs.codeEditor.value = this.documentData;
-    this.editor = CodeMirror.fromTextArea(this.$refs.codeEditor, {
-      mode: 'javascript',
-      lineNumbers: true,
-      smartIndent: false
-    });
   }
 });

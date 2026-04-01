@@ -1,44 +1,107 @@
-<div class="models flex w-full" style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
-  <aside class="models-sidebar bg-white border-r overflow-y-auto overflow-x-hidden h-full transition-all duration-300 ease-in-out shrink-0 flex flex-col" :style="hideSidebar === true ? { width: '0', minWidth: '0', overflow: 'hidden' } : { width: '12rem', minWidth: '12rem' }">
-    <div class="flex shrink-0 items-center border-b border-gray-100 w-48 overflow-x-hidden">
-      <div class="p-1 ml-2 font-bold">Models</div>
-      <button
-        @click="hideSidebar = true"
-        class="ml-auto mr-2 p-2 rounded hover:bg-gray-200 focus:outline-none"
-        aria-label="Close sidebar"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" style="h-5 w-5" viewBox="0 -960 960 960" class="w-5" fill="currentColor"><path d="M660-320v-320L500-480l160 160ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm120-80v-560H200v560h120Zm80 0h360v-560H400v560Zm-80 0H200h120Z"/></svg>
-      </button>
+<div class="models flex" style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
+  <aside class="bg-page border-r overflow-hidden transition-all duration-300 ease-in-out z-20 w-0 lg:w-64 fixed lg:relative shrink-0 flex flex-col top-[55px] bottom-0 lg:top-auto lg:bottom-auto lg:h-full" :class="hideSidebar === true ? '!w-0' : hideSidebar === false ? '!w-64' : ''">
+    <!-- Search -->
+    <div class="p-3 shrink-0">
+      <div class="relative">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input
+          v-model="modelSearch"
+          type="text"
+          placeholder="Find model..."
+          @keydown.esc="modelSearch = ''"
+          class="w-full rounded-md border border-edge bg-surface py-1.5 pl-8 pr-3 text-sm text-content placeholder:text-gray-400 focus:border-edge-strong focus:outline-none focus:ring-1 focus:ring-gray-300"
+        />
+      </div>
     </div>
-    <nav class="flex flex-1 flex-col">
-      <ul role="list" class="flex flex-1 flex-col gap-y-7 p-1">
-        <li>
-          <ul role="list">
-            <li v-for="model in models">
-              <router-link
-                :to="'/model/' + model"
-                class="block truncate rounded-md py-2 pr-2 pl-2 text-sm text-gray-700"
-                :class="model === currentModel ? 'bg-ultramarine-100 font-bold text-gray-900' : 'hover:bg-ultramarine-50'">
-                {{model}}
-              </router-link>
-            </li>
-          </ul>
+    <!-- Model list (scrollable) -->
+    <nav class="flex-1 overflow-y-auto px-2 pb-2">
+      <!-- Recently Viewed -->
+      <div v-if="filteredRecentModels.length > 0 && !modelSearch.trim()">
+        <div class="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Recently Viewed</div>
+        <ul role="list">
+          <li v-for="model in filteredRecentModels" :key="'recent-' + model">
+            <router-link
+              :to="'/model/' + model"
+              class="flex items-center rounded-md py-1.5 px-2 text-sm text-content-secondary"
+              :class="model === currentModel ? 'bg-gray-200 font-semibold text-content' : 'hover:bg-muted'">
+              <span class="truncate" v-html="highlightMatch(model)"></span>
+              <span
+                v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined && model !== currentModel"
+                class="ml-auto text-xs text-gray-400 bg-muted rounded px-1.5 py-[1px]"
+              >
+                {{formatCompactCount(modelDocumentCounts[model])}}
+              </span>
+            </router-link>
+          </li>
+        </ul>
+        <div class="border-b border-edge my-2"></div>
+      </div>
+      <!-- All Models / Search Results -->
+      <div class="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ modelSearch.trim() ? 'Search Results' : 'All Models' }}</div>
+      <ul role="list">
+        <li v-for="model in filteredModels" :key="'all-' + model">
+          <router-link
+            :to="'/model/' + model"
+            class="flex items-center rounded-md py-1.5 px-2 text-sm text-content-secondary"
+            :class="model === currentModel ? 'bg-gray-200 font-semibold text-content' : 'hover:bg-muted'">
+            <span class="truncate" v-html="highlightMatch(model)"></span>
+            <span
+              v-if="modelDocumentCounts && modelDocumentCounts[model] !== undefined && model !== currentModel"
+              class="ml-auto text-xs text-gray-400 bg-muted rounded px-1.5 py-[1px]"
+            >
+              {{formatCompactCount(modelDocumentCounts[model])}}
+            </span>
+          </router-link>
         </li>
       </ul>
-      <div v-if="models.length === 0 && status === 'loaded'" class="p-2 bg-red-100">
+      <div v-if="filteredModels.length === 0 && modelSearch.trim()" class="px-2 py-2 text-sm text-content-tertiary">
+        No models match "{{modelSearch}}"
+      </div>
+      <div v-if="models.length === 0 && status === 'loaded'" class="p-2 bg-red-100 rounded-md">
         No models found
       </div>
     </nav>
+    <!-- Bottom toolbar -->
+    <div class="shrink-0 border-t border-edge bg-page px-2 py-1.5 flex items-center gap-1">
+      <button
+        type="button"
+        @click="hideSidebar = true"
+        class="rounded p-1.5 text-gray-400 hover:text-gray-600 hover:bg-muted"
+        title="Hide sidebar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        @click="openModelSwitcher"
+        class="rounded p-1.5 text-gray-400 hover:text-gray-600 hover:bg-muted"
+        title="Quick switch (Ctrl+P)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+      </button>
+    </div>
   </aside>
-  <div class="flex-1 min-w-0 flex flex-row overflow-hidden">
-    <button v-if="hideSidebar === true" type="button" class="models-sidebar-expand shrink-0 w-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 border-r border-gray-200 cursor-pointer transition-colors" @click="hideSidebar = false" aria-label="Open models sidebar" title="Open models">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 -960 960 960" fill="#5f6368"><path d="M360-120v-720h80v720h-80Zm160-160v-400l200 200-200 200Z"/></svg>
-    </button>
-    <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
-    <div class="documents bg-slate-50 flex-1 min-w-0 overflow-auto" ref="documentsList">
-    <div class="relative h-[42px] z-10">
+  <div class="documents bg-slate-50 min-w-0" ref="documentsList">
       <div class="documents-menu bg-slate-50">
         <div class="flex flex-row items-center w-full gap-2">
+          <button
+            v-if="hideSidebar === true || hideSidebar === null"
+            type="button"
+            @click="hideSidebar = false"
+            class="shrink-0 rounded-md p-1.5 text-gray-400 hover:text-gray-600 hover:bg-muted"
+            :class="hideSidebar === null ? 'lg:hidden' : ''"
+            title="Show sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
           <document-search
             ref="documentSearch"
             :value="searchText"
@@ -48,13 +111,16 @@
           </document-search>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
-            <span v-else-if="typeof numDocuments === 'number'">{{numDocuments === 1 ? numDocuments+ ' document' : numDocuments + ' documents'}}</span>
+            <span v-else-if="typeof numDocuments === 'number'">{{documents.length}}/{{numDocuments === 1 ? numDocuments + ' document' : numDocuments + ' documents'}}</span>
           </div>
           <button
             @click="stagingSelect"
             type="button"
-            :class="{ 'bg-gray-500 ring-inset ring-2 ring-gray-300 hover:bg-gray-600': selectMultiple, 'bg-ultramarine-600 hover:bg-ultramarine-500' : !selectMultiple }"
-            class="rounded px-2 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
+            :class="{
+              'bg-page0 ring-inset ring-2 ring-gray-300 hover:bg-gray-200 text-content-secondary': selectMultiple,
+              'bg-primary hover:bg-primary-hover text-primary-text': !selectMultiple
+            }"
+            class="rounded px-2 py-2 text-sm font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {{ selectMultiple ? 'Cancel' : 'Select' }}
           </button>
@@ -95,66 +161,89 @@
               @click="toggleActionsMenu"
               type="button"
               aria-label="More actions"
-              class="rounded bg-white px-2 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600">
+              class="rounded bg-surface px-2 py-2 text-sm font-semibold text-content-secondary shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-page focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm0 6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
               </svg>
             </button>
             <div
               v-if="showActionsMenu"
-              class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20"
+              class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-surface shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
             >
               <div class="py-1">
                 <button
                   @click="shouldShowExportModal = true; showActionsMenu = false"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Export
                 </button>
                 <button
                   @click="shouldShowCreateModal = true; showActionsMenu = false"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Create
                 </button>
                 <button
-                  @click="openFieldSelection(); showActionsMenu = false"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Projection
-                </button>
-                <button
                   @click="openIndexModal"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Indexes
                 </button>
                 <button
                   @click="openCollectionInfo"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Collection Info
                 </button>
                 <button
                   @click="findOldestDocument"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Find oldest document
                 </button>
                 <button
-                  v-if="hasSleuthAccess"
-                  @click="openRightPanel('sleuth'); showActionsMenu = false"
+                  @click="toggleRowNumbers()"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
-                  Sleuth
+                  {{ showRowNumbers ? 'Hide row numbers' : 'Show row numbers' }}
                 </button>
+                <button
+                  @click="resetFilter()"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Reset Filter
+                </button>
+                <button
+                  @click="toggleProjectionMenu(); showActionsMenu = false"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm hover:bg-muted"
+                  :class="isProjectionMenuSelected ? 'text-primary font-semibold' : 'text-content-secondary'"
+                >
+                  {{ isProjectionMenuSelected ? 'Projection (On)' : 'Projection' }}
+                </button>
+                <button
+                  v-if="isProjectionMenuSelected"
+                  @click="clearProjection()"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Reset Projection
+                </button>
+                <async-button
+                  v-if="isProjectionMenuSelected"
+                  type="button"
+                  @click="applyDefaultProjectionColumns()"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Default Projection
+                </async-button>
               </div>
             </div>
           </div>
@@ -162,51 +251,221 @@
             <button
               @click="setOutputType('table')"
               type="button"
-              class="relative inline-flex items-center rounded-none rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
-              :class="outputType === 'table' ? 'bg-gray-200' : 'bg-white'">
+              class="relative inline-flex items-center rounded-none rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-page focus:z-10"
+              :class="outputType === 'table' ? 'bg-gray-200' : 'bg-surface'">
               <img class="h-5 w-5" src="images/table.svg">
             </button>
             <button
               @click="setOutputType('json')"
               type="button"
-              class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
-              :class="outputType === 'json' ? 'bg-gray-200' : 'bg-white'">
+              class="relative -ml-px inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-page focus:z-10"
+              :class="outputType === 'json' ? 'bg-gray-200' : 'bg-surface'">
               <img class="h-5 w-5" src="images/json.svg">
+            </button>
+            <button
+              @click="setOutputType('map')"
+              :disabled="geoJsonFields.length === 0"
+              type="button"
+              :title="geoJsonFields.length > 0 ? 'Map view' : 'No GeoJSON fields detected'"
+              class="relative -ml-px inline-flex items-center rounded-none rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 focus:z-10"
+              :class="[
+                geoJsonFields.length === 0 ? 'text-gray-300 cursor-not-allowed bg-muted' : 'text-gray-400 hover:bg-page',
+                outputType === 'map' ? 'bg-gray-200' : (geoJsonFields.length > 0 ? 'bg-surface' : '')
+              ]">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+              </svg>
             </button>
           </span>
         </div>
+        <div v-if="isProjectionMenuSelected && (outputType === 'table' || outputType === 'json')" class="flex items-center gap-2 w-full mt-2 flex-shrink-0">
+          <input
+            ref="projectionInput"
+            v-model="projectionText"
+            type="text"
+            placeholder="Projection: name email, or -password"
+            class="flex-1 min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            @focus="initProjection($event)"
+            @keydown.enter="applyProjectionFromInput()"
+          />
+        </div>
       </div>
-    </div>
-    <div class="documents-container relative">
+    <!-- In JSON view, this container is the scrollable element used for infinite scroll. -->
+    <div class="documents-container relative" ref="documentsContainerScroll" @scroll="checkIfScrolledToBottom">
       <div v-if="error">
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 relative m-4 rounded-md" role="alert">
           <span class="block font-bold">Error</span>
           <span class="block">{{ error }}</span>
+          <span class="block mt-2">
+            Need help?
+            <a
+              href="https://discord.gg/P3YCfKYxpy"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline font-medium text-red-800 hover:text-red-900"
+            >Ask in Discord</a>
+            or
+            <a
+              href="https://github.com/mongoosejs/studio/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline font-medium text-red-800 hover:text-red-900"
+            >
+              open a GitHub issue.
+            </a>
+          </span>
         </div>
       </div>
-      <table v-else-if="outputType === 'table'">
-        <thead class="bg-slate-50">
-          <th v-for="path in filteredPaths" @click="addPathFilter(path.path)" class="cursor-pointer p-3">
-            {{path.path}}
-            <span class="path-type">
-              ({{(path.instance || 'unknown')}})
-            </span>
-            <span class="sort-arrow" @click="sortDocs(1, path.path)">{{sortBy[path.path] == 1 ? 'X' : '↑'}}</span>
-            <span class="sort-arrow" @click="sortDocs(-1, path.path)">{{sortBy[path.path] == -1 ? 'X' : '↓'}}</span>
-          </th>
-        </thead>
-        <tbody>
-          <tr v-for="document in documents" @click="handleDocumentClick(document, $event)" :key="document._id" class="bg-white hover:bg-slate-50">
-            <td v-for="schemaPath in filteredPaths" class="p-3 cursor-pointer" :class="{ 'bg-blue-200': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }">
-              <component
-                :is="getComponentForPath(schemaPath)"
-                :value="getValueForPath(document, schemaPath.path)"
-                :allude="getReferenceModel(schemaPath)">
-              </component>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-else-if="outputType === 'table'" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+          ref="documentsScrollContainer"
+          class="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-edge rounded-lg bg-surface"
+          @scroll="checkIfScrolledToBottom"
+        >
+          <table class="min-w-full border-collapse text-sm">
+            <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-shark-800 border-b border-edge">
+              <tr>
+                <th v-if="showRowNumbers" class="px-3 py-2.5 text-left font-medium text-content border-r border-edge whitespace-nowrap align-middle w-0">
+                  #
+                </th>
+                <th
+                  v-for="path in tableDisplayPaths"
+                  :key="path.path"
+                  class="px-3 py-2.5 text-left font-medium text-content border-r border-edge last:border-r-0 whitespace-nowrap align-middle"
+                >
+                  <div class="flex items-center gap-2">
+                    <span
+                      @click="addPathFilter(path.path)"
+                      class="cursor-pointer hover:text-primary truncate min-w-0"
+                      :title="path.path"
+                    >
+                      {{ path.path }}
+                    </span>
+                    <span class="text-xs text-content-tertiary shrink-0">({{ path.instance || 'unknown' }})</span>
+                    <span class="inline-flex shrink-0 gap-0.5 items-center">
+                      <button
+                        type="button"
+                        @click.stop="sortDocs(1, path.path)"
+                        class="p-0.5 rounded text-content-tertiary hover:text-content hover:bg-muted"
+                        :class="{ 'text-primary font-semibold': sortBy[path.path] === 1 }"
+                        :title="sortBy[path.path] === 1 ? 'Clear sort' : 'Sort ascending'"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        @click.stop="sortDocs(-1, path.path)"
+                        class="p-0.5 rounded text-content-tertiary hover:text-content hover:bg-muted"
+                        :class="{ 'text-primary font-semibold': sortBy[path.path] === -1 }"
+                        :title="sortBy[path.path] === -1 ? 'Clear sort' : 'Sort descending'"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        v-if="filteredPaths.length > 0"
+                        type="button"
+                        @click.stop="removeField(path)"
+                        class="p-1.5 rounded-md border border-transparent text-content-tertiary hover:text-valencia-600 hover:bg-valencia-50 hover:border-valencia-200 focus:outline-none focus:ring-2 focus:ring-valencia-500/30"
+                        title="Remove column"
+                        aria-label="Remove column"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  </div>
+                </th>
+                <th v-if="filteredPaths.length > 0" class="px-2 py-2.5 border-r border-edge last:border-r-0 align-middle w-0 bg-slate-50 dark:bg-shark-800/80">
+                  <div class="relative" ref="addFieldContainer">
+                    <button
+                      type="button"
+                      @click="toggleAddFieldDropdown()"
+                      class="flex items-center justify-center w-8 h-8 rounded border border-dashed border-edge text-content-tertiary hover:border-primary hover:text-primary hover:bg-primary-subtle/30"
+                      title="Add column"
+                      aria-label="Add column"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"> <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /> </svg>
+                    </button>
+                    <div
+                      v-if="showAddFieldDropdown"
+                      class="absolute right-0 top-full mt-1 z-[100] min-w-[180px] max-w-[280px] rounded-md border border-edge bg-surface shadow-lg py-1 max-h-48 overflow-y-auto"
+                    >
+                      <input
+                        v-if="availablePathsToAdd.length > 5"
+                        ref="addFieldFilterInput"
+                        v-model="addFieldFilterText"
+                        type="text"
+                        placeholder="Filter fields..."
+                        class="mx-2 mb-1 w-[calc(100%-1rem)] rounded border border-edge px-2 py-1 text-sm"
+                        @click.stop
+                      />
+                      <button
+                        v-for="p in filteredPathsToAdd"
+                        :key="p.path"
+                        type="button"
+                        class="w-full px-3 py-1.5 text-left text-sm hover:bg-muted"
+                        @click.stop="addField(p)"
+                      >
+                        {{ p.path }}
+                      </button>
+                      <p v-if="filteredPathsToAdd.length === 0" class="px-3 py-2 text-sm text-content-tertiary">
+                        {{ addFieldFilterText.trim() ? 'No matching fields' : 'All fields added' }}
+                      </p>
+                    </div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-surface">
+              <tr
+                v-for="(document, docIndex) in documents"
+                :key="document._id"
+                @click="handleDocumentClick(document, $event)"
+                class="border-b border-edge cursor-pointer transition-colors hover:bg-muted/60"
+                :class="{ 'bg-primary-subtle/50 hover:bg-primary-subtle/70': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
+              >
+                <td v-if="showRowNumbers" class="px-3 py-2 border-r border-edge align-top text-content-tertiary whitespace-nowrap">
+                  {{ docIndex + 1 }}
+                </td>
+                <td
+                  v-for="schemaPath in tableDisplayPaths"
+                  :key="schemaPath.path"
+                  class="px-3 py-2 border-r border-edge last:border-r-0 align-top max-w-[280px]"
+                >
+                  <div class="table-cell-content flex items-center gap-1.5 min-w-0 group">
+                    <span class="min-w-0 overflow-hidden text-ellipsis flex-1">
+                      <component
+                        :is="getComponentForPath(schemaPath)"
+                        :value="getValueForPath(document, schemaPath.path)"
+                        :allude="getReferenceModel(schemaPath)"
+                      />
+                    </span>
+                    <button
+                      type="button"
+                      class="table-cell-copy shrink-0 p-1 rounded text-content-tertiary hover:text-content hover:bg-muted focus:outline-none focus:ring-1 focus:ring-edge"
+                      aria-label="Copy cell value"
+                      @click.stop="copyCellValue(getValueForPath(document, schemaPath.path))"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1M8 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M8 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m0 0h2a2 2 0 0 1 2 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+                <td v-if="filteredPaths.length > 0" class="w-0 px-0 py-0 border-r border-edge last:border-r-0 bg-slate-50/50 dark:bg-shark-800/30"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="outputType === 'table' && (loadingMore || (status === 'loading' && documents.length > 0))" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary border-t border-edge bg-surface">
+          <img src="images/loader.gif" alt="" class="h-5 w-5">
+          <span>Loading documents…</span>
+        </div>
+        <p v-if="outputType === 'table' && documents.length === 0 && status === 'loaded'" class="mt-2 text-sm text-content-tertiary px-1">
+          No documents to show. Use Projection in the menu to choose columns.
+        </p>
+      </div>
       <div v-else-if="outputType === 'json'" class="flex flex-col space-y-2 p-1 mt-1">
         <div
           v-for="document in documents"
@@ -214,22 +473,52 @@
           @click="handleDocumentContainerClick(document, $event)"
           :class="[
             'group relative transition-colors rounded-md border border-slate-100',
-            selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:shadow-sm hover:border-slate-300 bg-white'
+            selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:shadow-sm hover:border-slate-300 bg-surface'
           ]"
         >
-          <button
-            type="button"
-            class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-ultramarine-600 px-2 py-1 text-xs font-semibold text-white shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ultramarine-600"
-            @click.stop="openDocument(document)"
+          <router-link
+            class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-text shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            :to="{ path: '/model/' + currentModel + '/document/' + document._id, query: $route.query }"
+            target="_blank"
+            rel="noopener noreferrer"
+            @click.stop
           >
-            Open this Document
-          </button>
+            Open
+          </router-link>
           <list-json :value="filterDocument(document)" :references="referenceMap">
           </list-json>
         </div>
+        <div v-if="outputType === 'json' && (loadingMore || (status === 'loading' && documents.length > 0))" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary">
+          <img src="images/loader.gif" alt="" class="h-5 w-5">
+          <span>Loading documents…</span>
+        </div>
       </div>
-      <div v-if="status === 'loading'" class="loader">
-        <img src="images/loader.gif">
+      <div v-else-if="outputType === 'map'" class="flex flex-col h-full">
+        <div class="p-2 bg-surface border-b flex items-center gap-2">
+          <label class="text-sm font-medium text-content-secondary">GeoJSON Field:</label>
+          <select
+            :value="selectedGeoField"
+            @change="setSelectedGeoField($event.target.value)"
+            class="rounded-md border border-edge-strong py-1 px-2 text-sm focus:border-primary focus:ring-primary"
+          >
+            <option v-for="field in geoJsonFields" :key="field.path" :value="field.path">
+              {{ field.label }}
+            </option>
+          </select>
+          <async-button
+            @click="loadMoreDocuments"
+            :disabled="loadedAllDocs"
+            type="button"
+            class="rounded px-2 py-1 text-xs font-semibold text-primary-text shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            :class="loadedAllDocs ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'"
+          >
+            Load more
+          </async-button>
+        </div>
+        <div class="flex-1 min-h-[400px]" ref="modelsMap"></div>
+      </div>
+      <div v-if="status === 'loading' && !loadingMore && documents.length === 0" class="loader loader-overlay" aria-busy="true">
+        <img src="images/loader.gif" alt="Loading">
       </div>
     </div>
     </div>
@@ -286,7 +575,7 @@
           <div>
             <div class="font-bold flex items-center gap-2">
               <div>{{ index.name }}</div>
-              <div v-if="isTTLIndex(index)" class="rounded-full bg-ultramarine-100 px-2 py-0.5 text-xs font-semibold text-ultramarine-700">
+              <div v-if="isTTLIndex(index)" class="rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-semibold text-primary">
                 TTL: {{ formatTTL(index.expireAfterSeconds) }}
               </div>
             </div>
@@ -311,51 +600,34 @@
       <div v-if="!collectionInfo" class="text-gray-600">Loading collection details...</div>
       <div v-else class="space-y-3">
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Documents</div>
-          <div class="text-gray-900">{{ formatNumber(collectionInfo.documentCount) }}</div>
+          <div class="font-semibold text-content-secondary">Documents</div>
+          <div class="text-content">{{ formatNumber(collectionInfo.documentCount) }}</div>
         </div>
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Indexes</div>
-          <div class="text-gray-900">{{ formatNumber(collectionInfo.indexCount) }}</div>
+          <div class="font-semibold text-content-secondary">Indexes</div>
+          <div class="text-content">{{ formatNumber(collectionInfo.indexCount) }}</div>
         </div>
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Total Index Size</div>
-          <div class="text-gray-900">{{ formatCollectionSize(collectionInfo.totalIndexSize) }}</div>
+          <div class="font-semibold text-content-secondary">Total Index Size</div>
+          <div class="text-content">{{ formatCollectionSize(collectionInfo.totalIndexSize) }}</div>
         </div>
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Total Storage Size</div>
-          <div class="text-gray-900">{{ formatCollectionSize(collectionInfo.size) }}</div>
+          <div class="font-semibold text-content-secondary">Total Storage Size</div>
+          <div class="text-content">{{ formatCollectionSize(collectionInfo.size) }}</div>
         </div>
         <div class="flex flex-col gap-1">
           <div class="flex justify-between gap-4">
-            <div class="font-semibold text-gray-700">Collation</div>
-            <div class="text-gray-900">{{ collectionInfo.hasCollation ? 'Yes' : 'No' }}</div>
+            <div class="font-semibold text-content-secondary">Collation</div>
+            <div class="text-content">{{ collectionInfo.hasCollation ? 'Yes' : 'No' }}</div>
           </div>
-          <div v-if="collectionInfo.hasCollation" class="rounded bg-gray-100 p-3 text-sm text-gray-800 overflow-x-auto">
+          <div v-if="collectionInfo.hasCollation" class="rounded bg-muted p-3 text-sm text-gray-800 overflow-x-auto">
             <pre class="whitespace-pre-wrap">{{ JSON.stringify(collectionInfo.collation, null, 2) }}</pre>
           </div>
         </div>
         <div class="flex justify-between gap-4">
-          <div class="font-semibold text-gray-700">Capped</div>
-          <div class="text-gray-900">{{ collectionInfo.capped ? 'Yes' : 'No' }}</div>
+          <div class="font-semibold text-content-secondary">Capped</div>
+          <div class="text-content">{{ collectionInfo.capped ? 'Yes' : 'No' }}</div>
         </div>
-      </div>
-    </template>
-  </modal>
-  <modal v-if="shouldShowFieldModal">
-    <template v-slot:body>
-      <div class="modal-exit" @click="shouldShowFieldModal = false; selectedPaths = [...filteredPaths];">&times;</div>
-      <div v-for="(path, index) in schemaPaths" :key="index" class="w-5 flex items-center">
-        <input  class="mt-0 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-600 accent-sky-600" type="checkbox" :id="'path.path'+index" @change="addOrRemove(path)" :value="path.path" :checked="isSelected(path.path)" />
-        <div class="ml-2 text-gray-700 grow shrink text-left">
-          <label :for="'path.path' + index">{{path.path}}</label>
-        </div>
-      </div>
-      <div class="mt-4 flex gap-2">
-        <button type="button" @click="filterDocuments()" class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Filter Selection</button>
-        <button type="button" @click="selectAll()" class="rounded-md bg-forest-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">Select All</button>
-        <button type="button" @click="deselectAll()" class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">Deselect All</button>
-        <button type="button" @click="resetDocuments()" class="rounded-md bg-gray-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600" >Cancel</button>
       </div>
     </template>
   </modal>
@@ -382,10 +654,18 @@
         <async-button @click="deleteDocuments" class="rounded bg-red-500 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
           Confirm
         </async-button>
-        <button @click="shouldShowDeleteMultipleModal = false;" class="rounded bg-gray-400 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500">
+        <button @click="shouldShowDeleteMultipleModal = false;" class="rounded bg-gray-400 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-page0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500">
           Cancel
         </button>
       </div>
     </template>
   </modal>
+  <model-switcher
+    :show="showModelSwitcher"
+    :models="models"
+    :recently-viewed-models="recentlyViewedModels"
+    :model-document-counts="modelDocumentCounts"
+    @close="showModelSwitcher = false"
+    @select="selectSwitcherModel"
+  ></model-switcher>
 </div>

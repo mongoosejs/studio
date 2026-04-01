@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const assert = require('assert');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
@@ -16,13 +17,17 @@ const CreateChatMessageParams = new Archetype({
   content: {
     $type: 'string'
   },
+  currentDateTime: {
+    $type: 'string',
+    $validate: v => assert.ok(v == null || v.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/))
+  },
   roles: {
     $type: ['string']
   }
 }).compile('CreateChatMessageParams');
 
 module.exports = ({ db, studioConnection, options }) => async function createChatMessage(params) {
-  const { chatThreadId, initiatedById, content, script, roles } = new CreateChatMessageParams(params);
+  const { chatThreadId, initiatedById, content, currentDateTime, script, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -75,7 +80,12 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
   }
 
   const modelDescriptions = getModelDescriptions(db);
-  const system = systemPrompt + '\n\n' + modelDescriptions + (options?.context ? '\n\n' + options.context : '');
+  const system = [
+    systemPrompt,
+    currentDateTime ? `Current date: ${currentDateTime}` : null,
+    modelDescriptions,
+    options?.context
+  ].filter(Boolean).join('\n\n');
 
   // Create the chat message and get LLM response in parallel
   const chatMessages = await Promise.all([
@@ -108,6 +118,7 @@ The following globals are available. Assume no other globals exist.
 - mongoose: the output of require('mongoose').
 - ObjectId: MongoDB ObjectId class from mongoose.Types.ObjectId
 - console: has a stubbed log() function that logs to the console and is accessible in the output.
+- MongooseStudioChartColors: an array of 8 hex color strings for use as chart dataset colors.
 
 Keep scripts concise. Avoid unnecessary comments, error handling, and temporary variables.
 
@@ -129,9 +140,11 @@ Format output as Markdown, including code fences for any scripts the user reques
 
 Add a brief text description of what the script does.
 
-If the user's query is best answered with a chart, return a Chart.js 4 configuration as \`return { $chart: chartJSConfig };\`. Disable ChartJS animation by default unless user asks for it. Set responsive: true, maintainAspectRatio: false options unless the user explicitly asks.
+If the user's query is best answered with a chart, return a Chart.js 4 configuration as \`return { $chart: chartJSConfig };\`. Disable ChartJS animation by default unless user asks for it. Set responsive: true, maintainAspectRatio: false options unless the user explicitly asks. Use MongooseStudioChartColors for dataset backgroundColor and borderColor by default. For line/bar charts, use MongooseStudioChartColors[i] as borderColor and MongooseStudioChartColors[i] + '33' as backgroundColor for each dataset. For pie/doughnut charts, use MongooseStudioChartColors.slice(0, data.length) as backgroundColor. Only use custom colors if the user explicitly requests specific colors.
 
 If the user\'s query is best answered by a map, return an object { $featureCollection } which contains a GeoJSON FeatureCollection
+
+If the user's query is best answered by a table, return an object { $table: { columns: string[], rows: any[][] } }
 
 Example output:
 

@@ -1,6 +1,7 @@
 'use strict';
 
 const api = require('../api');
+const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 const template = require('./chat.html');
 
 module.exports = {
@@ -14,7 +15,9 @@ module.exports = {
     chatThreads: [],
     chatMessages: [],
     hideSidebar: null,
-    sharingThread: false
+    sharingThread: false,
+    threadSearch: '',
+    showProUpgradeModal: false
   }),
   methods: {
     async sendMessage() {
@@ -30,7 +33,9 @@ module.exports = {
           this.$toast.success('Chat thread created!');
         }
 
+        const userChatMessageIndex = this.chatMessages.length;
         this.chatMessages.push({
+          _id: Math.random().toString(36).substr(2, 9),
           content,
           role: 'user'
         });
@@ -41,18 +46,23 @@ module.exports = {
           }
         });
 
-        const params = { chatThreadId: this.chatThreadId, content };
+        const params = {
+          chatThreadId: this.chatThreadId,
+          content,
+          currentDateTime: getCurrentDateTimeContext()
+        };
         let userChatMessage = null;
         let assistantChatMessage = null;
         for await (const event of api.ChatThread.streamChatMessage(params)) {
           if (event.chatMessage) {
             if (!userChatMessage) {
               userChatMessage = event.chatMessage;
-            } else if (!assistantChatMessage) {
+              this.chatMessages.splice(userChatMessageIndex, 1, userChatMessage);
+            } else {
               const assistantChatMessageIndex = this.chatMessages.indexOf(assistantChatMessage);
               assistantChatMessage = event.chatMessage;
               if (assistantChatMessageIndex !== -1) {
-                this.chatMessages[assistantChatMessageIndex] = assistantChatMessage;
+                this.chatMessages.splice(assistantChatMessageIndex, 1, assistantChatMessage);
               } else {
                 this.chatMessages.push(assistantChatMessage);
               }
@@ -66,6 +76,7 @@ module.exports = {
           } else if (event.textPart) {
             if (!assistantChatMessage) {
               assistantChatMessage = {
+                _id: Math.random().toString(36).substr(2, 9),
                 content: event.textPart,
                 role: 'assistant'
               };
@@ -121,16 +132,32 @@ module.exports = {
       this.$router.push('/chat/' + threadId);
     },
     styleForMessage(message) {
-      return message.role === 'user' ? 'bg-gray-100' : '';
+      return message.role === 'user' ? 'bg-muted' : '';
     },
     async createNewThread() {
       const { chatThread } = await api.ChatThread.createChatThread();
       this.$toast.success('Chat thread created!');
       this.$router.push('/chat/' + chatThread._id);
     },
+    formatThreadDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = now - date;
+      const oneDay = 24 * 60 * 60 * 1000;
+      const isToday = date.toDateString() === now.toDateString();
+      const isYesterday = new Date(now - oneDay).toDateString() === date.toDateString();
+      const timeStr = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      if (isToday) return 'Today, ' + timeStr;
+      if (isYesterday) return 'Yesterday, ' + timeStr;
+      if (diff < 7 * oneDay) {
+        return date.toLocaleDateString(undefined, { weekday: 'long' }) + ', ' + timeStr;
+      }
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' + timeStr;
+    },
     async toggleShareThread() {
       if (!this.chatThreadId || !this.hasWorkspace) {
-        return;
+        throw new Error('Cannot share thread: chatThreadId or hasWorkspace is missing');
       }
       this.sharingThread = true;
       try {
@@ -161,9 +188,18 @@ module.exports = {
     },
     sharedWithWorkspace() {
       return !!this.currentThread?.sharingOptions?.sharedWithWorkspace;
+    },
+    filteredThreads() {
+      const search = this.threadSearch.trim().toLowerCase();
+      if (!search) {
+        return this.chatThreads;
+      }
+      return this.chatThreads.filter(t => (t.title || 'Untitled Thread').toLowerCase().includes(search));
     }
   },
   async mounted() {
+    window.pageState = this;
+
     this.chatThreadId = this.threadId;
     const { chatThreads } = await api.ChatThread.listChatThreads();
     this.chatThreads = chatThreads;

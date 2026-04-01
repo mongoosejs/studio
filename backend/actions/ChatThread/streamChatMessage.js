@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const assert = require('assert');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
 const streamLLM = require('../../integrations/streamLLM');
@@ -17,13 +18,17 @@ const CreateChatMessageParams = new Archetype({
   content: {
     $type: 'string'
   },
+  currentDateTime: {
+    $type: 'string',
+    $validate: v => assert.ok(v == null || v.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/))
+  },
   roles: {
     $type: ['string']
   }
 }).compile('CreateChatMessageParams');
 
 module.exports = ({ db, studioConnection, options }) => async function* createChatMessage(params) {
-  const { chatThreadId, initiatedById, content, script, roles } = new CreateChatMessageParams(params);
+  const { chatThreadId, initiatedById, content, currentDateTime, script, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -76,7 +81,12 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
   }
 
   const modelDescriptions = getModelDescriptions(db);
-  const system = systemPrompt + '\n\n' + modelDescriptions + (options?.context ? '\n\n' + options.context : '');
+  const system = [
+    systemPrompt,
+    currentDateTime ? `Current date: ${currentDateTime}` : null,
+    modelDescriptions,
+    options?.context
+  ].filter(Boolean).join('\n\n');
 
   const userChatMessage = await ChatMessage.create({
     chatThreadId,
@@ -123,7 +133,7 @@ const systemPrompt = `
 
   Do not write any imports or require() statements, that will cause the script to break.
 
-  If the user approves the script, the script will run in the Node.js server in a sandboxed vm.createContext() call with only 1 global variable: db, which contains the Mongoose connection. The script return value will then send the response via JSON to the client. Be aware that the result of the query will be serialized to JSON before being displayed to the user. MAKE SURE TO RETURN A VALUE FROM THE SCRIPT.
+  If the user approves the script, the script will run in the Node.js server in a sandboxed vm.createContext() call with the following globals: db (the Mongoose connection), mongoose, ObjectId (mongoose.Types.ObjectId), console, and MongooseStudioChartColors (an array of 8 hex color strings for chart dataset colors). The script return value will then send the response via JSON to the client. Be aware that the result of the query will be serialized to JSON before being displayed to the user. MAKE SURE TO RETURN A VALUE FROM THE SCRIPT.
 
   Optimize scripts for readability first, followed by reliability, followed by performance. Avoid using the aggregation framework unless explicitly requested by the user. Use indexed fields in queries where possible.
 
@@ -139,9 +149,11 @@ const systemPrompt = `
 
   Add a brief text description of what the script does.
 
-  If the user's query is best answered with a chart, return a Chart.js 4 configuration as \`return { $chart: chartJSConfig };\`. Disable ChartJS animation by default unless user asks for it. Set responsive: true, maintainAspectRatio: false options unless the user explicitly asks.
+  If the user's query is best answered with a chart, return a Chart.js 4 configuration as \`return { $chart: chartJSConfig };\`. Disable ChartJS animation by default unless user asks for it. Set responsive: true, maintainAspectRatio: false options unless the user explicitly asks. Use MongooseStudioChartColors for dataset backgroundColor and borderColor by default. For line/bar charts, use MongooseStudioChartColors[i] as borderColor and MongooseStudioChartColors[i] + '33' as backgroundColor for each dataset. For pie/doughnut charts, use MongooseStudioChartColors.slice(0, data.length) as backgroundColor. Only use custom colors if the user explicitly requests specific colors.
 
   If the user\'s query is best answered by a map, return an object { $featureCollection } which contains a GeoJSON FeatureCollection
+
+  If the user's query is best answered by a table, return an object { $table: { columns: string[], rows: any[][] } }
 
   Example output:
 

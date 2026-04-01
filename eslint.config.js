@@ -37,9 +37,16 @@ module.exports = defineConfig([
         fetch: true,
         __dirname: true,
         process: true,
+        clearTimeout: true,
         setTimeout: true,
         navigator: true,
-        TextDecoder: true
+        TextDecoder: true,
+        AbortController: true,
+        clearTimeout: true,
+        requestAnimationFrame: true,
+        localStorage: true,
+        getComputedStyle: true,
+        CustomEvent: true
       },
       sourceType: 'commonjs'
     },

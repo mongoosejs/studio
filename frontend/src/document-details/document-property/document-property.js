@@ -19,7 +19,8 @@ module.exports = app => app.component('document-property', {
       isValueExpanded: false, // Track if the value is expanded
       detailViewMode: 'text',
       copyButtonLabel: 'Copy',
-      copyResetTimeoutId: null
+      copyResetTimeoutId: null,
+      showTooltip: false
     };
   },
   beforeDestroy() {
@@ -101,12 +102,33 @@ module.exports = app => app.component('document-property', {
         && !Array.isArray(value)
         && Object.prototype.hasOwnProperty.call(value, 'type')
         && Object.prototype.hasOwnProperty.call(value, 'coordinates');
+    },
+    isGeoJsonPoint() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && value.type === 'Point';
+    },
+    isGeoJsonPolygon() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && (value.type === 'Polygon' || value.type === 'MultiPolygon');
+    },
+    isMultiPolygon() {
+      const value = this.getValueForPath(this.path.path);
+      return this.isGeoJsonGeometry && value.type === 'MultiPolygon';
     }
   },
   watch: {
     isGeoJsonGeometry(newValue) {
       if (!newValue) {
         this.detailViewMode = 'text';
+      } else if (this.editting) {
+        // Default to map view when editing GeoJSON
+        this.detailViewMode = 'map';
+      }
+    },
+    editting(newValue) {
+      // When entering edit mode for GeoJSON, default to map view
+      if (newValue && this.isGeoJsonGeometry) {
+        this.detailViewMode = 'map';
       }
     }
   },
@@ -194,6 +216,11 @@ module.exports = app => app.component('document-property', {
       if (!this.document) {
         return;
       }
+      // If there are unsaved changes for this path, use the changed value
+      if (Object.prototype.hasOwnProperty.call(this.changes, path)) {
+        return this.changes[path];
+      }
+      // Otherwise, use the document value
       const documentValue = mpath.get(path, this.document);
       return documentValue;
     },
@@ -212,6 +239,16 @@ module.exports = app => app.component('document-property', {
         this.copyButtonLabel = 'Copy';
         this.copyResetTimeoutId = null;
       }, 5000);
+    },
+    getTooltipStyle() {
+      if (!this.$refs.infoIcon || !this.showTooltip) {
+        return {};
+      }
+      const rect = this.$refs.infoIcon.getBoundingClientRect();
+      return {
+        left: (rect.right + 8) + 'px',
+        top: rect.top + 'px'
+      };
     },
     copyPropertyValue() {
       const textToCopy = this.valueAsString;

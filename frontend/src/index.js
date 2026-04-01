@@ -11,7 +11,7 @@ const api = require('./api');
 const format = require('./format');
 const arrayUtils = require('./array-utils');
 const mothership = require('./mothership');
-const { routes } = require('./routes');
+const { routes, hasAccess } = require('./routes');
 const Toast = require('vue-toastification').default;
 const { useToast } = require('vue-toastification');
 const appendCSS = require('./appendCSS');
@@ -130,8 +130,12 @@ app.component('app-component', {
           const { user, roles } = await mothership.me();
 
           try {
-            const { nodeEnv } = await api.status();
+            const [{ nodeEnv }, { modelSchemaPaths }] = await Promise.all([
+              api.status(),
+              api.Model.listModels()
+            ]);
             this.nodeEnv = nodeEnv;
+            this.modelSchemaPaths = modelSchemaPaths;
           } catch (err) {
             this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
             this.status = 'loaded';
@@ -144,8 +148,12 @@ app.component('app-component', {
       }
     } else {
       try {
-        const { nodeEnv } = await api.status();
+        const [{ nodeEnv }, { modelSchemaPaths }] = await Promise.all([
+          api.status(),
+          api.Model.listModels()
+        ]);
         this.nodeEnv = nodeEnv;
+        this.modelSchemaPaths = modelSchemaPaths;
       } catch (err) {
         this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
       }
@@ -159,8 +167,9 @@ app.component('app-component', {
     const status = Vue.ref('init');
     const nodeEnv = Vue.ref(null);
     const authError = Vue.ref(null);
+    const modelSchemaPaths = Vue.ref(null);
 
-    const state = Vue.reactive({ user, roles, status, nodeEnv, authError });
+    const state = Vue.reactive({ user, roles, status, nodeEnv, authError, modelSchemaPaths });
     Vue.provide('state', state);
 
     return state;
@@ -174,6 +183,41 @@ const router = VueRouter.createRouter({
     component: app.component(route.component),
     props: (route) => route.params
   }))
+});
+
+// Add global navigation guard
+router.beforeEach((to, from, next) => {
+  // Skip auth check for authorized (public) routes
+  if (to.meta.authorized) {
+    next();
+    return;
+  }
+
+  // Get roles from the app state
+  const roles = window.state?.roles;
+
+  // Check if user has access to the route
+  if (!hasAccess(roles, to.name)) {
+    // Find all routes the user has access to
+    const allowedRoutes = routes.filter(route => hasAccess(roles, route.name));
+
+    // If user has no allowed routes, redirect to splash/login
+    if (allowedRoutes.length === 0) {
+      next({ name: 'root' });
+      return;
+    }
+
+    // Redirect to first allowed route
+    const firstAllowedRoute = allowedRoutes[0].name;
+    next({ name: firstAllowedRoute });
+    return;
+  }
+
+  if (to.name === 'root' && roles && roles[0] === 'dashboards') {
+    return next({ name: 'dashboards' });
+  }
+
+  next();
 });
 
 router.beforeEach((to, from, next) => {

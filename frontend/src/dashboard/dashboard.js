@@ -28,6 +28,13 @@ module.exports = {
       this.showEditor = !this.showEditor;
     },
     async updateCode(update) {
+      if (!update?.doc) {
+        const message = update?.error?.message || 'Dashboard update failed';
+        console.error(update?.error || new Error(message));
+        this.$toast.error(message);
+        return;
+      }
+
       this.code = update.doc.code;
       this.title = update.doc.title;
       this.description = update.doc.description;
@@ -37,14 +44,24 @@ module.exports = {
     async evaluateDashboard() {
       this.status = 'evaluating';
       try {
-        const { dashboard, dashboardResult } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
+        const { dashboard, dashboardResult, result, error } = await api.Dashboard.getDashboard({ dashboardId: this.dashboardId, evaluate: true });
         this.dashboard = dashboard;
-        this.code = this.dashboard.code;
-        this.title = this.dashboard.title;
-        this.description = this.dashboard.description ?? '';
+        if (dashboard) {
+          this.code = this.dashboard.code;
+          this.title = this.dashboard.title;
+          this.description = this.dashboard.description ?? '';
+        }
         if (dashboardResult) {
           this.dashboardResults.unshift(dashboardResult);
+        } else if (result !== undefined) {
+          this.dashboardResults.unshift({ result, finishedEvaluatingAt: new Date() });
+        } else if (error) {
+          this.dashboardResults.unshift({ error: { message: error.message || 'Evaluation failed' }, finishedEvaluatingAt: new Date() });
         }
+      } catch (err) {
+        const message = err?.response?.data?.message || err?.message || 'Dashboard evaluation failed';
+        console.error(err || new Error(message));
+        this.$toast.error(message);
       } finally {
         this.status = 'loaded';
       }
@@ -127,7 +144,7 @@ module.exports = {
       this.code = this.dashboard.code;
       this.title = this.dashboard.title;
       this.description = this.dashboard.description ?? '';
-      this.dashboardResults = dashboardResults;
+      this.dashboardResults = Array.isArray(dashboardResults) ? dashboardResults : [];
       if (this.shouldEvaluateDashboard()) {
         await this.evaluateDashboard();
         return;
@@ -141,6 +158,8 @@ module.exports = {
     }
   },
   mounted: async function() {
+    window.pageState = this;
+
     document.addEventListener('click', this.handleDocumentClick);
     this.showEditor = this.$route.query.edit;
     await this.loadInitial();

@@ -1,7 +1,6 @@
 'use strict';
 
 const template = require('./edit-subdocument.html');
-
 const { BSON, EJSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
@@ -13,19 +12,11 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 module.exports = app => app.component('edit-subdocument', {
   template: template,
   props: ['value'],
-  data: () => ({ currentValue: null, status: 'init' }),
+  data: () => ({ currentValue: '', status: 'init' }),
   mounted() {
     this.currentValue = this.value == null
       ? '' + this.value
       : JSON.stringify(this.value, null, '  ').trim();
-    this.$refs.editor.value = this.currentValue;
-    this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
-      mode: 'javascript',
-      lineNumbers: true
-    });
-    this.editor.on('change', ev => {
-      this.currentValue = this.editor.getValue();
-    });
     this.status = 'loaded';
   },
   watch: {
@@ -39,11 +30,6 @@ module.exports = app => app.component('edit-subdocument', {
         console.log('Error', err);
         this.$emit('error', err);
       }
-    }
-  },
-  beforeDestroy() {
-    if (this.editor) {
-      this.editor.toTextArea();
     }
   },
   emits: ['input', 'error']

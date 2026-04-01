@@ -1,14 +1,14 @@
 <div class="document px-1 pt-4 pb-16 md:px-0 bg-slate-50 w-full">
   <div class="max-w-7xl mx-auto">
-    <div class="flex gap-4 items-center sticky top-0 z-50 bg-white p-4 border-b border-gray-200 shadow-sm">
+    <div class="flex gap-4 items-center sticky top-0 z-50 bg-surface p-4 border-b border-edge shadow-sm">
       <div class="font-bold overflow-hidden text-ellipsis">{{model}}: {{documentId}}</div>
       <div class="flex grow">
         <button
           @click="viewMode = 'fields'"
           :class="viewMode === 'fields'
             ? 'bg-blue-600 text-white z-10'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
-          class="px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2 border border-gray-300 border-r-0 rounded-l-lg rounded-r-none"
+            : 'bg-gray-200 text-content-secondary hover:bg-gray-300'"
+          class="px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2 border border-edge-strong border-r-0 rounded-l-lg rounded-r-none"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
@@ -19,14 +19,26 @@
           @click="viewMode = 'json'"
           :class="viewMode === 'json'
             ? 'bg-blue-600 text-white z-10'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
-          class="px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2 border border-gray-300 rounded-r-lg rounded-l-none"
+            : 'bg-gray-200 text-content-secondary hover:bg-gray-300'"
+          class="px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2 border border-edge-strong rounded-r-lg rounded-l-none"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
           </svg>
           JSON
         </button>
+      </div>
+
+      <div class="hidden md:flex items-center gap-3 text-sm text-slate-600">
+        <div class="text-right leading-tight">
+          <div class="text-xs uppercase tracking-wide text-slate-400 flex items-center gap-2 justify-end">
+            <span>Loaded at</span>
+            <span class="inline-flex items-center gap-1 text-[10px] font-semibold" :class="autoRefreshEnabled ? 'text-forest-green-600' : 'text-slate-400'">
+              <span class="inline-block h-1.5 w-1.5 rounded-full" :class="autoRefreshEnabled ? 'bg-forest-green-500' : 'bg-slate-300'"></span>
+            </span>
+          </div>
+          <div class="font-medium text-slate-700">{{lastUpdatedLabel}}</div>
+        </div>
       </div>
 
       <div class="gap-2 hidden md:flex items-center">
@@ -36,7 +48,7 @@
           :disabled="!canEdit"
           :class="{'cursor-not-allowed opacity-50': !canEdit}"
           type="button"
-          class="rounded-md bg-ultramarine-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-ultramarine-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
+          class="rounded-md bg-primary px-2.5 py-1.5 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
           <img src="images/edit.svg" class="inline" /> Edit
         </button>
         <button
@@ -61,7 +73,7 @@
           <button
             @click="desktopMenuOpen = !desktopMenuOpen"
             type="button"
-            class="inline-flex items-center justify-center rounded-md bg-gray-200 px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="inline-flex items-center justify-center rounded-md bg-gray-200 px-2.5 py-1.5 text-sm font-medium text-content-secondary hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             aria-expanded="desktopMenuOpen"
             aria-label="More options"
           >
@@ -74,20 +86,51 @@
           <div
             v-show="desktopMenuOpen"
             @click.away="desktopMenuOpen = false"
-            class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+            class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-surface ring-1 ring-black ring-opacity-5 z-50"
           >
             <div class="py-1 flex flex-col">
               <button
+                @click="refreshDocument({ force: true, source: 'manual' }); desktopMenuOpen = false"
+                :disabled="isRefreshing"
+                :class="['flex items-center px-4 py-2 text-sm text-content-secondary', isRefreshing ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-100']"
+                type="button"
+              >
+                {{isRefreshing ? 'Refreshing...' : 'Refresh'}}
+              </button>
+              <button
+                @click="toggleAutoRefresh(); desktopMenuOpen = false"
+                :disabled="isLambda"
+                type="button"
+                :class="['flex items-center px-4 py-2 text-sm', isLambda ? 'text-gray-400 cursor-not-allowed' : 'text-content-secondary hover:bg-slate-100']"
+                :title="isLambda ? 'Auto-refresh only available on Express deployments' : ''"
+              >
+                {{autoRefreshEnabled ? 'Disable Auto-Refresh' : 'Enable Auto-Refresh'}}
+              </button>
+              <button
                 @click="addField(); desktopMenuOpen = false"
                 type="button"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-green-100"
               >
                 Add Field
               </button>
               <button
+                @click="copyDocument(); desktopMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-blue-100"
+              >
+                Copy Document
+              </button>
+              <button
+                @click="openScriptDrawer()"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-indigo-100"
+              >
+                Run Script
+              </button>
+              <button
                 @click="shouldShowDeleteModal=true; desktopMenuOpen = false"
                 :disabled="!canManipulate"
-                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
+                :class="['flex items-center px-4 py-2 text-sm text-content-secondary', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
                 type="button"
               >
                 Delete
@@ -95,7 +138,7 @@
               <button
                 @click="shouldShowCloneModal=true; desktopMenuOpen = false"
                 :disabled="!canManipulate"
-                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-pink-100']"
+                :class="['flex items-center px-4 py-2 text-sm text-content-secondary', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-pink-100']"
                 type="button"
               >
                 Clone
@@ -117,7 +160,7 @@
           <button
             @click="mobileMenuOpen = !mobileMenuOpen"
             type="button"
-            class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-content-secondary hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             aria-expanded="mobileMenuOpen"
             aria-label="Open menu"
           >
@@ -129,14 +172,14 @@
           <div
             v-show="mobileMenuOpen"
             @click.away="mobileMenuOpen = false"
-            class="origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+            class="origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg bg-surface ring-1 ring-black ring-opacity-5 z-50"
           >
             <div class="py-1 flex flex-col">
               <button
                 v-if="!editting"
                 @click="editting = true; mobileMenuOpen = false"
                 :disabled="!canEdit"
-                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canEdit ? 'cursor-not-allowed opacity-50' : 'hover:bg-ultramarine-100']"
+                :class="['flex items-center px-4 py-2 text-sm text-content-secondary', !canEdit ? 'cursor-not-allowed opacity-50' : 'hover:bg-primary-subtle']"
                 type="button"
               >
                 Edit
@@ -145,30 +188,59 @@
                 v-if="editting"
                 @click="editting = false; mobileMenuOpen = false"
                 type="button"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-slate-100"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-slate-100"
               >
                 Cancel
               </button>
               <button
                 v-if="editting"
                 :disabled="!canManipulate"
-                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-green-100']"
+                :class="['flex items-center px-4 py-2 text-sm text-content-secondary', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-green-100']"
                 @click="shouldShowConfirmModal=true; mobileMenuOpen = false"
                 type="button"
               >
                 Save
               </button>
               <button
+                @click="refreshDocument({ force: true, source: 'manual' }); mobileMenuOpen = false"
+                :disabled="isRefreshing"
+                :class="['flex items-center px-4 py-2 text-sm text-content-secondary', isRefreshing ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-100']"
+                type="button"
+              >
+                {{isRefreshing ? 'Refreshing...' : 'Refresh'}}
+              </button>
+              <button
+                @click="toggleAutoRefresh(); mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-slate-100"
+              >
+                Auto-Refresh {{autoRefreshEnabled ? 'ON' : 'OFF'}}
+              </button>
+              <button
                 @click="addField(); mobileMenuOpen = false"
                 type="button"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-green-100"
               >
                 Add Field
               </button>
               <button
+                @click="copyDocument(); mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-blue-100"
+              >
+                Copy Document
+              </button>
+              <button
+                @click="openScriptDrawer()"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-indigo-100"
+              >
+                Run Script
+              </button>
+              <button
                 @click="shouldShowDeleteModal=true; mobileMenuOpen = false"
                 :disabled="!canManipulate"
-                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
+                :class="['flex items-center px-4 py-2 text-sm text-content-secondary', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-100']"
                 type="button"
               >
                 Delete
@@ -176,7 +248,7 @@
               <button
                 @click="shouldShowCloneModal=true; mobileMenuOpen = false"
                 :disabled="!canManipulate"
-                :class="['flex items-center px-4 py-2 text-sm text-gray-700', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-pink-100']"
+                :class="['flex items-center px-4 py-2 text-sm text-content-secondary', !canManipulate ? 'cursor-not-allowed opacity-50' : 'hover:bg-pink-100']"
                 type="button"
               >
                 Clone
@@ -224,6 +296,40 @@
             <clone-document :currentModel="model" :doc="document" :schemaPaths="schemaPaths" @close="showClonedDocument"></clone-document>
         </template>
       </modal>
+    </div>
+    <execute-script
+      :visible="scriptDrawerOpen"
+      :model="model"
+      :document-id="documentId"
+      :editting="editting"
+      @close="closeScriptDrawer"
+      @refresh="handleScriptRefresh"
+    ></execute-script>
+    <div
+      v-if="keyboardShortcuts.length > 0"
+      class="fixed bottom-4 left-4 z-40 group"
+    >
+      <button
+        type="button"
+        aria-label="Keyboard shortcuts"
+        title="Keyboard shortcuts"
+        class="rounded-full border border-slate-300 bg-surface p-2 text-slate-700 shadow-sm transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <rect x="2.5" y="6.5" width="19" height="11" rx="2" stroke-width="1.5"></rect>
+          <path d="M6 10.5h1.5M9 10.5h1.5M12 10.5h1.5M15 10.5h1.5M18 10.5h.01M6 13.5h1.5M9 13.5h6M16.5 13.5h1.5" stroke-width="1.5" stroke-linecap="round"></path>
+        </svg>
+      </button>
+      <div class="pointer-events-none absolute left-0 bottom-full mb-2 min-w-[220px] translate-y-1 rounded-lg bg-slate-900 px-3 py-2.5 text-slate-200 opacity-0 shadow-xl transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        <div
+          v-for="shortcut in keyboardShortcuts"
+          :key="shortcut.command + shortcut.description"
+          class="flex items-center justify-between gap-3 text-xs"
+        >
+          <span class="font-mono font-semibold text-slate-50">{{shortcut.command}}</span>
+          <span class="text-slate-300">{{shortcut.description}}</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>

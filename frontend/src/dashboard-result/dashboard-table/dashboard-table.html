@@ -1,0 +1,34 @@
+<div class="overflow-x-auto">
+  <table class="min-w-full border-separate border-spacing-0">
+    <thead v-if="hasColumns" class="bg-slate-50">
+      <tr>
+        <th
+          v-for="(column, index) in columns"
+          :key="'column-' + index"
+          class="bg-slate-50 p-3 text-left text-sm font-semibold text-content border-b border-edge"
+        >
+          {{ column }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="(row, rowIndex) in rows" :key="'row-' + rowIndex" class="bg-surface hover:bg-slate-50">
+        <td
+          v-for="(cell, columnIndex) in row"
+          :key="'cell-' + rowIndex + '-' + columnIndex"
+          class="p-3 text-sm text-content border-b border-edge"
+        >
+          {{ displayValue(cell) }}
+        </td>
+      </tr>
+      <tr v-if="!hasRows">
+        <td
+          :colspan="Math.max(columns.length, 1)"
+          class="p-3 text-sm text-content-tertiary border-b border-edge"
+        >
+          No rows
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

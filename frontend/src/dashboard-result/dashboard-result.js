@@ -34,6 +34,9 @@ module.exports = app => app.component('dashboard-result', {
       if (value.$grid) {
         return 'dashboard-grid';
       }
+      if (value.$table) {
+        return 'dashboard-table';
+      }
       return 'dashboard-object';
     }
   }

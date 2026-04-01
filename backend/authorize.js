@@ -17,10 +17,13 @@ const actionsToRequiredRoles = {
   'Model.deleteDocument': ['owner', 'admin', 'member'],
   'Model.deleteDocuments': ['owner', 'admin', 'member'],
   'Model.dropIndex': ['owner', 'admin'],
+  'Model.executeDocumentScript': ['owner', 'admin', 'member'],
   'Model.exportQueryResults': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocument': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocuments': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocumentsStream': ['owner', 'admin', 'member', 'readonly'],
+  'Model.getSuggestedProjection': ['owner', 'admin', 'member', 'readonly'],
+  'Model.getEstimatedDocumentCounts': ['owner', 'admin', 'member', 'readonly'],
   'Model.getIndexes': ['owner', 'admin', 'member', 'readonly'],
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
   'Model.updateDocuments': ['owner', 'admin', 'member'],
@@ -28,7 +31,10 @@ const actionsToRequiredRoles = {
   'CaseReport.createCaseReport': ['owner', 'admin', 'member'],
   'CaseReport.getCaseReports': ['owner', 'admin', 'member', 'readonly'],
   'CaseReport.getCaseReport': ['owner', 'admin', 'member', 'readonly'],
-  'CaseReport.updateCaseReport': ['owner', 'admin', 'member']
+  'CaseReport.updateCaseReport': ['owner', 'admin', 'member'],
+  'Model.streamDocumentChanges': ['owner', 'admin', 'member', 'readonly'],
+  'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly'],
+  'Model.updateDocuments': ['owner', 'admin', 'member']
 };
 
 module.exports = function authorize(action, roles) {

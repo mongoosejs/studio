@@ -22,8 +22,7 @@ module.exports = app => app.component('document-details', {
         value: ''
       },
       fieldErrors: {},
-      isSubmittingField: false,
-      fieldValueEditor: null
+      isSubmittingField: false
     };
   },
   mounted() {
@@ -32,32 +31,11 @@ module.exports = app => app.component('document-details', {
       if (this.$refs.searchInput) {
         this.$refs.searchInput.focus();
       }
-
-      if (this.showAddFieldModal) {
-        this.initializeFieldValueEditor();
-      }
     });
 
     this.searchQuery = this.getSearchQueryFromRoute();
   },
-  beforeDestroy() {
-    this.destroyFieldValueEditor();
-  },
   watch: {
-    'fieldData.type'(newType, oldType) {
-      // When field type changes, we need to handle the transition
-      if (newType !== oldType) {
-        // Destroy existing CodeMirror if it exists
-        this.destroyFieldValueEditor();
-
-        // If switching to a type that needs CodeMirror, initialize it
-        if (this.shouldUseCodeMirror) {
-          this.$nextTick(() => {
-            this.initializeFieldValueEditor();
-          });
-        }
-      }
-    },
     searchQuery(newValue) {
       this.syncSearchQueryToUrl(newValue);
     },
@@ -122,7 +100,7 @@ module.exports = app => app.component('document-details', {
       const allTypes = new Set([...schemaTypes, ...commonTypes]);
       return Array.from(allTypes).sort();
     },
-    shouldUseCodeMirror() {
+    shouldUseAce() {
       return ['Array', 'Object', 'Embedded'].includes(this.fieldData.type);
     },
     shouldUseDatePicker() {
@@ -313,15 +291,9 @@ module.exports = app => app.component('document-details', {
     },
     openAddFieldModal() {
       this.showAddFieldModal = true;
-      this.$nextTick(() => {
-        if (this.shouldUseCodeMirror) {
-          this.initializeFieldValueEditor();
-        }
-      });
     },
     closeAddFieldModal() {
       this.showAddFieldModal = false;
-      this.destroyFieldValueEditor();
       this.resetFieldForm();
     },
     async addNewField(fieldData) {
@@ -430,29 +402,6 @@ module.exports = app => app.component('document-details', {
       };
       this.fieldErrors = {};
       this.isSubmittingField = false;
-      // Reset CodeMirror editor if it exists
-      if (this.fieldValueEditor) {
-        this.fieldValueEditor.setValue('');
-      }
-    },
-    initializeFieldValueEditor() {
-      if (this.$refs.fieldValueEditor && !this.fieldValueEditor && this.shouldUseCodeMirror) {
-        this.$refs.fieldValueEditor.value = this.fieldData.value || '';
-        this.fieldValueEditor = CodeMirror.fromTextArea(this.$refs.fieldValueEditor, {
-          mode: 'javascript',
-          lineNumbers: true,
-          height: 'auto'
-        });
-        this.fieldValueEditor.on('change', () => {
-          this.fieldData.value = this.fieldValueEditor.getValue();
-        });
-      }
-    },
-    destroyFieldValueEditor() {
-      if (this.fieldValueEditor) {
-        this.fieldValueEditor.toTextArea();
-        this.fieldValueEditor = null;
-      }
     },
     getVirtualFieldType(virtual) {
       const value = virtual.value;

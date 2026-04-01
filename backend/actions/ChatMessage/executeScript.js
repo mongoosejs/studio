@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const MongooseStudioChartColors = require('../../constants/mongooseStudioChartColors');
 const mongoose = require('mongoose');
 const vm = require('vm');
 
@@ -10,7 +11,8 @@ const ExecuteScriptParams = new Archetype({
     $type: mongoose.Types.ObjectId
   },
   chatMessageId: {
-    $type: mongoose.Types.ObjectId
+    $type: mongoose.Types.ObjectId,
+    $required: true
   },
   script: {
     $type: 'string'
@@ -42,7 +44,7 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
   if (!db.Types) {
     db.Types = mongoose.Types;
   }
-  const sandbox = { db, mongoose, console: {}, ObjectId: mongoose.Types.ObjectId };
+  const sandbox = { db, mongoose, console: {}, ObjectId: mongoose.Types.ObjectId, MongooseStudioChartColors };
 
   // Capture console logs
   sandbox.console.log = function() {
