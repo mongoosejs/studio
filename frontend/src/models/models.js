@@ -404,7 +404,7 @@ module.exports = app => app.component('models', {
           this.$nextTick(runAdd);
         });
       }
-      },
+    },
     highlightMatch(model) {
       const search = this.modelSearch.trim();
       if (!search) {

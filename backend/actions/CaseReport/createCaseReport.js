@@ -21,7 +21,7 @@ const DocumentsParams = new Archetype({
   notes: {
     $type: 'string'
   }
-}).compile('DocumentsParams')
+}).compile('DocumentsParams');
 
 const CreateCaseReportParams = new Archetype({
   name: {
@@ -53,21 +53,21 @@ module.exports = ({ db }) => async function createCaseReport(params) {
   const finalName = existingCount > 0 ? `${normalizedName} (${existingCount})` : normalizedName;
   const docs = Array.isArray(documents)
     ? documents
-        .filter(doc => doc && doc.documentId != null && doc.documentModel)
-        .map(doc => {
-          let documentId = doc.documentId;
-          if (documentId != null && typeof documentId === 'object' && typeof documentId.toString === 'function') {
-            documentId = documentId.toString();
-          } else if (documentId != null) {
-            documentId = String(documentId);
-          }
-          return {
-            documentId,
-            documentModel: doc.documentModel,
-            ...(doc.highlightedFields ? { highlightedFields: doc.highlightedFields } : {}),
-            ...(doc.notes ? { notes: doc.notes } : {})
-          };
-        })
+      .filter(doc => doc && doc.documentId != null && doc.documentModel)
+      .map(doc => {
+        let documentId = doc.documentId;
+        if (documentId != null && typeof documentId === 'object' && typeof documentId.toString === 'function') {
+          documentId = documentId.toString();
+        } else if (documentId != null) {
+          documentId = String(documentId);
+        }
+        return {
+          documentId,
+          documentModel: doc.documentModel,
+          ...(doc.highlightedFields ? { highlightedFields: doc.highlightedFields } : {}),
+          ...(doc.notes ? { notes: doc.notes } : {})
+        };
+      })
     : [];
   console.log('document created');
   let created = null;
@@ -76,7 +76,7 @@ module.exports = ({ db }) => async function createCaseReport(params) {
       name: finalName,
       documents: docs
     });
-  } catch(err) {
+  } catch (err) {
     console.log('mongoose error', err);
   }
   console.log('creating the document', created);

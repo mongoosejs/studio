@@ -85,6 +85,13 @@ module.exports = app => app.component('document', {
       return hasAccess(this.roles, 'mongoose-sleuth');
     }
   },
+  watch: {
+    editting(nextValue) {
+      if (!nextValue && this.pendingRefresh) {
+        this.refreshDocument({ source: 'pending' });
+      }
+    }
+  },
   methods: {
     addToSleuth() {
       try {
@@ -108,16 +115,7 @@ module.exports = app => app.component('document', {
     },
     isLambda() {
       return !!window?.MONGOOSE_STUDIO_CONFIG?.isLambda;
-    }
-  },
-  watch: {
-    editting(nextValue) {
-      if (!nextValue && this.pendingRefresh) {
-        this.refreshDocument({ source: 'pending' });
-      }
-    }
-  },
-  methods: {
+    },
     handleSaveShortcut(event) {
       const key = typeof event?.key === 'string' ? event.key.toLowerCase() : '';
       const isSaveShortcut = (event.ctrlKey || event.metaKey) && key === 's';
