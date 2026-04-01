@@ -582,10 +582,10 @@
       </div>
     </template>
   </modal>
-  <modal v-if="shouldShowCreateModal">
+  <modal v-if="shouldShowCreateModal" containerClass="create-document-modal">
     <template v-slot:body>
       <div class="modal-exit" @click="shouldShowCreateModal = false;">&times;</div>
-      <create-document :currentModel="currentModel" :paths="schemaPaths" @close="closeCreationModal"></create-document>
+      <create-document :currentModel="currentModel" :paths="schemaPaths" :model-schema-paths="modelSchemaPaths" @close="closeCreationModal"></create-document>
     </template>
   </modal>
   <modal v-if="shouldShowUpdateMultipleModal">

@@ -75,6 +75,7 @@ module.exports = app => app.component('models', {
   props: ['model', 'user', 'roles'],
   data: () => ({
     models: [],
+    modelSchemaPaths: {},
     currentModel: null,
     modelDocumentCounts: {},
     documents: [],
@@ -192,8 +193,9 @@ module.exports = app => app.component('models', {
     this.query = Object.assign({}, this.$route.query);
     // Keep UI mode in sync with the URL on remounts.
     this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
-    const { models, readyState } = await api.Model.listModels();
+    const { models, modelSchemaPaths, readyState } = await api.Model.listModels();
     this.models = models;
+    this.modelSchemaPaths = modelSchemaPaths || {};
     await this.loadModelCounts();
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];

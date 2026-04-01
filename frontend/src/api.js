@@ -94,6 +94,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     executeDocumentScript(params) {
       return client.post('', { action: 'Model.executeDocumentScript', ...params }).then(res => res.data);
     },
+    executeCreateDocumentScript(params) {
+      return client.post('', { action: 'Model.executeCreateDocumentScript', ...params }).then(res => res.data);
+    },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
@@ -123,6 +126,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getDocument: function getDocument(params) {
       return client.post('', { action: 'Model.getDocument', ...params }).then(res => res.data);
+    },
+    pullDocumentValues(params) {
+      return client.post('', { action: 'Model.pullDocumentValues', ...params }).then(res => res.data);
     },
     getDocuments: function getDocuments(params) {
       return client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
@@ -315,6 +321,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     executeDocumentScript: function(params) {
       return client.post('/Model/executeDocumentScript', params).then(res => res.data);
     },
+    executeCreateDocumentScript: function(params) {
+      return client.post('/Model/executeCreateDocumentScript', params).then(res => res.data);
+    },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
@@ -344,6 +353,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getDocument: function getDocument(params) {
       return client.post('/Model/getDocument', params).then(res => res.data);
+    },
+    pullDocumentValues: function pullDocumentValues(params) {
+      return client.post('/Model/pullDocumentValues', params).then(res => res.data);
     },
     getDocuments: function getDocuments(params) {
       return client.post('/Model/getDocuments', params).then(res => res.data);
