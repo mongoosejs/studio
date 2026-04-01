@@ -53,7 +53,9 @@ module.exports = app => app.component('mongoose-sleuth', {
     expandedFieldModels: {},
     summary: '',
     aiSummary: '',
-    savingSummary: false
+    savingSummary: false,
+    caseReports: [],
+    currentCaseReportName: ''
   }),
   created() {
     this.loadOutputPreference();
@@ -76,6 +78,15 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     } else {
       this.status = 'loaded';
+    }
+
+    // Load case reports for "use existing" dropdown
+    try {
+      const { caseReports } = await api.CaseReport.getCaseReports();
+      this.caseReports = Array.isArray(caseReports) ? caseReports : [];
+    } catch (err) {
+      // Non-fatal; just log
+      console.error('Error loading case reports for Sleuth sidebar', err);
     }
 
     // If opened with an existing case report (from route params on case-report page or query when embedded), load it and go to Step 2
@@ -175,9 +186,29 @@ module.exports = app => app.component('mongoose-sleuth', {
         model,
         documents: grouped[model]
       }));
+    },
+    availableCaseReports() {
+      if (!Array.isArray(this.caseReports)) {
+        return [];
+      }
+      return this.caseReports.filter(cr => cr && cr.status && cr.status !== 'resolved' && cr.status !== 'archived');
     }
   },
   methods: {
+    async selectExistingCaseReport(caseReportId) {
+      if (!caseReportId) {
+        return;
+      }
+      this.currentCaseReportId = caseReportId;
+      try {
+        await this.loadCaseReport(caseReportId);
+        const existing = this.caseReports.find(cr => cr && String(cr._id) === String(caseReportId));
+        this.currentCaseReportName = existing && existing.name ? existing.name : '';
+      } catch (err) {
+        console.error('Error loading existing case report from Sleuth select', err);
+        this.$toast?.error?.(err?.message || 'Error loading case report');
+      }
+    },
     attachScrollListener() {
       const container = this.$refs.unified?.$refs?.documentsList?.querySelector('.documents-container');
       if (container) {
@@ -372,6 +403,9 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     },
     async applyPendingAddFromDocumentView() {
+      // When opened from a document's "Add to Sleuth" action, just add the
+      // document to the current selection. Do not auto-create a case report;
+      // let the user name it explicitly via the "Save as case report" modal.
       try {
         const raw = typeof window !== 'undefined' && window.sessionStorage
           ? window.sessionStorage.getItem('studio:sleuth:addDocument')
@@ -387,26 +421,14 @@ module.exports = app => app.component('mongoose-sleuth', {
         if (!this.selectedDocuments.some(d => this.getDocumentKey(d) === key)) {
           this.selectedDocuments.push(withModel);
         }
-        if (this.selectedDocuments.length > 0) {
+        // If we're already working on a case report, persist the updated docs.
+        if (this.currentCaseReportId && this.selectedDocuments.length > 0) {
           const documentsPayload = this.buildDocumentsPayload();
-          if (this.currentCaseReportId) {
-            await api.CaseReport.updateCaseReport({
-              caseReportId: this.currentCaseReportId,
-              documents: documentsPayload
-            });
-            this.$toast.success('Case report updated');
-          } else {
-            const name = this.getDefaultCaseReportName();
-            const { caseReport } = await api.CaseReport.createCaseReport({
-              name,
-              documents: documentsPayload
-            });
-            if (caseReport && caseReport._id) {
-              this.currentCaseReportId = caseReport._id != null ? String(caseReport._id) : caseReport._id;
-            }
-            this.investigationSelections = this.selectedDocuments.slice();
-            this.$toast.success('Case report created');
-          }
+          await api.CaseReport.updateCaseReport({
+            caseReportId: this.currentCaseReportId,
+            documents: documentsPayload
+          });
+          this.$toast.success('Case report updated');
         }
       } catch (e) {
         console.error('Apply pending add to Sleuth', e);
@@ -419,6 +441,10 @@ module.exports = app => app.component('mongoose-sleuth', {
       return `Case report – ${date}, ${time}`;
     },
     async addSourceSelectedToSleuth() {
+      // Add currently selected documents from the models view into the
+      // working Sleuth selection. If a case report is already active, update it;
+      // otherwise, keep the selection in-memory and prompt the user to name
+      // the case report via the modal.
       const source = Array.isArray(this.sourceSelectedDocuments) ? this.sourceSelectedDocuments : [];
       const model = this.sourceModel || this.currentModel;
       for (const doc of source) {
@@ -430,29 +456,23 @@ module.exports = app => app.component('mongoose-sleuth', {
         }
       }
       if (this.selectedDocuments.length === 0) return;
-      const documentsPayload = this.buildDocumentsPayload();
-      try {
-        if (this.currentCaseReportId) {
+
+      if (this.currentCaseReportId) {
+        const documentsPayload = this.buildDocumentsPayload();
+        try {
           await api.CaseReport.updateCaseReport({
             caseReportId: this.currentCaseReportId,
             documents: documentsPayload
           });
           this.$toast.success('Case report updated');
-        } else {
-          const name = this.getDefaultCaseReportName();
-          const { caseReport } = await api.CaseReport.createCaseReport({
-            name,
-            documents: documentsPayload
-          });
-          if (caseReport && caseReport._id) {
-            this.currentCaseReportId = caseReport._id != null ? String(caseReport._id) : caseReport._id;
-          }
-          this.investigationSelections = this.selectedDocuments.slice();
-          this.$toast.success('Case report created');
+        } catch (err) {
+          console.error('Error saving case report', err);
+          this.$toast.error(err?.message || 'Error saving case report');
         }
-      } catch (err) {
-        console.error('Error saving case report', err);
-        this.$toast.error(err?.message || 'Error saving case report');
+      } else {
+        // No active case report yet: open the naming modal instead of
+        // auto-creating with a generated name.
+        this.shouldShowCaseReportModal = true;
       }
     },
     async getDocuments() {
@@ -547,6 +567,10 @@ module.exports = app => app.component('mongoose-sleuth', {
         // Restore AI summary if present
         if (typeof caseReport.AISummary === 'string') {
           this.aiSummary = caseReport.AISummary;
+        }
+        // Store current case report name for display
+        if (typeof caseReport.name === 'string') {
+          this.currentCaseReportName = caseReport.name;
         }
         // Open directly to Step 2 when a case report already has documents
         // If summary exists, go to Step 3
@@ -801,13 +825,15 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
 
       try {
+        const trimmedName = this.caseReportName.trim();
         const { caseReport } = await api.CaseReport.createCaseReport({
-          name: this.caseReportName.trim(),
+          name: trimmedName,
           documents: documentsPayload
         });
         if (caseReport && caseReport._id) {
           this.currentCaseReportId = caseReport._id != null ? String(caseReport._id) : caseReport._id;
         }
+        this.currentCaseReportName = trimmedName;
         this.shouldShowCaseReportModal = false;
         this.caseReportName = '';
         // Pre-populate investigation step with all currently selected documents
@@ -865,9 +891,17 @@ module.exports = app => app.component('mongoose-sleuth', {
         });
         if (aiSummary) {
           this.aiSummary = aiSummary;
-          this.$toast.success('Summary saved and AI summary generated');
+          this.$toast.success('Summary saved and AI summary requested');
         } else {
           this.$toast.success('Summary saved');
+        }
+        // After saving summary, navigate to the full case report page so the
+        // user can continue the investigation outside the sidebar.
+        if (this.$router && this.currentCaseReportId) {
+          this.$router.push({
+            name: 'case-report',
+            params: { caseReportId: this.currentCaseReportId }
+          });
         }
       } catch (err) {
         console.error('Error saving summary', err);

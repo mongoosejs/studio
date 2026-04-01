@@ -384,8 +384,21 @@ module.exports = app => app.component('models', {
       return false;
     },
     openRightPanel(tabId) {
+      // When opening Sleuth, put the user into selection mode and
+      // immediately synchronize any currently selected documents into
+      // the Sleuth sidebar so the save button can be used.
+      const isSleuth = tabId === 'sleuth';
+      if (isSleuth && !this.selectMultiple) {
+        this.selectMultiple = true;
+        this.lastSelectedIndex = null;
+      }
       this.hideRightPanel = false;
       this.activeRightTab = tabId;
+      if (isSleuth && Array.isArray(this.selectedDocuments) && this.selectedDocuments.length > 0 && this.$refs.mongooseSleuth?.addSourceSelectedToSleuth) {
+        this.$nextTick(() => {
+          this.$refs.mongooseSleuth.addSourceSelectedToSleuth();
+        });
+      }
     },
     closeRightPanel() {
       this.hideRightPanel = true;
@@ -1463,7 +1476,29 @@ module.exports = app => app.component('models', {
     selectSwitcherModel(model) {
       this.showModelSwitcher = false;
       this.trackRecentModel(model);
-      this.$router.push('/model/' + model);
+      this.navigateToModel(model);
+    },
+    navigateToModel(model) {
+      if (!model || model === this.currentModel) {
+        return;
+      }
+      const sleuth = this.$refs.mongooseSleuth;
+      if (this.sleuthPanelOpen && sleuth) {
+        const hasUnsavedSelection =
+          !sleuth.currentCaseReportId &&
+          Array.isArray(sleuth.selectedDocuments) &&
+          sleuth.selectedDocuments.length > 0;
+        if (hasUnsavedSelection) {
+          const wantsToSave = window.confirm(
+            'You have an unsaved Sleuth selection. Open the "Save as case report" dialog before switching models?'
+          );
+          if (wantsToSave) {
+            sleuth.shouldShowCaseReportModal = true;
+            return;
+          }
+        }
+      }
+      this.$router.push('/model/' + encodeURIComponent(model));
     },
     async loadModelCounts() {
       if (!Array.isArray(this.models) || this.models.length === 0) {
