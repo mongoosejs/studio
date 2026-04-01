@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const assert = require('assert');
 const authorize = require('../../authorize');
 const streamLLM = require('../../integrations/streamLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
@@ -22,7 +23,12 @@ const StreamChatMessageParams = new Archetype({
   },
   aiTarget: {
     $type: 'string',
-    $default: 'document'
+    $default: 'document',
+  },
+  currentDateTime: {
+    $type: 'string',
+    $transform: v => v == null ? null : decodeURIComponent(v),
+    $validate: v => assert.ok(v == null || v.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/))
   },
   roles: {
     $type: ['string']
@@ -30,7 +36,7 @@ const StreamChatMessageParams = new Archetype({
 }).compile('StreamChatMessageParams');
 
 module.exports = ({ db, options }) => async function* streamChatMessage(params) {
-  let { model, content, documentData, createDraftScript, aiTarget, roles } = new StreamChatMessageParams(params);
+  let { model, content, documentData, createDraftScript, currentDateTime,aiTarget, roles } = new StreamChatMessageParams(params);
   aiTarget = aiTarget === 'script' ? 'script' : 'document';
 
   await authorize('Model.streamChatMessage', roles);
@@ -41,7 +47,10 @@ module.exports = ({ db, options }) => async function* streamChatMessage(params) 
   }
 
   const modelDescriptions = getModelDescriptions({ models: { [Model.modelName]: Model } });
-  let context;
+  let context = [
+    modelDescriptions,
+    'Current draft document:\n' + (documentData || '')
+  ]
   if (aiTarget === 'script') {
     context = [
       modelDescriptions,
@@ -55,7 +64,13 @@ module.exports = ({ db, options }) => async function* streamChatMessage(params) 
     ].join('\n\n');
   }
   const systemPromptForTarget = aiTarget === 'script' ? scriptSystemPrompt : documentSystemPrompt;
-  const system = systemPromptForTarget + '\n\n' + context + (options?.context ? '\n\n' + options.context : '');
+ 
+  const system = [
+    systemPromptForTarget,
+    currentDateTime ? `Current date: ${currentDateTime}` : null,
+    context,
+    options?.context
+  ].filter(Boolean).join('\n\n');
 
   const llmMessages = [{ role: 'user', content: [{ type: 'text', text: content }] }];
   const textStream = streamLLM(llmMessages, system, options);

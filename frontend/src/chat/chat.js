@@ -1,6 +1,7 @@
 'use strict';
 
 const api = require('../api');
+const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 const template = require('./chat.html');
 
 module.exports = {
@@ -15,7 +16,8 @@ module.exports = {
     chatMessages: [],
     hideSidebar: null,
     sharingThread: false,
-    threadSearch: ''
+    threadSearch: '',
+    showProUpgradeModal: false
   }),
   methods: {
     async sendMessage() {
@@ -44,7 +46,11 @@ module.exports = {
           }
         });
 
-        const params = { chatThreadId: this.chatThreadId, content };
+        const params = {
+          chatThreadId: this.chatThreadId,
+          content,
+          currentDateTime: getCurrentDateTimeContext()
+        };
         let userChatMessage = null;
         let assistantChatMessage = null;
         for await (const event of api.ChatThread.streamChatMessage(params)) {
@@ -151,7 +157,7 @@ module.exports = {
     },
     async toggleShareThread() {
       if (!this.chatThreadId || !this.hasWorkspace) {
-        return;
+        throw new Error('Cannot share thread: chatThreadId or hasWorkspace is missing');
       }
       this.sharingThread = true;
       try {

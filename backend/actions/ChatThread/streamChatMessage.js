@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const assert = require('assert');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
 const streamLLM = require('../../integrations/streamLLM');
@@ -17,13 +18,17 @@ const CreateChatMessageParams = new Archetype({
   content: {
     $type: 'string'
   },
+  currentDateTime: {
+    $type: 'string',
+    $validate: v => assert.ok(v == null || v.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/))
+  },
   roles: {
     $type: ['string']
   }
 }).compile('CreateChatMessageParams');
 
 module.exports = ({ db, studioConnection, options }) => async function* createChatMessage(params) {
-  const { chatThreadId, initiatedById, content, script, roles } = new CreateChatMessageParams(params);
+  const { chatThreadId, initiatedById, content, currentDateTime, script, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -76,7 +81,12 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
   }
 
   const modelDescriptions = getModelDescriptions(db);
-  const system = systemPrompt + '\n\n' + modelDescriptions + (options?.context ? '\n\n' + options.context : '');
+  const system = [
+    systemPrompt,
+    currentDateTime ? `Current date: ${currentDateTime}` : null,
+    modelDescriptions,
+    options?.context
+  ].filter(Boolean).join('\n\n');
 
   const userChatMessage = await ChatMessage.create({
     chatThreadId,

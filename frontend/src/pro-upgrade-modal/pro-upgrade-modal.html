@@ -1,0 +1,38 @@
+<modal v-if="show" containerClass="!max-w-md">
+  <template v-slot:body>
+    <div @keydown.esc="$emit('close')" tabindex="0" ref="overlay">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Pro Feature</h3>
+        <button
+          type="button"
+          @click="$emit('close')"
+          class="text-gray-400 hover:text-gray-600 cursor-pointer"
+          aria-label="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <p class="text-gray-600 mb-6">
+        {{ featureDescription }} Upgrade to a Pro workspace to unlock this feature.
+      </p>
+      <div class="flex justify-end gap-3">
+        <button
+          type="button"
+          @click="$emit('close')"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer"
+        >
+          Cancel
+        </button>
+        <a
+          href="https://studio.mongoosejs.io/pro"
+          target="_blank"
+          class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover inline-flex items-center"
+        >
+          Upgrade to Pro
+        </a>
+      </div>
+    </div>
+  </template>
+</modal>

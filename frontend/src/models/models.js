@@ -263,7 +263,7 @@ module.exports = app => app.component('models', {
   computed: {
     referenceMap() {
       const map = {};
-      for (const path of this.filteredPaths) {
+      for (const path of this.schemaPaths) {
         if (path?.ref) {
           map[path.path] = path.ref;
         }

@@ -11,6 +11,7 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 });
 
 const appendCSS = require('../appendCSS');
+const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 
 appendCSS(require('./create-document.css'));
 
@@ -212,7 +213,8 @@ module.exports = app => app.component('create-document', {
           content: prompt,
           documentData: this.aiOriginalDocument,
           createDraftScript: target === 'script' ? this.aiOriginalScript : undefined,
-          aiTarget: target
+          aiTarget: target,
+          currentDateTime: getCurrentDateTimeContext()
         })) {
           if (event?.textPart) {
             this.aiSuggestion += event.textPart;
