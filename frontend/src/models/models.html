@@ -460,13 +460,15 @@
             selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:shadow-sm hover:border-slate-300 bg-surface'
           ]"
         >
-          <button
-            type="button"
+          <router-link
             class="absolute top-2 right-2 z-10 inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-text shadow-sm transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            @click.stop="openDocument(document)"
+            :to="{ path: '/model/' + currentModel + '/document/' + document._id, query: $route.query }"
+            target="_blank"
+            rel="noopener noreferrer"
+            @click.stop
           >
-            Open this Document
-          </button>
+            Open
+          </router-link>
           <list-json :value="filterDocument(document)" :references="referenceMap">
           </list-json>
         </div>
