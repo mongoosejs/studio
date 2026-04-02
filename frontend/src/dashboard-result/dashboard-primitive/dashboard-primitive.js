@@ -9,7 +9,7 @@ module.exports = app => app.component('dashboard-primitive', {
   props: ['value'],
   computed: {
     header() {
-      if (this.value != null && this.value.$primitive.header) {
+      if (this.value != null && this.value.$primitive?.header) {
         return this.value.$primitive.header;
       }
       return null;

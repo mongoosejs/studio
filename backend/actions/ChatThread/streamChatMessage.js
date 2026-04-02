@@ -4,6 +4,8 @@ const Archetype = require('archetype');
 const assert = require('assert');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
+const agentSystemPrompt = require('../../chatAgent/agentSystemPrompt');
+const getAgentTools = require('../../chatAgent/getAgentTools');
 const streamLLM = require('../../integrations/streamLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
 const mongoose = require('mongoose');
@@ -82,7 +84,7 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
 
   const modelDescriptions = getModelDescriptions(db);
   const system = [
-    systemPrompt,
+    chatThread.agentMode ? agentSystemPrompt : systemPrompt,
     currentDateTime ? `Current date: ${currentDateTime}` : null,
     modelDescriptions,
     options?.context
@@ -105,16 +107,30 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
     script: null,
     executionResult: null
   });
-  const textStream = streamLLM(llmMessages, system, options);
+  const llmOptions = chatThread.agentMode ? { ...options, tools: getAgentTools(db) } : options;
+  const textStream = streamLLM(llmMessages, system, llmOptions);
+  const toolCalls = [];
   let count = 0;
-  for await (const textPart of textStream) {
-    assistantChatMessage.content += textPart;
-    // Only save every 10th chunk for performance
-    if (count++ % 10 === 0) {
-      await assistantChatMessage.save();
+  for await (const event of textStream) {
+    if (typeof event === 'string') {
+      assistantChatMessage.content += event;
+      // Only save every 10th chunk for performance
+      if (count++ % 10 === 0) {
+        await assistantChatMessage.save();
+      }
+      yield { textPart: event };
+    } else if (event.toolCall) {
+      toolCalls.push({ toolName: event.toolCall.toolName, input: event.toolCall.input, status: 'running' });
+      yield { toolCall: event.toolCall };
+    } else if (event.toolResult) {
+      const tc = toolCalls.find(t => t.toolName === event.toolResult.toolName && t.status === 'running');
+      if (tc) {
+        tc.status = 'done';
+      }
+      yield { toolResult: event.toolResult };
     }
-    yield { textPart };
   }
+  assistantChatMessage.toolCalls = toolCalls;
 
   await assistantChatMessage.save();
   yield { chatMessage: assistantChatMessage };
@@ -138,6 +154,8 @@ const systemPrompt = `
   Optimize scripts for readability first, followed by reliability, followed by performance. Avoid using the aggregation framework unless explicitly requested by the user. Use indexed fields in queries where possible.
 
   Assume the user has pre-defined schemas and models. Do not define any new schemas or models for the user.
+
+  Avoid using the aggregation framework unless explicitly asked by the user.
 
   Use async/await where possible. Assume top-level await is allowed.
 

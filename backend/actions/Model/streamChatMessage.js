@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const assert = require('assert');
 const authorize = require('../../authorize');
+const getAgentTools = require('../../chatAgent/getAgentTools');
 const streamLLM = require('../../integrations/streamLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
 
@@ -18,6 +19,10 @@ const StreamChatMessageParams = new Archetype({
   documentData: {
     $type: 'string'
   },
+  agentMode: {
+    $type: 'boolean',
+    $default: true
+  },
   currentDateTime: {
     $type: 'string',
     $transform: v => v == null ? null : decodeURIComponent(v),
@@ -29,7 +34,7 @@ const StreamChatMessageParams = new Archetype({
 }).compile('StreamChatMessageParams');
 
 module.exports = ({ db, options }) => async function* streamChatMessage(params) {
-  const { model, content, documentData, currentDateTime, roles } = new StreamChatMessageParams(params);
+  const { model, content, documentData, currentDateTime, agentMode, roles } = new StreamChatMessageParams(params);
 
   await authorize('Model.streamChatMessage', roles);
 
@@ -51,7 +56,8 @@ module.exports = ({ db, options }) => async function* streamChatMessage(params) 
   ].filter(Boolean).join('\n\n');
 
   const llmMessages = [{ role: 'user', content: [{ type: 'text', text: content }] }];
-  const textStream = streamLLM(llmMessages, system, options);
+  const llmOptions = agentMode ? { ...options, tools: getAgentTools(db) } : options;
+  const textStream = streamLLM(llmMessages, system, llmOptions);
 
   for await (const textPart of textStream) {
     yield { textPart };

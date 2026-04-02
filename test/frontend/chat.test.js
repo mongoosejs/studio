@@ -178,7 +178,8 @@ describe('chat component', function() {
       chatThreads: [],
       $refs: {},
       $toast: { success: () => {} },
-      $nextTick: fn => fn && fn()
+      $nextTick: fn => fn && fn(),
+      scrollToBottom: () => {}
     };
 
     await chat.methods.sendMessage.call(state);
