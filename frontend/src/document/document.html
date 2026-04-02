@@ -143,6 +143,14 @@
               >
                 Clone
               </button>
+              <button
+                v-if="hasSleuthAccess"
+                @click="addToSleuth(); desktopMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-ultramarine-50"
+              >
+                Add to Sleuth
+              </button>
             </div>
           </div>
         </div>
@@ -244,6 +252,14 @@
                 type="button"
               >
                 Clone
+              </button>
+              <button
+                v-if="hasSleuthAccess"
+                @click="addToSleuth(); mobileMenuOpen = false"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-ultramarine-50"
+              >
+                Add to Sleuth
               </button>
             </div>
           </div>

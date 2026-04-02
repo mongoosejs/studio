@@ -26,9 +26,14 @@ const actionsToRequiredRoles = {
   'Model.getEstimatedDocumentCounts': ['owner', 'admin', 'member', 'readonly'],
   'Model.getIndexes': ['owner', 'admin', 'member', 'readonly'],
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
+  'Model.updateDocuments': ['owner', 'admin', 'member'],
+  // CaseReport / Mongoose CaseReport (Bug Hunt) actions
+  'CaseReport.createCaseReport': ['owner', 'admin', 'member'],
+  'CaseReport.getCaseReports': ['owner', 'admin', 'member', 'readonly'],
+  'CaseReport.getCaseReport': ['owner', 'admin', 'member', 'readonly'],
+  'CaseReport.updateCaseReport': ['owner', 'admin', 'member'],
   'Model.streamDocumentChanges': ['owner', 'admin', 'member', 'readonly'],
-  'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly'],
-  'Model.updateDocuments': ['owner', 'admin', 'member']
+  'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly']
 };
 
 module.exports = function authorize(action, roles) {

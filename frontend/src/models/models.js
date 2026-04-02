@@ -5,6 +5,7 @@
 const api = require('../api');
 const template = require('./models.html');
 const mpath = require('mpath');
+const { hasAccess } = require('../routes');
 const xss = require('xss');
 
 const appendCSS = require('../appendCSS');
@@ -70,6 +71,9 @@ function normalizeFieldsParamForApi(fieldsStr) {
   return null;
 }
 
+// Persist selected documents per model so switching models preserves selection
+const selectedDocumentsByModel = {};
+
 module.exports = app => app.component('models', {
   template: template,
   props: ['model', 'user', 'roles'],
@@ -117,6 +121,11 @@ module.exports = app => app.component('models', {
     error: null,
     showActionsMenu: false,
     collectionInfo: null,
+    hideRightPanel: true,
+    activeRightTab: null,
+    rightPanelTabs: [
+      { id: 'sleuth', label: 'Sleuth' }
+    ],
     modelSearch: '',
     recentlyViewedModels: [],
     showModelSwitcher: false,
@@ -128,17 +137,22 @@ module.exports = app => app.component('models', {
     this.currentModel = this.model;
     this.setSearchTextFromRoute();
     this.loadOutputPreference();
-    this.loadSelectedGeoField();
-    this.loadShowRowNumbersPreference();
-    this.loadRecentlyViewedModels();
-    this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
+    const key = this.currentModel != null ? this.currentModel : '';
+    this.selectedDocuments = Array.isArray(selectedDocumentsByModel[key]) ? selectedDocumentsByModel[key].slice() : [];
   },
   beforeDestroy() {
+    const key = this.currentModel != null ? this.currentModel : '';
+    selectedDocumentsByModel[key] = Array.isArray(this.selectedDocuments) ? this.selectedDocuments.slice() : [];
+    document.removeEventListener('scroll', this.onScroll, true);
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
     document.removeEventListener('click', this.onOutsideAddFieldDropdownClick, true);
     document.documentElement.removeEventListener('studio-theme-changed', this.onStudioThemeChanged);
     document.removeEventListener('keydown', this.onCtrlP, true);
+    this.loadSelectedGeoField();
+    this.loadShowRowNumbersPreference();
+    this.loadRecentlyViewedModels();
+    this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
     this.destroyMap();
   },
   async mounted() {
@@ -218,8 +232,16 @@ module.exports = app => app.component('models', {
         input.focus();
       }
     });
+    if (this.$route.query?.openSleuth === '1') {
+      this.openRightPanel('sleuth');
+    }
   },
   watch: {
+    '$route.query.openSleuth'(val) {
+      if (val === '1') {
+        this.openRightPanel('sleuth');
+      }
+    },
     model(newModel) {
       if (newModel !== this.currentModel) {
         this.currentModel = newModel;
@@ -259,6 +281,15 @@ module.exports = app => app.component('models', {
     }
   },
   computed: {
+    hasSleuthAccess() {
+      return hasAccess(this.roles, 'mongoose-sleuth');
+    },
+    sleuthPanelOpen() {
+      return !this.hideRightPanel && this.activeRightTab === 'sleuth';
+    },
+    hasAnyRightPanelTabAccess() {
+      return this.rightPanelTabs.some(tab => this.hasRightPanelTabAccess(tab));
+    },
     referenceMap() {
       const map = {};
       for (const path of this.schemaPaths) {
@@ -348,6 +379,45 @@ module.exports = app => app.component('models', {
     }
   },
   methods: {
+    hasRightPanelTabAccess(tab) {
+      if (tab.id === 'sleuth') return this.hasSleuthAccess;
+      return false;
+    },
+    openRightPanel(tabId) {
+      // When opening Sleuth, put the user into selection mode and
+      // immediately synchronize any currently selected documents into
+      // the Sleuth sidebar so the save button can be used.
+      const isSleuth = tabId === 'sleuth';
+      if (isSleuth && !this.selectMultiple) {
+        this.selectMultiple = true;
+        this.lastSelectedIndex = null;
+      }
+      this.hideRightPanel = false;
+      this.activeRightTab = tabId;
+      if (isSleuth && Array.isArray(this.selectedDocuments) && this.selectedDocuments.length > 0 && this.$refs.mongooseSleuth?.addSourceSelectedToSleuth) {
+        this.$nextTick(() => {
+          this.$refs.mongooseSleuth.addSourceSelectedToSleuth();
+        });
+      }
+    },
+    closeRightPanel() {
+      this.hideRightPanel = true;
+      this.activeRightTab = null;
+    },
+    addSelectedToSleuth() {
+      const wasPanelOpen = this.sleuthPanelOpen;
+      this.openRightPanel('sleuth');
+      const runAdd = () => {
+        this.$refs.mongooseSleuth?.addSourceSelectedToSleuth?.();
+      };
+      if (wasPanelOpen) {
+        runAdd();
+      } else {
+        this.$nextTick(() => {
+          this.$nextTick(runAdd);
+        });
+      }
+    },
     highlightMatch(model) {
       const search = this.modelSearch.trim();
       if (!search) {
@@ -1406,7 +1476,29 @@ module.exports = app => app.component('models', {
     selectSwitcherModel(model) {
       this.showModelSwitcher = false;
       this.trackRecentModel(model);
-      this.$router.push('/model/' + model);
+      this.navigateToModel(model);
+    },
+    navigateToModel(model) {
+      if (!model || model === this.currentModel) {
+        return;
+      }
+      const sleuth = this.$refs.mongooseSleuth;
+      if (this.sleuthPanelOpen && sleuth) {
+        const hasUnsavedSelection =
+          !sleuth.currentCaseReportId &&
+          Array.isArray(sleuth.selectedDocuments) &&
+          sleuth.selectedDocuments.length > 0;
+        if (hasUnsavedSelection) {
+          const wantsToSave = window.confirm(
+            'You have an unsaved Sleuth selection. Open the "Save as case report" dialog before switching models?'
+          );
+          if (wantsToSave) {
+            sleuth.shouldShowCaseReportModal = true;
+            return;
+          }
+        }
+      }
+      this.$router.push('/model/' + encodeURIComponent(model));
     },
     async loadModelCounts() {
       if (!Array.isArray(this.models) || this.models.length === 0) {

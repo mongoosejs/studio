@@ -3,6 +3,7 @@
 const api = require('../api');
 const mpath = require('mpath');
 const template = require('./document.html');
+const { hasAccess } = require('../routes');
 
 const appendCSS = require('../appendCSS');
 
@@ -80,15 +81,8 @@ module.exports = app => app.component('document', {
     canEdit() {
       return this.canManipulate && this.viewMode === 'fields';
     },
-    keyboardShortcuts() {
-      const shortcuts = [];
-      if (this.editting && this.canManipulate) {
-        shortcuts.push({ command: 'Ctrl + S', description: 'Save document' });
-      }
-      return shortcuts;
-    },
-    isLambda() {
-      return !!window?.MONGOOSE_STUDIO_CONFIG?.isLambda;
+    hasSleuthAccess() {
+      return hasAccess(this.roles, 'mongoose-sleuth');
     }
   },
   watch: {
@@ -99,6 +93,29 @@ module.exports = app => app.component('document', {
     }
   },
   methods: {
+    addToSleuth() {
+      try {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          window.sessionStorage.setItem('studio:sleuth:addDocument', JSON.stringify({
+            model: this.model,
+            documentId: this.documentId
+          }));
+        }
+        this.$router.push({ path: `/model/${encodeURIComponent(this.model)}`, query: { openSleuth: '1' } });
+      } catch (e) {
+        console.error('Add to Sleuth', e);
+      }
+    },
+    keyboardShortcuts() {
+      const shortcuts = [];
+      if (this.editting && this.canManipulate) {
+        shortcuts.push({ command: 'Ctrl + S', description: 'Save document' });
+      }
+      return shortcuts;
+    },
+    isLambda() {
+      return !!window?.MONGOOSE_STUDIO_CONFIG?.isLambda;
+    },
     handleSaveShortcut(event) {
       const key = typeof event?.key === 'string' ? event.key.toLowerCase() : '';
       const isSaveShortcut = (event.ctrlKey || event.metaKey) && key === 's';
