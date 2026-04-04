@@ -198,6 +198,13 @@
                   {{ showRowNumbers ? 'Hide row numbers' : 'Show row numbers' }}
                 </button>
                 <button
+                  @click="openQueryTimeoutModal"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Query Timeout: {{ queryTimeoutSeconds }} {{ queryTimeoutSeconds === 1 ? 'second' : 'seconds' }}
+                </button>
+                <button
                   @click="resetFilter()"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
@@ -605,6 +612,42 @@
         </async-button>
         <button @click="shouldShowDeleteMultipleModal = false;" class="rounded bg-gray-400 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-page0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500">
           Cancel
+        </button>
+      </div>
+    </template>
+  </modal>
+  <modal v-if="shouldShowQueryTimeoutModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="shouldShowQueryTimeoutModal = false;">&times;</div>
+      <div class="text-xl font-bold mb-3">Query Timeout</div>
+      <p class="text-sm text-content-secondary mb-3">
+        Set the default timeout for document queries in this browser.
+      </p>
+      <label for="query-timeout-seconds" class="block text-sm font-medium text-content-secondary mb-1">
+        Timeout (seconds)
+      </label>
+      <input
+        id="query-timeout-seconds"
+        v-model="queryTimeoutDraftSeconds"
+        type="number"
+        min="1"
+        step="1"
+        class="w-full rounded border border-edge bg-surface px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+      />
+      <div class="mt-4 flex gap-2">
+        <button
+          type="button"
+          @click="shouldShowQueryTimeoutModal = false"
+          class="rounded bg-gray-400 px-2 py-2 text-sm font-semibold text-white shadow-sm hover:bg-page0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          @click="saveQueryTimeoutPreference"
+          class="rounded bg-primary px-2 py-2 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Save
         </button>
       </div>
     </template>
