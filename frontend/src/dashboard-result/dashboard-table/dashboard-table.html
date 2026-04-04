@@ -1,4 +1,23 @@
 <div class="overflow-x-auto">
+  <div class="relative flex justify-end mb-2" ref="dropdown">
+    <button
+      @click.stop="toggleDropdown"
+      class="px-1 py-1 text-xs hover:bg-gray-300 rounded flex items-center"
+      aria-label="Table actions">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+      </svg>
+    </button>
+    <div
+      v-if="showDropdown"
+      class="absolute z-10 mt-7 w-56 origin-top-right rounded-md bg-surface py-1 shadow-lg ring-1 ring-black/5">
+      <button
+        class="block w-full text-left px-4 py-2 text-xs text-content-secondary hover:bg-muted"
+        @click="downloadCsv(); showDropdown = false">
+        Download as CSV
+      </button>
+    </div>
+  </div>
   <table class="min-w-full border-separate border-spacing-0">
     <thead v-if="hasColumns" class="bg-slate-50">
       <tr>
