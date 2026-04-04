@@ -1,6 +1,6 @@
 <div>
   <div v-if="Array.isArray(result)">
-    <div v-for="(el, index) in result" :key="index">
+    <div v-for="(el, index) in result">
       <component
         class="bg-surface shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl"
         :is="getComponentForValue(el)"
