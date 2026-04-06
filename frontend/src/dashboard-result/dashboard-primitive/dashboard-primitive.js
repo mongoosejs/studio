@@ -16,9 +16,21 @@ module.exports = app => app.component('dashboard-primitive', {
     },
     displayValue() {
       if (this.value != null && this.value.$primitive) {
+        if (this.value.$primitive.value === null) {
+          return 'null';
+        }
         return this.value.$primitive.value;
       }
+      if (this.value === null) {
+        return 'null';
+      }
       return this.value;
+    },
+    displayClass() {
+      if (this.value == null) {
+        return 'text-content-tertiary';
+      }
+      return null;
     }
   }
 });

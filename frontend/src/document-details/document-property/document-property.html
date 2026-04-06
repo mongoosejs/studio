@@ -70,6 +70,12 @@
       </div>
     </div>
     <div class="flex items-center gap-2">
+      <date-view-mode-picker
+        v-if="isDatePath"
+        :viewMode="dateViewMode"
+        :path="path"
+        @update:viewMode="dateViewMode = $event"
+      ></date-view-mode-picker>
       <button
         type="button"
         class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded-md border border-transparent hover:border-edge-strong bg-surface"
@@ -125,7 +131,7 @@
         v-if="isGeoJsonGeometry"
         :is="getComponentForPath(path)"
         :value="getEditValueForPath(path)"
-        :view-mode="detailViewMode"
+        :viewMode="detailViewMode"
         :on-change="handleInputChange"
         >
       </component>
@@ -195,8 +201,9 @@
       <div v-else-if="needsTruncation && isValueExpanded" class="relative">
         <component
           :is="getComponentForPath(path)"
-          :value="getValueForPath(path.path)"
-          :view-mode="detailViewMode"></component>
+          :value="rawValue"
+          :viewMode="isDatePath ? dateViewMode : detailViewMode"
+          @updated="renderedValue = $event"></component>
         <button
           @click="toggleValueExpansion"
           class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
@@ -211,8 +218,9 @@
       <div v-else>
         <component
           :is="getComponentForPath(path)"
-          :value="getValueForPath(path.path)"
-          :view-mode="detailViewMode"></component>
+          :value="rawValue"
+          :viewMode="isDatePath ? dateViewMode : detailViewMode"
+          @updated="renderedValue = $event"></component>
       </div>
     </div>
   </div>
