@@ -15,8 +15,7 @@ module.exports = app => app.component('document-property', {
   data: function() {
     return {
       dateType: 'picker', // picker, iso
-      dateDisplayFormat: 'utc_iso',
-      customTimezone: '',
+      dateViewMode: 'utc_iso',
       isCollapsed: false, // Start uncollapsed by default
       isValueExpanded: false, // Track if the value is expanded
       detailViewMode: 'text',
@@ -39,30 +38,8 @@ module.exports = app => app.component('document-property', {
     rawValue() {
       return this.getValueForPath(this.path.path);
     },
-    parsedDateValue() {
-      if (!this.isDatePath || this.rawValue == null) {
-        return null;
-      }
-      const date = new Date(this.rawValue);
-      return Number.isNaN(date.getTime()) ? null : date;
-    },
-    displayReadValue() {
-      if (!this.isDatePath) {
-        return this.rawValue;
-      }
-      if (this.rawValue == null) {
-        return this.rawValue;
-      }
-      if (!this.parsedDateValue) {
-        return 'Invalid Date';
-      }
-      return this.formatDateForDisplay(this.parsedDateValue);
-    },
-    timezoneDatalistId() {
-      return `timezone-options-${String(this.path?.path || '').replace(/[^a-zA-Z0-9_-]/g, '-')}`;
-    },
     valueAsString() {
-      const value = this.displayReadValue;
+      const value = this.rawValue;
       if (value == null) {
         return String(value);
       }
@@ -163,80 +140,6 @@ module.exports = app => app.component('document-property', {
     }
   },
   methods: {
-    formatDateForDisplay(date) {
-      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-        return 'Invalid Date';
-      }
-
-      if (this.dateDisplayFormat === 'utc_iso') {
-        return date.toISOString();
-      }
-
-      if (this.dateDisplayFormat === 'local_browser') {
-        return date.toLocaleString();
-      }
-
-      if (this.dateDisplayFormat === 'unix_ms') {
-        return String(date.getTime());
-      }
-
-      if (this.dateDisplayFormat === 'unix_seconds') {
-        return String(Math.floor(date.getTime() / 1000));
-      }
-
-      if (this.dateDisplayFormat === 'duration_relative') {
-        return this.formatRelativeDuration(date);
-      }
-
-      if (this.dateDisplayFormat === 'custom_tz') {
-        return this.formatCustomTimezone(date);
-      }
-
-      return date.toISOString();
-    },
-    formatRelativeDuration(date) {
-      const diffMs = date.getTime() - Date.now();
-      const absMs = Math.abs(diffMs);
-      const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
-      const units = [
-        { unit: 'year', ms: 365 * 24 * 60 * 60 * 1000 },
-        { unit: 'month', ms: 30 * 24 * 60 * 60 * 1000 },
-        { unit: 'day', ms: 24 * 60 * 60 * 1000 },
-        { unit: 'hour', ms: 60 * 60 * 1000 },
-        { unit: 'minute', ms: 60 * 1000 },
-        { unit: 'second', ms: 1000 }
-      ];
-
-      for (const { unit, ms } of units) {
-        if (absMs >= ms || unit === 'second') {
-          const value = Math.round(diffMs / ms);
-          return rtf.format(value, unit);
-        }
-      }
-
-      return 'now';
-    },
-    formatCustomTimezone(date) {
-      const timezone = (this.customTimezone || '').trim();
-      if (!timezone) {
-        return `${date.toISOString()} (enter an IANA timezone)`;
-      }
-
-      try {
-        return new Intl.DateTimeFormat(undefined, {
-          timeZone: timezone,
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          timeZoneName: 'short'
-        }).format(date);
-      } catch (err) {
-        return `Invalid timezone: ${timezone}`;
-      }
-    },
     setDetailViewMode(mode) {
       this.detailViewMode = mode;
       
@@ -267,6 +170,9 @@ module.exports = app => app.component('document-property', {
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
         return 'detail-array';
+      }
+      if (schemaPath.instance === 'Date') {
+        return 'detail-date';
       }
       return 'detail-default';
     },
@@ -355,7 +261,7 @@ module.exports = app => app.component('document-property', {
       };
     },
     copyPropertyValue() {
-      const textToCopy = this.isDatePath ? String(this.displayReadValue) : this.valueAsString;
+      const textToCopy = this.valueAsString;
       if (textToCopy == null) {
         return;
       }
