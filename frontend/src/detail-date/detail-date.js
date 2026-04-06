@@ -5,6 +5,15 @@ const template = require('./detail-date.html');
 module.exports = app => app.component('detail-date', {
   template,
   props: ['value', 'viewMode'],
+  emits: ['updated'],
+  watch: {
+    displayValue: {
+      immediate: true,
+      handler(val) {
+        this.$emit('updated', val);
+      }
+    }
+  },
   computed: {
     format() {
       if (this.viewMode != null && typeof this.viewMode === 'object') {

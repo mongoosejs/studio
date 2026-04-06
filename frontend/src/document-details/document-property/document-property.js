@@ -10,12 +10,15 @@ const appendCSS = require('../../appendCSS');
 
 appendCSS(require('./document-property.css'));
 
+const UNSET = Symbol('unset');
+
 module.exports = app => app.component('document-property', {
   template,
   data: function() {
     return {
       dateType: 'picker', // picker, iso
       dateViewMode: 'utc_iso',
+      renderedValue: UNSET,
       isCollapsed: false, // Start uncollapsed by default
       isValueExpanded: false, // Track if the value is expanded
       detailViewMode: 'text',
@@ -39,7 +42,7 @@ module.exports = app => app.component('document-property', {
       return this.getValueForPath(this.path.path);
     },
     valueAsString() {
-      const value = this.rawValue;
+      const value = this.renderedValue !== UNSET ? this.renderedValue : this.rawValue;
       if (value == null) {
         return String(value);
       }

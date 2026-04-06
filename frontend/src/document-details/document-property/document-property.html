@@ -202,7 +202,8 @@
         <component
           :is="getComponentForPath(path)"
           :value="rawValue"
-          :viewMode="isDatePath ? dateViewMode : detailViewMode"></component>
+          :viewMode="isDatePath ? dateViewMode : detailViewMode"
+          @updated="renderedValue = $event"></component>
         <button
           @click="toggleValueExpansion"
           class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
@@ -218,7 +219,8 @@
         <component
           :is="getComponentForPath(path)"
           :value="rawValue"
-          :viewMode="isDatePath ? dateViewMode : detailViewMode"></component>
+          :viewMode="isDatePath ? dateViewMode : detailViewMode"
+          @updated="renderedValue = $event"></component>
       </div>
     </div>
   </div>
