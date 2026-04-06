@@ -29,7 +29,8 @@ async function run() {
       __watch: process.env.WATCH,
       _mothershipUrl: 'http://localhost:7777/.netlify/functions',
       apiKey: 'TACO',
-      openAIAPIKey: process.env.OPENAI_API_KEY
+      openAIAPIKey: process.env.OPENAI_API_KEY,
+      googleGeminiAPIKey: process.env.GEMINI_API_KEY
     })
   );
 
