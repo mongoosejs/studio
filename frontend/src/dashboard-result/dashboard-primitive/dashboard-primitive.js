@@ -27,7 +27,7 @@ module.exports = app => app.component('dashboard-primitive', {
       return this.value;
     },
     displayClass() {
-      if (this.displayValue === 'null') {
+      if (this.value == null) {
         return 'text-content-tertiary';
       }
       return null;
