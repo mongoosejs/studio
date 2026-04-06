@@ -30,8 +30,13 @@ module.exports = app => app.component('dashboard-table', {
       this.showDropdown = !this.showDropdown;
     },
     handleBodyClick(event) {
-      const dropdown = this.$refs.dropdown;
-      if (dropdown && typeof dropdown.contains === 'function' && !dropdown.contains(event.target)) {
+      const dropdownRefs = this.$refs.dropdown;
+      const dropdowns = Array.isArray(dropdownRefs) ? dropdownRefs : [dropdownRefs];
+      const hasClickInsideDropdown = dropdowns
+        .filter(dropdown => dropdown && typeof dropdown.contains === 'function')
+        .some(dropdown => dropdown.contains(event.target));
+
+      if (!hasClickInsideDropdown) {
         this.showDropdown = false;
       }
     },
