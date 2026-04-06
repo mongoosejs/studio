@@ -35,8 +35,12 @@ module.exports = app => app.component('dashboard-table', {
         this.showDropdown = false;
       }
     },
+    neutralizeCsvCell(cell) {
+      const value = this.displayValue(cell);
+      return /^\s*[=+\-@]/.test(value) ? `'${value}` : value;
+    },
     escapeCsvCell(cell) {
-      const escapedCell = this.displayValue(cell).replaceAll('"', '""');
+      const escapedCell = this.neutralizeCsvCell(cell).replaceAll('"', '""');
       return `"${escapedCell}"`;
     },
     downloadCsv() {
