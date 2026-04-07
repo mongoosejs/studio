@@ -4,6 +4,7 @@ const { createAnthropic } = require('@ai-sdk/anthropic');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
 const { generateText } = require('ai');
+const { defaultMothershipURL } = require('../../constants');
 
 module.exports = async function callLLM(messages, system, options) {
   let provider = null;
@@ -50,7 +51,7 @@ module.exports = async function callLLM(messages, system, options) {
   }
 
   const headers = { 'Content-Type': 'application/json' };
-  const response = await fetch('https://mongoose-js.netlify.app/.netlify/functions/getChatCompletion', {
+  const response = await fetch(`${defaultMothershipURL}/getChatCompletion`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
