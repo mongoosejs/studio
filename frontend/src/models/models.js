@@ -122,7 +122,9 @@ module.exports = app => app.component('models', {
     showModelSwitcher: false,
     showRowNumbers: true,
     suppressScrollCheck: false,
-    scrollTopToRestore: null
+    scrollTopToRestore: null,
+    projectionAutocompleteSuggestions: [],
+    projectionAutocompleteIndex: 0
   }),
   created() {
     this.currentModel = this.model;
@@ -1092,14 +1094,121 @@ module.exports = app => app.component('models', {
         });
       }
     },
+    updateProjectionAutocomplete() {
+      const input = this.$refs.projectionInput;
+      const cursorPos = input ? input.selectionStart : 0;
+      const before = this.projectionText.slice(0, cursorPos);
+      const tokenMatch = before.match(/(?:^|[,\s])([+-]?)([^\s,]*)$/);
+      if (!tokenMatch) {
+        this.projectionAutocompleteSuggestions = [];
+        this.projectionAutocompleteIndex = 0;
+        return;
+      }
+
+      const prefix = tokenMatch[1] || '';
+      const term = (tokenMatch[2] || '').trim().toLowerCase();
+      if (!term) {
+        this.projectionAutocompleteSuggestions = [];
+        this.projectionAutocompleteIndex = 0;
+        return;
+      }
+
+      const tokenStart = cursorPos - (tokenMatch[0] || '').length + ((tokenMatch[0] || '').length - (tokenMatch[1] + tokenMatch[2]).length);
+      const after = this.projectionText.slice(cursorPos);
+      const currentTokenText = `${prefix}${tokenMatch[2]}`;
+      const fullText = `${this.projectionText.slice(0, tokenStart)}${currentTokenText}${after}`;
+      const tokenCandidates = fullText.split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+      const selectedPaths = new Set(tokenCandidates.map(token => token.replace(/^[+-]/, '')).filter(Boolean));
+      if (tokenMatch[2]) {
+        selectedPaths.delete(tokenMatch[2]);
+      }
+
+      const suggestions = this.schemaPaths
+        .map(path => path.path)
+        .filter(path => typeof path === 'string' && path.toLowerCase().includes(term) && !selectedPaths.has(path))
+        .slice(0, 10)
+        .map(path => `${prefix}${path}`);
+
+      this.projectionAutocompleteSuggestions = suggestions;
+      this.projectionAutocompleteIndex = 0;
+    },
+    handleProjectionKeyDown(ev) {
+      if (this.projectionAutocompleteSuggestions.length > 0) {
+        if (ev.key === 'Tab' || ev.key === 'Enter') {
+          ev.preventDefault();
+          this.applyProjectionSuggestion(this.projectionAutocompleteIndex);
+          return;
+        }
+        if (ev.key === 'ArrowDown') {
+          ev.preventDefault();
+          this.projectionAutocompleteIndex =
+            (this.projectionAutocompleteIndex + 1) % this.projectionAutocompleteSuggestions.length;
+          return;
+        }
+        if (ev.key === 'ArrowUp') {
+          ev.preventDefault();
+          this.projectionAutocompleteIndex =
+            (this.projectionAutocompleteIndex + this.projectionAutocompleteSuggestions.length - 1) %
+            this.projectionAutocompleteSuggestions.length;
+          return;
+        }
+      }
+
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        this.applyProjectionFromInput();
+      } else if (ev.key === 'Escape') {
+        this.projectionAutocompleteSuggestions = [];
+        this.projectionAutocompleteIndex = 0;
+      }
+    },
+    applyProjectionSuggestion(index) {
+      const suggestion = this.projectionAutocompleteSuggestions[index];
+      if (!suggestion) {
+        return;
+      }
+      const input = this.$refs.projectionInput;
+      if (!input) {
+        return;
+      }
+      const cursorPos = input.selectionStart;
+      const before = this.projectionText.slice(0, cursorPos);
+      const after = this.projectionText.slice(cursorPos);
+      const tokenMatch = before.match(/(?:^|[,\s])([+-]?)([^\s,]*)$/);
+      if (!tokenMatch) {
+        return;
+      }
+
+      const token = `${tokenMatch[1] || ''}${tokenMatch[2] || ''}`;
+      const start = cursorPos - token.length;
+      const needsSpace = after.length === 0 || !/^[,\s]/.test(after);
+      const replacement = needsSpace ? `${suggestion} ` : suggestion;
+      this.projectionText = this.projectionText.slice(0, start) + replacement + after;
+      this.$nextTick(() => {
+        const newCursorPos = start + replacement.length;
+        input.setSelectionRange(newCursorPos, newCursorPos);
+      });
+      this.projectionAutocompleteSuggestions = [];
+      this.projectionAutocompleteIndex = 0;
+    },
+    hideProjectionAutocomplete() {
+      window.setTimeout(() => {
+        this.projectionAutocompleteSuggestions = [];
+        this.projectionAutocompleteIndex = 0;
+      }, 100);
+    },
     syncProjectionFromPaths() {
       if (this.filteredPaths.length === 0) {
         this.projectionText = '';
+        this.projectionAutocompleteSuggestions = [];
+        this.projectionAutocompleteIndex = 0;
         return;
       }
       // String-only projection syntax: `field1 field2` and `-field` for exclusions.
       // Since `filteredPaths` represents the final include set, we serialize as space-separated fields.
       this.projectionText = this.filteredPaths.map(p => p.path).join(' ');
+      this.projectionAutocompleteSuggestions = [];
+      this.projectionAutocompleteIndex = 0;
     },
     parseProjectionInput(text) {
       if (!text || typeof text !== 'string') {

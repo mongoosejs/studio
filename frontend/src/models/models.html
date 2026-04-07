@@ -262,7 +262,7 @@
             </button>
           </span>
         </div>
-        <div v-if="isProjectionMenuSelected && (outputType === 'table' || outputType === 'json')" class="flex items-center gap-2 w-full mt-2 flex-shrink-0">
+        <div v-if="isProjectionMenuSelected && (outputType === 'table' || outputType === 'json')" class="relative flex items-center gap-2 w-full mt-2 flex-shrink-0">
           <input
             ref="projectionInput"
             v-model="projectionText"
@@ -270,8 +270,24 @@
             placeholder="Projection: name email, or -password"
             class="flex-1 min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             @focus="initProjection($event)"
-            @keydown.enter="applyProjectionFromInput()"
+            @input="updateProjectionAutocomplete"
+            @keydown="handleProjectionKeyDown"
+            @blur="hideProjectionAutocomplete"
           />
+          <ul
+            v-if="projectionAutocompleteSuggestions.length"
+            class="absolute left-0 right-0 top-full z-[9999] mt-1 max-h-40 overflow-y-auto rounded border border-edge bg-surface shadow"
+          >
+            <li
+              v-for="(suggestion, index) in projectionAutocompleteSuggestions"
+              :key="suggestion"
+              class="cursor-pointer px-2 py-1 text-sm font-mono"
+              :class="{ 'bg-primary-subtle': index === projectionAutocompleteIndex }"
+              @mousedown.prevent="applyProjectionSuggestion(index)"
+            >
+              {{ suggestion }}
+            </li>
+          </ul>
         </div>
       </div>
     <!-- In JSON view, this container is the scrollable element used for infinite scroll. -->
