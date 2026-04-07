@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const vm = require('vm');
 const authorize = require('../../authorize');
+const { defaultMothershipURL } = require('../../../constants');
 
 const GetDashboardParams = new Archetype({
   dashboardId: {
@@ -26,7 +27,7 @@ const GetDashboardParams = new Archetype({
 module.exports = ({ db, options }) => async function getDashboard(params) {
   const { $workspaceId, authorization, dashboardId, evaluate, roles } = new GetDashboardParams(params);
   const Dashboard = db.model('__Studio_Dashboard');
-  const mothershipUrl = options?._mothershipUrl ?? 'https://mongoose-js.netlify.app/.netlify/functions';
+  const mothershipUrl = options?._mothershipUrl ?? defaultMothershipURL;
 
   await authorize('Dashboard.getDashboard', roles);
 

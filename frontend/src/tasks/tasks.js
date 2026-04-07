@@ -7,13 +7,13 @@ const { DATE_FILTERS, getDateRangeForRange } = require('../_util/dateRange');
 /** Returns the bucket size in ms for the given date range. */
 function getBucketSizeMs(range) {
   switch (range) {
-    case 'last_hour': return 5 * 60 * 1000;        // 5 minutes
+    case 'last_hour': return 5 * 60 * 1000; // 5 minutes
     case 'today':
-    case 'yesterday': return 60 * 60 * 1000;        // 1 hour
+    case 'yesterday': return 60 * 60 * 1000; // 1 hour
     case 'thisWeek':
-    case 'lastWeek': return 24 * 60 * 60 * 1000;    // 1 day
+    case 'lastWeek': return 24 * 60 * 60 * 1000; // 1 day
     case 'thisMonth':
-    case 'lastMonth': return 24 * 60 * 60 * 1000;   // 1 day
+    case 'lastMonth': return 24 * 60 * 60 * 1000; // 1 day
     default: return 5 * 60 * 1000;
   }
 }
