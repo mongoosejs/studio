@@ -18,6 +18,23 @@ const SHOW_ROW_NUMBERS_STORAGE_KEY = 'studio:model-show-row-numbers';
 const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
+const FOCUS_AFTER_MODELS_REMOUNT_KEY = '__studioModelsFocusAfterRemount';
+
+function setModelsRemountFocusIntent(target) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window[FOCUS_AFTER_MODELS_REMOUNT_KEY] = target;
+}
+
+function takeModelsRemountFocusIntent() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const v = window[FOCUS_AFTER_MODELS_REMOUNT_KEY] || null;
+  delete window[FOCUS_AFTER_MODELS_REMOUNT_KEY];
+  return v;
+}
 
 /** Parse `fields` from the route (JSON array or inclusion projection object only). */
 function parseFieldsQueryParam(fields) {
@@ -44,6 +61,28 @@ function parseFieldsQueryParam(fields) {
     );
   }
   return [];
+}
+
+/**
+ * Split projection list tokens on commas/whitespace, merging a lone `-` or `+` with the next
+ * chunk so `- password` and `-password` both exclude `password`.
+ * @returns {string[]|null} null when a dangling `+`/`-` has no following field name.
+ */
+function normalizeProjectionTokens(trimmed) {
+  const rawTokens = trimmed.split(/[,\s]+/).filter(Boolean);
+  const tokens = [];
+  for (let i = 0; i < rawTokens.length; i++) {
+    const t = rawTokens[i];
+    if (t === '-' || t === '+') {
+      if (i + 1 >= rawTokens.length) {
+        return null;
+      }
+      tokens.push(t + rawTokens[++i]);
+    } else {
+      tokens.push(t);
+    }
+  }
+  return tokens;
 }
 
 /** Pass through a valid JSON `fields` string for Model.getDocuments / getDocumentsStream. */
@@ -212,10 +251,19 @@ module.exports = app => app.component('models', {
       this.setOutputType('json');
     }
     this.$nextTick(() => {
-      if (!this.isProjectionMenuSelected) return;
-      const projectionSearch = this.$refs.projectionSearch;
-      if (projectionSearch && typeof projectionSearch.focusInput === 'function') {
-        projectionSearch.focusInput();
+      const focusIntent = takeModelsRemountFocusIntent();
+      if (focusIntent === 'documentSearch') {
+        const ds = this.$refs.documentSearch;
+        if (ds && typeof ds.focusInput === 'function') {
+          ds.focusInput();
+        }
+        return;
+      }
+      if (focusIntent === 'projection' && this.isProjectionMenuSelected) {
+        const projectionSearch = this.$refs.projectionSearch;
+        if (projectionSearch && typeof projectionSearch.focusInput === 'function') {
+          projectionSearch.focusInput();
+        }
       }
     });
   },
@@ -674,8 +722,17 @@ module.exports = app => app.component('models', {
       if (this.$route.query?.fields) {
         const urlPaths = parseFieldsQueryParam(this.$route.query.fields);
         if (urlPaths.length > 0) {
-          this.filteredPaths = urlPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
-          if (this.filteredPaths.length > 0) {
+          const nextFiltered = urlPaths
+            .map(path => this.schemaPaths.find(p => p.path === path))
+            .filter(Boolean);
+          if (nextFiltered.length > 0) {
+            this.filteredPaths = nextFiltered;
+            this.syncProjectionFromPaths();
+          } else if (this.isProjectionMenuSelected && this.schemaPaths.length > 0) {
+            this.applyDefaultProjection(
+              this.schemaPaths.map(p => p.path).slice(0, DEFAULT_FIRST_N_FIELDS)
+            );
+            this.selectedPaths = [...this.filteredPaths];
             this.syncProjectionFromPaths();
           }
         }
@@ -786,6 +843,7 @@ module.exports = app => app.component('models', {
       } else {
         delete this.query.search;
       }
+      setModelsRemountFocusIntent('documentSearch');
       const query = this.query;
       this.$router.push({ query });
       this.documents = [];
@@ -820,6 +878,7 @@ module.exports = app => app.component('models', {
       // Persist projection UI state in the URL so Reset/Suggest don't turn the mode off.
       if (next) {
         this.query[PROJECTION_MODE_QUERY_KEY] = '1';
+        setModelsRemountFocusIntent('projection');
         if (this.outputType === 'map') {
           this.setOutputType('json');
         }
@@ -970,7 +1029,21 @@ module.exports = app => app.component('models', {
             }
             const isProjectionModeOn = this.isProjectionMenuSelected === true;
             if (isProjectionModeOn) {
-              this.applyDefaultProjection(event.suggestedFields);
+              const urlFieldsRaw = this.$route.query?.fields;
+              const urlPaths = urlFieldsRaw ? parseFieldsQueryParam(urlFieldsRaw) : [];
+              let hydratedFromUrl = false;
+              if (urlPaths.length > 0) {
+                const fromUrl = urlPaths
+                  .map(path => this.schemaPaths.find(p => p.path === path))
+                  .filter(Boolean);
+                if (fromUrl.length > 0) {
+                  this.filteredPaths = fromUrl;
+                  hydratedFromUrl = true;
+                }
+              }
+              if (!hydratedFromUrl) {
+                this.applyDefaultProjection(event.suggestedFields);
+              }
             } else {
               this.filteredPaths = [];
               this.selectedPaths = [];
@@ -1080,6 +1153,7 @@ module.exports = app => app.component('models', {
       this.applyDefaultProjection(pathNames.slice(0, DEFAULT_FIRST_N_FIELDS));
       this.selectedPaths = [...this.filteredPaths];
       this.syncProjectionFromPaths();
+      setModelsRemountFocusIntent('projection');
       this.updateProjectionQuery();
     },
     syncProjectionFromPaths() {
@@ -1111,7 +1185,10 @@ module.exports = app => app.component('models', {
         return null;
       }
 
-      const tokens = trimmed.split(/[,\s]+/).filter(Boolean);
+      const tokens = normalizeProjectionTokens(trimmed);
+      if (tokens === null) {
+        return null;
+      }
       if (tokens.length === 0) return [];
 
       const includeKeys = [];
@@ -1140,14 +1217,21 @@ module.exports = app => app.component('models', {
         // `name email createdAt -email` -> `name createdAt`.
         const includeSet = new Set(includeKeys.map(normalizeKey));
         for (const path of excludeKeys) {
-          includeSet.delete(normalizeKey(path));
+          const ex = normalizeKey(path);
+          for (const k of Array.from(includeSet)) {
+            if (k.toLowerCase() === ex.toLowerCase()) {
+              includeSet.delete(k);
+            }
+          }
         }
         return Array.from(includeSet);
       }
 
       if (excludeKeys.length > 0) {
-        const excludeSet = new Set(excludeKeys.map(normalizeKey));
-        return this.schemaPaths.map(p => p.path).filter(p => !excludeSet.has(p));
+        const excludeNorm = excludeKeys.map(normalizeKey);
+        return this.schemaPaths
+          .map(p => p.path)
+          .filter(p => !excludeNorm.some(ex => ex === p || p.toLowerCase() === ex.toLowerCase()));
       }
 
       return includeKeys.map(normalizeKey);
@@ -1155,7 +1239,6 @@ module.exports = app => app.component('models', {
     applyProjectionFromInput() {
       const paths = this.parseProjectionInput(this.projectionText);
       if (paths === null) {
-        this.syncProjectionFromPaths();
         return;
       }
       if (paths.length === 0) {
@@ -1178,6 +1261,7 @@ module.exports = app => app.component('models', {
       }
       this.selectedPaths = [...this.filteredPaths];
       this.syncProjectionFromPaths();
+      setModelsRemountFocusIntent('projection');
       this.updateProjectionQuery();
     },
     updateProjectionQuery() {
