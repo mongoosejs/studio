@@ -1,10 +1,10 @@
 declare module '@mongoosejs/studio' {
   import { RequestHandler } from 'express';
-  import mongoose from 'mongoose';
+  import { Connection, Mongoose } from 'mongoose';
 
   const express: (
     path: string,
-    connOrMongoose?: mongoose.Connection | mongoose.Mongoose,
+    connOrMongoose?: Connection | Mongoose,
     options?: { apiKey?: string }
   ) => RequestHandler;
 
