@@ -1110,18 +1110,17 @@ module.exports = app => app.component('models', {
             if (isProjectionModeOn) {
               const urlFieldsRaw = this.$route.query?.fields;
               const urlPaths = urlFieldsRaw ? parseFieldsQueryParam(urlFieldsRaw) : [];
-              let hydratedFromUrl = false;
               if (urlPaths.length > 0) {
                 const fromUrl = urlPaths
                   .map(path => this.schemaPaths.find(p => p.path === path))
                   .filter(Boolean);
                 if (fromUrl.length > 0) {
                   this.filteredPaths = fromUrl;
-                  hydratedFromUrl = true;
+                } else {
+                  this.applyDefaultProjection(event.suggestedFields);
                 }
-              }
-              if (!hydratedFromUrl) {
-                this.applyDefaultProjection(event.suggestedFields);
+              } else {
+                this.filteredPaths = [];
               }
             } else {
               this.filteredPaths = [];
@@ -1210,6 +1209,9 @@ module.exports = app => app.component('models', {
       // Keep current filter input in sync with the URL so projection reset
       // does not unintentionally wipe the filter on remount.
       this.syncFilterToQuery();
+      if (this.$route.query?.fields) {
+        delete this.query.fields;
+      }
       this.filteredPaths = [];
       this.selectedPaths = [];
       this.projectionText = '';
