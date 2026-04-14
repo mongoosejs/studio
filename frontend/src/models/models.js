@@ -85,6 +85,85 @@ function normalizeProjectionTokens(trimmed) {
   return tokens;
 }
 
+/**
+ * Parse projection object syntax like:
+ *   { deletedAt: 1 }
+ *   { "deletedAt": true, email: 1 }
+ *   { password: 0 }
+ *
+ * Supported values are 1/0/true/false (quoted or unquoted).
+ * Returns include paths, exclude-derived include paths, or null when invalid.
+ */
+function parseProjectionObjectNotation(trimmed, schemaPaths) {
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+    return null;
+  }
+  const body = trimmed.slice(1, -1).trim();
+  if (!body) {
+    return [];
+  }
+
+  const pairRe = /(?:^|,)\s*(?:"([^"]+)"|'([^']+)'|([a-zA-Z_$][\w.$]*))\s*:\s*("[^"]*"|'[^']*'|[^,]+?)\s*(?=,|$)/g;
+  const includeKeys = [];
+  const excludeKeys = [];
+  let matchedChars = '';
+  let match;
+
+  while ((match = pairRe.exec(body)) !== null) {
+    matchedChars += match[0];
+    const key = (match[1] || match[2] || match[3] || '').trim();
+    const rawValue = (match[4] || '').trim();
+    if (!key || !rawValue) {
+      return null;
+    }
+
+    const valueLower = rawValue.replace(/^['"]|['"]$/g, '').trim().toLowerCase();
+    const isInclude = valueLower === '1' || valueLower === 'true';
+    const isExclude = valueLower === '0' || valueLower === 'false';
+    if (!isInclude && !isExclude) {
+      return null;
+    }
+    if (isInclude) {
+      includeKeys.push(key);
+    } else {
+      excludeKeys.push(key);
+    }
+  }
+
+  // Reject malformed object strings where regex skipped segments.
+  const normalizedBody = body.replace(/\s+/g, '');
+  const normalizedMatched = matchedChars.replace(/\s+/g, '').replace(/^,/, '');
+  if (!normalizedMatched || normalizedMatched !== normalizedBody) {
+    return null;
+  }
+
+  const normalizeKey = (key) => String(key).trim();
+  if (includeKeys.length > 0 && excludeKeys.length > 0) {
+    const includeSet = new Set(includeKeys.map(normalizeKey));
+    for (const path of excludeKeys) {
+      const ex = normalizeKey(path);
+      for (const k of Array.from(includeSet)) {
+        if (k.toLowerCase() === ex.toLowerCase()) {
+          includeSet.delete(k);
+        }
+      }
+    }
+    if (includeSet.size === 0) {
+      return null;
+    }
+    return Array.from(includeSet);
+  }
+
+  if (excludeKeys.length > 0) {
+    const excludeNorm = excludeKeys.map(normalizeKey);
+    return schemaPaths
+      .map(p => p.path)
+      .filter(p => !excludeNorm.some(ex => ex === p || p.toLowerCase() === ex.toLowerCase()));
+  }
+
+  return includeKeys.map(normalizeKey);
+}
+
 /** Pass through a valid JSON `fields` string for Model.getDocuments / getDocumentsStream. */
 function normalizeFieldsParamForApi(fieldsStr) {
   if (fieldsStr == null || fieldsStr === '') {
@@ -1175,14 +1254,15 @@ module.exports = app => app.component('models', {
       }
       const normalizeKey = (key) => String(key).trim();
 
-      // String-only projection syntax:
+      // String projection syntax:
       //   name email
       //   -password   (exclusion-only)
       //   +email      (inclusion-only)
+      //   { deletedAt: 1 } (object notation)
       //
-      // Brace/object syntax is intentionally NOT supported.
-      if (trimmed.startsWith('{') || trimmed.endsWith('}')) {
-        return null;
+      // For object notation, return include paths based on 1/0/true/false values.
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        return parseProjectionObjectNotation(trimmed, this.schemaPaths);
       }
 
       const tokens = normalizeProjectionTokens(trimmed);
@@ -1223,6 +1303,9 @@ module.exports = app => app.component('models', {
               includeSet.delete(k);
             }
           }
+        }
+        if (includeSet.size === 0) {
+          return null;
         }
         return Array.from(includeSet);
       }

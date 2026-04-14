@@ -2,6 +2,78 @@
 
 const template = require('./projection-search.html');
 
+function getBraceDepth(text, pos) {
+  let depth = 0;
+  for (let i = 0; i < pos; i++) {
+    const ch = text[i];
+    if (ch === "{") {
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+    }
+  }
+  return depth;
+}
+
+function collectObjectKeysBefore(text, endPos) {
+  const before = text.slice(0, endPos);
+  const keys = new Set();
+  const re = /([a-zA-Z_][\w.]*)\s*:/g;
+  let m;
+  while ((m = re.exec(before)) !== null) {
+    keys.add(m[1]);
+  }
+  return keys;
+}
+
+function getProjectionTokenContext(fullText, cursorPos) {
+  const before = fullText.slice(0, cursorPos);
+  const depth = getBraceDepth(before, before.length);
+
+  if (depth > 0) {
+    const m = before.match(/(?:\{|,)\s*([+-]?)([^\s:},]*)$/);
+    if (!m) {
+      return null;
+    }
+    const prefix = m[1] || '';
+    const raw = m[2] || '';
+    const term = raw.trim().toLowerCase();
+    if (!term) {
+      return null;
+    }
+    const token = `${prefix}${raw}`;
+    const start = cursorPos - token.length;
+    const selectedPaths = collectObjectKeysBefore(before, before.length);
+    if (raw) {
+      selectedPaths.delete(raw.trim());
+    }
+    return { mode: 'object', prefix, term, start, selectedPaths };
+  }
+
+  const tokenMatch = before.match(/(?:^|[,\s])([+-]?)([^\s,]*)$/);
+  if (!tokenMatch) {
+    return null;
+  }
+  const prefix = tokenMatch[1] || '';
+  const raw = tokenMatch[2] || '';
+  const term = raw.trim().toLowerCase();
+  if (!term) {
+    return null;
+  }
+
+  const token = `${prefix}${raw}`;
+  const after = fullText.slice(cursorPos);
+  const start = cursorPos - token.length;
+  const normalizedText = `${fullText.slice(0, start)}${token}${after}`;
+  const tokenCandidates = normalizedText.split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+  const selectedPaths = new Set(tokenCandidates.map(t => t.replace(/^[+-]/, '')).filter(Boolean));
+  if (raw) {
+    selectedPaths.delete(raw);
+  }
+
+  return { mode: 'list', prefix, term, start, selectedPaths };
+}
+
 module.exports = app => app.component('projection-search', {
   template,
   props: {
@@ -59,35 +131,19 @@ module.exports = app => app.component('projection-search', {
     updateAutocomplete() {
       const input = this.$refs.projectionInput;
       const cursorPos = input ? input.selectionStart : 0;
-      const before = this.projectionText.slice(0, cursorPos);
-      const tokenMatch = before.match(/(?:^|[,\s])([+-]?)([^\s,]*)$/);
-      if (!tokenMatch) {
+      const ctx = getProjectionTokenContext(this.projectionText, cursorPos);
+      if (!ctx) {
         this.clearAutocomplete();
         return;
       }
 
-      const prefix = tokenMatch[1] || '';
-      const term = (tokenMatch[2] || '').trim().toLowerCase();
-      if (!term) {
-        this.clearAutocomplete();
-        return;
-      }
-
-      const token = `${prefix}${tokenMatch[2] || ''}`;
-      const after = this.projectionText.slice(cursorPos);
-      const start = cursorPos - token.length;
-      const fullText = `${this.projectionText.slice(0, start)}${token}${after}`;
-      const tokenCandidates = fullText.split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
-      const selectedPaths = new Set(tokenCandidates.map(t => t.replace(/^[+-]/, '')).filter(Boolean));
-      if (tokenMatch[2]) {
-        selectedPaths.delete(tokenMatch[2]);
-      }
+      const { prefix, term, selectedPaths } = ctx;
 
       this.autocompleteSuggestions = this.schemaPaths
         .map(path => path.path)
         .filter(path => typeof path === 'string' && path.toLowerCase().includes(term) && !selectedPaths.has(path))
         .slice(0, 10)
-        .map(path => `${prefix}${path}`);
+        .map(path => (ctx.mode === 'object' ? path : `${prefix}${path}`));
       this.autocompleteIndex = 0;
     },
     handleKeyDown(ev) {
@@ -128,17 +184,21 @@ module.exports = app => app.component('projection-search', {
       }
 
       const cursorPos = input.selectionStart;
-      const before = this.projectionText.slice(0, cursorPos);
       const after = this.projectionText.slice(cursorPos);
-      const tokenMatch = before.match(/(?:^|[,\s])([+-]?)([^\s,]*)$/);
-      if (!tokenMatch) {
+      const ctx = getProjectionTokenContext(this.projectionText, cursorPos);
+      if (!ctx) {
         return;
       }
 
-      const token = `${tokenMatch[1] || ''}${tokenMatch[2] || ''}`;
-      const start = cursorPos - token.length;
-      const needsSpace = after.length === 0 || !/^[,\s]/.test(after);
-      const replacement = needsSpace ? `${suggestion} ` : suggestion;
+      const { mode, start } = ctx;
+      let replacement;
+      if (mode === 'object') {
+        const colon = /^\s*:/.test(after) ? '' : ': ';
+        replacement = `${suggestion}${colon}`;
+      } else {
+        const needsSpace = after.length === 0 || !/^[,\s]/.test(after);
+        replacement = needsSpace ? `${suggestion} ` : suggestion;
+      }
 
       this.projectionText = this.projectionText.slice(0, start) + replacement + after;
       this.emitInput();
