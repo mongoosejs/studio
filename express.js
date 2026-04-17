@@ -4,12 +4,13 @@ const Backend = require('./backend');
 const express = require('express');
 const frontend = require('./frontend');
 const { toRoute, objectRouter } = require('extrovert');
+const { defaultMothershipURL } = require('./constants');
 
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
   options = options ? { changeStream: true, ...options } : { changeStream: true };
 
-  const mothershipUrl = options._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
+  const mothershipUrl = options._mothershipUrl || defaultMothershipURL;
   let workspace = null;
   if (options?.apiKey) {
     ({ workspace } = await fetch(`${mothershipUrl}/getWorkspace`, {

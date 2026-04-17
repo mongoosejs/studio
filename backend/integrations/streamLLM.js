@@ -4,6 +4,7 @@ const { createAnthropic } = require('@ai-sdk/anthropic');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
 const { streamText, stepCountIs } = require('ai');
+const { defaultMothershipURL } = require('../../constants');
 
 module.exports = async function* streamLLM(messages, system, options) {
   let provider = null;
@@ -70,7 +71,7 @@ module.exports = async function* streamLLM(messages, system, options) {
 
   // If not using OpenAI, Anthropic, or Google Gemini, fallback to Mongoose (no streaming)
   const headers = { 'Content-Type': 'application/json' };
-  const response = await fetch('https://mongoose-js.netlify.app/.netlify/functions/getChatCompletion', {
+  const response = await fetch(`${defaultMothershipURL}/getChatCompletion`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
