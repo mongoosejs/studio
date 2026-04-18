@@ -1,13 +1,12 @@
 'use strict';
 
 const Archetype = require('archetype');
-const vm = require('vm');
 const authorize = require('../../authorize');
-const { defaultMothershipURL } = require('../../../constants');
+const mongoose = require('mongoose');
 
 const GetDashboardParams = new Archetype({
   dashboardId: {
-    $type: 'string',
+    $type: mongoose.Types.ObjectId,
     $required: true
   },
   evaluate: {
@@ -17,26 +16,27 @@ const GetDashboardParams = new Archetype({
     $type: 'string'
   },
   $workspaceId: {
-    $type: 'string'
+    $type: mongoose.Types.ObjectId
+  },
+  userId: {
+    $type: mongoose.Types.ObjectId
   },
   roles: {
     $type: ['string']
   }
 }).compile('GetDashboardParams');
 
-module.exports = ({ db, options }) => async function getDashboard(params) {
-  const { $workspaceId, authorization, dashboardId, evaluate, roles } = new GetDashboardParams(params);
-  const Dashboard = db.model('__Studio_Dashboard');
-  const mothershipUrl = options?._mothershipUrl ?? defaultMothershipURL;
+module.exports = ({ studioConnection }) => async function getDashboard(params) {
+  const { $workspaceId, userId, dashboardId, evaluate, roles } = new GetDashboardParams(params);
+  const Dashboard = studioConnection.model('__Studio_Dashboard');
+  const DashboardResult = studioConnection.model('__Studio_DashboardResult');
 
   await authorize('Dashboard.getDashboard', roles);
 
   const dashboard = await Dashboard.findOne({ _id: dashboardId });
   if (evaluate) {
     let result = null;
-    const startExec = startDashboardEvaluate(dashboardId, $workspaceId, authorization, mothershipUrl);
-    // Avoid unhandled promise rejection since we handle the promise later.
-    startExec.catch(() => {});
+    const startExec = startDashboardEvaluate(DashboardResult, dashboardId, $workspaceId, userId);
     try {
       result = await dashboard.evaluate();
     } catch (error) {
@@ -45,12 +45,11 @@ module.exports = ({ db, options }) => async function getDashboard(params) {
           return {};
         }
         return completeDashboardEvaluate(
+          DashboardResult,
           dashboardResult._id,
-          $workspaceId,
-          authorization,
           null,
           { message: error.message },
-          mothershipUrl
+          'failed'
         );
       });
       return { dashboard, dashboardResult, error: { message: error.message } };
@@ -62,12 +61,11 @@ module.exports = ({ db, options }) => async function getDashboard(params) {
           return {};
         }
         return completeDashboardEvaluate(
+          DashboardResult,
           dashboardResult._id,
-          $workspaceId,
-          authorization,
           result,
           undefined,
-          mothershipUrl
+          'completed'
         );
       });
 
@@ -76,92 +74,39 @@ module.exports = ({ db, options }) => async function getDashboard(params) {
       return { dashboard, error: { message: error.message } };
     }
   } else {
-    const { dashboardResults } = await getDashboardResults(dashboardId, $workspaceId, authorization, mothershipUrl);
+    const { dashboardResults } = await getDashboardResults(DashboardResult, dashboardId, $workspaceId);
     return { dashboard, dashboardResults };
   }
 };
 
-async function completeDashboardEvaluate(dashboardResultId, workspaceId, authorization, result, error, mothershipUrl) {
-  if (!workspaceId) {
-    return {};
-  }
-  const headers = { 'Content-Type': 'application/json' };
-  if (authorization) {
-    headers.Authorization = authorization;
-  }
-  const response = await fetch(`${mothershipUrl}/completeDashboardEvaluate`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      dashboardResultId,
-      workspaceId,
-      finishedEvaluatingAt: new Date(),
-      result,
-      error
-    })
-  }).then(response => {
-    if (response.status < 200 || response.status >= 400) {
-      return response.json().then(data => {
-        throw new Error(`completeDashboardEvaluate error: ${data.message}`);
-      });
-    }
-    return response;
-  });
-
-  return await response.json();
+async function completeDashboardEvaluate(DashboardResult, dashboardResultId, result, error, status) {
+  const dashboardResult = await DashboardResult.findById(dashboardResultId).orFail();
+  dashboardResult.finishedEvaluatingAt = new Date();
+  dashboardResult.result = result;
+  dashboardResult.error = error;
+  dashboardResult.status = status;
+  await dashboardResult.save();
+  return { dashboardResult };
 }
 
-async function startDashboardEvaluate(dashboardId, workspaceId, authorization, _mothershipUrl) {
-  if (!workspaceId) {
-    return {};
-  }
-  const headers = { 'Content-Type': 'application/json' };
-  if (authorization) {
-    headers.Authorization = authorization;
-  }
-  const response = await fetch(`${_mothershipUrl}/startDashboardEvaluate`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      dashboardId,
-      workspaceId,
-      startedEvaluatingAt: new Date()
-    })
-  }).then(response => {
-    if (response.status < 200 || response.status >= 400) {
-      return response.json().then(data => {
-        throw new Error(`startDashboardEvaluate error: ${data.message}`);
-      });
-    }
-    return response;
+async function startDashboardEvaluate(DashboardResult, dashboardId, workspaceId, userId) {
+  const dashboardResult = await DashboardResult.create({
+    dashboardId,
+    workspaceId,
+    userId,
+    startedEvaluatingAt: new Date(),
+    status: 'in_progress'
   });
 
-  return await response.json();
+  return { dashboardResult };
 }
 
-async function getDashboardResults(dashboardId, workspaceId, authorization, mothershipUrl) {
-  if (!workspaceId) {
-    return {};
+async function getDashboardResults(DashboardResult, dashboardId, workspaceId) {
+  const filter = { dashboardId };
+  if (workspaceId != null) {
+    filter.workspaceId = workspaceId;
   }
-  const headers = { 'Content-Type': 'application/json' };
-  if (authorization) {
-    headers.Authorization = authorization;
-  }
-  const response = await fetch(`${mothershipUrl}/getDashboardResults`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      dashboardId,
-      workspaceId
-    })
-  }).then(response => {
-    if (response.status < 200 || response.status >= 400) {
-      return response.json().then(data => {
-        throw new Error(`getDashboardResults error: ${data.message}`);
-      });
-    }
-    return response;
-  });
 
-  return await response.json();
+  const dashboardResults = await DashboardResult.find(filter).sort({ _id: -1 }).limit(10);
+  return { dashboardResults };
 }
