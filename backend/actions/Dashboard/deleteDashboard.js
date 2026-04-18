@@ -13,12 +13,14 @@ const DeleteDashboardParams = new Archetype({
   }
 }).compile('DeleteDashboardParams');
 
-module.exports = ({ db }) => async function deleteDashboard(params) {
+module.exports = ({ studioConnection }) => async function deleteDashboard(params) {
   const { dashboardId, roles } = new DeleteDashboardParams(params);
-  const Dashboard = db.model('__Studio_Dashboard');
+  const Dashboard = studioConnection.model('__Studio_Dashboard');
+  const DashboardResult = studioConnection.model('__Studio_DashboardResult');
 
   await authorize('Dashboard.deleteDashboard', roles);
 
   const result = await Dashboard.deleteOne({ _id: dashboardId }).orFail();
+  await DashboardResult.deleteMany({ dashboardId });
   return { result };
 };

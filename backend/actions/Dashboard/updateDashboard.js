@@ -23,10 +23,10 @@ const UpdateDashboardParams = new Archetype({
   }
 }).compile('UpdateDashboardParams');
 
-module.exports = ({ db }) => async function updateDashboard(params) {
+module.exports = ({ studioConnection }) => async function updateDashboard(params) {
   const { dashboardId, code, title, description, roles, evaluate } = new UpdateDashboardParams(params);
 
-  const Dashboard = db.models['__Studio_Dashboard'];
+  const Dashboard = studioConnection.models['__Studio_Dashboard'];
 
   await authorize('Dashboard.updateDashboard', roles);
 
