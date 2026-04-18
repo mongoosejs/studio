@@ -57,3 +57,4 @@ const actions = Backend(connection, studioConnection, { changeStream: true });
 
 exports.actions = actions;
 exports.connection = connection;
+exports.studioConnection = studioConnection;
