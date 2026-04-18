@@ -39,6 +39,7 @@ module.exports = ({ studioConnection, options }) => async function getDashboard(
   if (evaluate) {
     let result = null;
     const startExec = startDashboardEvaluate(DashboardResult, dashboardId, $workspaceId, userId);
+    startExec.catch(() => {}); // Avoid unhandled promise rejections - we will handle this error later.
     try {
       result = await dashboard.evaluate();
     } catch (error) {

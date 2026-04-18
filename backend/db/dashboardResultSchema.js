@@ -32,6 +32,6 @@ const dashboardResultSchema = new mongoose.Schema({
   result: mongoose.Schema.Types.Mixed
 }, { timestamps: true });
 
-dashboardResultSchema.index({ dashboardId: 1, workspaceId: 1, createdAt: -1 });
+dashboardResultSchema.index({ dashboardId: 1 });
 
 module.exports = dashboardResultSchema;
