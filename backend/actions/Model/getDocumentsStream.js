@@ -35,6 +35,9 @@ const GetDocumentsParams = new Archetype({
   fields: {
     $type: 'string'
   },
+  maxTimeMS: {
+    $type: 'number'
+  },
   roles: {
     $type: ['string']
   }
@@ -45,7 +48,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   const { roles } = params;
   await authorize('Model.getDocumentsStream', roles);
 
-  const { model, limit, skip, sortKey, sortDirection, searchText, fields } = params;
+  const { model, limit, skip, sortKey, sortDirection, searchText, fields, maxTimeMS } = params;
 
   const Model = db.models[model];
   if (Model == null) {
@@ -71,6 +74,9 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   const projection = parseFieldsParam(fields);
   if (projection != null) {
     query = query.select(projection);
+  }
+  if (typeof maxTimeMS === 'number' && maxTimeMS > 0) {
+    query = query.maxTimeMS(maxTimeMS);
   }
 
   const schemaPaths = {};

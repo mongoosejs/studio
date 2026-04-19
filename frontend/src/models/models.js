@@ -15,9 +15,11 @@ const DEFAULT_FIRST_N_FIELDS = 6;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
 const SHOW_ROW_NUMBERS_STORAGE_KEY = 'studio:model-show-row-numbers';
+const QUERY_TIMEOUT_SECONDS_STORAGE_KEY = 'studio:model-query-timeout-seconds';
 const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
+const DEFAULT_QUERY_TIMEOUT_SECONDS = 10;
 
 /** Parse `fields` from the route (JSON array or inclusion projection object only). */
 function parseFieldsQueryParam(fields) {
@@ -102,6 +104,7 @@ module.exports = app => app.component('models', {
     shouldShowCollectionInfoModal: false,
     shouldShowUpdateMultipleModal: false,
     shouldShowDeleteMultipleModal: false,
+    shouldShowQueryTimeoutModal: false,
     shouldExport: {},
     sortBy: {},
     query: {},
@@ -121,6 +124,8 @@ module.exports = app => app.component('models', {
     recentlyViewedModels: [],
     showModelSwitcher: false,
     showRowNumbers: true,
+    queryTimeoutSeconds: DEFAULT_QUERY_TIMEOUT_SECONDS,
+    queryTimeoutDraftSeconds: String(DEFAULT_QUERY_TIMEOUT_SECONDS),
     suppressScrollCheck: false,
     scrollTopToRestore: null
   }),
@@ -130,6 +135,7 @@ module.exports = app => app.component('models', {
     this.loadOutputPreference();
     this.loadSelectedGeoField();
     this.loadShowRowNumbersPreference();
+    this.loadQueryTimeoutPreference();
     this.loadRecentlyViewedModels();
     this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
   },
@@ -637,8 +643,46 @@ module.exports = app => app.component('models', {
       if (fieldsParam) {
         params.fields = fieldsParam;
       }
+      params.maxTimeMS = this.getQueryTimeoutMS();
 
       return params;
+    },
+    getQueryTimeoutMS() {
+      const parsedSeconds = Number(this.queryTimeoutSeconds);
+      const normalizedSeconds = Number.isFinite(parsedSeconds) && parsedSeconds > 0 ?
+        parsedSeconds :
+        DEFAULT_QUERY_TIMEOUT_SECONDS;
+      return Math.floor(normalizedSeconds * 1000);
+    },
+    loadQueryTimeoutPreference() {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const stored = window.localStorage.getItem(QUERY_TIMEOUT_SECONDS_STORAGE_KEY);
+      const parsed = Number(stored);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        this.queryTimeoutSeconds = parsed;
+        this.queryTimeoutDraftSeconds = String(parsed);
+      }
+    },
+    openQueryTimeoutModal() {
+      this.closeActionsMenu();
+      this.queryTimeoutDraftSeconds = String(this.queryTimeoutSeconds);
+      this.shouldShowQueryTimeoutModal = true;
+    },
+    saveQueryTimeoutPreference() {
+      const parsed = Number(this.queryTimeoutDraftSeconds);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        this.$toast.error('Query timeout must be a positive number of seconds.');
+        return;
+      }
+      const normalized = Math.round(parsed);
+      this.queryTimeoutSeconds = normalized;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(QUERY_TIMEOUT_SECONDS_STORAGE_KEY, String(normalized));
+      }
+      this.shouldShowQueryTimeoutModal = false;
+      this.$toast.success('Query timeout updated.');
     },
     setSearchTextFromRoute() {
       if (this.$route.query?.search) {
@@ -846,7 +890,8 @@ module.exports = app => app.component('models', {
         model: this.currentModel,
         limit: 1,
         sortKey: '_id',
-        sortDirection: 1
+        sortDirection: 1,
+        maxTimeMS: this.getQueryTimeoutMS()
       });
       if (!Array.isArray(docs) || docs.length === 0) {
         throw new Error('No documents found');
