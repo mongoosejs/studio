@@ -1,0 +1,142 @@
+<div class="aggregation-builder p-4 md:p-6 bg-slate-50 overflow-y-auto" style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
+  <div class="max-w-6xl mx-auto space-y-4">
+    <div class="flex flex-col md:flex-row md:items-end gap-3">
+      <div class="w-full md:max-w-sm">
+        <label class="block text-xs font-semibold uppercase tracking-wide text-content-tertiary mb-1">Collection</label>
+        <select
+          v-model="selectedModel"
+          class="w-full rounded-md border border-edge bg-surface px-3 py-2 text-sm text-content focus:border-edge-strong focus:outline-none focus:ring-1 focus:ring-gray-300">
+          <option v-for="modelName in models" :key="modelName" :value="modelName">{{modelName}}</option>
+        </select>
+      </div>
+      <div class="w-full md:max-w-[120px]">
+        <label class="block text-xs font-semibold uppercase tracking-wide text-content-tertiary mb-1">Limit</label>
+        <input
+          v-model.number="resultLimit"
+          type="number"
+          min="1"
+          max="200"
+          class="w-full rounded-md border border-edge bg-surface px-3 py-2 text-sm text-content focus:border-edge-strong focus:outline-none focus:ring-1 focus:ring-gray-300" />
+      </div>
+      <div class="flex gap-2 md:ml-auto">
+        <button
+          type="button"
+          @click="addStage"
+          class="rounded-md border border-edge bg-surface px-3 py-2 text-sm text-content-secondary hover:bg-muted">
+          Add Stage
+        </button>
+        <button
+          type="button"
+          @click="runAggregation"
+          :disabled="isRunning || !selectedModel || hasPipelineErrors"
+          class="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-text hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-500">
+          {{ isRunning ? 'Running...' : 'Run Now' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <section class="rounded-lg border border-edge bg-page">
+        <div class="border-b border-edge px-4 py-2 text-sm font-semibold text-content">Pipeline Stages</div>
+        <div class="p-3 space-y-3">
+          <div
+            v-for="(stage, index) in stages"
+            :key="stage.id"
+            class="rounded-md border border-edge bg-surface p-3 space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-content-tertiary">Stage {{index + 1}}</span>
+              <select
+                v-model="stage.operator"
+                class="rounded-md border border-edge bg-page px-2 py-1 text-sm text-content focus:border-edge-strong focus:outline-none">
+                <option v-for="operator in stageOperators" :key="operator" :value="operator">{{operator}}</option>
+              </select>
+              <button
+                type="button"
+                @click="removeStage(index)"
+                class="ml-auto rounded px-2 py-1 text-xs text-content-tertiary hover:bg-muted"
+                :disabled="stages.length === 1">
+                Remove
+              </button>
+            </div>
+            <textarea
+              v-model="stage.bodyText"
+              rows="6"
+              spellcheck="false"
+              class="w-full rounded-md border border-edge bg-page px-2 py-1.5 text-sm font-mono text-content focus:border-edge-strong focus:outline-none"
+              placeholder='{"status":"active"}'
+            ></textarea>
+            <p v-if="getStageError(stage)" class="text-xs text-red-600">{{getStageError(stage)}}</p>
+            <div class="rounded-md border border-edge bg-page">
+              <button
+                type="button"
+                @click="toggleStagePreview(stage)"
+                class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-content-tertiary hover:bg-muted">
+                <span>Stage Output Preview</span>
+                <span>
+                  <span v-if="stage.previewLoading">Loading...</span>
+                  <span v-else-if="stage.previewError" class="text-red-600">Error</span>
+                  <span v-else-if="stage.previewDocs && stage.previewDocs.length">{{stage.previewDocs.length}} doc(s)</span>
+                  <span v-else class="text-content-tertiary">0 doc(s)</span>
+                  <span class="ml-2">{{stage.previewExpanded ? 'Hide' : 'Show'}}</span>
+                </span>
+              </button>
+              <div v-if="stage.previewExpanded" class="border-t border-edge p-2 space-y-2">
+                <p v-if="stage.previewLoading" class="text-xs text-content-tertiary">Loading preview...</p>
+                <p v-else-if="stage.previewError" class="text-xs text-red-600">{{stage.previewError}}</p>
+                <p v-else-if="stage.previewDocs.length === 0" class="text-xs text-content-tertiary">No documents returned.</p>
+                <div v-else class="space-y-2">
+                  <div
+                    v-for="(doc, docIndex) in stage.previewDocs"
+                    :key="stage.id + '-preview-' + docIndex"
+                    class="aggregation-builder-doc-card">
+                    <div class="aggregation-builder-doc-card-header">Document {{docIndex + 1}}</div>
+                    <pre class="aggregation-builder-code-panel aggregation-builder-doc-card-body"><code>{{formatDoc(doc)}}</code></pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-lg border border-edge bg-page">
+        <div class="border-b border-edge px-4 py-2 text-sm font-semibold text-content">Pipeline JSON</div>
+        <pre class="aggregation-builder-code-panel p-3 text-xs overflow-auto rounded-b-lg"><code>{{pipelinePreview}}</code></pre>
+      </section>
+    </div>
+
+    <section class="rounded-lg border border-edge bg-page">
+      <div class="border-b border-edge px-4 py-2 text-sm font-semibold text-content">Results</div>
+      <div class="p-3">
+        <p v-if="errorMessage" class="mb-3 text-sm text-red-600">{{errorMessage}}</p>
+        <p v-else-if="isRunning" class="text-sm text-content-tertiary">Refreshing results...</p>
+        <p v-else-if="results.length === 0" class="text-sm text-content-tertiary">Edit a stage to generate results automatically.</p>
+        <div v-else class="space-y-3">
+          <p class="text-xs text-content-tertiary">Showing {{results.length}} document(s).</p>
+          <div class="max-h-[55vh] overflow-auto space-y-2 pr-1">
+            <div
+              v-for="(doc, index) in visibleResults"
+              :key="'result-' + index"
+              class="aggregation-builder-doc-card">
+              <button
+                type="button"
+                @click="toggleResult(index)"
+                class="aggregation-builder-doc-card-header w-full flex items-center justify-between text-left hover:bg-muted">
+                <span>Document {{index + 1}}</span>
+                <span class="text-xs text-content-tertiary">{{isResultExpanded(index) ? 'Hide' : 'Show'}}</span>
+              </button>
+              <pre v-if="isResultExpanded(index)" class="aggregation-builder-code-panel aggregation-builder-doc-card-body"><code>{{formatDoc(doc)}}</code></pre>
+            </div>
+          </div>
+          <button
+            v-if="hasMoreResults"
+            type="button"
+            @click="loadMoreResults"
+            class="rounded-md border border-edge bg-surface px-3 py-1.5 text-xs font-semibold text-content-secondary hover:bg-muted">
+            Load {{Math.min(20, results.length - visibleResultsCount)}} more
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

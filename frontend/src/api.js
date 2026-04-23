@@ -176,6 +176,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocuments: function updateDocuments(params) {
       return client.post('', { action: 'Model.updateDocuments', ...params }).then(res => res.data);
+    },
+    aggregate(params) {
+      return client.post('', { action: 'Model.aggregate', ...params }).then(res => res.data);
     }
   };
   exports.Task = {
@@ -519,6 +522,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocuments: function updateDocument(params) {
       return client.post('/Model/updateDocuments', params).then(res => res.data);
+    },
+    aggregate(params) {
+      return client.post('/Model/aggregate', params).then(res => res.data);
     }
   };
   exports.Task = {
