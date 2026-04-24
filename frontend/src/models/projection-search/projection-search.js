@@ -148,9 +148,16 @@ module.exports = app => app.component('projection-search', {
     },
     handleKeyDown(ev) {
       if (this.autocompleteSuggestions.length > 0) {
-        if (ev.key === 'Tab' || ev.key === 'Enter') {
+        if (ev.key === 'Tab') {
           ev.preventDefault();
           this.applySuggestion(this.autocompleteIndex);
+          return;
+        }
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          this.applySuggestion(this.autocompleteIndex);
+          // Enter should both accept autocomplete and apply projection.
+          this.$nextTick(() => this.$emit('apply'));
           return;
         }
         if (ev.key === 'ArrowDown') {

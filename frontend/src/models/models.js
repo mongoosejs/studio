@@ -16,6 +16,7 @@ const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
 const SHOW_ROW_NUMBERS_STORAGE_KEY = 'studio:model-show-row-numbers';
 const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
+const PROJECTION_INPUT_QUERY_KEY = 'projectionInput';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
 const FOCUS_AFTER_MODELS_REMOUNT_KEY = '__studioModelsFocusAfterRemount';
@@ -806,13 +807,13 @@ module.exports = app => app.component('models', {
             .filter(Boolean);
           if (nextFiltered.length > 0) {
             this.filteredPaths = nextFiltered;
-            this.syncProjectionFromPaths();
+            this.syncProjectionInputFromQueryOrPaths();
           } else if (this.isProjectionMenuSelected && this.schemaPaths.length > 0) {
             this.applyDefaultProjection(
               this.schemaPaths.map(p => p.path).slice(0, DEFAULT_FIRST_N_FIELDS)
             );
             this.selectedPaths = [...this.filteredPaths];
-            this.syncProjectionFromPaths();
+            this.syncProjectionInputFromQueryOrPaths();
           }
         }
       }
@@ -963,6 +964,7 @@ module.exports = app => app.component('models', {
         }
       } else {
         delete this.query[PROJECTION_MODE_QUERY_KEY];
+        delete this.query[PROJECTION_INPUT_QUERY_KEY];
         delete this.query.fields;
         this.filteredPaths = [];
         this.selectedPaths = [];
@@ -1128,7 +1130,7 @@ module.exports = app => app.component('models', {
               this.projectionText = '';
             }
             this.selectedPaths = [...this.filteredPaths];
-            this.syncProjectionFromPaths();
+            this.syncProjectionInputFromQueryOrPaths();
             schemaPathsReceived = true;
           }
           if (event.numDocs !== undefined) {
@@ -1212,6 +1214,7 @@ module.exports = app => app.component('models', {
       if (this.$route.query?.fields) {
         delete this.query.fields;
       }
+      delete this.query[PROJECTION_INPUT_QUERY_KEY];
       this.filteredPaths = [];
       this.selectedPaths = [];
       this.projectionText = '';
@@ -1245,6 +1248,14 @@ module.exports = app => app.component('models', {
       // String-only projection syntax: `field1 field2` and `-field` for exclusions.
       // Since `filteredPaths` represents the final include set, we serialize as space-separated fields.
       this.projectionText = this.filteredPaths.map(p => p.path).join(' ');
+    },
+    syncProjectionInputFromQueryOrPaths() {
+      const fromQuery = this.$route.query?.[PROJECTION_INPUT_QUERY_KEY];
+      if (typeof fromQuery === 'string' && fromQuery.trim().length > 0) {
+        this.projectionText = fromQuery;
+        return;
+      }
+      this.syncProjectionFromPaths();
     },
     parseProjectionInput(text) {
       if (!text || typeof text !== 'string') {
@@ -1321,21 +1332,69 @@ module.exports = app => app.component('models', {
 
       return includeKeys.map(normalizeKey);
     },
+    projectionExplicitlyExcludesId(text) {
+      if (!text || typeof text !== 'string') {
+        return false;
+      }
+      const trimmed = text.trim();
+      if (!trimmed) {
+        return false;
+      }
+
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        const body = trimmed.slice(1, -1).trim();
+        if (!body) {
+          return false;
+        }
+        const pairRe = /(?:^|,)\s*(?:"([^"]+)"|'([^']+)'|([a-zA-Z_$][\w.$]*))\s*:\s*("[^"]*"|'[^']*'|[^,]+?)\s*(?=,|$)/g;
+        let match;
+        while ((match = pairRe.exec(body)) !== null) {
+          const key = (match[1] || match[2] || match[3] || '').trim();
+          if (!key || key.toLowerCase() !== '_id') {
+            continue;
+          }
+          const rawValue = (match[4] || '').trim();
+          const valueLower = rawValue.replace(/^['"]|['"]$/g, '').trim().toLowerCase();
+          if (valueLower === '0' || valueLower === 'false') {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      const tokens = normalizeProjectionTokens(trimmed);
+      if (!tokens) {
+        return false;
+      }
+      return tokens.some((rawToken) => {
+        const token = rawToken.trim();
+        return token.toLowerCase() === '-_id';
+      });
+    },
     applyProjectionFromInput() {
       const paths = this.parseProjectionInput(this.projectionText);
       if (paths === null) {
         return;
       }
-      if (paths.length === 0) {
+      const excludesId = this.projectionExplicitlyExcludesId(this.projectionText);
+      const hasIdSchemaPath = this.schemaPaths.some(p => p.path === '_id');
+      const normalizedPaths = Array.isArray(paths) ? [...paths] : [];
+      if (hasIdSchemaPath && !excludesId) {
+        const hasIdAlready = normalizedPaths.some(p => String(p).toLowerCase() === '_id');
+        if (!hasIdAlready) {
+          normalizedPaths.unshift('_id');
+        }
+      }
+      if (normalizedPaths.length === 0) {
         this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
         if (this.filteredPaths.length === 0 && this.schemaPaths.length > 0) {
           const idPath = this.schemaPaths.find(p => p.path === '_id');
           this.filteredPaths = idPath ? [idPath] : [this.schemaPaths[0]];
         }
       } else {
-        this.filteredPaths = paths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+        this.filteredPaths = normalizedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
         const validPaths = new Set(this.schemaPaths.map(p => p.path));
-        for (const path of paths) {
+        for (const path of normalizedPaths) {
           if (validPaths.has(path) && !this.filteredPaths.find(p => p.path === path)) {
             this.filteredPaths.push(this.schemaPaths.find(p => p.path === path));
           }
@@ -1345,7 +1404,6 @@ module.exports = app => app.component('models', {
         }
       }
       this.selectedPaths = [...this.filteredPaths];
-      this.syncProjectionFromPaths();
       setModelsRemountFocusIntent('projection');
       this.updateProjectionQuery();
     },
@@ -1355,6 +1413,11 @@ module.exports = app => app.component('models', {
         this.query.fields = JSON.stringify(paths);
       } else {
         delete this.query.fields;
+      }
+      if (typeof this.projectionText === 'string' && this.projectionText.trim().length > 0) {
+        this.query[PROJECTION_INPUT_QUERY_KEY] = this.projectionText;
+      } else {
+        delete this.query[PROJECTION_INPUT_QUERY_KEY];
       }
       this.$router.push({ query: this.query });
     },
