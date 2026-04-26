@@ -1,10 +1,10 @@
 'use strict';
 
 const assert = require('assert');
-const { actions, connection } = require('./setup.test');
+const { actions, studioConnection } = require('./setup.test');
 const dashboardSchema = require('../backend/db/dashboardSchema');
 
-const Dashboard = connection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
+const Dashboard = studioConnection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
 
 describe('Dashboard.updateDashboard()', function() {
   afterEach(async function () {
