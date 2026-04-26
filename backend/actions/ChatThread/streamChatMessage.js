@@ -127,7 +127,11 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
       if (tc) {
         tc.status = 'done';
       }
-      yield { toolResult: event.toolResult };
+      const sanitizedToolResult = {
+        toolName: event.toolResult.toolName,
+        status: tc ? tc.status : 'done'
+      };
+      yield { toolResult: sanitizedToolResult };
     }
   }
   assistantChatMessage.toolCalls = toolCalls;
