@@ -1,5 +1,5 @@
-<div>
-  <div class="flex items-baseline whitespace-pre" :style="indentStyle">
+<div class="min-w-0 max-w-full">
+  <div class="flex min-w-0 max-w-full items-baseline whitespace-pre-wrap break-words" :style="indentStyle">
     <button
       v-if="showToggle"
       type="button"
@@ -23,36 +23,33 @@
       </template>
     </template>
     <template v-else>
-      <!--
-        If value is a string and overflows its container (i.e. goes over one line), show an ellipsis.
-        This is done via CSS ellipsis strategy.
-      -->
       <span
         v-if="shouldShowReferenceLink"
-        class="inline-flex items-baseline group"
+        class="group inline-flex min-w-0 max-w-full items-baseline flex-wrap gap-x-1.5"
       >
         <span
-          :class="[...valueClasses, 'underline', 'decoration-dotted', 'underline-offset-2']"
-          :style="typeof value === 'string'
-            ? {
-                display: 'inline-block',
-                maxWidth: '100%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                verticalAlign: 'bottom'
-              }
-            : {}"
-          :title="typeof value === 'string' && $el && $el.scrollWidth > $el.clientWidth ? value : undefined"
+          :class="[...valueClasses, ...stringWrapperClasses, 'underline', 'decoration-dotted', 'underline-offset-2']"
+          :style="isStringValue ? { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } : {}"
+          :title="shouldTruncateString && !isStringExpanded ? value : undefined"
         >
-          {{ formattedValue }}
+          {{ displayedValue }}
         </span>
-        <span>
+        <span class="shrink-0">
           {{ comma }}
         </span>
+        <button
+          v-if="shouldTruncateString"
+          type="button"
+          class="inline-flex shrink-0 items-center gap-1 rounded-full border border-edge bg-surface px-2 py-0.5 text-[11px] font-medium text-content-secondary shadow-sm transition-colors hover:bg-muted hover:text-content focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          :title="stringToggleTitle"
+          :aria-expanded="isStringExpanded"
+          @click.stop="toggleStringExpansion"
+        >
+          <span class="leading-none">{{ stringToggleLabel }}</span>
+        </button>
         <a
           href="#"
-          class="ml-1 text-sm text-primary opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+          class="ml-1 shrink-0 text-sm text-primary opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
           @click.stop.prevent="goToReference()"
         >
           View Document
@@ -60,20 +57,26 @@
       </span>
       <span
         v-else
-        :class="valueClasses"
-        :style="typeof value === 'string'
-          ? {
-              display: 'inline-block',
-              maxWidth: '100%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              verticalAlign: 'bottom'
-            }
-          : {}"
-        :title="typeof value === 'string' && $el && $el.scrollWidth > $el.clientWidth ? value : undefined"
+        class="inline-flex min-w-0 max-w-full items-baseline flex-wrap gap-x-1.5"
       >
-        {{ formattedValue }}{{ comma }}
+        <span
+          :class="[...valueClasses, ...stringWrapperClasses]"
+          :style="isStringValue ? { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } : {}"
+          :title="shouldTruncateString && !isStringExpanded ? value : undefined"
+        >
+          {{ displayedValue }}
+        </span>
+        <span class="shrink-0">{{ comma }}</span>
+        <button
+          v-if="shouldTruncateString"
+          type="button"
+          class="inline-flex shrink-0 items-center gap-1 rounded-full border border-edge bg-surface px-2 py-0.5 text-[11px] font-medium text-content-secondary shadow-sm transition-colors hover:bg-muted hover:text-content focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          :title="stringToggleTitle"
+          :aria-expanded="isStringExpanded"
+          @click.stop="toggleStringExpansion"
+        >
+          <span class="leading-none">{{ stringToggleLabel }}</span>
+        </button>
       </span>
     </template>
   </div>
@@ -94,6 +97,7 @@
       :top-level-expanded="topLevelExpanded"
       :expand-top-level="expandTopLevel"
       :references="references"
+      :max-string-length="maxStringLength"
     ></json-node>
     <div
       v-if="hasHiddenRootChildren"

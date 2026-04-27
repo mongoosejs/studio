@@ -450,13 +450,13 @@
           No documents to show. Use Projection in the menu to choose columns.
         </p>
       </div>
-      <div v-else-if="outputType === 'json'" class="flex flex-col space-y-2 p-1 mt-1">
+      <div v-else-if="outputType === 'json'" class="flex min-w-0 flex-col space-y-2 p-1 mt-1">
         <div
           v-for="document in documents"
           :key="document._id"
           @click="handleDocumentContainerClick(document, $event)"
           :class="[
-            'group relative transition-colors rounded-md border border-slate-100',
+            'group relative min-w-0 max-w-full transition-colors rounded-md border border-slate-100',
             selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:shadow-sm hover:border-slate-300 bg-surface'
           ]"
         >
