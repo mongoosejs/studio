@@ -750,7 +750,7 @@ module.exports = app => app.component('models', {
       }
       const routeProjectionInput = this.$route.query?.[PROJECTION_INPUT_QUERY_KEY];
       if (typeof routeProjectionInput === 'string' && routeProjectionInput.trim().length > 0) {
-        const urlPaths = this.parseProjectionInput(routeProjectionInput);
+        const urlPaths = this.normalizeProjectionPathsForDisplay(routeProjectionInput);
         if (urlPaths !== null) {
           const nextFiltered = urlPaths
             .map(path => this.schemaPaths.find(p => p.path === path))
@@ -1055,7 +1055,7 @@ module.exports = app => app.component('models', {
             if (isProjectionModeOn) {
               const routeProjectionInput = this.$route.query?.[PROJECTION_INPUT_QUERY_KEY];
               if (typeof routeProjectionInput === 'string' && routeProjectionInput.trim().length > 0) {
-                const projectionPaths = this.parseProjectionInput(routeProjectionInput);
+                const projectionPaths = this.normalizeProjectionPathsForDisplay(routeProjectionInput);
                 const fromProjectionInput = Array.isArray(projectionPaths) ?
                   projectionPaths
                   .map(path => this.schemaPaths.find(p => p.path === path))
@@ -1198,6 +1198,21 @@ module.exports = app => app.component('models', {
       }
       this.syncProjectionFromPaths();
     },
+    normalizeProjectionPathsForDisplay(text) {
+      const paths = this.parseProjectionInput(text);
+      if (paths == null) {
+        return null;
+      }
+      const excludesId = this.projectionExplicitlyExcludesId(text);
+      const hasIdSchemaPath = this.schemaPaths.some(p => p.path === '_id');
+      if (hasIdSchemaPath && !excludesId) {
+        const hasIdAlready = paths.some(p => String(p).toLowerCase() === '_id');
+        if (!hasIdAlready) {
+          paths.unshift('_id');
+        }
+      }
+      return paths;
+    },
     parseProjectionInput(text) {
       if (!text || typeof text !== 'string') {
         return [];
@@ -1321,17 +1336,9 @@ module.exports = app => app.component('models', {
         return;
       }
 
-      const paths = this.parseProjectionInput(this.projectionText);
+      const paths = this.normalizeProjectionPathsForDisplay(this.projectionText);
       if (paths == null) {
         return;
-      }
-      const excludesId = this.projectionExplicitlyExcludesId(this.projectionText);
-      const hasIdSchemaPath = this.schemaPaths.some(p => p.path === '_id');
-      if (hasIdSchemaPath && !excludesId) {
-        const hasIdAlready = paths.some(p => String(p).toLowerCase() === '_id');
-        if (!hasIdAlready) {
-          paths.unshift('_id');
-        }
       }
       if (paths.length === 0) {
         this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');

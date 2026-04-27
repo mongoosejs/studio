@@ -64,11 +64,10 @@ function parseProjectionInput(projectionInput, schemaPaths) {
     }
   }
 
-  const normalizeKey = key => String(key).trim();
   if (includeKeys.length > 0 && excludeKeys.length > 0) {
-    const includeSet = new Set(includeKeys.map(normalizeKey));
+    const includeSet = new Set(includeKeys);
     for (const path of excludeKeys) {
-      const ex = normalizeKey(path);
+      const ex = path;
       for (const key of Array.from(includeSet)) {
         if (key.toLowerCase() === ex.toLowerCase()) {
           includeSet.delete(key);
@@ -82,10 +81,10 @@ function parseProjectionInput(projectionInput, schemaPaths) {
   }
 
   if (excludeKeys.length > 0) {
-    return excludeKeys.map(path => `-${normalizeKey(path)}`).join(' ');
+    return excludeKeys.map(path => `-${path}`).join(' ');
   }
 
-  return includeKeys.map(normalizeKey).join(' ');
+  return includeKeys.join(' ');
 }
 
 function normalizeProjectionTokens(trimmed) {
@@ -124,6 +123,9 @@ function parseProjectionObjectNotation(trimmed, schemaPaths) {
     if (!key || !rawValue) {
       return null;
     }
+    if (key === '__proto__' || key === 'constructor') {
+      throw new Error(`Invalid key: ${key}`);
+    }
 
     const valueLower = rawValue.replace(/^['"]|['"]$/g, '').trim().toLowerCase();
     const isInclude = valueLower === '1' || valueLower === 'true';
@@ -144,11 +146,10 @@ function parseProjectionObjectNotation(trimmed, schemaPaths) {
     return null;
   }
 
-  const normalizeKey = key => String(key).trim();
   if (includeKeys.length > 0 && excludeKeys.length > 0) {
-    const includeSet = new Set(includeKeys.map(normalizeKey));
+    const includeSet = new Set(includeKeys);
     for (const path of excludeKeys) {
-      const ex = normalizeKey(path);
+      const ex = path;
       for (const key of Array.from(includeSet)) {
         if (key.toLowerCase() === ex.toLowerCase()) {
           includeSet.delete(key);
@@ -164,14 +165,14 @@ function parseProjectionObjectNotation(trimmed, schemaPaths) {
   if (excludeKeys.length > 0) {
     const projection = {};
     for (const path of excludeKeys) {
-      projection[normalizeKey(path)] = 0;
+      projection[path] = 0;
     }
     return Object.keys(projection).length > 0 ? projection : null;
   }
 
   const projection = {};
   for (const path of includeKeys) {
-    projection[normalizeKey(path)] = 1;
+    projection[path] = 1;
   }
   return Object.keys(projection).length > 0 ? projection : null;
 }

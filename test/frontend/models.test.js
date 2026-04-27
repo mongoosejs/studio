@@ -6,6 +6,32 @@ require('./setup');
 const modelsComponent = require('../../frontend/src/models/models');
 
 describe('models projection input', function() {
+  it('adds _id to displayed projection paths by default', function() {
+    const componentDef = modelsComponent({ component: (_name, def) => def });
+    const state = {
+      schemaPaths: [{ path: '_id' }, { path: 'email' }, { path: 'role' }],
+      parseProjectionInput: componentDef.methods.parseProjectionInput,
+      projectionExplicitlyExcludesId: componentDef.methods.projectionExplicitlyExcludesId
+    };
+
+    const paths = componentDef.methods.normalizeProjectionPathsForDisplay.call(state, 'email role');
+
+    assert.deepStrictEqual(paths, ['_id', 'email', 'role']);
+  });
+
+  it('does not add _id when projection explicitly excludes it', function() {
+    const componentDef = modelsComponent({ component: (_name, def) => def });
+    const state = {
+      schemaPaths: [{ path: '_id' }, { path: 'email' }, { path: 'role' }],
+      parseProjectionInput: componentDef.methods.parseProjectionInput,
+      projectionExplicitlyExcludesId: componentDef.methods.projectionExplicitlyExcludesId
+    };
+
+    const paths = componentDef.methods.normalizeProjectionPathsForDisplay.call(state, 'email role -_id');
+
+    assert.deepStrictEqual(paths, ['email', 'role']);
+  });
+
   it('persists projection input without also persisting fields', function() {
     const componentDef = modelsComponent({ component: (_name, def) => def });
     const pushedQueries = [];
