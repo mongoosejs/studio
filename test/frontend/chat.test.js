@@ -13,6 +13,7 @@ const time = require('time-commando');
 
 describe('chat component', function() {
   afterEach(function() {
+    delete window.matchMedia;
     sinon.restore();
   });
 
@@ -210,5 +211,23 @@ describe('chat component', function() {
 
     assert.ok(toast.error.calledOnceWithExactly('LLM stream failed'));
     assert.strictEqual(state.sendingMessage, false);
+  });
+
+  it('opens the agent sidebar when agent mode is enabled on desktop', async function() {
+    window.matchMedia = sinon.stub().returns({ matches: true });
+
+    const state = {
+      chatThreadId: null,
+      draftAgentMode: false,
+      showAgentSidebar: false,
+      isAgentModeEnabled: false,
+      isDesktopViewport: chat.methods.isDesktopViewport,
+      maybeOpenAgentSidebar: chat.methods.maybeOpenAgentSidebar
+    };
+
+    await chat.methods.toggleAgentMode.call(state);
+
+    assert.strictEqual(state.draftAgentMode, true);
+    assert.strictEqual(state.showAgentSidebar, true);
   });
 });

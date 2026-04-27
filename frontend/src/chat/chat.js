@@ -1,6 +1,7 @@
 'use strict';
 
 const api = require('../api');
+const agentToolMetadata = require('../../../backend/chatAgent/agentToolMetadata');
 const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 const template = require('./chat.html');
 
@@ -16,9 +17,11 @@ module.exports = {
     chatThreads: [],
     chatMessages: [],
     hideSidebar: null,
+    showAgentSidebar: false,
     sharingThread: false,
     threadSearch: '',
-    showProUpgradeModal: false
+    showProUpgradeModal: false,
+    agentTools: agentToolMetadata
   }),
   methods: {
     async sendMessage() {
@@ -137,9 +140,11 @@ module.exports = {
       }
     },
     async toggleAgentMode() {
+      const wasEnabled = this.isAgentModeEnabled;
       const newValue = !this.isAgentModeEnabled;
       if (!this.chatThreadId) {
         this.draftAgentMode = newValue;
+        this.maybeOpenAgentSidebar({ wasEnabled, isEnabled: newValue });
         return;
       }
       const { chatThread } = await api.ChatThread.toggleAgentMode({
@@ -150,6 +155,7 @@ module.exports = {
       if (idx !== -1) {
         this.chatThreads.splice(idx, 1, chatThread);
       }
+      this.maybeOpenAgentSidebar({ wasEnabled, isEnabled: newValue });
     },
     scrollToBottom() {
       this.$nextTick(() => {
@@ -221,6 +227,24 @@ module.exports = {
       } finally {
         this.sharingThread = false;
       }
+    },
+    isDesktopViewport() {
+      return typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(min-width: 1024px)').matches;
+    },
+    maybeOpenAgentSidebar({ wasEnabled, isEnabled }) {
+      if (!isEnabled) {
+        this.showAgentSidebar = false;
+        return;
+      }
+      if (wasEnabled || !this.isDesktopViewport()) {
+        return;
+      }
+      this.showAgentSidebar = true;
+    },
+    closeAgentSidebar() {
+      this.showAgentSidebar = false;
     }
   },
   computed: {

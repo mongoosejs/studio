@@ -4,13 +4,15 @@ const vm = require('vm');
 const ts = require('typescript');
 const { tool } = require('ai');
 const { jsonSchema } = require('@ai-sdk/provider-utils');
+const agentToolMetadata = require('./agentToolMetadata');
 
 module.exports = function getAgentTools(db) {
   const modelNames = Object.keys(db.models).filter(name => !name.startsWith('__Studio'));
+  const toolDescriptions = Object.fromEntries(agentToolMetadata.map(tool => [tool.name, tool.description]));
 
   return {
     estimatedDocumentCount: tool({
-      description: 'Count the estimated number of documents in a collection. Takes a model name.',
+      description: toolDescriptions.estimatedDocumentCount + ' Takes a model name.',
       inputSchema: jsonSchema({
         type: 'object',
         properties: {
@@ -29,7 +31,7 @@ module.exports = function getAgentTools(db) {
       }
     }),
     find: tool({
-      description: 'Run a find() query on a Mongoose model. Returns an array of documents.',
+      description: toolDescriptions.find,
       inputSchema: jsonSchema({
         type: 'object',
         properties: {
@@ -50,7 +52,7 @@ module.exports = function getAgentTools(db) {
       }
     }),
     findOne: tool({
-      description: 'Run a findOne() query on a Mongoose model. Returns a single document or null.',
+      description: toolDescriptions.findOne,
       inputSchema: jsonSchema({
         type: 'object',
         properties: {
@@ -70,7 +72,7 @@ module.exports = function getAgentTools(db) {
       }
     }),
     typeCheck: tool({
-      description: 'Type-check a JavaScript script before presenting it to the user. The script will run in a sandbox with globals: db (mongoose.Connection), mongoose, ObjectId (mongoose.Types.ObjectId), console, and MongooseStudioChartColors (string[]). Pass the raw script body (no imports, no wrapping function). Returns any TypeScript errors or JavaScript syntax errors found. Remember that you should write JavaScript, NOT TypeScript. This tool is just to check for obvious errors.',
+      description: toolDescriptions.typeCheck + ' The script will run in a sandbox with globals: db (mongoose.Connection), mongoose, ObjectId (mongoose.Types.ObjectId), console, and MongooseStudioChartColors (string[]). Pass the raw script body (no imports, no wrapping function). Returns any TypeScript errors or JavaScript syntax errors found. Remember that you should write JavaScript, NOT TypeScript. This tool is just to check for obvious errors.',
       inputSchema: jsonSchema({
         type: 'object',
         properties: {
