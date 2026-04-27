@@ -5,6 +5,8 @@ const agentToolMetadata = require('../../../backend/chatAgent/agentToolMetadata'
 const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 const template = require('./chat.html');
 
+const AGENT_MODE_STORAGE_KEY = '_mongooseStudioAgentMode';
+
 module.exports = {
   template: template,
   props: ['threadId'],
@@ -142,8 +144,9 @@ module.exports = {
     async toggleAgentMode() {
       const wasEnabled = this.isAgentModeEnabled;
       const newValue = !this.isAgentModeEnabled;
+      this.draftAgentMode = newValue;
+      this.persistAgentModePreference(newValue);
       if (!this.chatThreadId) {
-        this.draftAgentMode = newValue;
         this.maybeOpenAgentSidebar({ wasEnabled, isEnabled: newValue });
         return;
       }
@@ -233,6 +236,30 @@ module.exports = {
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(min-width: 1024px)').matches;
     },
+    getAgentModePreference() {
+      if (typeof window === 'undefined') {
+        return false;
+      }
+      return window.localStorage?.getItem(AGENT_MODE_STORAGE_KEY) === 'true';
+    },
+    persistAgentModePreference(agentMode) {
+      if (typeof window !== 'undefined') {
+        window.localStorage?.setItem(AGENT_MODE_STORAGE_KEY, String(agentMode));
+      }
+    },
+    async syncCurrentThreadAgentMode() {
+      if (!this.chatThreadId || !this.currentThread || !this.draftAgentMode || this.currentThread.agentMode) {
+        return;
+      }
+      const { chatThread } = await api.ChatThread.toggleAgentMode({
+        chatThreadId: this.chatThreadId,
+        agentMode: true
+      });
+      const idx = this.chatThreads.findIndex(t => t._id === chatThread._id);
+      if (idx !== -1) {
+        this.chatThreads.splice(idx, 1, chatThread);
+      }
+    },
     maybeOpenAgentSidebar({ wasEnabled, isEnabled }) {
       if (!isEnabled) {
         this.showAgentSidebar = false;
@@ -271,13 +298,14 @@ module.exports = {
   async mounted() {
     window.pageState = this;
 
+    this.draftAgentMode = this.getAgentModePreference();
     this.chatThreadId = this.threadId;
     const { chatThreads } = await api.ChatThread.listChatThreads();
     this.chatThreads = chatThreads;
     if (this.chatThreadId) {
+      await this.syncCurrentThreadAgentMode();
       const { chatMessages } = await api.ChatThread.getChatThread({ chatThreadId: this.chatThreadId });
       this.chatMessages = chatMessages;
-      this.draftAgentMode = this.currentThread?.agentMode ?? false;
     }
     this.status = 'loaded';
 

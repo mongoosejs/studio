@@ -14,6 +14,8 @@ const time = require('time-commando');
 describe('chat component', function() {
   afterEach(function() {
     delete window.matchMedia;
+    window.localStorage.getItem = () => null;
+    window.localStorage.setItem = () => {};
     sinon.restore();
   });
 
@@ -215,6 +217,8 @@ describe('chat component', function() {
 
   it('opens the agent sidebar when agent mode is enabled on desktop', async function() {
     window.matchMedia = sinon.stub().returns({ matches: true });
+    const setItem = sinon.spy();
+    window.localStorage.setItem = setItem;
 
     const state = {
       chatThreadId: null,
@@ -222,6 +226,7 @@ describe('chat component', function() {
       showAgentSidebar: false,
       isAgentModeEnabled: false,
       isDesktopViewport: chat.methods.isDesktopViewport,
+      persistAgentModePreference: chat.methods.persistAgentModePreference,
       maybeOpenAgentSidebar: chat.methods.maybeOpenAgentSidebar
     };
 
@@ -229,5 +234,26 @@ describe('chat component', function() {
 
     assert.strictEqual(state.draftAgentMode, true);
     assert.strictEqual(state.showAgentSidebar, true);
+    assert.ok(setItem.calledOnceWithExactly('_mongooseStudioAgentMode', 'true'));
+  });
+
+  it('turns agent mode on for a thread when the sticky preference is on', async function() {
+    const toggledThread = { _id: '1'.repeat(24), agentMode: true };
+    const toggleStub = sinon.stub(api.ChatThread, 'toggleAgentMode').resolves({ chatThread: toggledThread });
+
+    const state = {
+      chatThreadId: toggledThread._id,
+      draftAgentMode: true,
+      chatThreads: [{ _id: toggledThread._id, agentMode: false }],
+      currentThread: { _id: toggledThread._id, agentMode: false }
+    };
+
+    await chat.methods.syncCurrentThreadAgentMode.call(state);
+
+    assert.ok(toggleStub.calledOnceWithExactly({
+      chatThreadId: toggledThread._id,
+      agentMode: true
+    }));
+    assert.strictEqual(state.chatThreads[0].agentMode, true);
   });
 });
