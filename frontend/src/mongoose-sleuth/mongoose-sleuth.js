@@ -15,9 +15,11 @@ const embeddedModelsSleuthState = {
   documentNotes: {},
   currentCaseReportId: null,
   currentCaseReportName: '',
+  currentCaseReportStatus: 'created',
   summary: '',
   aiSummary: '',
-  identifierPathByModel: {}
+  identifierPathByModel: {},
+  investigationPreviewZoomPercent: 65
 };
 
 function persistEmbeddedModelsSleuthState(vm) {
@@ -29,11 +31,15 @@ function persistEmbeddedModelsSleuthState(vm) {
   s.documentNotes = { ...vm.documentNotes };
   s.currentCaseReportId = vm.currentCaseReportId;
   s.currentCaseReportName = vm.currentCaseReportName;
+  s.currentCaseReportStatus = typeof vm.currentCaseReportStatus === 'string' ? vm.currentCaseReportStatus : 'created';
   s.summary = typeof vm.summary === 'string' ? vm.summary : '';
   s.aiSummary = typeof vm.aiSummary === 'string' ? vm.aiSummary : '';
   s.identifierPathByModel = vm.identifierPathByModel && typeof vm.identifierPathByModel === 'object'
     ? { ...vm.identifierPathByModel }
     : {};
+  s.investigationPreviewZoomPercent = typeof vm.investigationPreviewZoomPercent === 'number'
+    ? vm.investigationPreviewZoomPercent
+    : 65;
 }
 
 function pathsObjectToSortedArray(pathsObj) {
@@ -62,11 +68,15 @@ function hydrateEmbeddedModelsSleuthState(vm) {
   vm.documentNotes = { ...s.documentNotes };
   vm.currentCaseReportId = s.currentCaseReportId;
   vm.currentCaseReportName = s.currentCaseReportName || '';
+  vm.currentCaseReportStatus = typeof s.currentCaseReportStatus === 'string' ? s.currentCaseReportStatus : 'created';
   vm.summary = s.summary || '';
   vm.aiSummary = s.aiSummary || '';
   vm.identifierPathByModel = s.identifierPathByModel && typeof s.identifierPathByModel === 'object'
     ? { ...s.identifierPathByModel }
     : {};
+  vm.investigationPreviewZoomPercent = typeof s.investigationPreviewZoomPercent === 'number'
+    ? s.investigationPreviewZoomPercent
+    : 65;
   vm.investigationDocPreviewExpanded = {};
   vm.shouldShowCaseReportModal = false;
   vm.caseReportName = '';
@@ -111,14 +121,21 @@ module.exports = app => app.component('mongoose-sleuth', {
     summary: '',
     aiSummary: '',
     savingSummary: false,
+    /** Prevents overlapping deferred AI runs when route updates fire more than once. */
+    deferredAISummaryInProgress: false,
+    loadingCaseReport: false,
     caseReports: [],
     currentCaseReportName: '',
+    currentCaseReportStatus: 'created',
+    updatingCaseReportStatus: false,
     // Mongoose schema paths keyed by model name (from getDocument / document stream)
     schemaPathsByModel: {},
     // Step 2: per-model Mongoose path (e.g. "email", "profile.name") used as human label
     identifierPathByModel: {},
     // Step 2: getDocumentKey -> show embedded JSON preview
-    investigationDocPreviewExpanded: {}
+    investigationDocPreviewExpanded: {},
+    // Step 2: CSS zoom % for JSON preview (40–150)
+    investigationPreviewZoomPercent: 65
   }),
   created() {
     this.loadOutputPreference();
@@ -170,6 +187,8 @@ module.exports = app => app.component('mongoose-sleuth', {
     if (this.hasSourceFromModelsView) {
       this.applyPendingAddFromDocumentView();
     }
+
+    await this.maybeRunPendingAISummary();
   },
   watch: {
     sourceModel: {
@@ -292,6 +311,9 @@ module.exports = app => app.component('mongoose-sleuth', {
         }
       }
       return Array.from(set).sort();
+    },
+    isCaseReportDetailRoute() {
+      return this.$route && this.$route.name === 'case-report';
     }
   },
   methods: {
@@ -302,8 +324,6 @@ module.exports = app => app.component('mongoose-sleuth', {
       this.currentCaseReportId = caseReportId;
       try {
         await this.loadCaseReport(caseReportId);
-        const existing = this.caseReports.find(cr => cr && String(cr._id) === String(caseReportId));
-        this.currentCaseReportName = existing && existing.name ? existing.name : '';
       } catch (err) {
         console.error('Error loading existing case report from Sleuth select', err);
         this.$toast?.error?.(err?.message || 'Error loading case report');
@@ -819,75 +839,76 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     },
     async loadCaseReport(caseReportId) {
-      const { caseReport } = await api.CaseReport.getCaseReport({ caseReportId });
-      if (!caseReport || !Array.isArray(caseReport.documents)) {
-        return;
-      }
+      this.loadingCaseReport = true;
+      try {
+        const { caseReport } = await api.CaseReport.getCaseReport({ caseReportId });
+        if (!caseReport) {
+          return;
+        }
 
-      const loadedDocs = [];
-      for (const entry of caseReport.documents) {
-        if (!entry || !entry.documentModel) {
-          continue;
-        }
-        // Stored shape uses documentId (see CaseReport schema); support legacy document
-        const rawId = entry.documentId != null ? entry.documentId : entry.document;
-        if (rawId == null || rawId === '') {
-          continue;
-        }
-        let documentId = rawId;
-        if (documentId != null && typeof documentId === 'object' && typeof documentId.toString === 'function') {
-          documentId = documentId.toString();
-        } else {
-          documentId = String(documentId);
-        }
-        try {
-          const { doc, schemaPaths } = await api.Model.getDocument({
-            model: entry.documentModel,
-            documentId
-          });
-          if (!doc) {
-            continue;
-          }
-          if (schemaPaths && typeof schemaPaths === 'object') {
-            this.schemaPathsByModel[entry.documentModel] = schemaPaths;
-          }
-          const merged = {
-            ...doc,
-            model: entry.documentModel
-          };
-          if (Array.isArray(entry.highlightedFields) && entry.highlightedFields.length > 0) {
-            merged.highlightedFields = entry.highlightedFields.slice();
-          }
-          loadedDocs.push(merged);
-
-          // Restore note if present
-          if (typeof entry.notes === 'string' && entry.notes.trim().length > 0) {
-            const key = this.getDocumentKey(merged);
-            if (key) {
-              this.documentNotes[key] = entry.notes.trim();
-            }
-          }
-        } catch (err) {
-          console.error('Error loading document for case report', entry, err);
-        }
-      }
-
-      if (loadedDocs.length > 0) {
-        this.selectedDocuments = loadedDocs;
-        // Restore summary if present
-        if (typeof caseReport.summary === 'string') {
-          this.summary = caseReport.summary;
-        }
-        // Restore AI summary if present
-        if (typeof caseReport.AISummary === 'string') {
-          this.aiSummary = caseReport.AISummary;
-        }
-        // Store current case report name for display
         if (typeof caseReport.name === 'string') {
           this.currentCaseReportName = caseReport.name;
         }
-      } else {
-        this.selectedDocuments = [];
+        this.currentCaseReportStatus = typeof caseReport.status === 'string' ? caseReport.status : 'created';
+        this.summary = typeof caseReport.summary === 'string' ? caseReport.summary : '';
+        this.aiSummary = typeof caseReport.AISummary === 'string' ? caseReport.AISummary : '';
+
+        if (!Array.isArray(caseReport.documents)) {
+          this.selectedDocuments = [];
+          return;
+        }
+
+        const loadedDocs = [];
+        for (const entry of caseReport.documents) {
+          if (!entry || !entry.documentModel) {
+            continue;
+          }
+          // Stored shape uses documentId (see CaseReport schema); support legacy document
+          const rawId = entry.documentId != null ? entry.documentId : entry.document;
+          if (rawId == null || rawId === '') {
+            continue;
+          }
+          let documentId = rawId;
+          if (documentId != null && typeof documentId === 'object' && typeof documentId.toString === 'function') {
+            documentId = documentId.toString();
+          } else {
+            documentId = String(documentId);
+          }
+          try {
+            const { doc, schemaPaths } = await api.Model.getDocument({
+              model: entry.documentModel,
+              documentId
+            });
+            if (!doc) {
+              continue;
+            }
+            if (schemaPaths && typeof schemaPaths === 'object') {
+              this.schemaPathsByModel[entry.documentModel] = schemaPaths;
+            }
+            const merged = {
+              ...doc,
+              model: entry.documentModel
+            };
+            if (Array.isArray(entry.highlightedFields) && entry.highlightedFields.length > 0) {
+              merged.highlightedFields = entry.highlightedFields.slice();
+            }
+            loadedDocs.push(merged);
+
+            // Restore note if present
+            if (typeof entry.notes === 'string' && entry.notes.trim().length > 0) {
+              const key = this.getDocumentKey(merged);
+              if (key) {
+                this.documentNotes[key] = entry.notes.trim();
+              }
+            }
+          } catch (err) {
+            console.error('Error loading document for case report', entry, err);
+          }
+        }
+
+        this.selectedDocuments = loadedDocs.length > 0 ? loadedDocs : [];
+      } finally {
+        this.loadingCaseReport = false;
       }
     },
     async loadMoreDocuments() {
@@ -1000,12 +1021,48 @@ module.exports = app => app.component('mongoose-sleuth', {
           this.currentCaseReportId = caseReport._id != null ? String(caseReport._id) : caseReport._id;
         }
         this.currentCaseReportName = trimmedName;
+        if (caseReport && typeof caseReport.status === 'string') {
+          this.currentCaseReportStatus = caseReport.status;
+        }
         this.shouldShowCaseReportModal = false;
         this.caseReportName = '';
         this.$toast.success('Case report created!');
       } catch (error) {
         console.error('Error saving case report', error);
         this.$toast.error(error?.message || 'Error saving case report');
+      }
+    },
+    async updateCaseReportStatus(nextStatus) {
+      if (!this.currentCaseReportId) {
+        return;
+      }
+      const allowed = new Set(['created', 'in_progress', 'cancelled', 'resolved', 'archived']);
+      if (!allowed.has(nextStatus)) {
+        return;
+      }
+      this.updatingCaseReportStatus = true;
+      try {
+        const { caseReport } = await api.CaseReport.updateCaseReport({
+          caseReportId: this.currentCaseReportId,
+          status: nextStatus
+        });
+        if (caseReport && typeof caseReport.status === 'string') {
+          this.currentCaseReportStatus = caseReport.status;
+        } else {
+          this.currentCaseReportStatus = nextStatus;
+        }
+        try {
+          const { caseReports } = await api.CaseReport.getCaseReports();
+          this.caseReports = Array.isArray(caseReports) ? caseReports : [];
+        } catch (listErr) {
+          console.error('Error refreshing case reports list', listErr);
+        }
+        this.$toast.success('Case report status updated');
+      } catch (err) {
+        console.error('Error updating case report status', err);
+        this.$toast.error(err?.message || 'Error updating status');
+      } finally {
+        this.updatingCaseReportStatus = false;
       }
     },
     async saveInvestigationProgress() {
@@ -1027,6 +1084,32 @@ module.exports = app => app.component('mongoose-sleuth', {
         this.$toast.error(err?.message || 'Error saving progress');
       }
     },
+    adjustInvestigationPreviewZoom(delta) {
+      const next = Math.round(this.investigationPreviewZoomPercent + delta);
+      this.investigationPreviewZoomPercent = Math.min(150, Math.max(40, next));
+    },
+    resetInvestigationPreviewZoom() {
+      this.investigationPreviewZoomPercent = 65;
+    },
+    async saveDocumentNote(doc) {
+      if (!this.currentCaseReportId) {
+        this.$toast.warning('Create or open a case report before saving notes.');
+        return;
+      }
+      const documentsPayload = this.buildDocumentsPayload();
+      try {
+        await api.CaseReport.updateCaseReport({
+          caseReportId: this.currentCaseReportId,
+          documents: documentsPayload
+        });
+        const label = this.getInvestigationDocumentHeading(doc);
+        this.$toast.success(label ? `Note saved (${label})` : 'Note saved');
+      } catch (err) {
+        console.error('Error saving note', err);
+        this.$toast.error(err?.message || 'Error saving note');
+        throw err;
+      }
+    },
     async saveSummary() {
       if (!this.currentCaseReportId) {
         this.$toast.error('No case report to save yet.');
@@ -1034,33 +1117,94 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
 
       const documentsPayload = this.buildDocumentsPayload();
+      const summaryTrimmed = (this.summary || '').trim();
 
-      this.savingSummary = true;
       try {
-        const { caseReport, aiSummary } = await api.CaseReport.updateCaseReport({
+        await api.CaseReport.updateCaseReport({
           caseReportId: this.currentCaseReportId,
           documents: documentsPayload,
-          summary: this.summary || ''
+          summary: this.summary || '',
+          skipAISummary: true
         });
-        if (aiSummary) {
-          this.aiSummary = aiSummary;
-          this.$toast.success('Summary saved and AI summary requested');
-        } else {
-          this.$toast.success('Summary saved');
-        }
-        // After saving summary, navigate to the full case report page so the
-        // user can continue the investigation outside the sidebar.
-        if (this.$router && this.currentCaseReportId) {
-          this.$router.push({
-            name: 'case-report',
-            params: { caseReportId: this.currentCaseReportId }
-          });
-        }
       } catch (err) {
         console.error('Error saving summary', err);
         this.$toast.error(err?.message || 'Error saving summary');
+        return;
+      }
+
+      const query = summaryTrimmed ? { generateAiSummary: '1' } : {};
+
+      if (this.$router && this.currentCaseReportId) {
+        try {
+          await this.$router.push({
+            name: 'case-report',
+            params: { caseReportId: this.currentCaseReportId },
+            query
+          });
+        } catch (navErr) {
+          const msg = String(navErr && navErr.message ? navErr.message : '');
+          const isDup =
+            navErr &&
+            (navErr.name === 'NavigationDuplicated' || msg.includes('redundant navigation'));
+          if (isDup) {
+            await this.maybeRunPendingAISummary();
+          } else {
+            console.error('Error navigating to case report', navErr);
+            this.$toast.error(navErr?.message || 'Error opening case report');
+            return;
+          }
+        }
+      }
+
+      if (summaryTrimmed) {
+        this.$toast.success('Opening your case report to generate the AI summary…');
+      } else {
+        this.$toast.success('Summary saved.');
+      }
+    },
+    async maybeRunPendingAISummary() {
+      const want =
+        this.$route?.query?.generateAiSummary === '1' ||
+        this.$route?.query?.generateAiSummary === 'true';
+      if (!want || !this.currentCaseReportId) {
+        return;
+      }
+      if (this.deferredAISummaryInProgress) {
+        return;
+      }
+
+      this.deferredAISummaryInProgress = true;
+      this.savingSummary = true;
+      try {
+        const { caseReport, aiSummary } = await api.CaseReport.generateCaseReportAISummary({
+          caseReportId: this.currentCaseReportId
+        });
+        const resolvedAi =
+          (typeof aiSummary === 'string' && aiSummary.trim().length > 0 ? aiSummary : null) ||
+          (caseReport && typeof caseReport.AISummary === 'string' && caseReport.AISummary.trim().length > 0
+            ? caseReport.AISummary
+            : null);
+        if (resolvedAi) {
+          this.aiSummary = resolvedAi;
+        }
+        this.$toast.success(resolvedAi ? 'Case report completed with AI summary.' : 'AI summary was not generated.');
+      } catch (err) {
+        console.error('Error generating AI summary', err);
+        this.$toast.error(err?.message || 'Error generating AI summary');
       } finally {
         this.savingSummary = false;
+        this.deferredAISummaryInProgress = false;
+        if (want && this.$router && this.currentCaseReportId) {
+          try {
+            await this.$router.replace({
+              name: 'case-report',
+              params: { caseReportId: String(this.currentCaseReportId) },
+              query: {}
+            });
+          } catch (replaceErr) {
+            console.error('Error clearing case report query', replaceErr);
+          }
+        }
       }
     }
   }

@@ -90,6 +90,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateCaseReport(params) {
       return client.post('', { action: 'CaseReport.updateCaseReport', ...params }).then(res => res.data);
+    },
+    generateCaseReportAISummary(params) {
+      return client.post('', { action: 'CaseReport.generateCaseReportAISummary', ...params }).then(res => res.data);
     }
   };
   exports.Model = {
@@ -325,6 +328,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateCaseReport: function updateCaseReport(params) {
       return client.post('/CaseReport/updateCaseReport', params).then(res => res.data);
+    },
+    generateCaseReportAISummary: function generateCaseReportAISummary(params) {
+      return client.post('/CaseReport/generateCaseReportAISummary', params).then(res => res.data);
     }
   };
   exports.Model = {

@@ -3,16 +3,16 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
+const buildDocumentDataForAISummary = require('./buildDocumentDataForAISummary');
 
 const UpdateCaseReportParams = new Archetype({
   caseReportId: {
     $type: 'string',
     $required: true
   },
-  // Full replacement array of documents for this case report
+  // Full replacement array of documents for this case report (omit to leave documents unchanged)
   documents: {
-    $type: Array,
-    $default: []
+    $type: Array
   },
   summary: {
     $type: 'string'
@@ -22,11 +22,21 @@ const UpdateCaseReportParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  skipAISummary: {
+    $type: 'boolean',
+    $default: false
   }
 }).compile('UpdateCaseReportParams');
 
 module.exports = ({ db, options }) => async function updateCaseReport(params) {
-  const { caseReportId: rawCaseReportId, documents, summary, status, roles } = new UpdateCaseReportParams(params);
+  const documentsInRequest = params != null && Object.prototype.hasOwnProperty.call(params, 'documents');
+  const paramsForCompile = documentsInRequest ? params : (() => {
+    const copy = { ...params };
+    delete copy.documents;
+    return copy;
+  })();
+  const { caseReportId: rawCaseReportId, documents, summary, status, roles, skipAISummary } = new UpdateCaseReportParams(paramsForCompile);
   const CaseReport = db.model('__Studio_CaseReport');
 
   await authorize('CaseReport.updateCaseReport', roles);
@@ -38,7 +48,7 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
     throw new Error('Case report ID is required');
   }
 
-  const docs = Array.isArray(documents)
+  const docs = documentsInRequest && Array.isArray(documents)
     ? documents
       .filter(doc => doc && doc.documentId != null && doc.documentModel)
       .map(doc => {
@@ -57,7 +67,11 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
         };
       })
     : [];
-  const updateData = { documents: docs };
+
+  const updateData = {};
+  if (documentsInRequest) {
+    updateData.documents = docs;
+  }
   let aiSummary = null;
   
   // If status is explicitly provided, use it
@@ -72,33 +86,17 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
       updateData.status = 'resolved';
     }
 
-    // Generate AI summary if summary is provided
-    if (summary && summary.trim().length > 0) {
+    // Generate AI summary if summary is provided (unless deferred to generateCaseReportAISummary)
+    if (summary && summary.trim().length > 0 && !skipAISummary) {
       try {
-        // Fetch all documents with their data for context
-        const documentData = [];
-        for (const docEntry of docs) {
-          if (!docEntry.documentId || !docEntry.documentModel) {
-            continue;
-          }
-          try {
-            const Model = db.models[docEntry.documentModel];
-            if (Model) {
-              const doc = await Model.findById(docEntry.documentId).setOptions({ sanitizeFilter: true }).lean();
-              if (doc) {
-                documentData.push({
-                  model: docEntry.documentModel,
-                  documentId: docEntry.documentId.toString(),
-                  data: doc,
-                  notes: docEntry.notes || ''
-                });
-              }
-            }
-          } catch (err) {
-            console.error(`Error fetching document ${docEntry.documentId} from model ${docEntry.documentModel}:`, err);
-            // Continue with other documents even if one fails
-          }
+        let contextDocEntries = docs;
+        if (!documentsInRequest || contextDocEntries.length === 0) {
+          const existingForContext = await CaseReport.findById(caseReportId).lean();
+          contextDocEntries = Array.isArray(existingForContext && existingForContext.documents)
+            ? existingForContext.documents
+            : [];
         }
+        const documentData = await buildDocumentDataForAISummary(db, contextDocEntries);
 
         // Build prompt for AI summary
         const documentsContext = documentData.map(doc => {

@@ -33,6 +33,7 @@ const actionsToRequiredRoles = {
   'CaseReport.getCaseReports': ['owner', 'admin', 'member', 'readonly'],
   'CaseReport.getCaseReport': ['owner', 'admin', 'member', 'readonly'],
   'CaseReport.updateCaseReport': ['owner', 'admin', 'member'],
+  'CaseReport.generateCaseReportAISummary': ['owner', 'admin', 'member'],
   'Model.streamDocumentChanges': ['owner', 'admin', 'member', 'readonly'],
   'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly']
 };
