@@ -22,11 +22,15 @@ const CreateChatThreadParams = new Archetype({
   dashboardId: {
     $type: mongoose.Types.ObjectId,
     $required: false
+  },
+  agentMode: {
+    $type: 'boolean',
+    $required: false
   }
 }).compile('CreateChatThreadParams');
 
 module.exports = ({ studioConnection }) => async function createChatThread(params) {
-  const { initiatedById, roles, $workspaceId, initialMessage, dashboardId } = new CreateChatThreadParams(params);
+  const { initiatedById, roles, $workspaceId, initialMessage, dashboardId, agentMode } = new CreateChatThreadParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -41,6 +45,9 @@ module.exports = ({ studioConnection }) => async function createChatThread(param
   }
   if (dashboardId) {
     doc.dashboardId = dashboardId;
+  }
+  if (agentMode != null) {
+    doc.agentMode = agentMode;
   }
   const chatThread = await ChatThread.create(doc);
 

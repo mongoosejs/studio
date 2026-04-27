@@ -3,7 +3,9 @@
 const Archetype = require('archetype');
 const assert = require('assert');
 const authorize = require('../../authorize');
+const agentSystemPrompt = require('../../chatAgent/agentSystemPrompt');
 const callLLM = require('../../integrations/callLLM');
+const getAgentTools = require('../../chatAgent/getAgentTools');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
 const mongoose = require('mongoose');
 
@@ -81,11 +83,13 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
 
   const modelDescriptions = getModelDescriptions(db);
   const system = [
-    systemPrompt,
+    chatThread.agentMode ? agentSystemPrompt : systemPrompt,
     currentDateTime ? `Current date: ${currentDateTime}` : null,
     modelDescriptions,
     options?.context
   ].filter(Boolean).join('\n\n');
+
+  const llmOptions = chatThread.agentMode ? { ...options, tools: getAgentTools(db) } : options;
 
   // Create the chat message and get LLM response in parallel
   const chatMessages = await Promise.all([
@@ -96,12 +100,20 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
       script,
       executionResult: null
     }),
-    callLLM(llmMessages, system, options).then(res => {
+    callLLM(llmMessages, system, llmOptions).then(res => {
       const content = res.text;
+      const toolCalls = (res.steps || []).flatMap(step =>
+        (step.toolCalls || []).map(tc => ({
+          toolName: tc.toolName,
+          input: tc.toolName === 'typeCheck' ? {} : tc.args,
+          status: 'done'
+        }))
+      );
       return ChatMessage.create({
         chatThreadId,
         role: 'assistant',
-        content
+        content,
+        toolCalls: toolCalls.length ? toolCalls : undefined
       });
     })
   ]);

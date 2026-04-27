@@ -62,6 +62,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     shareChatThread(params) {
       return client.post('', { action: 'ChatThread.shareChatThread', ...params }).then(res => res.data);
     },
+    toggleAgentMode(params) {
+      return client.post('', { action: 'ChatThread.toggleAgentMode', ...params }).then(res => res.data);
+    },
     streamChatMessage: async function* streamChatMessage(params) {
       // Don't stream on Next.js or Netlify for now.
       const data = await client.post('', { action: 'ChatThread.createChatMessage', ...params }).then(res => res.data);
@@ -237,6 +240,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     shareChatThread: function shareChatThread(params) {
       return client.post('/ChatThread/shareChatThread', params).then(res => res.data);
+    },
+    toggleAgentMode: function toggleAgentMode(params) {
+      return client.post('/ChatThread/toggleAgentMode', params).then(res => res.data);
     },
     streamChatMessage: async function* streamChatMessage(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
