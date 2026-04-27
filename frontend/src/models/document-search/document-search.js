@@ -4,7 +4,10 @@ const template = require('./document-search.html');
 const {
   buildAutocompleteTrie,
   getAutocompleteSuggestions,
-  applySuggestion
+  applySuggestion,
+  getDatePickerInsertionRange,
+  dateArgumentSliceToDatetimeLocal,
+  insertQuotedIsoInDateArgument
 } = require('../../_util/document-search-autocomplete');
 
 module.exports = app => app.component('document-search', {
@@ -24,7 +27,9 @@ module.exports = app => app.component('document-search', {
       autocompleteSuggestions: [],
       autocompleteIndex: 0,
       autocompleteTrie: null,
-      searchText: this.value || ''
+      searchText: this.value || '',
+      datePickerContext: null,
+      datePickerLocalValue: ''
     };
   },
   watch: {
@@ -64,6 +69,15 @@ module.exports = app => app.component('document-search', {
       const input = this.$refs.searchInput;
       const cursorPos = input ? input.selectionStart : 0;
 
+      const dateRange = getDatePickerInsertionRange(this.searchText, cursorPos);
+      this.datePickerContext = dateRange;
+      if (dateRange) {
+        const argSlice = this.searchText.slice(dateRange.innerStart, dateRange.innerEnd);
+        this.datePickerLocalValue = dateArgumentSliceToDatetimeLocal(argSlice);
+      } else {
+        this.datePickerLocalValue = '';
+      }
+
       if (this.autocompleteTrie) {
         this.autocompleteSuggestions = getAutocompleteSuggestions(
           this.autocompleteTrie,
@@ -75,6 +89,27 @@ module.exports = app => app.component('document-search', {
       } else {
         this.autocompleteSuggestions = [];
       }
+    },
+    applyDateFromPicker(localDateTime) {
+      if (!localDateTime || !this.datePickerContext) {
+        return;
+      }
+      const iso = new Date(localDateTime).toISOString();
+      const result = insertQuotedIsoInDateArgument(
+        this.searchText,
+        this.datePickerContext,
+        iso
+      );
+      const input = this.$refs.searchInput;
+      this.searchText = result.text;
+      this.autocompleteSuggestions = [];
+      this.$nextTick(() => {
+        if (input) {
+          input.focus();
+          input.setSelectionRange(result.newCursorPos, result.newCursorPos);
+        }
+        this.updateAutocomplete();
+      });
     },
     handleKeyDown(ev) {
       if (this.autocompleteSuggestions.length === 0) {

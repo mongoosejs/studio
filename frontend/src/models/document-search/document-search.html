@@ -5,11 +5,28 @@
     type="text"
     placeholder="Filter (supports JS, dates, ObjectIds, and more)"
     v-model="searchText"
-    @click="initFilter"
+    @click="initFilter(); updateAutocomplete()"
     @input="updateAutocomplete"
+    @keyup="updateAutocomplete"
     @keydown="handleKeyDown"
   />
-  <ul v-if="autocompleteSuggestions.length" class="absolute z-[9999] bg-surface border border-edge-strong rounded mt-1 w-full max-h-40 overflow-y-auto shadow">
+  <div
+    v-if="datePickerContext || autocompleteSuggestions.length"
+    class="absolute z-[9999] bg-surface border border-edge-strong rounded mt-1 w-full shadow"
+  >
+    <div
+      v-if="datePickerContext"
+      class="flex flex-wrap items-center gap-2 px-2 py-2 border-b border-edge-strong text-sm"
+    >
+      <span class="text-content-secondary shrink-0">Date</span>
+      <input
+        class="min-w-0 flex-1 h-8 rounded border border-edge-strong px-1 font-mono text-sm outline-edge-strong focus:ring-1 focus:ring-primary-subtle"
+        type="datetime-local"
+        :value="datePickerLocalValue"
+        @change="applyDateFromPicker($event.target.value)"
+      />
+    </div>
+    <ul v-if="autocompleteSuggestions.length" class="max-h-40 overflow-y-auto">
     <li
       v-for="(suggestion, index) in autocompleteSuggestions"
       :key="suggestion"
@@ -20,4 +37,5 @@
       {{ suggestion }}
     </li>
   </ul>
+  </div>
 </form>
