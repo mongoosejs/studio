@@ -1,7 +1,6 @@
 'use strict';
 
 const { inspect } = require('node-inspect-extracted');
-const deepEqual = require('./_util/deepEqual');
 
 /**
  * Format a value for display in array views
@@ -59,9 +58,68 @@ function formatItemValue(item, key) {
   return String(value);
 }
 
+/**
+ * True when every element is a plain object (empty array counts as eligible).
+ */
+function isArrayOfObjects(arr) {
+  return Array.isArray(arr) && arr.every(item => isObjectItem(item));
+}
+
+/**
+ * Sorted union of keys across plain object elements.
+ */
+function unionKeysForArrayOfObjects(arr) {
+  if (!Array.isArray(arr)) {
+    return [];
+  }
+  const set = new Set();
+  for (const item of arr) {
+    if (!isObjectItem(item)) {
+      continue;
+    }
+    for (const k of Object.keys(item)) {
+      set.add(k);
+    }
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Flat text for substring search over one array element (field names + values, or whole item).
+ * @param {*} item
+ * @returns {string}
+ */
+function searchTextForArrayItem(item) {
+  if (item == null) {
+    return String(item);
+  }
+  if (isObjectItem(item)) {
+    return getItemKeys(item)
+      .map(k => `${k} ${formatItemValue(item, k)}`)
+      .join(' \n ');
+  }
+  return formatValue(item);
+}
+
+/**
+ * Case-insensitive substring match against an array element.
+ * @param {*} item
+ * @param {string} normalizedQuery lowercased trimmed query; empty matches all
+ */
+function arrayItemMatchesSearch(item, normalizedQuery) {
+  if (normalizedQuery == null || normalizedQuery === '') {
+    return true;
+  }
+  return searchTextForArrayItem(item).toLowerCase().includes(normalizedQuery);
+}
+
 module.exports = {
   formatValue,
   isObjectItem,
   getItemKeys,
-  formatItemValue
+  formatItemValue,
+  isArrayOfObjects,
+  unionKeysForArrayOfObjects,
+  searchTextForArrayItem,
+  arrayItemMatchesSearch
 };
