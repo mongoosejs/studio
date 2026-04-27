@@ -3,7 +3,8 @@
 const { createAnthropic } = require('@ai-sdk/anthropic');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
-const { streamText } = require('ai');
+const { streamText, stepCountIs } = require('ai');
+const { defaultMothershipURL } = require('../../constants');
 
 module.exports = async function* streamLLM(messages, system, options) {
   let provider = null;
@@ -43,16 +44,24 @@ module.exports = async function* streamLLM(messages, system, options) {
 
   if (provider) {
     let error = null;
-    const { textStream } = streamText({
+    const { fullStream } = streamText({
       model: provider(model),
       system,
       messages,
+      tools: options?.tools,
+      stopWhen: options?.tools ? stepCountIs(10) : undefined,
       onError(err) {
         error = err.error;
       }
     });
-    for await (const chunk of textStream) {
-      yield chunk;
+    for await (const chunk of fullStream) {
+      if (chunk.type === 'text-delta') {
+        yield chunk.text;
+      } else if (chunk.type === 'tool-call') {
+        yield { toolCall: { toolName: chunk.toolName, input: chunk.input } };
+      } else if (chunk.type === 'tool-result') {
+        yield { toolResult: { toolName: chunk.toolName, output: chunk.output } };
+      }
     }
     if (error) {
       throw error;
@@ -62,7 +71,7 @@ module.exports = async function* streamLLM(messages, system, options) {
 
   // If not using OpenAI, Anthropic, or Google Gemini, fallback to Mongoose (no streaming)
   const headers = { 'Content-Type': 'application/json' };
-  const response = await fetch('https://mongoose-js.netlify.app/.netlify/functions/getChatCompletion', {
+  const response = await fetch(`${defaultMothershipURL}/getChatCompletion`, {
     method: 'POST',
     headers,
     body: JSON.stringify({

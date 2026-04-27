@@ -7,12 +7,14 @@ const mongoose = require('mongoose');
 const chatMessageSchema = require('./db/chatMessageSchema');
 const chatThreadSchema = require('./db/chatThreadSchema');
 const dashboardSchema = require('./db/dashboardSchema');
+const dashboardResultSchema = require('./db/dashboardResultSchema');
 
 module.exports = function backend(db, studioConnection, options) {
   db = db || mongoose.connection;
 
   studioConnection = studioConnection ?? db;
   const Dashboard = studioConnection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
+  const DashboardResult = studioConnection.model('__Studio_DashboardResult', dashboardResultSchema, 'studio__dashboardResults');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
   const ChatThread = studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
 

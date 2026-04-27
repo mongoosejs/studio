@@ -18,6 +18,10 @@ const chatThreadSchema = new mongoose.Schema({
     type: mongoose.ObjectId,
     ref: 'Workspace'
   },
+  agentMode: {
+    type: Boolean,
+    default: false
+  },
   sharingOptions: {
     sharedWithWorkspace: {
       type: Boolean,

@@ -2,10 +2,11 @@
 
 const Backend = require('./');
 const { toNetlifyFunction } = require('extrovert');
+const { defaultMothershipURL } = require('../constants');
 
 module.exports = function netlify(conn, options) {
   const backend = Backend(conn, options?.studioConnection, options);
-  const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
+  const mothershipUrl = options?._mothershipUrl || defaultMothershipURL;
 
   let workspace = null;
 

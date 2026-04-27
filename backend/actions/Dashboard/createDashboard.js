@@ -17,9 +17,9 @@ const CreateDashboardParams = new Archetype({
   }
 }).compile('CreateDashboardParams');
 
-module.exports = ({ db }) => async function createDashboard(params) {
+module.exports = ({ studioConnection }) => async function createDashboard(params) {
   const { title, code, roles } = new CreateDashboardParams(params);
-  const Dashboard = db.model('__Studio_Dashboard');
+  const Dashboard = studioConnection.model('__Studio_Dashboard');
 
   await authorize('Dashboard.createDashboard', roles);
 
