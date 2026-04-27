@@ -1372,29 +1372,36 @@ module.exports = app => app.component('models', {
       });
     },
     applyProjectionFromInput() {
+      if (typeof this.projectionText === 'string' && this.projectionText.trim().length === 0) {
+        this.filteredPaths = [];
+        this.selectedPaths = [];
+        setModelsRemountFocusIntent('projection');
+        this.updateProjectionQuery();
+        return;
+      }
+
       const paths = this.parseProjectionInput(this.projectionText);
-      if (paths === null) {
+      if (paths == null) {
         return;
       }
       const excludesId = this.projectionExplicitlyExcludesId(this.projectionText);
       const hasIdSchemaPath = this.schemaPaths.some(p => p.path === '_id');
-      const normalizedPaths = Array.isArray(paths) ? [...paths] : [];
       if (hasIdSchemaPath && !excludesId) {
-        const hasIdAlready = normalizedPaths.some(p => String(p).toLowerCase() === '_id');
+        const hasIdAlready = paths.some(p => String(p).toLowerCase() === '_id');
         if (!hasIdAlready) {
-          normalizedPaths.unshift('_id');
+          paths.unshift('_id');
         }
       }
-      if (normalizedPaths.length === 0) {
+      if (paths.length === 0) {
         this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
         if (this.filteredPaths.length === 0 && this.schemaPaths.length > 0) {
           const idPath = this.schemaPaths.find(p => p.path === '_id');
           this.filteredPaths = idPath ? [idPath] : [this.schemaPaths[0]];
         }
       } else {
-        this.filteredPaths = normalizedPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
+        this.filteredPaths = paths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
         const validPaths = new Set(this.schemaPaths.map(p => p.path));
-        for (const path of normalizedPaths) {
+        for (const path of paths) {
           if (validPaths.has(path) && !this.filteredPaths.find(p => p.path === path)) {
             this.filteredPaths.push(this.schemaPaths.find(p => p.path === path));
           }
