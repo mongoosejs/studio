@@ -3,23 +3,83 @@
     Empty array
   </div>
 
-  <div v-else class="mt-2">
-    <div
-      v-for="(item, index) in arrayValue"
-      :key="index"
-      :title="'Index: ' + index"
-      class="mb-1.5 last:mb-0 py-2.5 px-3 pl-4 bg-transparent border-l-[3px] border-l-blue-500 rounded-none transition-all duration-200 cursor-pointer relative hover:bg-slate-50 hover:border-l-blue-600 hover:shadow-lg hover:-translate-y-0.5">
-      <div class="absolute -left-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-semibold font-mono z-10 hover:bg-blue-600">{{ index >= 1000 ? '1k+' : index }}</div>
-      <div v-if="arrayUtils.isObjectItem(item)" class="flex flex-col gap-1 mt-1 px-2">
-        <div
-          v-for="key in arrayUtils.getItemKeys(item)"
-          :key="key"
-          class="flex items-start gap-2 text-xs font-mono">
-          <span class="font-semibold text-gray-600 flex-shrink-0 min-w-[80px]">{{ key }}:</span>
-          <span class="text-gray-800 break-words whitespace-pre-wrap flex-1">{{ arrayUtils.formatItemValue(item, key) }}</span>
-        </div>
+  <div v-else>
+    <div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+      <div class="relative min-w-0 flex-1">
+        <input
+          v-model="arraySearchQuery"
+          type="search"
+          autocomplete="off"
+          aria-label="Search in this array"
+          placeholder="Search in this array…"
+          class="w-full rounded-md border border-edge bg-surface py-1.5 pl-2 pr-8 text-xs text-content placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+        />
+        <button
+          v-if="arraySearchNormalized"
+          type="button"
+          class="absolute right-1 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-[11px] text-content-tertiary hover:bg-slate-100 hover:text-content"
+          title="Clear search"
+          @click="arraySearchQuery = ''">
+          Clear
+        </button>
       </div>
-      <div v-else class="text-xs py-1.5 px-2 font-mono text-gray-800 break-words whitespace-pre-wrap mt-1">{{ arrayUtils.formatValue(item) }}</div>
+      <span v-if="arraySearchNormalized" class="shrink-0 text-xs text-content-tertiary">
+        {{ filteredArrayRows.length }} of {{ arrayValue.length }} shown
+      </span>
+    </div>
+
+    <div
+      v-if="filteredArrayRows.length === 0"
+      class="rounded-md border border-dashed border-edge py-6 text-center text-xs text-content-tertiary">
+      No items match "{{ arraySearchQuery.trim() }}".
+    </div>
+
+    <div v-else-if="showAsTable" class="mt-2 overflow-x-auto rounded-md border border-edge">
+      <table class="min-w-full text-left text-xs font-mono text-content">
+        <thead class="bg-slate-100 text-content-secondary border-b border-edge">
+          <tr>
+            <th scope="col" class="sticky left-0 z-[1] bg-slate-100 px-2 py-2 font-semibold border-r border-edge w-10 text-center">#</th>
+            <th
+              v-for="key in tableColumnKeys"
+              :key="key"
+              scope="col"
+              class="px-3 py-2 font-semibold whitespace-nowrap border-r border-edge last:border-r-0">
+              {{ key }}
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-edge bg-surface">
+          <tr v-for="row in filteredArrayRows" :key="row.index" class="hover:bg-slate-50/80">
+            <td class="sticky left-0 z-[1] bg-inherit px-2 py-2 text-center text-content-tertiary border-r border-edge">{{ row.index }}</td>
+            <td
+              v-for="key in tableColumnKeys"
+              :key="key"
+              class="px-3 py-2 align-top break-words whitespace-pre-wrap max-w-md border-r border-edge last:border-r-0">
+              {{ Object.prototype.hasOwnProperty.call(row.item, key) ? arrayUtils.formatItemValue(row.item, key) : '' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div v-else class="mt-2">
+      <div
+        v-for="row in filteredArrayRows"
+        :key="row.index"
+        :title="'Index: ' + row.index"
+        class="mb-1.5 last:mb-0 py-2.5 px-3 pl-4 bg-transparent border-l-[3px] border-l-blue-500 rounded-none transition-all duration-200 cursor-pointer relative hover:bg-slate-50 hover:border-l-blue-600 hover:shadow-lg hover:-translate-y-0.5">
+        <div class="absolute -left-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-semibold font-mono z-10 hover:bg-blue-600">{{ row.index >= 1000 ? '1k+' : row.index }}</div>
+        <div v-if="arrayUtils.isObjectItem(row.item)" class="flex flex-col gap-1 mt-1 px-2">
+          <div
+            v-for="key in arrayUtils.getItemKeys(row.item)"
+            :key="key"
+            class="flex items-start gap-2 text-xs font-mono">
+            <span class="font-semibold text-gray-600 flex-shrink-0 min-w-[80px]">{{ key }}:</span>
+            <span class="text-gray-800 break-words whitespace-pre-wrap flex-1">{{ arrayUtils.formatItemValue(row.item, key) }}</span>
+          </div>
+        </div>
+        <div v-else class="text-xs py-1.5 px-2 font-mono text-gray-800 break-words whitespace-pre-wrap mt-1">{{ arrayUtils.formatValue(row.item) }}</div>
+      </div>
     </div>
   </div>
 </div>

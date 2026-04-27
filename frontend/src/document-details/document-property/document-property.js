@@ -11,6 +11,7 @@ const appendCSS = require('../../appendCSS');
 appendCSS(require('./document-property.css'));
 
 const UNSET = Symbol('unset');
+const { isArrayOfObjects } = require('../../array-utils');
 
 module.exports = app => app.component('document-property', {
   template,
@@ -21,6 +22,8 @@ module.exports = app => app.component('document-property', {
       renderedValue: UNSET,
       isCollapsed: false, // Start uncollapsed by default
       isValueExpanded: false, // Track if the value is expanded
+      /** 'list' | 'table' for array-of-objects display and editing */
+      arrayDetailViewMode: 'list',
       detailViewMode: 'text',
       copyButtonLabel: 'Copy',
       copyResetTimeoutId: null,
@@ -124,6 +127,28 @@ module.exports = app => app.component('document-property', {
     isMultiPolygon() {
       const value = this.getValueForPath(this.path.path);
       return this.isGeoJsonGeometry && value.type === 'MultiPolygon';
+    },
+    arrayPathCurrentValue() {
+      if (!this.path || this.path.instance !== 'Array') {
+        return null;
+      }
+      if (this.editting) {
+        return this.getEditValueForPath(this.path);
+      }
+      return this.getValueForPath(this.path.path);
+    },
+    canUseArrayTableView() {
+      const v = this.arrayPathCurrentValue;
+      return Array.isArray(v) && isArrayOfObjects(v);
+    },
+    propertyDetailViewMode() {
+      if (this.isDatePath) {
+        return this.dateViewMode;
+      }
+      if (this.path?.instance === 'Array') {
+        return this.arrayDetailViewMode;
+      }
+      return this.detailViewMode;
     }
   },
   watch: {
@@ -140,9 +165,28 @@ module.exports = app => app.component('document-property', {
       if (newValue && this.isGeoJsonGeometry) {
         this.detailViewMode = 'map';
       }
+    },
+    canUseArrayTableView(can) {
+      if (!can && this.arrayDetailViewMode === 'table') {
+        this.arrayDetailViewMode = 'list';
+      }
+    },
+    'path.path'() {
+      this.arrayDetailViewMode = 'list';
     }
   },
   methods: {
+    setArrayDetailViewMode(mode) {
+      this.arrayDetailViewMode = mode;
+      if (mode === 'table') {
+        if (this.needsTruncation && !this.isValueExpanded) {
+          this.isValueExpanded = true;
+        }
+        if (this.isCollapsed) {
+          this.isCollapsed = false;
+        }
+      }
+    },
     setDetailViewMode(mode) {
       this.detailViewMode = mode;
       
@@ -213,6 +257,7 @@ module.exports = app => app.component('document-property', {
       if (path.instance === 'Array') {
         props.path = path;
         props.schemaPaths = this.schemaPaths;
+        props.viewMode = this.arrayDetailViewMode === 'table' ? 'table' : 'json';
       }
       return props;
     },

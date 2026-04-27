@@ -18,6 +18,24 @@
       </svg>
       <span class="font-medium text-content">{{path.path}}</span>
       <span class="ml-2 text-sm text-content-tertiary">({{(path.instance || 'unknown').toLowerCase()}})</span>
+      <div v-if="path.instance === 'Array' && canUseArrayTableView" class="ml-3 inline-flex items-center rounded-full bg-gray-200 p-0.5 text-xs font-semibold">
+        <button
+          type="button"
+          class="rounded-full px-2.5 py-0.5 transition"
+          :class="arrayDetailViewMode === 'list' ? 'bg-blue-600 text-white shadow' : 'text-content-secondary hover:text-content'"
+          :style="arrayDetailViewMode === 'list' ? 'color: white !important; background-color: #2563eb !important;' : ''"
+          @click.stop="setArrayDetailViewMode('list')">
+          List
+        </button>
+        <button
+          type="button"
+          class="rounded-full px-2.5 py-0.5 transition"
+          :class="arrayDetailViewMode === 'table' ? 'bg-blue-600 text-white shadow' : 'text-content-secondary hover:text-content'"
+          :style="arrayDetailViewMode === 'table' ? 'color: white !important; background-color: #2563eb !important;' : ''"
+          @click.stop="setArrayDetailViewMode('table')">
+          Table
+        </button>
+      </div>
       <div v-if="isGeoJsonGeometry" class="ml-3 inline-flex items-center gap-2">
         <div class="inline-flex items-center rounded-full bg-gray-200 p-0.5 text-xs font-semibold">
           <button
@@ -202,7 +220,7 @@
         <component
           :is="getComponentForPath(path)"
           :value="rawValue"
-          :viewMode="isDatePath ? dateViewMode : detailViewMode"
+          :viewMode="propertyDetailViewMode"
           @updated="renderedValue = $event"></component>
         <button
           @click="toggleValueExpansion"
@@ -219,7 +237,7 @@
         <component
           :is="getComponentForPath(path)"
           :value="rawValue"
-          :viewMode="isDatePath ? dateViewMode : detailViewMode"
+          :viewMode="propertyDetailViewMode"
           @updated="renderedValue = $event"></component>
       </div>
     </div>
