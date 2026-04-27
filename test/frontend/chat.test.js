@@ -187,4 +187,28 @@ describe('chat component', function() {
     const params = streamStub.firstCall.args[0];
     assert.strictEqual(params.currentDateTime, '2026-03-22T15:04:05');
   });
+
+  it('surfaces a streamed error message', async function() {
+    const toast = { success: () => {}, error: sinon.spy() };
+    sinon.stub(api.ChatThread, 'streamChatMessage').callsFake(async function* () {
+      yield { message: 'LLM stream failed' };
+    });
+
+    const state = {
+      sendingMessage: false,
+      newMessage: 'Hello',
+      chatThreadId: '1'.repeat(24),
+      chatMessages: [],
+      chatThreads: [],
+      $refs: {},
+      $toast: toast,
+      $nextTick: fn => fn && fn(),
+      scrollToBottom: () => {}
+    };
+
+    await chat.methods.sendMessage.call(state);
+
+    assert.ok(toast.error.calledOnceWithExactly('LLM stream failed'));
+    assert.strictEqual(state.sendingMessage, false);
+  });
 });

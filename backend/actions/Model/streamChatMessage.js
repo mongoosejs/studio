@@ -59,8 +59,13 @@ module.exports = ({ db, options }) => async function* streamChatMessage(params) 
   const llmOptions = agentMode ? { ...options, tools: getAgentTools(db) } : options;
   const textStream = streamLLM(llmMessages, system, llmOptions);
 
-  for await (const textPart of textStream) {
-    yield { textPart };
+  try {
+    for await (const textPart of textStream) {
+      yield { textPart };
+    }
+  } catch (err) {
+    yield { message: err?.message || 'Failed to stream chat response' };
+    return {};
   }
 
   return {};

@@ -12,6 +12,7 @@ module.exports = {
     sendingMessage: false,
     newMessage: '',
     chatThreadId: null,
+    draftAgentMode: false,
     chatThreads: [],
     chatMessages: [],
     hideSidebar: null,
@@ -26,7 +27,9 @@ module.exports = {
         const content = this.newMessage;
         this.newMessage = '';
         if (!this.chatThreadId) {
-          const { chatThread } = await api.ChatThread.createChatThread();
+          const { chatThread } = await api.ChatThread.createChatThread({
+            agentMode: this.draftAgentMode
+          });
           this.chatThreads.unshift(chatThread);
           this.chatThreadId = chatThread._id;
           this.chatMessages = [];
@@ -127,13 +130,18 @@ module.exports = {
             this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
           }
         });
+      } catch (err) {
+        this.$toast.error(err?.message || 'Failed to send message.');
       } finally {
         this.sendingMessage = false;
       }
     },
     async toggleAgentMode() {
-      if (!this.chatThreadId) return;
-      const newValue = !this.currentThread?.agentMode;
+      const newValue = !this.isAgentModeEnabled;
+      if (!this.chatThreadId) {
+        this.draftAgentMode = newValue;
+        return;
+      }
       const { chatThread } = await api.ChatThread.toggleAgentMode({
         chatThreadId: this.chatThreadId,
         agentMode: newValue
@@ -169,7 +177,9 @@ module.exports = {
       return message.role === 'user' ? 'bg-muted' : '';
     },
     async createNewThread() {
-      const { chatThread } = await api.ChatThread.createChatThread();
+      const { chatThread } = await api.ChatThread.createChatThread({
+        agentMode: this.draftAgentMode
+      });
       this.$toast.success('Chat thread created!');
       this.$router.push('/chat/' + chatThread._id);
     },
@@ -217,6 +227,9 @@ module.exports = {
     currentThread() {
       return this.chatThreads.find(t => t._id === this.chatThreadId);
     },
+    isAgentModeEnabled() {
+      return this.currentThread?.agentMode ?? this.draftAgentMode;
+    },
     hasWorkspace() {
       return !!window.MONGOOSE_STUDIO_CONFIG.workspace?._id;
     },
@@ -240,6 +253,7 @@ module.exports = {
     if (this.chatThreadId) {
       const { chatMessages } = await api.ChatThread.getChatThread({ chatThreadId: this.chatThreadId });
       this.chatMessages = chatMessages;
+      this.draftAgentMode = this.currentThread?.agentMode ?? false;
     }
     this.status = 'loaded';
 

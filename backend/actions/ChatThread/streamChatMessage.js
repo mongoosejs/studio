@@ -29,7 +29,7 @@ const CreateChatMessageParams = new Archetype({
   }
 }).compile('CreateChatMessageParams');
 
-module.exports = ({ db, studioConnection, options }) => async function* createChatMessage(params) {
+module.exports = ({ db, studioConnection, options }) => async function* streamChatMessage(params) {
   const { chatThreadId, initiatedById, content, currentDateTime, script, roles } = new CreateChatMessageParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
@@ -75,11 +75,15 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
       }],
       'You are a helpful assistant that summarizes chat threads into titles.',
       options
-    ).then(res => {
-      const title = res.text;
-      chatThread.title = title;
-      return chatThread.save();
-    });
+    ).then(
+      res => {
+        const title = res.text;
+        chatThread.title = title;
+        return chatThread.save();
+      },
+      // Avoid unhandled promise rejection
+      () => {}
+    );
   }
 
   const modelDescriptions = getModelDescriptions(db);
@@ -108,27 +112,38 @@ module.exports = ({ db, studioConnection, options }) => async function* createCh
     executionResult: null
   });
   const llmOptions = chatThread.agentMode ? { ...options, tools: getAgentTools(db) } : options;
-  const textStream = streamLLM(llmMessages, system, llmOptions);
+  let textStream;
+  try {
+    textStream = streamLLM(llmMessages, system, llmOptions);
+  } catch (err) {
+    yield { message: err?.message || 'Failed to stream response' };
+    return {};
+  }
   const toolCalls = [];
   let count = 0;
-  for await (const event of textStream) {
-    if (typeof event === 'string') {
-      assistantChatMessage.content += event;
-      // Only save every 10th chunk for performance
-      if (count++ % 10 === 0) {
-        await assistantChatMessage.save();
+  try {
+    for await (const event of textStream) {
+      if (typeof event === 'string') {
+        assistantChatMessage.content += event;
+        // Only save every 10th chunk for performance
+        if (count++ % 10 === 0) {
+          await assistantChatMessage.save();
+        }
+        yield { textPart: event };
+      } else if (event.toolCall) {
+        toolCalls.push({ toolName: event.toolCall.toolName, input: event.toolCall.input, status: 'running' });
+        yield { toolCall: event.toolCall };
+      } else if (event.toolResult) {
+        const tc = toolCalls.find(t => t.toolName === event.toolResult.toolName && t.status === 'running');
+        if (tc) {
+          tc.status = 'done';
+        }
+        yield { toolResult: event.toolResult };
       }
-      yield { textPart: event };
-    } else if (event.toolCall) {
-      toolCalls.push({ toolName: event.toolCall.toolName, input: event.toolCall.input, status: 'running' });
-      yield { toolCall: event.toolCall };
-    } else if (event.toolResult) {
-      const tc = toolCalls.find(t => t.toolName === event.toolResult.toolName && t.status === 'running');
-      if (tc) {
-        tc.status = 'done';
-      }
-      yield { toolResult: event.toolResult };
     }
+  } catch (err) {
+    yield { message: err?.message || 'Failed to stream chat response' };
+    return {};
   }
   assistantChatMessage.toolCalls = toolCalls;
 
