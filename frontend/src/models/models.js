@@ -37,33 +37,6 @@ function takeModelsRemountFocusIntent() {
   return v;
 }
 
-/** Parse `fields` from the route (JSON array or inclusion projection object only). */
-function parseFieldsQueryParam(fields) {
-  if (fields == null || fields === '') {
-    return [];
-  }
-  const s = typeof fields === 'string' ? fields : String(fields);
-  const trimmed = s.trim();
-  if (!trimmed) {
-    return [];
-  }
-  let parsed;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch (e) {
-    return [];
-  }
-  if (Array.isArray(parsed)) {
-    return parsed.map(x => String(x).trim()).filter(Boolean);
-  }
-  if (parsed != null && typeof parsed === 'object') {
-    return Object.keys(parsed).filter(k =>
-      Object.prototype.hasOwnProperty.call(parsed, k) && parsed[k]
-    );
-  }
-  return [];
-}
-
 /**
  * Split projection list tokens on commas/whitespace, merging a lone `-` or `+` with the next
  * chunk so `- password` and `-password` both exclude `password`.
@@ -163,30 +136,6 @@ function parseProjectionObjectNotation(trimmed, schemaPaths) {
   }
 
   return includeKeys.map(normalizeKey);
-}
-
-/** Pass through a valid JSON `fields` string for Model.getDocuments / getDocumentsStream. */
-function normalizeFieldsParamForApi(fieldsStr) {
-  if (fieldsStr == null || fieldsStr === '') {
-    return null;
-  }
-  const s = typeof fieldsStr === 'string' ? fieldsStr : String(fieldsStr);
-  const trimmed = s.trim();
-  if (!trimmed) {
-    return null;
-  }
-  try {
-    const parsed = JSON.parse(trimmed);
-    if (Array.isArray(parsed)) {
-      return trimmed;
-    }
-    if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return trimmed;
-    }
-  } catch (e) {
-    return null;
-  }
-  return null;
 }
 
 module.exports = app => app.component('models', {
@@ -750,20 +699,20 @@ module.exports = app => app.component('models', {
         params.searchText = this.searchText;
       }
 
-      // Prefer explicit URL projection (`query.fields`) so the first fetch after
-      // mount/remount respects deep-linked projections before `filteredPaths`
-      // is rehydrated from schema paths.
-      let fieldsParam = normalizeFieldsParamForApi(this.query?.fields);
-      if (!fieldsParam && this.isProjectionMenuSelected === true) {
+      const projectionInput = typeof this.query?.[PROJECTION_INPUT_QUERY_KEY] === 'string' ?
+        this.query[PROJECTION_INPUT_QUERY_KEY].trim() :
+        '';
+      if (projectionInput) {
+        params.projectionInput = projectionInput;
+      }
+
+      if (!projectionInput && this.isProjectionMenuSelected === true) {
         const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
           ? this.filteredPaths.map(p => p.path).filter(Boolean)
           : null;
         if (fieldPaths && fieldPaths.length > 0) {
-          fieldsParam = JSON.stringify(fieldPaths);
+          params.projectionInput = fieldPaths.join(' ');
         }
-      }
-      if (fieldsParam) {
-        params.fields = fieldsParam;
       }
 
       return params;
@@ -799,22 +748,16 @@ module.exports = app => app.component('models', {
       if (this.currentModel != null) {
         await this.getDocuments();
       }
-      if (this.$route.query?.fields) {
-        const urlPaths = parseFieldsQueryParam(this.$route.query.fields);
-        if (urlPaths.length > 0) {
+      const routeProjectionInput = this.$route.query?.[PROJECTION_INPUT_QUERY_KEY];
+      if (typeof routeProjectionInput === 'string' && routeProjectionInput.trim().length > 0) {
+        const urlPaths = this.parseProjectionInput(routeProjectionInput);
+        if (urlPaths !== null) {
           const nextFiltered = urlPaths
             .map(path => this.schemaPaths.find(p => p.path === path))
             .filter(Boolean);
-          if (nextFiltered.length > 0) {
-            this.filteredPaths = nextFiltered;
-            this.syncProjectionInputFromQueryOrPaths();
-          } else if (this.isProjectionMenuSelected && this.schemaPaths.length > 0) {
-            this.applyDefaultProjection(
-              this.schemaPaths.map(p => p.path).slice(0, DEFAULT_FIRST_N_FIELDS)
-            );
-            this.selectedPaths = [...this.filteredPaths];
-            this.syncProjectionInputFromQueryOrPaths();
-          }
+          this.filteredPaths = nextFiltered;
+          this.selectedPaths = [...this.filteredPaths];
+          this.syncProjectionInputFromQueryOrPaths();
         }
       }
       this.status = 'loaded';
@@ -1110,17 +1053,15 @@ module.exports = app => app.component('models', {
             }
             const isProjectionModeOn = this.isProjectionMenuSelected === true;
             if (isProjectionModeOn) {
-              const urlFieldsRaw = this.$route.query?.fields;
-              const urlPaths = urlFieldsRaw ? parseFieldsQueryParam(urlFieldsRaw) : [];
-              if (urlPaths.length > 0) {
-                const fromUrl = urlPaths
+              const routeProjectionInput = this.$route.query?.[PROJECTION_INPUT_QUERY_KEY];
+              if (typeof routeProjectionInput === 'string' && routeProjectionInput.trim().length > 0) {
+                const projectionPaths = this.parseProjectionInput(routeProjectionInput);
+                const fromProjectionInput = Array.isArray(projectionPaths) ?
+                  projectionPaths
                   .map(path => this.schemaPaths.find(p => p.path === path))
-                  .filter(Boolean);
-                if (fromUrl.length > 0) {
-                  this.filteredPaths = fromUrl;
-                } else {
-                  this.applyDefaultProjection(event.suggestedFields);
-                }
+                  .filter(Boolean) :
+                  [];
+                this.filteredPaths = fromProjectionInput;
               } else {
                 this.filteredPaths = [];
               }
@@ -1415,17 +1356,12 @@ module.exports = app => app.component('models', {
       this.updateProjectionQuery();
     },
     updateProjectionQuery() {
-      const paths = this.filteredPaths.map(x => x.path).filter(Boolean);
-      if (paths.length > 0) {
-        this.query.fields = JSON.stringify(paths);
-      } else {
-        delete this.query.fields;
-      }
       if (typeof this.projectionText === 'string' && this.projectionText.trim().length > 0) {
         this.query[PROJECTION_INPUT_QUERY_KEY] = this.projectionText;
       } else {
         delete this.query[PROJECTION_INPUT_QUERY_KEY];
       }
+      delete this.query.fields;
       this.$router.push({ query: this.query });
     },
     removeField(schemaPath) {

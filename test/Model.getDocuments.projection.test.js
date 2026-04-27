@@ -4,7 +4,7 @@ const assert = require('assert');
 const mongoose = require('mongoose');
 const { actions, connection } = require('./setup.test');
 
-describe('Model.getDocuments() projection (fields)', function() {
+describe('Model.getDocuments() projection', function() {
   const ProjectionFieldsTest = connection.model(
     'ProjectionFieldsTest',
     new mongoose.Schema({
@@ -17,30 +17,6 @@ describe('Model.getDocuments() projection (fields)', function() {
 
   afterEach(async function() {
     await ProjectionFieldsTest.deleteMany();
-  });
-
-  it('returns only selected fields when fields is provided', async function() {
-    const doc = await ProjectionFieldsTest.create({
-      name: 'Alice',
-      email: 'alice@example.com',
-      value: 123,
-      createdAt: new Date('2020-01-01')
-    });
-
-    const res = await actions.Model.getDocuments({
-      model: 'ProjectionFieldsTest',
-      fields: JSON.stringify(['name', 'email']),
-      roles: ['admin']
-    });
-
-    assert.strictEqual(res.docs.length, 1);
-    assert.strictEqual(res.docs[0]._id.toString(), doc._id.toString());
-    assert.strictEqual(res.docs[0].name, 'Alice');
-    assert.strictEqual(res.docs[0].email, 'alice@example.com');
-
-    // Should not include unselected fields
-    assert.strictEqual(res.docs[0].value, undefined);
-    assert.strictEqual(res.docs[0].createdAt, undefined);
   });
 
   it('includes all fields when fields is omitted', async function() {
@@ -63,5 +39,48 @@ describe('Model.getDocuments() projection (fields)', function() {
     assert.strictEqual(res.docs[0].value, 456);
     assert.strictEqual(new Date(res.docs[0].createdAt).toISOString(), doc.createdAt.toISOString());
   });
-});
 
+  it('supports raw projectionInput inclusion syntax', async function() {
+    const doc = await ProjectionFieldsTest.create({
+      name: 'Carol',
+      email: 'carol@example.com',
+      value: 789,
+      createdAt: new Date('2022-01-01')
+    });
+
+    const res = await actions.Model.getDocuments({
+      model: 'ProjectionFieldsTest',
+      projectionInput: 'name email',
+      roles: ['admin']
+    });
+
+    assert.strictEqual(res.docs.length, 1);
+    assert.strictEqual(res.docs[0]._id.toString(), doc._id.toString());
+    assert.strictEqual(res.docs[0].name, 'Carol');
+    assert.strictEqual(res.docs[0].email, 'carol@example.com');
+    assert.strictEqual(res.docs[0].value, undefined);
+    assert.strictEqual(res.docs[0].createdAt, undefined);
+  });
+
+  it('supports raw projectionInput exclusion syntax', async function() {
+    const doc = await ProjectionFieldsTest.create({
+      name: 'Dave',
+      email: 'dave@example.com',
+      value: 321,
+      createdAt: new Date('2023-01-01')
+    });
+
+    const res = await actions.Model.getDocuments({
+      model: 'ProjectionFieldsTest',
+      projectionInput: '-value -createdAt',
+      roles: ['admin']
+    });
+
+    assert.strictEqual(res.docs.length, 1);
+    assert.strictEqual(res.docs[0]._id.toString(), doc._id.toString());
+    assert.strictEqual(res.docs[0].name, 'Dave');
+    assert.strictEqual(res.docs[0].email, 'dave@example.com');
+    assert.strictEqual(res.docs[0].value, undefined);
+    assert.strictEqual(res.docs[0].createdAt, undefined);
+  });
+});
