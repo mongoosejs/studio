@@ -139,6 +139,8 @@ module.exports = ({ db, studioConnection, options }) => async function* streamCh
           tc.status = 'done';
         }
         yield { toolResult: event.toolResult };
+      } else {
+        yield { textPart: event };
       }
     }
   } catch (err) {
