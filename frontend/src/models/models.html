@@ -263,14 +263,12 @@
           </span>
         </div>
         <div v-if="isProjectionMenuSelected && (outputType === 'table' || outputType === 'json')" class="flex items-center gap-2 w-full mt-2 flex-shrink-0">
-          <input
-            ref="projectionInput"
-            v-model="projectionText"
-            type="text"
-            placeholder="Projection: name email, or -password"
-            class="flex-1 min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            @focus="initProjection($event)"
-            @keydown.enter="applyProjectionFromInput()"
+          <projection-search
+            ref="projectionSearch"
+            :value="projectionText"
+            :schema-paths="schemaPaths"
+            @projection-input="projectionText = $event"
+            @apply="applyProjectionFromInput"
           />
         </div>
       </div>
