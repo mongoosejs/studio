@@ -1,0 +1,26 @@
+<div class="flex items-center gap-2" @click.stop>
+  <select
+    :value="format"
+    @input="onFormatChange($event.target.value)"
+    class="text-xs border border-edge rounded-md bg-surface px-2 py-1"
+  >
+    <option value="utc_iso">UTC (ISO)</option>
+    <option value="local_browser">Local (Browser)</option>
+    <option value="unix_ms">Unix (ms)</option>
+    <option value="unix_seconds">Unix (seconds)</option>
+    <option value="duration_relative">Duration relative to now</option>
+    <option value="custom_tz">Custom TZ...</option>
+  </select>
+  <input
+    v-if="format === 'custom_tz'"
+    :value="timezone"
+    @input="onTimezoneChange($event.target.value.trim())"
+    :list="timezoneDatalistId"
+    type="text"
+    placeholder="America/New_York"
+    class="text-xs border border-edge rounded-md bg-surface px-2 py-1 w-40"
+  >
+  <datalist v-if="format === 'custom_tz'" :id="timezoneDatalistId">
+    <option v-for="tz in timezones" :key="tz" :value="tz"></option>
+  </datalist>
+</div>

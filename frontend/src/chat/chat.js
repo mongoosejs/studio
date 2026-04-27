@@ -1,8 +1,11 @@
 'use strict';
 
 const api = require('../api');
+const agentToolMetadata = require('../../../backend/chatAgent/agentToolMetadata');
 const getCurrentDateTimeContext = require('../getCurrentDateTimeContext');
 const template = require('./chat.html');
+
+const AGENT_MODE_STORAGE_KEY = '_mongooseStudioAgentMode';
 
 module.exports = {
   template: template,
@@ -12,12 +15,15 @@ module.exports = {
     sendingMessage: false,
     newMessage: '',
     chatThreadId: null,
+    draftAgentMode: false,
     chatThreads: [],
     chatMessages: [],
     hideSidebar: null,
+    showAgentSidebar: false,
     sharingThread: false,
     threadSearch: '',
-    showProUpgradeModal: false
+    showProUpgradeModal: false,
+    agentTools: agentToolMetadata
   }),
   methods: {
     async sendMessage() {
@@ -26,7 +32,9 @@ module.exports = {
         const content = this.newMessage;
         this.newMessage = '';
         if (!this.chatThreadId) {
-          const { chatThread } = await api.ChatThread.createChatThread();
+          const { chatThread } = await api.ChatThread.createChatThread({
+            agentMode: this.draftAgentMode
+          });
           this.chatThreads.unshift(chatThread);
           this.chatThreadId = chatThread._id;
           this.chatMessages = [];
@@ -40,11 +48,7 @@ module.exports = {
           role: 'user'
         });
 
-        this.$nextTick(() => {
-          if (this.$refs.messagesContainer) {
-            this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
-          }
-        });
+        this.scrollToBottom();
 
         const params = {
           chatThreadId: this.chatThreadId,
@@ -53,6 +57,7 @@ module.exports = {
         };
         let userChatMessage = null;
         let assistantChatMessage = null;
+        const toolCalls = [];
         for await (const event of api.ChatThread.streamChatMessage(params)) {
           if (event.chatMessage) {
             if (!userChatMessage) {
@@ -61,6 +66,7 @@ module.exports = {
             } else {
               const assistantChatMessageIndex = this.chatMessages.indexOf(assistantChatMessage);
               assistantChatMessage = event.chatMessage;
+              assistantChatMessage.toolCalls = toolCalls;
               if (assistantChatMessageIndex !== -1) {
                 this.chatMessages.splice(assistantChatMessageIndex, 1, assistantChatMessage);
               } else {
@@ -73,27 +79,44 @@ module.exports = {
                 thread.title = event.chatThread.title;
               }
             }
+          } else if (event.toolCall) {
+            toolCalls.push({ toolName: event.toolCall.toolName, input: event.toolCall.input, status: 'running' });
+            if (!assistantChatMessage) {
+              assistantChatMessage = {
+                _id: Math.random().toString(36).substr(2, 9),
+                content: '',
+                role: 'assistant',
+                toolCalls: [...toolCalls]
+              };
+              this.chatMessages.push(assistantChatMessage);
+              assistantChatMessage = this.chatMessages[this.chatMessages.length - 1];
+            } else {
+              assistantChatMessage.toolCalls = [...toolCalls];
+            }
+            this.scrollToBottom();
+          } else if (event.toolResult) {
+            const tc = toolCalls.find(t => t.toolName === event.toolResult.toolName && t.status === 'running');
+            if (tc) {
+              tc.status = 'done';
+            }
+            if (assistantChatMessage) {
+              assistantChatMessage.toolCalls = [...toolCalls];
+            }
+            this.scrollToBottom();
           } else if (event.textPart) {
             if (!assistantChatMessage) {
               assistantChatMessage = {
                 _id: Math.random().toString(36).substr(2, 9),
                 content: event.textPart,
-                role: 'assistant'
+                role: 'assistant',
+                toolCalls: [...toolCalls]
               };
               this.chatMessages.push(assistantChatMessage);
               assistantChatMessage = this.chatMessages[this.chatMessages.length - 1];
-              this.$nextTick(() => {
-                if (this.$refs.messagesContainer) {
-                  this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
-                }
-              });
+              this.scrollToBottom();
             } else {
               assistantChatMessage.content += event.textPart;
-              this.$nextTick(() => {
-                if (this.$refs.messagesContainer) {
-                  this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
-                }
-              });
+              this.scrollToBottom();
             }
           } else if (event.message) {
             throw new Error(event.message);
@@ -112,9 +135,37 @@ module.exports = {
             this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
           }
         });
+      } catch (err) {
+        this.$toast.error(err?.message || 'Failed to send message.');
       } finally {
         this.sendingMessage = false;
       }
+    },
+    async toggleAgentMode() {
+      const wasEnabled = this.isAgentModeEnabled;
+      const newValue = !this.isAgentModeEnabled;
+      this.draftAgentMode = newValue;
+      this.persistAgentModePreference(newValue);
+      if (!this.chatThreadId) {
+        this.maybeOpenAgentSidebar({ wasEnabled, isEnabled: newValue });
+        return;
+      }
+      const { chatThread } = await api.ChatThread.toggleAgentMode({
+        chatThreadId: this.chatThreadId,
+        agentMode: newValue
+      });
+      const idx = this.chatThreads.findIndex(t => t._id === chatThread._id);
+      if (idx !== -1) {
+        this.chatThreads.splice(idx, 1, chatThread);
+      }
+      this.maybeOpenAgentSidebar({ wasEnabled, isEnabled: newValue });
+    },
+    scrollToBottom() {
+      this.$nextTick(() => {
+        if (this.$refs.messagesContainer) {
+          this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+        }
+      });
     },
     handleEnter(ev) {
       if (!ev.shiftKey) {
@@ -135,7 +186,9 @@ module.exports = {
       return message.role === 'user' ? 'bg-muted' : '';
     },
     async createNewThread() {
-      const { chatThread } = await api.ChatThread.createChatThread();
+      const { chatThread } = await api.ChatThread.createChatThread({
+        agentMode: this.draftAgentMode
+      });
       this.$toast.success('Chat thread created!');
       this.$router.push('/chat/' + chatThread._id);
     },
@@ -177,11 +230,56 @@ module.exports = {
       } finally {
         this.sharingThread = false;
       }
+    },
+    isDesktopViewport() {
+      return typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(min-width: 1024px)').matches;
+    },
+    getAgentModePreference() {
+      if (typeof window === 'undefined') {
+        return false;
+      }
+      return window.localStorage?.getItem(AGENT_MODE_STORAGE_KEY) === 'true';
+    },
+    persistAgentModePreference(agentMode) {
+      if (typeof window !== 'undefined') {
+        window.localStorage?.setItem(AGENT_MODE_STORAGE_KEY, String(agentMode));
+      }
+    },
+    async syncCurrentThreadAgentMode() {
+      if (!this.chatThreadId || !this.currentThread || !this.draftAgentMode || this.currentThread.agentMode) {
+        return;
+      }
+      const { chatThread } = await api.ChatThread.toggleAgentMode({
+        chatThreadId: this.chatThreadId,
+        agentMode: true
+      });
+      const idx = this.chatThreads.findIndex(t => t._id === chatThread._id);
+      if (idx !== -1) {
+        this.chatThreads.splice(idx, 1, chatThread);
+      }
+    },
+    maybeOpenAgentSidebar({ wasEnabled, isEnabled }) {
+      if (!isEnabled) {
+        this.showAgentSidebar = false;
+        return;
+      }
+      if (wasEnabled || !this.isDesktopViewport()) {
+        return;
+      }
+      this.showAgentSidebar = true;
+    },
+    closeAgentSidebar() {
+      this.showAgentSidebar = false;
     }
   },
   computed: {
     currentThread() {
       return this.chatThreads.find(t => t._id === this.chatThreadId);
+    },
+    isAgentModeEnabled() {
+      return this.currentThread?.agentMode ?? this.draftAgentMode;
     },
     hasWorkspace() {
       return !!window.MONGOOSE_STUDIO_CONFIG.workspace?._id;
@@ -200,10 +298,12 @@ module.exports = {
   async mounted() {
     window.pageState = this;
 
+    this.draftAgentMode = this.getAgentModePreference();
     this.chatThreadId = this.threadId;
     const { chatThreads } = await api.ChatThread.listChatThreads();
     this.chatThreads = chatThreads;
     if (this.chatThreadId) {
+      await this.syncCurrentThreadAgentMode();
       const { chatMessages } = await api.ChatThread.getChatThread({ chatThreadId: this.chatThreadId });
       this.chatMessages = chatMessages;
     }

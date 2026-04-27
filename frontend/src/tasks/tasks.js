@@ -4,6 +4,39 @@ const template = require('./tasks.html');
 const api = require('../api');
 const { DATE_FILTERS, getDateRangeForRange } = require('../_util/dateRange');
 
+/** Returns the bucket size in ms for the given date range. */
+function getBucketSizeMs(range) {
+  switch (range) {
+    case 'last_hour': return 5 * 60 * 1000; // 5 minutes
+    case 'today':
+    case 'yesterday': return 60 * 60 * 1000; // 1 hour
+    case 'thisWeek':
+    case 'lastWeek': return 24 * 60 * 60 * 1000; // 1 day
+    case 'thisMonth':
+    case 'lastMonth': return 24 * 60 * 60 * 1000; // 1 day
+    default: return 5 * 60 * 1000;
+  }
+}
+
+/** Formats a bucket timestamp for the x-axis label based on the date range. */
+function formatBucketLabel(timestamp, range) {
+  const date = new Date(timestamp);
+  switch (range) {
+    case 'last_hour':
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    case 'today':
+    case 'yesterday':
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    case 'thisWeek':
+    case 'lastWeek':
+    case 'thisMonth':
+    case 'lastMonth':
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    default:
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+}
+
 module.exports = app => app.component('tasks', {
   data: () => ({
     status: 'init',
@@ -31,10 +64,22 @@ module.exports = app => app.component('tasks', {
       scheduledAt: '',
       parameters: '',
       repeatInterval: ''
-    }
+    },
+    // Chart over time
+    overTimeChart: null,
+    overTimeBuckets: [],
+    // Toggled with v-if on the canvas so Chart.js is torn down and remounted on
+    // filter changes. Updating Chart.js in place during a big Vue re-render was
+    // freezing the page (dropdowns unresponsive, chart stale).
+    showOverTimeChart: true
   }),
   methods: {
     async getTasks() {
+      // Hide chart canvas + teardown Chart.js immediately on filter changes
+      // (see showOverTimeChart + v-if on the canvas in tasks.html).
+      this.showOverTimeChart = false;
+      this.destroyOverTimeChart();
+
       const params = {};
       if (this.selectedStatus == 'all') {
         params.status = null;
@@ -53,9 +98,105 @@ module.exports = app => app.component('tasks', {
         params.name = this.searchQuery.trim();
       }
 
-      const { statusCounts, tasksByName } = await api.Task.getTaskOverview(params);
-      this.statusCounts = statusCounts || this.statusCounts;
-      this.tasksByName = tasksByName || [];
+      const [overviewResult, overTimeResult] = await Promise.all([
+        api.Task.getTaskOverview(params),
+        api.Task.getTasksOverTime({
+          start: params.start,
+          end: params.end,
+          bucketSizeMs: getBucketSizeMs(this.selectedRange)
+        })
+      ]);
+
+      this.statusCounts = overviewResult.statusCounts || this.statusCounts;
+      this.tasksByName = overviewResult.tasksByName || [];
+      this.overTimeBuckets = overTimeResult || [];
+      if (this.overTimeBuckets.length === 0) {
+        this.showOverTimeChart = false;
+        this.destroyOverTimeChart();
+      } else {
+        this.showOverTimeChart = true;
+        await this.$nextTick();
+        this.renderOverTimeChart();
+      }
+    },
+
+    /** Build or update the stacked bar chart showing tasks over time. */
+    renderOverTimeChart() {
+      const Chart = typeof window !== 'undefined' && window.Chart;
+      if (!Chart) {
+        throw new Error('Chart.js not found');
+      }
+      const canvas = this.$refs.overTimeChart;
+      if (!canvas || typeof canvas.getContext !== 'function') return;
+
+      const buckets = this.overTimeBuckets;
+      const labels = buckets.map(b => formatBucketLabel(b.timestamp, this.selectedRange));
+      const succeeded = buckets.map(b => b.succeeded || 0);
+      const failed = buckets.map(b => b.failed || 0);
+      const cancelled = buckets.map(b => b.cancelled || 0);
+
+      const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+      const tickColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+      const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+      const chartData = {
+        labels,
+        datasets: [
+          { label: 'Succeeded', data: succeeded, backgroundColor: '#22c55e', stack: 'tasks' },
+          { label: 'Failed', data: failed, backgroundColor: '#ef4444', stack: 'tasks' },
+          { label: 'Cancelled', data: cancelled, backgroundColor: '#6b7280', stack: 'tasks' }
+        ]
+      };
+
+      if (this.overTimeChart) {
+        try {
+          this.overTimeChart.data.labels = labels;
+          this.overTimeChart.data.datasets[0].data = succeeded;
+          this.overTimeChart.data.datasets[1].data = failed;
+          this.overTimeChart.data.datasets[2].data = cancelled;
+          this.overTimeChart.update('none');
+        } finally {
+          this.destroyOverTimeChart();
+        }
+      }
+
+      this.overTimeChart = new Chart(canvas, {
+        type: 'bar',
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { color: tickColor, maxRotation: 45, minRotation: 0 },
+              grid: { color: gridColor }
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              ticks: { color: tickColor, precision: 0 },
+              grid: { color: gridColor }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: { color: tickColor }
+            },
+            tooltip: { mode: 'index', intersect: false }
+          }
+        }
+      });
+    },
+
+    destroyOverTimeChart() {
+      if (this.overTimeChart) {
+        this.overTimeChart.destroy();
+        this.overTimeChart = null;
+      }
     },
     openTaskGroupDetails(group) {
       const query = { dateRange: this.selectedRange || 'last_hour' };
@@ -231,10 +372,22 @@ module.exports = app => app.component('tasks', {
     }
   },
   mounted: async function() {
+    // Load initial data while showing the loader state.
     await this.updateDateRange();
-    await this.getTasks();
+
+    // Once data is loaded, switch to the main view.
     this.status = 'loaded';
+    await this.$nextTick();
+
+    // Ensure the chart renders now that the canvas exists in the DOM.
+    if (this.showOverTimeChart && this.overTimeBuckets.length > 0) {
+      this.renderOverTimeChart();
+    }
+
     this.setDefaultCreateTaskValues();
+  },
+  beforeUnmount() {
+    this.destroyOverTimeChart();
   },
   template: template
 });

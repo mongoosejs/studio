@@ -17,58 +17,126 @@ const OUTPUT_TYPE_STORAGE_KEY = 'studio:model-output-type';
 const SELECTED_GEO_FIELD_STORAGE_KEY = 'studio:model-selected-geo-field';
 const SHOW_ROW_NUMBERS_STORAGE_KEY = 'studio:model-show-row-numbers';
 const PROJECTION_MODE_QUERY_KEY = 'projectionMode';
+const PROJECTION_INPUT_QUERY_KEY = 'projectionInput';
 const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
+const FOCUS_AFTER_MODELS_REMOUNT_KEY = '__studioModelsFocusAfterRemount';
 
-/** Parse `fields` from the route (JSON array or inclusion projection object only). */
-function parseFieldsQueryParam(fields) {
-  if (fields == null || fields === '') {
-    return [];
+function setModelsRemountFocusIntent(target) {
+  if (typeof window === 'undefined') {
+    return;
   }
-  const s = typeof fields === 'string' ? fields : String(fields);
-  const trimmed = s.trim();
-  if (!trimmed) {
-    return [];
-  }
-  let parsed;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch (e) {
-    return [];
-  }
-  if (Array.isArray(parsed)) {
-    return parsed.map(x => String(x).trim()).filter(Boolean);
-  }
-  if (parsed != null && typeof parsed === 'object') {
-    return Object.keys(parsed).filter(k =>
-      Object.prototype.hasOwnProperty.call(parsed, k) && parsed[k]
-    );
-  }
-  return [];
+  window[FOCUS_AFTER_MODELS_REMOUNT_KEY] = target;
 }
 
-/** Pass through a valid JSON `fields` string for Model.getDocuments / getDocumentsStream. */
-function normalizeFieldsParamForApi(fieldsStr) {
-  if (fieldsStr == null || fieldsStr === '') {
+function takeModelsRemountFocusIntent() {
+  if (typeof window === 'undefined') {
     return null;
   }
-  const s = typeof fieldsStr === 'string' ? fieldsStr : String(fieldsStr);
-  const trimmed = s.trim();
-  if (!trimmed) {
-    return null;
-  }
-  try {
-    const parsed = JSON.parse(trimmed);
-    if (Array.isArray(parsed)) {
-      return trimmed;
+  const v = window[FOCUS_AFTER_MODELS_REMOUNT_KEY] || null;
+  delete window[FOCUS_AFTER_MODELS_REMOUNT_KEY];
+  return v;
+}
+
+/**
+ * Split projection list tokens on commas/whitespace, merging a lone `-` or `+` with the next
+ * chunk so `- password` and `-password` both exclude `password`.
+ * @returns {string[]|null} null when a dangling `+`/`-` has no following field name.
+ */
+function normalizeProjectionTokens(trimmed) {
+  const rawTokens = trimmed.split(/[,\s]+/).filter(Boolean);
+  const tokens = [];
+  for (let i = 0; i < rawTokens.length; i++) {
+    const t = rawTokens[i];
+    if (t === '-' || t === '+') {
+      if (i + 1 >= rawTokens.length) {
+        return null;
+      }
+      tokens.push(t + rawTokens[++i]);
+    } else {
+      tokens.push(t);
     }
-    if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return trimmed;
-    }
-  } catch (e) {
+  }
+  return tokens;
+}
+
+/**
+ * Parse projection object syntax like:
+ *   { deletedAt: 1 }
+ *   { "deletedAt": true, email: 1 }
+ *   { password: 0 }
+ *
+ * Supported values are 1/0/true/false (quoted or unquoted).
+ * Returns include paths, exclude-derived include paths, or null when invalid.
+ */
+function parseProjectionObjectNotation(trimmed, schemaPaths) {
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
     return null;
   }
-  return null;
+  const body = trimmed.slice(1, -1).trim();
+  if (!body) {
+    return [];
+  }
+
+  const pairRe = /(?:^|,)\s*(?:"([^"]+)"|'([^']+)'|([a-zA-Z_$][\w.$]*))\s*:\s*("[^"]*"|'[^']*'|[^,]+?)\s*(?=,|$)/g;
+  const includeKeys = [];
+  const excludeKeys = [];
+  let matchedChars = '';
+  let match;
+
+  while ((match = pairRe.exec(body)) !== null) {
+    matchedChars += match[0];
+    const key = (match[1] || match[2] || match[3] || '').trim();
+    const rawValue = (match[4] || '').trim();
+    if (!key || !rawValue) {
+      return null;
+    }
+
+    const valueLower = rawValue.replace(/^['"]|['"]$/g, '').trim().toLowerCase();
+    const isInclude = valueLower === '1' || valueLower === 'true';
+    const isExclude = valueLower === '0' || valueLower === 'false';
+    if (!isInclude && !isExclude) {
+      return null;
+    }
+    if (isInclude) {
+      includeKeys.push(key);
+    } else {
+      excludeKeys.push(key);
+    }
+  }
+
+  // Reject malformed object strings where regex skipped segments.
+  const normalizedBody = body.replace(/\s+/g, '');
+  const normalizedMatched = matchedChars.replace(/\s+/g, '').replace(/^,/, '');
+  if (!normalizedMatched || normalizedMatched !== normalizedBody) {
+    return null;
+  }
+
+  const normalizeKey = (key) => String(key).trim();
+  if (includeKeys.length > 0 && excludeKeys.length > 0) {
+    const includeSet = new Set(includeKeys.map(normalizeKey));
+    for (const path of excludeKeys) {
+      const ex = normalizeKey(path);
+      for (const k of Array.from(includeSet)) {
+        if (k.toLowerCase() === ex.toLowerCase()) {
+          includeSet.delete(k);
+        }
+      }
+    }
+    if (includeSet.size === 0) {
+      return null;
+    }
+    return Array.from(includeSet);
+  }
+
+  if (excludeKeys.length > 0) {
+    const excludeNorm = excludeKeys.map(normalizeKey);
+    return schemaPaths
+      .map(p => p.path)
+      .filter(p => !excludeNorm.some(ex => ex === p || p.toLowerCase() === ex.toLowerCase()));
+  }
+
+  return includeKeys.map(normalizeKey);
 }
 
 // Persist selected documents per model so switching models preserves selection
@@ -226,10 +294,19 @@ module.exports = app => app.component('models', {
       this.setOutputType('json');
     }
     this.$nextTick(() => {
-      if (!this.isProjectionMenuSelected) return;
-      const input = this.$refs.projectionInput;
-      if (input && typeof input.focus === 'function') {
-        input.focus();
+      const focusIntent = takeModelsRemountFocusIntent();
+      if (focusIntent === 'documentSearch') {
+        const ds = this.$refs.documentSearch;
+        if (ds && typeof ds.focusInput === 'function') {
+          ds.focusInput();
+        }
+        return;
+      }
+      if (focusIntent === 'projection' && this.isProjectionMenuSelected) {
+        const projectionSearch = this.$refs.projectionSearch;
+        if (projectionSearch && typeof projectionSearch.focusInput === 'function') {
+          projectionSearch.focusInput();
+        }
       }
     });
     if (this.$route.query?.openSleuth === '1') {
@@ -692,20 +769,20 @@ module.exports = app => app.component('models', {
         params.searchText = this.searchText;
       }
 
-      // Prefer explicit URL projection (`query.fields`) so the first fetch after
-      // mount/remount respects deep-linked projections before `filteredPaths`
-      // is rehydrated from schema paths.
-      let fieldsParam = normalizeFieldsParamForApi(this.query?.fields);
-      if (!fieldsParam && this.isProjectionMenuSelected === true) {
+      const projectionInput = typeof this.query?.[PROJECTION_INPUT_QUERY_KEY] === 'string' ?
+        this.query[PROJECTION_INPUT_QUERY_KEY].trim() :
+        '';
+      if (projectionInput) {
+        params.projectionInput = projectionInput;
+      }
+
+      if (!projectionInput && this.isProjectionMenuSelected === true) {
         const fieldPaths = this.filteredPaths && this.filteredPaths.length > 0
           ? this.filteredPaths.map(p => p.path).filter(Boolean)
           : null;
         if (fieldPaths && fieldPaths.length > 0) {
-          fieldsParam = JSON.stringify(fieldPaths);
+          params.projectionInput = fieldPaths.join(' ');
         }
-      }
-      if (fieldsParam) {
-        params.fields = fieldsParam;
       }
 
       return params;
@@ -741,13 +818,16 @@ module.exports = app => app.component('models', {
       if (this.currentModel != null) {
         await this.getDocuments();
       }
-      if (this.$route.query?.fields) {
-        const urlPaths = parseFieldsQueryParam(this.$route.query.fields);
-        if (urlPaths.length > 0) {
-          this.filteredPaths = urlPaths.map(path => this.schemaPaths.find(p => p.path === path)).filter(Boolean);
-          if (this.filteredPaths.length > 0) {
-            this.syncProjectionFromPaths();
-          }
+      const routeProjectionInput = this.$route.query?.[PROJECTION_INPUT_QUERY_KEY];
+      if (typeof routeProjectionInput === 'string' && routeProjectionInput.trim().length > 0) {
+        const urlPaths = this.normalizeProjectionPathsForDisplay(routeProjectionInput);
+        if (urlPaths !== null) {
+          const nextFiltered = urlPaths
+            .map(path => this.schemaPaths.find(p => p.path === path))
+            .filter(Boolean);
+          this.filteredPaths = nextFiltered;
+          this.selectedPaths = [...this.filteredPaths];
+          this.syncProjectionInputFromQueryOrPaths();
         }
       }
       this.status = 'loaded';
@@ -856,6 +936,7 @@ module.exports = app => app.component('models', {
       } else {
         delete this.query.search;
       }
+      setModelsRemountFocusIntent('documentSearch');
       const query = this.query;
       this.$router.push({ query });
       this.documents = [];
@@ -890,11 +971,13 @@ module.exports = app => app.component('models', {
       // Persist projection UI state in the URL so Reset/Suggest don't turn the mode off.
       if (next) {
         this.query[PROJECTION_MODE_QUERY_KEY] = '1';
+        setModelsRemountFocusIntent('projection');
         if (this.outputType === 'map') {
           this.setOutputType('json');
         }
       } else {
         delete this.query[PROJECTION_MODE_QUERY_KEY];
+        delete this.query[PROJECTION_INPUT_QUERY_KEY];
         delete this.query.fields;
         this.filteredPaths = [];
         this.selectedPaths = [];
@@ -1040,14 +1123,25 @@ module.exports = app => app.component('models', {
             }
             const isProjectionModeOn = this.isProjectionMenuSelected === true;
             if (isProjectionModeOn) {
-              this.applyDefaultProjection(event.suggestedFields);
+              const routeProjectionInput = this.$route.query?.[PROJECTION_INPUT_QUERY_KEY];
+              if (typeof routeProjectionInput === 'string' && routeProjectionInput.trim().length > 0) {
+                const projectionPaths = this.normalizeProjectionPathsForDisplay(routeProjectionInput);
+                const fromProjectionInput = Array.isArray(projectionPaths) ?
+                  projectionPaths
+                  .map(path => this.schemaPaths.find(p => p.path === path))
+                  .filter(Boolean) :
+                  [];
+                this.filteredPaths = fromProjectionInput;
+              } else {
+                this.filteredPaths = [];
+              }
             } else {
               this.filteredPaths = [];
               this.selectedPaths = [];
               this.projectionText = '';
             }
             this.selectedPaths = [...this.filteredPaths];
-            this.syncProjectionFromPaths();
+            this.syncProjectionInputFromQueryOrPaths();
             schemaPathsReceived = true;
           }
           if (event.numDocs !== undefined) {
@@ -1128,6 +1222,10 @@ module.exports = app => app.component('models', {
       // Keep current filter input in sync with the URL so projection reset
       // does not unintentionally wipe the filter on remount.
       this.syncFilterToQuery();
+      if (this.$route.query?.fields) {
+        delete this.query.fields;
+      }
+      delete this.query[PROJECTION_INPUT_QUERY_KEY];
       this.filteredPaths = [];
       this.selectedPaths = [];
       this.projectionText = '';
@@ -1150,17 +1248,8 @@ module.exports = app => app.component('models', {
       this.applyDefaultProjection(pathNames.slice(0, DEFAULT_FIRST_N_FIELDS));
       this.selectedPaths = [...this.filteredPaths];
       this.syncProjectionFromPaths();
+      setModelsRemountFocusIntent('projection');
       this.updateProjectionQuery();
-    },
-    initProjection(ev) {
-      if (!this.projectionText || !this.projectionText.trim()) {
-        this.projectionText = '';
-        this.$nextTick(() => {
-          if (ev && ev.target) {
-            ev.target.setSelectionRange(0, 0);
-          }
-        });
-      }
     },
     syncProjectionFromPaths() {
       if (this.filteredPaths.length === 0) {
@@ -1170,6 +1259,29 @@ module.exports = app => app.component('models', {
       // String-only projection syntax: `field1 field2` and `-field` for exclusions.
       // Since `filteredPaths` represents the final include set, we serialize as space-separated fields.
       this.projectionText = this.filteredPaths.map(p => p.path).join(' ');
+    },
+    syncProjectionInputFromQueryOrPaths() {
+      const fromQuery = this.$route.query?.[PROJECTION_INPUT_QUERY_KEY];
+      if (typeof fromQuery === 'string' && fromQuery.trim().length > 0) {
+        this.projectionText = fromQuery;
+        return;
+      }
+      this.syncProjectionFromPaths();
+    },
+    normalizeProjectionPathsForDisplay(text) {
+      const paths = this.parseProjectionInput(text);
+      if (paths == null) {
+        return null;
+      }
+      const excludesId = this.projectionExplicitlyExcludesId(text);
+      const hasIdSchemaPath = this.schemaPaths.some(p => p.path === '_id');
+      if (hasIdSchemaPath && !excludesId) {
+        const hasIdAlready = paths.some(p => String(p).toLowerCase() === '_id');
+        if (!hasIdAlready) {
+          paths.unshift('_id');
+        }
+      }
+      return paths;
     },
     parseProjectionInput(text) {
       if (!text || typeof text !== 'string') {
@@ -1181,17 +1293,21 @@ module.exports = app => app.component('models', {
       }
       const normalizeKey = (key) => String(key).trim();
 
-      // String-only projection syntax:
+      // String projection syntax:
       //   name email
       //   -password   (exclusion-only)
       //   +email      (inclusion-only)
+      //   { deletedAt: 1 } (object notation)
       //
-      // Brace/object syntax is intentionally NOT supported.
-      if (trimmed.startsWith('{') || trimmed.endsWith('}')) {
-        return null;
+      // For object notation, return include paths based on 1/0/true/false values.
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        return parseProjectionObjectNotation(trimmed, this.schemaPaths);
       }
 
-      const tokens = trimmed.split(/[,\s]+/).filter(Boolean);
+      const tokens = normalizeProjectionTokens(trimmed);
+      if (tokens === null) {
+        return null;
+      }
       if (tokens.length === 0) return [];
 
       const includeKeys = [];
@@ -1220,22 +1336,78 @@ module.exports = app => app.component('models', {
         // `name email createdAt -email` -> `name createdAt`.
         const includeSet = new Set(includeKeys.map(normalizeKey));
         for (const path of excludeKeys) {
-          includeSet.delete(normalizeKey(path));
+          const ex = normalizeKey(path);
+          for (const k of Array.from(includeSet)) {
+            if (k.toLowerCase() === ex.toLowerCase()) {
+              includeSet.delete(k);
+            }
+          }
+        }
+        if (includeSet.size === 0) {
+          return null;
         }
         return Array.from(includeSet);
       }
 
       if (excludeKeys.length > 0) {
-        const excludeSet = new Set(excludeKeys.map(normalizeKey));
-        return this.schemaPaths.map(p => p.path).filter(p => !excludeSet.has(p));
+        const excludeNorm = excludeKeys.map(normalizeKey);
+        return this.schemaPaths
+          .map(p => p.path)
+          .filter(p => !excludeNorm.some(ex => ex === p || p.toLowerCase() === ex.toLowerCase()));
       }
 
       return includeKeys.map(normalizeKey);
     },
+    projectionExplicitlyExcludesId(text) {
+      if (!text || typeof text !== 'string') {
+        return false;
+      }
+      const trimmed = text.trim();
+      if (!trimmed) {
+        return false;
+      }
+
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        const body = trimmed.slice(1, -1).trim();
+        if (!body) {
+          return false;
+        }
+        const pairRe = /(?:^|,)\s*(?:"([^"]+)"|'([^']+)'|([a-zA-Z_$][\w.$]*))\s*:\s*("[^"]*"|'[^']*'|[^,]+?)\s*(?=,|$)/g;
+        let match;
+        while ((match = pairRe.exec(body)) !== null) {
+          const key = (match[1] || match[2] || match[3] || '').trim();
+          if (!key || key.toLowerCase() !== '_id') {
+            continue;
+          }
+          const rawValue = (match[4] || '').trim();
+          const valueLower = rawValue.replace(/^['"]|['"]$/g, '').trim().toLowerCase();
+          if (valueLower === '0' || valueLower === 'false') {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      const tokens = normalizeProjectionTokens(trimmed);
+      if (!tokens) {
+        return false;
+      }
+      return tokens.some((rawToken) => {
+        const token = rawToken.trim();
+        return token.toLowerCase() === '-_id';
+      });
+    },
     applyProjectionFromInput() {
-      const paths = this.parseProjectionInput(this.projectionText);
-      if (paths === null) {
-        this.syncProjectionFromPaths();
+      if (typeof this.projectionText === 'string' && this.projectionText.trim().length === 0) {
+        this.filteredPaths = [];
+        this.selectedPaths = [];
+        setModelsRemountFocusIntent('projection');
+        this.updateProjectionQuery();
+        return;
+      }
+
+      const paths = this.normalizeProjectionPathsForDisplay(this.projectionText);
+      if (paths == null) {
         return;
       }
       if (paths.length === 0) {
@@ -1257,16 +1429,16 @@ module.exports = app => app.component('models', {
         }
       }
       this.selectedPaths = [...this.filteredPaths];
-      this.syncProjectionFromPaths();
+      setModelsRemountFocusIntent('projection');
       this.updateProjectionQuery();
     },
     updateProjectionQuery() {
-      const paths = this.filteredPaths.map(x => x.path).filter(Boolean);
-      if (paths.length > 0) {
-        this.query.fields = JSON.stringify(paths);
+      if (typeof this.projectionText === 'string' && this.projectionText.trim().length > 0) {
+        this.query[PROJECTION_INPUT_QUERY_KEY] = this.projectionText;
       } else {
-        delete this.query.fields;
+        delete this.query[PROJECTION_INPUT_QUERY_KEY];
       }
+      delete this.query.fields;
       this.$router.push({ query: this.query });
     },
     removeField(schemaPath) {

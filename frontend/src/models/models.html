@@ -119,7 +119,7 @@
             @click="stagingSelect"
             type="button"
             :class="{
-              'bg-page0 ring-inset ring-2 ring-gray-300 hover:bg-gray-200 text-content-secondary': selectMultiple,
+              'bg-gray-700 ring-inset ring-2 ring-gray-300 hover:bg-gray-200 text-content-secondary': selectMultiple,
               'bg-primary hover:bg-primary-hover text-primary-text': !selectMultiple
             }"
             class="rounded px-2 py-2 text-sm font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -290,14 +290,12 @@
           </button>
         </div>
         <div v-if="isProjectionMenuSelected && (outputType === 'table' || outputType === 'json')" class="flex items-center gap-2 w-full mt-2 flex-shrink-0">
-          <input
-            ref="projectionInput"
-            v-model="projectionText"
-            type="text"
-            placeholder="Projection: name email, or -password"
-            class="flex-1 min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            @focus="initProjection($event)"
-            @keydown.enter="applyProjectionFromInput()"
+          <projection-search
+            ref="projectionSearch"
+            :value="projectionText"
+            :schema-paths="schemaPaths"
+            @projection-input="projectionText = $event"
+            @apply="applyProjectionFromInput"
           />
         </div>
       </div>

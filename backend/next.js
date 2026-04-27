@@ -1,11 +1,12 @@
 'use strict';
 
 const Backend = require('./');
+const { defaultMothershipURL } = require('../constants');
 
 module.exports = function next(conn, options) {
   const backend = Backend(conn, options?.studioConnection, options);
 
-  const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
+  const mothershipUrl = options?._mothershipUrl || defaultMothershipURL;
   let workspace = null;
 
   return async function wrappedNextJSFunction(req, res) {

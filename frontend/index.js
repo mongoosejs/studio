@@ -4,10 +4,11 @@ const { execSync, exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
+const { defaultMothershipURL } = require('../constants');
 const webpackConfig = require('./webpack.config');
 
 module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
-  const mothershipUrl = options?._mothershipUrl || 'https://mongoose-js.netlify.app/.netlify/functions';
+  const mothershipUrl = options?._mothershipUrl || defaultMothershipURL;
 
   if (workspace == null && options?.apiKey) {
     ({ workspace } = await fetch(`${mothershipUrl}/getWorkspace`, {

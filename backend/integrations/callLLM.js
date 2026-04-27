@@ -3,7 +3,8 @@
 const { createAnthropic } = require('@ai-sdk/anthropic');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
-const { generateText } = require('ai');
+const { generateText, stepCountIs } = require('ai');
+const { defaultMothershipURL } = require('../../constants');
 
 module.exports = async function callLLM(messages, system, options) {
   let provider = null;
@@ -45,12 +46,14 @@ module.exports = async function callLLM(messages, system, options) {
     return generateText({
       model: provider(model),
       system,
-      messages
+      messages,
+      tools: options?.tools,
+      stopWhen: options?.tools ? stepCountIs(10) : undefined
     });
   }
 
   const headers = { 'Content-Type': 'application/json' };
-  const response = await fetch('https://mongoose-js.netlify.app/.netlify/functions/getChatCompletion', {
+  const response = await fetch(`${defaultMothershipURL}/getChatCompletion`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
