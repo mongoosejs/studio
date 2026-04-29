@@ -11,8 +11,10 @@ const dashboardResultSchema = require('./db/dashboardResultSchema');
 
 module.exports = function backend(db, studioConnection, options) {
   db = db || mongoose.connection;
+  enableTransactionAsyncLocalStorage(db);
 
   studioConnection = studioConnection ?? db;
+  enableTransactionAsyncLocalStorage(studioConnection);
   const Dashboard = studioConnection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
   const DashboardResult = studioConnection.model('__Studio_DashboardResult', dashboardResultSchema, 'studio__dashboardResults');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
@@ -35,3 +37,17 @@ module.exports = function backend(db, studioConnection, options) {
   actions.services = { changeStream: () => changeStream };
   return actions;
 };
+
+function enableTransactionAsyncLocalStorage(conn) {
+  if (typeof conn?.set === 'function' && Array.isArray(conn?.connections)) {
+    conn.set('transactionAsyncLocalStorage', true);
+    return;
+  }
+
+  if (typeof conn?.base?.set === 'function') {
+    conn.base.set('transactionAsyncLocalStorage', true);
+    return;
+  }
+
+  mongoose.set('transactionAsyncLocalStorage', true);
+}

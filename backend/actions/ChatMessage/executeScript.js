@@ -6,6 +6,8 @@ const MongooseStudioChartColors = require('../../constants/mongooseStudioChartCo
 const mongoose = require('mongoose');
 const vm = require('vm');
 
+const dryRunRollbackMessage = '__MONGOOSE_STUDIO_DRY_RUN_ROLLBACK__';
+
 const ExecuteScriptParams = new Archetype({
   initiatedById: {
     $type: mongoose.Types.ObjectId
@@ -17,13 +19,16 @@ const ExecuteScriptParams = new Archetype({
   script: {
     $type: 'string'
   },
+  dryRun: {
+    $type: 'boolean'
+  },
   roles: {
     $type: ['string']
   }
 }).compile('ExecuteScriptParams');
 
 module.exports = ({ db, studioConnection }) => async function executeScript(params) {
-  const { initiatedById, chatMessageId, script, roles } = new ExecuteScriptParams(params);
+  const { initiatedById, chatMessageId, script, dryRun, roles } = new ExecuteScriptParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
@@ -59,7 +64,7 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
 
   try {
     // Execute the script in the sandbox
-    output = await vm.runInContext(wrappedScript(script), context);
+    output = await vm.runInContext(wrappedScript(script, dryRun), context);
 
     const updatedContent = updateContentWithScript(chatMessage.content, chatMessage.script, script);
     chatMessage.script = script;
@@ -90,9 +95,31 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
   }
 };
 
-const wrappedScript = script => `(async () => {
+const wrappedScriptNonDryRun = script => `(async () => {
   ${script}
 })()`;
+const wrappedScriptDryRun = script => `(async () => {
+  let __result;
+  await db.transaction(async() => {
+    __result = await (async () => {
+      ${script}
+    })();
+    throw new Error('${dryRunRollbackMessage}');
+  }).catch(err => {
+    if (err?.message !== '${dryRunRollbackMessage}') {
+      throw err;
+    }
+  });
+  return __result;
+})()`;
+
+function wrappedScript(script, dryRun) {
+  if (!dryRun) {
+    return wrappedScriptNonDryRun(script);
+  }
+
+  return wrappedScriptDryRun(script);
+}
 
 function updateContentWithScript(content, previousScript, newScript) {
   if (typeof content !== 'string') {
