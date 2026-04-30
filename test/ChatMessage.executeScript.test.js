@@ -63,7 +63,8 @@ describe('ChatMessage.executeScript()', function() {
     assert.deepStrictEqual(chatMessage.executionResult, {
       output: 42,
       logs: '',
-      error: null
+      error: null,
+      dryRun: true
     });
   });
 });

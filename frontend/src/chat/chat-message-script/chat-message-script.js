@@ -47,6 +47,9 @@ module.exports = app => app.component('chat-message-script', {
     dryRunDisabledTitle() {
       return this.canUseDryRun ? null : 'dry run mode requires MongoDB transactions support';
     },
+    isDryRunResult() {
+      return !!this.message.executionResult?.dryRun;
+    },
     selectedRunLabel() {
       return this.selectedRunMode === 'dryRun' ? 'Dry Run' : 'Run';
     }

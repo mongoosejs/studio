@@ -69,7 +69,7 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
     const updatedContent = updateContentWithScript(chatMessage.content, chatMessage.script, script);
     chatMessage.script = script;
     chatMessage.content = updatedContent;
-    chatMessage.executionResult = { output, logs: logs.join('\n'), error: null };
+    chatMessage.executionResult = { output, logs: logs.join('\n'), error: null, dryRun: !!dryRun };
     await chatMessage.save();
 
     return { chatMessage };
@@ -86,7 +86,8 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
         executionResult: {
           output: null,
           logs: logs.join('\n'),
-          error
+          error,
+          dryRun: !!dryRun
         }
       }
     );
