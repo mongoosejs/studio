@@ -3,20 +3,17 @@
 const Backend = require('./backend');
 const express = require('express');
 const frontend = require('./frontend');
+const isBindIPConnection = require('./backend/helpers/isBindIPConnection');
+const isLocalhostConnection = require('./backend/helpers/isLocalhostConnection');
+const normalizeBindIPOption = require('./backend/helpers/normalizeBindIPOption');
 const { toRoute, objectRouter } = require('extrovert');
 const { defaultMothershipURL } = require('./constants');
-
-
-function isLocalhostConnection(req) {
-  const remoteAddress = req.socket?.remoteAddress || req.ip || '';
-  return remoteAddress === '127.0.0.1' ||
-    remoteAddress === '::1' ||
-    remoteAddress === '::ffff:127.0.0.1';
-}
 
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
   options = options ? { changeStream: true, ...options } : { changeStream: true };
+  const hasBindIpOption = Object.prototype.hasOwnProperty.call(options, 'bindIp');
+  const bindIp = normalizeBindIPOption(options.bindIp);
 
   const mothershipUrl = options._mothershipUrl || defaultMothershipURL;
   let workspace = null;
@@ -40,6 +37,17 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
       .then(res => res.json()));
   }
 
+  if (!workspace && bindIp !== null) {
+    router.use((req, res, next) => {
+      const allowed = hasBindIpOption ? isBindIPConnection(req, bindIp) : isLocalhostConnection(req);
+      if (!allowed) {
+        return res.status(403).json({ message: 'Mongoose Studio without an API key only accepts localhost or configured bindIp connections' });
+      }
+
+      next();
+    });
+  }
+
   apiUrl = apiUrl || 'api';
   const backend = Backend(conn, options.studioConnection, options);
   delete backend.services;
@@ -47,9 +55,6 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   router.use(
     '/api',
     function authorize(req, res, next) {
-      if (!workspace && !isLocalhostConnection(req)) {
-        return res.status(403).json({ message: 'Mongoose Studio without an API key only accepts localhost connections' });
-      }
       if (!workspace) {
         next();
         return;
