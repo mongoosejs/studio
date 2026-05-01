@@ -6,6 +6,14 @@ const frontend = require('./frontend');
 const { toRoute, objectRouter } = require('extrovert');
 const { defaultMothershipURL } = require('./constants');
 
+
+function isLocalhostConnection(req) {
+  const remoteAddress = req.socket?.remoteAddress || req.ip || '';
+  return remoteAddress === '127.0.0.1' ||
+    remoteAddress === '::1' ||
+    remoteAddress === '::ffff:127.0.0.1';
+}
+
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
   options = options ? { changeStream: true, ...options } : { changeStream: true };
@@ -39,6 +47,9 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   router.use(
     '/api',
     function authorize(req, res, next) {
+      if (!workspace && !isLocalhostConnection(req)) {
+        return res.status(403).json({ message: 'Mongoose Studio without an API key only accepts localhost connections' });
+      }
       if (!workspace) {
         next();
         return;
