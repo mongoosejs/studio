@@ -1,6 +1,7 @@
 'use strict';
 
 const template = require('./detail-objectid.html');
+const ObjectId = require('mongoose/lib/mongoose').ObjectId;
 
 module.exports = app => app.component('detail-objectid', {
   template,
@@ -37,11 +38,7 @@ module.exports = app => app.component('detail-objectid', {
     },
     objectIdDate() {
       const hex = this.hexValue;
-      if (!/^[0-9a-fA-F]{24}$/.test(hex || '')) {
-        return null;
-      }
-      const seconds = parseInt(hex.slice(0, 8), 16);
-      return new Date(seconds * 1000);
+      return new ObjectId(hex).getTimestamp();
     },
     displayValue() {
       if (this.value == null) {
@@ -50,7 +47,7 @@ module.exports = app => app.component('detail-objectid', {
 
       const hex = this.hexValue;
       if (this.format === 'object_call') {
-        return `Object("${hex}")`;
+        return `ObjectId('${hex}')`;
       }
       if (this.format === 'unix_seconds') {
         if (!this.objectIdDate) {
