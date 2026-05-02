@@ -1,7 +1,7 @@
 'use strict';
 
 const template = require('./detail-objectid.html');
-const ObjectId = require('mongoose/lib/mongoose').Types.ObjectId;
+const ObjectId = require('mongoose/lib/types/objectid');
 
 module.exports = app => app.component('detail-objectid', {
   template,
