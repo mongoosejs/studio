@@ -18,6 +18,7 @@ module.exports = app => app.component('document-property', {
     return {
       dateType: 'picker', // picker, iso
       dateViewMode: 'utc_iso',
+      objectIdViewMode: 'hex',
       renderedValue: UNSET,
       isCollapsed: false, // Start uncollapsed by default
       isValueExpanded: false, // Track if the value is expanded
@@ -37,6 +38,9 @@ module.exports = app => app.component('document-property', {
   computed: {
     isDatePath() {
       return this.path?.instance === 'Date';
+    },
+    isObjectIdPath() {
+      return this.path?.instance === 'ObjectID' || this.path?.instance === 'ObjectId';
     },
     rawValue() {
       return this.getValueForPath(this.path.path);
@@ -176,6 +180,9 @@ module.exports = app => app.component('document-property', {
       }
       if (schemaPath.instance === 'Date') {
         return 'detail-date';
+      }
+      if (schemaPath.instance === 'ObjectID' || schemaPath.instance === 'ObjectId') {
+        return 'detail-objectid';
       }
       return 'detail-default';
     },
