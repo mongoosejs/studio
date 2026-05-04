@@ -17,6 +17,104 @@ const { useToast } = require('vue-toastification');
 const appendCSS = require('./appendCSS');
 appendCSS(require('vue-toastification/dist/index.css'));
 
+const RECENT_PAGES_STORAGE_KEY = 'studio:recent-pages-history';
+const MAX_RECENT_PAGES = 10;
+
+function formatHistoryLabel(route) {
+  if (!route || typeof route.path !== 'string') {
+    return 'Unknown page';
+  }
+  if (route.name === 'root') {
+    return 'Home';
+  }
+  if (route.name === 'model') {
+    return route.params?.model ? `Model: ${route.params.model}` : 'Model';
+  }
+  if (route.name === 'document') {
+    const model = route.params?.model ? `${route.params.model} ` : '';
+    const documentId = route.params?.documentId ? String(route.params.documentId) : '';
+    const shortDocumentId = documentId ? documentId.slice(0, 8) : '';
+    return `Document: ${model}${shortDocumentId}`.trim();
+  }
+  if (route.name === 'dashboard') {
+    return route.params?.dashboardId ? `Dashboard: ${route.params.dashboardId}` : 'Dashboard';
+  }
+  if (route.name === 'dashboards') {
+    return 'Dashboards';
+  }
+  if (route.name === 'tasks') {
+    return 'Tasks';
+  }
+  if (route.name === 'taskByName') {
+    return route.params?.name ? `Task: ${route.params.name}` : 'Task';
+  }
+  if (route.name === 'taskSingle') {
+    const taskName = route.params?.name ? `${route.params.name} ` : '';
+    const taskId = route.params?.id ? String(route.params.id) : '';
+    return `Task: ${taskName}${taskId}`.trim();
+  }
+  if (route.name === 'team') {
+    return 'Team';
+  }
+  if (route.name === 'chat' || route.name === 'chat index') {
+    return route.params?.threadId ? `Chat: ${route.params.threadId}` : 'Chat';
+  }
+  const normalizedPath = route.path.replace(/^\//, '');
+  return normalizedPath || 'Home';
+}
+
+function safeReadRecentPages() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return [];
+  }
+  try {
+    const raw = window.localStorage.getItem(RECENT_PAGES_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter(entry =>
+      entry &&
+      typeof entry.path === 'string' &&
+      typeof entry.label === 'string' &&
+      typeof entry.visitedAt === 'number'
+    ).slice(0, MAX_RECENT_PAGES);
+  } catch (err) {
+    return [];
+  }
+}
+
+function saveRecentPages(entries) {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  window.localStorage.setItem(
+    RECENT_PAGES_STORAGE_KEY,
+    JSON.stringify(entries.slice(0, MAX_RECENT_PAGES))
+  );
+}
+
+function trackRecentPage(route) {
+  if (!route || typeof route.path !== 'string') {
+    return;
+  }
+  // Ignore auth callback state because it is transient and not useful history.
+  if (typeof route.path === 'string' && route.path.includes('code=')) {
+    return;
+  }
+  const path = route.fullPath || route.path;
+  const label = formatHistoryLabel(route);
+  const visitedAt = Date.now();
+
+  const existing = safeReadRecentPages();
+  const deduped = existing.filter(entry => entry.path !== path);
+  const next = [{ path, label, visitedAt }, ...deduped].slice(0, MAX_RECENT_PAGES);
+  saveRecentPages(next);
+}
+
 const app = Vue.createApp({
   template: '<app-component />'
 });
@@ -64,6 +162,56 @@ app.component('app-component', {
       <navbar :user="user" :roles="roles" />
       <div class="view">
         <router-view :key="$route.fullPath" :user="user" :roles="roles" :hasAPIKey="hasAPIKey" />
+      </div>
+      <div class="fixed right-3 bottom-6 z-[9999] flex items-end">
+        <button
+          type="button"
+          class="mr-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-text shadow-lg hover:bg-primary-hover"
+          @click="toggleHistoryDrawer"
+          :aria-expanded="showRecentPagesDrawer ? 'true' : 'false'"
+          aria-controls="recent-pages-drawer"
+          title="Recent pages"
+        >
+          History
+        </button>
+        <aside
+          id="recent-pages-drawer"
+          class="border border-edge bg-surface shadow-2xl transition-all duration-200 ease-in-out overflow-hidden rounded-md"
+          :class="showRecentPagesDrawer ? 'w-80 opacity-100' : 'w-0 opacity-0 pointer-events-none'"
+        >
+          <div class="w-80 max-h-[70vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-edge px-3 py-2">
+              <div class="text-sm font-semibold text-content">Recent pages</div>
+              <button
+                type="button"
+                class="rounded px-2 py-1 text-xs text-content-secondary hover:bg-muted"
+                @click="clearRecentPages"
+                :disabled="recentPages.length === 0"
+              >
+                Clear
+              </button>
+            </div>
+            <div class="overflow-y-auto p-2">
+              <div
+                v-if="recentPages.length === 0"
+                class="rounded border border-dashed border-edge px-3 py-4 text-sm text-content-tertiary"
+              >
+                No recent pages yet.
+              </div>
+              <button
+                v-for="entry in recentPages"
+                :key="entry.path + '-' + entry.visitedAt"
+                type="button"
+                class="mb-1 w-full rounded px-2 py-2 text-left hover:bg-muted"
+                :class="entry.path === $route.fullPath ? 'bg-primary-subtle' : ''"
+                @click="goToRecentPage(entry)"
+              >
+                <div class="truncate text-sm font-medium text-content">{{ entry.label }}</div>
+                <div class="truncate text-xs text-content-tertiary">{{ entry.path }}</div>
+              </button>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   </div>
@@ -161,6 +309,33 @@ app.component('app-component', {
 
     this.status = 'loaded';
   },
+  watch: {
+    '$route.fullPath': function() {
+      this.recentPages = safeReadRecentPages();
+    }
+  },
+  methods: {
+    toggleHistoryDrawer() {
+      this.showRecentPagesDrawer = !this.showRecentPagesDrawer;
+      if (this.showRecentPagesDrawer) {
+        this.recentPages = safeReadRecentPages();
+      }
+    },
+    clearRecentPages() {
+      this.recentPages = [];
+      saveRecentPages([]);
+    },
+    goToRecentPage(entry) {
+      if (!entry || !entry.path) {
+        return;
+      }
+      this.showRecentPagesDrawer = false;
+      if (entry.path === this.$route.fullPath) {
+        return;
+      }
+      this.$router.push(entry.path);
+    }
+  },
   setup() {
     const user = Vue.ref(null);
     const roles = Vue.ref(null);
@@ -168,8 +343,19 @@ app.component('app-component', {
     const nodeEnv = Vue.ref(null);
     const authError = Vue.ref(null);
     const modelSchemaPaths = Vue.ref(null);
+    const recentPages = Vue.ref(safeReadRecentPages());
+    const showRecentPagesDrawer = Vue.ref(false);
 
-    const state = Vue.reactive({ user, roles, status, nodeEnv, authError, modelSchemaPaths });
+    const state = Vue.reactive({
+      user,
+      roles,
+      status,
+      nodeEnv,
+      authError,
+      modelSchemaPaths,
+      recentPages,
+      showRecentPagesDrawer
+    });
     Vue.provide('state', state);
 
     return state;
@@ -226,6 +412,10 @@ router.beforeEach((to, from, next) => {
   } else {
     next();
   }
+});
+
+router.afterEach((to) => {
+  trackRecentPage(to);
 });
 
 app.config.globalProperties = { format, arrayUtils, $toast: toast };
