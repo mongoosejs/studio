@@ -218,11 +218,70 @@ function applySuggestion(searchText, cursorPos, suggestion) {
   return null;
 }
 
+/**
+ * When the cursor is inside a Date(…) or new Date(…) argument, returns the
+ * slice indices of that argument so a picker can replace it with a quoted ISO string.
+ */
+function getDatePickerInsertionRange(searchText, cursorPos) {
+  const before = searchText.slice(0, cursorPos);
+  const re = /((?:new\s+)?Date\s*\(\s*)([^)]*)$/i;
+  const m = before.match(re);
+  if (!m) {
+    return null;
+  }
+  const innerStart = m.index + m[1].length;
+  const after = searchText.slice(cursorPos);
+  let closeIdx = -1;
+  let parenDepth = 0;
+  for (let k = 0; k < after.length; k++) {
+    const ch = after[k];
+    if (ch === '(') {
+      parenDepth++;
+    } else if (ch === ')') {
+      if (parenDepth === 0) {
+        closeIdx = cursorPos + k;
+        break;
+      }
+      parenDepth--;
+    }
+  }
+  const innerEnd = closeIdx >= 0 ? closeIdx : cursorPos;
+  return { innerStart, innerEnd };
+}
+
+function dateArgumentSliceToDatetimeLocal(slice) {
+  const t = slice.trim();
+  if (!t) {
+    return '';
+  }
+  const unquoted = (t.startsWith('"') && t.endsWith('"')) || (t.startsWith('\'') && t.endsWith('\''))
+    ? t.slice(1, -1)
+    : t;
+  const d = new Date(unquoted);
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function insertQuotedIsoInDateArgument(searchText, range, isoString) {
+  const quoted = JSON.stringify(isoString);
+  const { innerStart, innerEnd } = range;
+  return {
+    text: searchText.slice(0, innerStart) + quoted + searchText.slice(innerEnd),
+    newCursorPos: innerStart + quoted.length
+  };
+}
+
 module.exports = {
   buildAutocompleteTrie,
   getAutocompleteContext,
   getAutocompleteSuggestions,
   applySuggestion,
+  getDatePickerInsertionRange,
+  dateArgumentSliceToDatetimeLocal,
+  insertQuotedIsoInDateArgument,
   QUERY_SELECTORS,
   VALUE_HELPERS,
   FUNCTION_HELPERS
