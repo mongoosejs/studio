@@ -28,7 +28,8 @@ const chatMessageSchema = new mongoose.Schema({
   executionResult: {
     output: mongoose.Schema.Types.Mixed,
     logs: String,
-    error: String
+    error: String,
+    dryRun: Boolean
   }
 }, { timestamps: true });
 

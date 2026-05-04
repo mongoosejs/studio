@@ -20,17 +20,19 @@
           : 'bg-muted hover:bg-muted text-gray-600'
       ]"
       @click="activeTab = 'output'">
-      Output
+      <span>Output</span>
+      <span v-if="isDryRunResult" class="ml-1">[Dry Run]</span>
+      <span
+        v-if="isDryRunResult"
+        class="ml-1 inline-flex align-middle cursor-pointer"
+        title="This output was produced in dry run mode"
+        @click.stop="openRunInfoModal">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-7-3a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 102 0v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+        </svg>
+      </span>
     </button>
     <div class="ml-auto mr-1 flex items-center">
-      <button
-        v-if="activeTab === 'output'"
-        class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-primary-hover transition-colors flex items-center"
-        @click="openDetailModal">
-        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.2em;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
-        </svg>
-      </button>
       <button
         v-if="activeTab === 'code' && !isEditing"
         class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-gray-600 transition-colors flex items-center"
@@ -39,12 +41,58 @@
           <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM4 13.5V16h2.5l7.086-7.086-2.828-2.828L4 13.5z" />
         </svg>
       </button>
-      <async-button
-        v-if="!isEditing"
-        class="px-2 py-1 text-xs bg-primary hover:bg-primary-hover text-primary-text border-none rounded cursor-pointer transition-colors disabled:bg-gray-400"
-        @click="executeScript">
-        Run
-      </async-button>
+      <button
+        v-if="activeTab === 'output'"
+        class="px-2 py-1 mr-1 text-xs bg-gray-700 text-white border-none rounded cursor-pointer hover:bg-primary-hover transition-colors flex items-center"
+        @click="openDetailModal">
+        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.2em;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" />
+        </svg>
+      </button>
+      <div v-if="!isEditing" class="relative mr-1" ref="runDropdown">
+        <div class="flex items-center">
+          <button
+            class="px-2 py-1 text-xs bg-primary hover:bg-primary-hover text-primary-text border-none rounded-l-md cursor-pointer transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            :disabled="isExecuting"
+            @click="executeScript()">
+            {{ selectedRunLabel }}
+          </button>
+          <button
+            class="px-1 py-1 text-xs bg-primary hover:bg-primary-hover text-primary-text border-l border-black/10 rounded-r-md cursor-pointer transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            :disabled="isExecuting"
+            @click.stop="toggleRunDropdown">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <button
+            class="ml-1 px-1 py-1 text-content-secondary hover:bg-muted rounded cursor-pointer transition-colors"
+            @click="openRunInfoModal"
+            title="How run works">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-7-3a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 102 0v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+        <div
+          v-if="showRunDropdown"
+          class="absolute right-0 z-10 mt-1 w-40 origin-top-right rounded-md bg-surface py-1 shadow-lg ring-1 ring-black/5">
+          <button
+            class="block w-full text-left px-4 py-2 text-xs text-content-secondary hover:bg-muted"
+            :disabled="isExecuting"
+            @click="selectRunMode('run')">
+            Run
+          </button>
+          <button
+            class="block w-full text-left px-4 py-2 text-xs"
+            :class="isExecuting ? 'cursor-not-allowed text-gray-400' : canUseDryRun ? 'text-content-secondary hover:bg-muted' : 'cursor-not-allowed text-gray-400'"
+            :aria-disabled="!canUseDryRun"
+            :title="dryRunDisabledTitle"
+            @click="selectRunMode('dryRun')">
+            Dry Run
+          </button>
+        </div>
+      </div>
       <div class="relative ml-1" ref="dropdown">
         <button
           @click.stop="toggleDropdown"
@@ -100,7 +148,7 @@
         </button>
         <async-button
           class="px-2 py-1 text-xs bg-blue-600 text-white border-none rounded cursor-pointer hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-          @click="executeScript">
+          @click="executeScript(false)">
           Execute
         </async-button>
       </div>
@@ -131,6 +179,20 @@
           :fullscreen="true">
         </dashboard-result>
         <pre v-else class="whitespace-pre-wrap">No output</pre>
+      </div>
+    </template>
+  </modal>
+  <modal v-if="showRunInfoModal">
+    <template #body>
+      <div class="modal-exit" @click="showRunInfoModal = false">&times;</div>
+      <div>
+        <div class="mt-4 text-content font-semibold">How Run Works</div>
+        <p class="mt-4 text-sm text-content-secondary">
+          Run executes the script shown in this message on the server and saves the latest script back onto the chat message.
+        </p>
+        <p class="mt-2 text-sm text-content-secondary">
+          The output and any console logs are stored on the message, and the Output tab updates to show the latest result.
+        </p>
       </div>
     </template>
   </modal>

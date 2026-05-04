@@ -62,10 +62,11 @@ module.exports = app => app.component('chat-message', {
       if (input.limit && input.limit !== 10) parts.push('limit=' + input.limit);
       return parts.length ? '(' + parts.join(', ') + ')' : '';
     },
-    async executeScript(message, script) {
+    async executeScript(message, script, dryRun) {
       const { chatMessage } = await api.ChatMessage.executeScript({
         chatMessageId: message._id,
-        script
+        script,
+        dryRun
       });
       message.executionResult = chatMessage.executionResult;
       console.log(message);

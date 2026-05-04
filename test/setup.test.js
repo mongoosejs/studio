@@ -14,10 +14,8 @@ const Test = connection.model('Test', new mongoose.Schema({ name: String }));
 before(async function() {
   this.timeout(60000);
 
-  let uri = 'mongodb://127.0.0.1:27017';
-
-  if (process.env.GITHUB_ACTIONS) {
-
+  let uri = process.env.MONGODB_URI;
+  if (!uri) {
     replSet = await MongoMemoryReplSet.create({
       replSet: {
         name: 'rs0',
