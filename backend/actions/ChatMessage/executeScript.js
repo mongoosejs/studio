@@ -2,11 +2,8 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const MongooseStudioChartColors = require('../../constants/mongooseStudioChartColors');
+const createSandbox = require('../../sandbox/createSandbox');
 const mongoose = require('mongoose');
-const vm = require('vm');
-
-const dryRunRollbackMessage = '__MONGOOSE_STUDIO_DRY_RUN_ROLLBACK__';
 
 const ExecuteScriptParams = new Archetype({
   initiatedById: {
@@ -44,32 +41,19 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
     throw new Error('Unauthorized');
   }
 
-  // Create a sandbox with the db object
-  const logs = [];
-  if (!db.Types) {
-    db.Types = mongoose.Types;
-  }
-  const sandbox = { db, mongoose, console: {}, ObjectId: mongoose.Types.ObjectId, MongooseStudioChartColors };
-
-  // Capture console logs
-  sandbox.console.log = function() {
-    const args = Array.from(arguments);
-    logs.push(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' '));
-  };
-
-  const context = vm.createContext(sandbox);
+  const sandbox = createSandbox({ db });
 
   let output;
   let error;
 
   try {
     // Execute the script in the sandbox
-    output = await vm.runInContext(wrappedScript(script, dryRun), context);
+    output = await sandbox.runScript({ script, dryRun });
 
     const updatedContent = updateContentWithScript(chatMessage.content, chatMessage.script, script);
     chatMessage.script = script;
     chatMessage.content = updatedContent;
-    chatMessage.executionResult = { output, logs: logs.join('\n'), error: null, dryRun: !!dryRun };
+    chatMessage.executionResult = { output, logs: sandbox.getLogs(), error: null, dryRun: !!dryRun };
     await chatMessage.save();
 
     return { chatMessage };
@@ -85,7 +69,7 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
         content: updatedContent,
         executionResult: {
           output: null,
-          logs: logs.join('\n'),
+          logs: sandbox.getLogs(),
           error,
           dryRun: !!dryRun
         }
@@ -93,34 +77,10 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
     );
 
     throw new Error(`Script execution failed: ${error}`);
+  } finally {
+    await sandbox.close();
   }
 };
-
-const wrappedScriptNonDryRun = script => `(async () => {
-  ${script}
-})()`;
-const wrappedScriptDryRun = script => `(async () => {
-  let __result;
-  await db.transaction(async() => {
-    __result = await (async () => {
-      ${script}
-    })();
-    throw new Error('${dryRunRollbackMessage}');
-  }).catch(err => {
-    if (err?.message !== '${dryRunRollbackMessage}') {
-      throw err;
-    }
-  });
-  return __result;
-})()`;
-
-function wrappedScript(script, dryRun) {
-  if (!dryRun) {
-    return wrappedScriptNonDryRun(script);
-  }
-
-  return wrappedScriptDryRun(script);
-}
 
 function updateContentWithScript(content, previousScript, newScript) {
   if (typeof content !== 'string') {
