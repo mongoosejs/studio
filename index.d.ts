@@ -5,7 +5,7 @@ declare module '@mongoosejs/studio' {
   const express: (
     path: string,
     connOrMongoose?: Connection | Mongoose,
-    options?: { apiKey?: string }
+    options?: { apiKey?: string; bindIp?: string | string[] | null }
   ) => RequestHandler;
 
   const studio: {
