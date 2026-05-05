@@ -78,7 +78,11 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
 
     throw new Error(`Script execution failed: ${error}`);
   } finally {
-    await sandbox.close();
+    try {
+      await sandbox.close();
+    } catch (_) {
+      // Ignore sandbox cleanup errors so they do not mask the primary result.
+    }
   }
 };
 
