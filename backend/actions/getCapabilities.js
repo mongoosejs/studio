@@ -1,13 +1,15 @@
 'use strict';
 
-module.exports = ({ db }) => async function getDatabaseCapabilities() {
+module.exports = ({ db, options }) => async function getCapabilities() {
   const connection = db?.connection ?? db;
   const admin = typeof connection?.db?.admin === 'function' ? connection.db.admin() : null;
+  const supportsAI = hasAIProviderKey(options);
 
   if (admin == null || typeof admin.command !== 'function') {
     return {
       supportsChangeStreams: false,
-      supportsTransactions: false
+      supportsTransactions: false,
+      supportsAI
     };
   }
 
@@ -26,6 +28,15 @@ module.exports = ({ db }) => async function getDatabaseCapabilities() {
 
   return {
     supportsChangeStreams: supportsModernMongoFeatures && (isReplicaSet || isMongos),
-    supportsTransactions: supportsModernMongoFeatures && hasSessions && (isReplicaSet || isMongos)
+    supportsTransactions: supportsModernMongoFeatures && hasSessions && (isReplicaSet || isMongos),
+    supportsAI
   };
 };
+
+function hasAIProviderKey(options) {
+  return [
+    options?.openAIAPIKey,
+    options?.anthropicAPIKey,
+    options?.googleGeminiAPIKey
+  ].some(value => typeof value === 'string' ? value.trim().length > 0 : !!value);
+}

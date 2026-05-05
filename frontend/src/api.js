@@ -29,8 +29,8 @@ client.interceptors.response.use(
 );
 
 if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
-  exports.getDatabaseCapabilities = function getDatabaseCapabilities() {
-    return client.post('', { action: 'getDatabaseCapabilities' }).then(res => res.data);
+  exports.getCapabilities = function getCapabilities() {
+    return client.post('', { action: 'getCapabilities' }).then(res => res.data);
   };
   exports.status = function status() {
     return client.post('', { action: 'status' }).then(res => res.data);
@@ -208,8 +208,8 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
 } else {
-  exports.getDatabaseCapabilities = function getDatabaseCapabilities() {
-    return client.get('/getDatabaseCapabilities').then(res => res.data);
+  exports.getCapabilities = function getCapabilities() {
+    return client.get('/getCapabilities').then(res => res.data);
   };
   exports.status = function status() {
     return client.get('/status').then(res => res.data);

@@ -4,7 +4,7 @@
 const api = require('../../api');
 const template = require('./chat-message-script.html');
 
-let databaseCapabilitiesPromise = null;
+let capabilitiesPromise = null;
 
 module.exports = app => app.component('chat-message-script', {
   template,
@@ -14,9 +14,10 @@ module.exports = app => app.component('chat-message-script', {
     return {
       activeTab: 'code',
       selectedRunMode: 'run',
-      databaseCapabilities: {
+      capabilities: {
         supportsChangeStreams: false,
-        supportsTransactions: true
+        supportsTransactions: false,
+        supportsAI: false
       },
       showDetailModal: false,
       showRunInfoModal: false,
@@ -43,7 +44,7 @@ module.exports = app => app.component('chat-message-script', {
       return !!this.targetDashboardId;
     },
     canUseDryRun() {
-      return this.databaseCapabilities.supportsTransactions;
+      return this.capabilities.supportsTransactions;
     },
     dryRunDisabledTitle() {
       return this.canUseDryRun ? null : 'dry run mode requires MongoDB transactions support';
@@ -56,16 +57,16 @@ module.exports = app => app.component('chat-message-script', {
     }
   },
   methods: {
-    async loadDatabaseCapabilities() {
-      if (databaseCapabilitiesPromise == null) {
-        databaseCapabilitiesPromise = api.getDatabaseCapabilities().catch(err => {
-          databaseCapabilitiesPromise = null;
+    async loadCapabilities() {
+      if (capabilitiesPromise == null) {
+        capabilitiesPromise = api.getCapabilities().catch(err => {
+          capabilitiesPromise = null;
           throw err;
         });
       }
 
-      const capabilities = await databaseCapabilitiesPromise;
-      this.databaseCapabilities = capabilities;
+      const capabilities = await capabilitiesPromise;
+      this.capabilities = capabilities;
       if (!capabilities.supportsTransactions && this.selectedRunMode === 'dryRun') {
         this.selectedRunMode = 'run';
       }
@@ -248,7 +249,7 @@ module.exports = app => app.component('chat-message-script', {
   },
   mounted() {
     this.highlightCode();
-    this.loadDatabaseCapabilities().catch(() => {});
+    this.loadCapabilities().catch(() => {});
     this.$nextTick(() => {
       document.body.addEventListener('click', this.handleBodyClick);
     });
