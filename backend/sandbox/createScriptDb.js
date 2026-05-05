@@ -54,8 +54,8 @@ function createScriptDb(db) {
     setDryRunSession(session) {
       dryRunSession = session;
     },
-    async close() {
-      await closeUseDbConnection(sourceConnection, scriptConnection);
+    close() {
+      closeUseDbConnection(sourceConnection, scriptConnection);
     }
   };
 }
@@ -187,7 +187,7 @@ function addSessionOption(args, optionsIndex, session) {
   return args;
 }
 
-async function closeUseDbConnection(sourceConnection, scriptConnection) {
+function closeUseDbConnection(sourceConnection, scriptConnection) {
   if (Array.isArray(sourceConnection.otherDbs)) {
     sourceConnection.otherDbs = sourceConnection.otherDbs.filter(db => db !== scriptConnection);
   }
@@ -196,10 +196,6 @@ async function closeUseDbConnection(sourceConnection, scriptConnection) {
   }
   if (sourceConnection.relatedDbs?.[scriptConnection.name] === scriptConnection) {
     delete sourceConnection.relatedDbs[scriptConnection.name];
-  }
-
-  if (typeof scriptConnection.close === 'function') {
-    await scriptConnection.close({ force: false, skipCloseClient: true });
   }
 }
 
