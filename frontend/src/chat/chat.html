@@ -112,7 +112,11 @@
         </div>
         <ul role="list" class="space-y-4" v-else>
           <li v-for="message in chatMessages" :key="message._id">
-            <chat-message :message="message" :target-dashboard-id="currentThread?.dashboardId"></chat-message>
+            <chat-message
+              :message="message"
+              :target-dashboard-id="currentThread?.dashboardId"
+              :capabilities="capabilities">
+            </chat-message>
           </li>
         </ul>
       </div>

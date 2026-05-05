@@ -4,21 +4,14 @@
 const api = require('../../api');
 const template = require('./chat-message-script.html');
 
-let capabilitiesPromise = null;
-
 module.exports = app => app.component('chat-message-script', {
   template,
-  props: ['message', 'script', 'language', 'targetDashboardId'],
+  props: ['message', 'script', 'language', 'targetDashboardId', 'capabilities'],
   emits: ['copyMessage'],
   data() {
     return {
       activeTab: 'code',
       selectedRunMode: 'run',
-      capabilities: {
-        supportsChangeStreams: false,
-        supportsTransactions: false,
-        supportsAI: false
-      },
       showDetailModal: false,
       showRunInfoModal: false,
       showDryRunInfoModal: false,
@@ -44,7 +37,7 @@ module.exports = app => app.component('chat-message-script', {
       return !!this.targetDashboardId;
     },
     canUseDryRun() {
-      return this.capabilities.supportsTransactions;
+      return this.capabilities?.supportsTransactions !== false;
     },
     dryRunDisabledTitle() {
       return this.canUseDryRun ? null : 'dry run mode requires MongoDB transactions support';
@@ -57,20 +50,6 @@ module.exports = app => app.component('chat-message-script', {
     }
   },
   methods: {
-    async loadCapabilities() {
-      if (capabilitiesPromise == null) {
-        capabilitiesPromise = api.getCapabilities().catch(err => {
-          capabilitiesPromise = null;
-          throw err;
-        });
-      }
-
-      const capabilities = await capabilitiesPromise;
-      this.capabilities = capabilities;
-      if (!capabilities.supportsTransactions && this.selectedRunMode === 'dryRun') {
-        this.selectedRunMode = 'run';
-      }
-    },
     async executeScript(dryRun = this.selectedRunMode === 'dryRun') {
       const scriptToRun = this.isEditing ? this.editedScript : this.script;
       if (this.isExecuting) {
@@ -245,11 +224,18 @@ module.exports = app => app.component('chat-message-script', {
         this.editedScript = newScript;
         this.highlightCode();
       }
+    },
+    capabilities: {
+      immediate: true,
+      handler(capabilities) {
+        if (capabilities?.supportsTransactions === false && this.selectedRunMode === 'dryRun') {
+          this.selectedRunMode = 'run';
+        }
+      }
     }
   },
   mounted() {
     this.highlightCode();
-    this.loadCapabilities().catch(() => {});
     this.$nextTick(() => {
       document.body.addEventListener('click', this.handleBodyClick);
     });
