@@ -1,5 +1,7 @@
 'use strict';
 
+const wrappedCollections = new WeakSet();
+
 const collectionMethodOptionsIndex = new Map([
   ['bulkWrite', 1],
   ['countDocuments', 1],
@@ -99,28 +101,39 @@ function setModelCollectionSymbols(target, collection) {
 }
 
 function wrapCollectionAccessors(scriptConnection, getSession) {
-  const wrappedCollections = new WeakMap();
+  const wrappedCollectionCache = new WeakMap();
+
+  const nativeDb = scriptConnection.db;
+  const originalDbCollection = nativeDb != null && typeof nativeDb.collection === 'function'
+    ? nativeDb.collection
+    : null;
 
   if (typeof scriptConnection.collection === 'function') {
     const originalConnectionCollection = scriptConnection.collection;
     scriptConnection.collection = function() {
       const collection = originalConnectionCollection.apply(this, arguments);
-      return getOrCreateWrappedCollection(wrappedCollections, collection, getSession);
+      if (collection != null && originalDbCollection != null && collection.name != null) {
+        if (collection.collection == null || wrappedCollections.has(collection.collection)) {
+          collection.collection = originalDbCollection.call(nativeDb, collection.name);
+        }
+      }
+      return getOrCreateWrappedCollection(wrappedCollectionCache, collection, getSession);
     };
   }
 
-  const nativeDb = scriptConnection.db;
-  if (nativeDb != null && typeof nativeDb.collection === 'function') {
-    const originalDbCollection = nativeDb.collection;
+  if (originalDbCollection != null) {
     nativeDb.collection = function() {
       const collection = originalDbCollection.apply(this, arguments);
-      return getOrCreateWrappedCollection(wrappedCollections, collection, getSession);
+      return getOrCreateWrappedCollection(wrappedCollectionCache, collection, getSession);
     };
   }
 }
 
 function getOrCreateWrappedCollection(cache, collection, getSession) {
   if (collection == null || (typeof collection !== 'object' && typeof collection !== 'function')) {
+    return collection;
+  }
+  if (wrappedCollections.has(collection)) {
     return collection;
   }
   if (cache.has(collection)) {
@@ -132,7 +145,11 @@ function getOrCreateWrappedCollection(cache, collection, getSession) {
 }
 
 function wrapCollection(collection, getSession) {
+  if (wrappedCollections.has(collection)) {
+    return collection;
+  }
   const wrapped = Object.create(collection);
+  wrappedCollections.add(wrapped);
   for (const [methodName, optionsIndex] of collectionMethodOptionsIndex) {
     const method = collection[methodName];
     if (typeof method !== 'function') {
@@ -157,12 +174,13 @@ function addSessionOption(args, optionsIndex, session) {
   }
 
   const options = args[optionsIndex];
+
   if (options != null && typeof options !== 'object') {
-    return args;
+    throw new Error('Cannot run dry run on script where options arg is a non-object');
   }
 
   if (options?.session != null) {
-    return args;
+    throw new Error('Cannot run dry run on script that uses sessions');
   }
 
   args[optionsIndex] = { ...(options ?? {}), session };

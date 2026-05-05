@@ -109,6 +109,22 @@ describe('ChatMessage.executeScript()', function() {
     assert.deepStrictEqual(docs.map(doc => doc.name), ['test']);
   });
 
+  it('rolls back dry run insertOne calls when options arg is a non-object primitive', async function() {
+    const chatMessage = await createChatMessage(
+      '```js\ntry { await db.models.Test.collection.insertOne({ name: \'test\' }, 42); } catch (_) {} return \'ok\';\n```',
+      ''
+    );
+
+    await actions.ChatMessage.executeScript({
+      chatMessageId: chatMessage._id,
+      script: 'try { await db.models.Test.collection.insertOne({ name: \'test\' }, 42); } catch (_) {} return \'ok\';',
+      dryRun: true,
+      roles: ['admin']
+    });
+
+    assert.strictEqual(await Test.countDocuments({ name: 'test' }), 0);
+  });
+
   it('rolls back dry run db.db.collection() native driver writes', async function() {
     const chatMessage = await createChatMessage(
       '```js\nawait db.db.collection(\'tests\').insertOne({ name: \'native\' }); return \'ok\';\n```',
