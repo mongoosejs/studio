@@ -6,9 +6,9 @@ function getBraceDepth(text, pos) {
   let depth = 0;
   for (let i = 0; i < pos; i++) {
     const ch = text[i];
-    if (ch === "{") {
+    if (ch === '{') {
       depth++;
-    } else if (ch === "}") {
+    } else if (ch === '}') {
       depth--;
     }
   }

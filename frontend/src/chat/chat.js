@@ -307,7 +307,7 @@ module.exports = {
     this.chatThreadId = this.threadId;
     const [{ chatThreads }, { capabilities }] = await Promise.all([
       api.ChatThread.listChatThreads(),
-      api.getCapabilities(),
+      api.getCapabilities()
     ]);
     this.chatThreads = chatThreads;
     this.capabilities = capabilities;

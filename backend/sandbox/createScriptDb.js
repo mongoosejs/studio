@@ -55,7 +55,15 @@ function createScriptDb(db) {
       dryRunSession = session;
     },
     close() {
-      closeUseDbConnection(sourceConnection, scriptConnection);
+      if (Array.isArray(sourceConnection.otherDbs)) {
+        sourceConnection.otherDbs = sourceConnection.otherDbs.filter(db => db !== scriptConnection);
+      }
+      if (Array.isArray(scriptConnection.otherDbs)) {
+        scriptConnection.otherDbs = [];
+      }
+      if (sourceConnection.relatedDbs?.[scriptConnection.name] === scriptConnection) {
+        delete sourceConnection.relatedDbs[scriptConnection.name];
+      }
     }
   };
 }
@@ -185,18 +193,6 @@ function addSessionOption(args, optionsIndex, session) {
 
   args[optionsIndex] = { ...(options ?? {}), session };
   return args;
-}
-
-function closeUseDbConnection(sourceConnection, scriptConnection) {
-  if (Array.isArray(sourceConnection.otherDbs)) {
-    sourceConnection.otherDbs = sourceConnection.otherDbs.filter(db => db !== scriptConnection);
-  }
-  if (Array.isArray(scriptConnection.otherDbs)) {
-    scriptConnection.otherDbs = [];
-  }
-  if (sourceConnection.relatedDbs?.[scriptConnection.name] === scriptConnection) {
-    delete sourceConnection.relatedDbs[scriptConnection.name];
-  }
 }
 
 module.exports = {
