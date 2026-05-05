@@ -26,13 +26,14 @@ const collectionMethodOptionsIndex = new Map([
 ]);
 
 function createScriptDb(db) {
-  const sourceConnection = db?.connection?.useDb ? db.connection : db;
-  if (typeof sourceConnection?.useDb !== 'function') {
-    return createPassthroughScriptDb(db);
-  }
+  const sourceConnection = db;
 
   const scriptConnection = sourceConnection.useDb(sourceConnection.name, { useCache: false });
-  scriptConnection.options = { ...(scriptConnection.options ?? {}) };
+  scriptConnection.config = {
+    ...scriptConnection.config,
+    autoCreate: false,
+    autoIndex: false
+  };
 
   let dryRunSession = null;
   cloneModels(sourceConnection, scriptConnection, () => dryRunSession);
@@ -52,14 +53,6 @@ function createScriptDb(db) {
     async close() {
       await closeUseDbConnection(sourceConnection, scriptConnection);
     }
-  };
-}
-
-function createPassthroughScriptDb(db) {
-  return {
-    db,
-    setDryRunSession() {},
-    async close() {}
   };
 }
 

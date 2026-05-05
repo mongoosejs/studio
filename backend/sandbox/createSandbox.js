@@ -5,8 +5,6 @@ const mongoose = require('mongoose');
 const vm = require('vm');
 const { createScriptDb } = require('./createScriptDb');
 
-const dryRunRollbackMessage = '__MONGOOSE_STUDIO_DRY_RUN_ROLLBACK__';
-
 module.exports = function createSandbox({ db }) {
   const logs = [];
   const scriptDb = createScriptDb(db);
@@ -43,18 +41,43 @@ module.exports = function createSandbox({ db }) {
         return await vm.runInContext(wrappedScript, this.context);
       }
 
-      let result;
-      await this.db.transaction(async session => {
-        this.setDryRunSession(session);
-        result = await vm.runInContext(wrappedScript, this.context);
-        throw new Error(dryRunRollbackMessage);
-      }).catch(err => {
-        if (err?.message !== dryRunRollbackMessage) {
-          throw err;
-        }
+      return await runDryRunScript({
+        db: this.db,
+        context: this.context,
+        setDryRunSession: this.setDryRunSession,
+        wrappedScript
       });
-      return result;
     },
     close: scriptDb.close
   };
 };
+
+async function runDryRunScript({ db, context, setDryRunSession, wrappedScript }) {
+  if (typeof db?.startSession !== 'function') {
+    throw new Error('Dry run mode requires MongoDB sessions support');
+  }
+
+  const session = await db.startSession();
+  setDryRunSession(session);
+
+  try {
+    session.startTransaction();
+    const result = await vm.runInContext(wrappedScript, context);
+    await abortTransaction(session);
+    return result;
+  } catch (err) {
+    await abortTransaction(session);
+    throw err;
+  } finally {
+    setDryRunSession(null);
+    await session.endSession().catch(() => {});
+  }
+}
+
+async function abortTransaction(session) {
+  if (typeof session?.inTransaction === 'function' && !session.inTransaction()) {
+    return;
+  }
+
+  await session.abortTransaction().catch(() => {});
+}
