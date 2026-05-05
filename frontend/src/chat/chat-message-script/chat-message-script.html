@@ -26,7 +26,7 @@
         v-if="isDryRunResult"
         class="ml-1 inline-flex align-middle cursor-pointer"
         title="This output was produced in dry run mode"
-        @click.stop="openRunInfoModal">
+        @click.stop="openDryRunInfoModal">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-7-3a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 102 0v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
         </svg>
@@ -188,10 +188,30 @@
       <div>
         <div class="mt-4 text-content font-semibold">How Run Works</div>
         <p class="mt-4 text-sm text-content-secondary">
-          Run executes the script shown in this message on the server and saves the latest script back onto the chat message.
+          Run executes the script shown in this message on the server with access to your Mongoose models through <code class="bg-muted px-1 rounded">db.models</code>. The latest script is saved back onto the chat message.
         </p>
         <p class="mt-2 text-sm text-content-secondary">
-          The output and any console logs are stored on the message, and the Output tab updates to show the latest result.
+          Output and console logs are stored on the message, and the Output tab updates to show the latest result.
+        </p>
+        <p class="mt-2 text-sm text-content-secondary">
+          Dry Run executes the same script inside a MongoDB transaction. Studio attaches the transaction session to Mongoose model and collection calls, captures the output and logs, then aborts the transaction so writes are rolled back.
+        </p>
+        <p class="mt-2 text-sm text-content-secondary">
+          Dry Run requires MongoDB transaction support. It is intended for previewing what a script would return before persisting changes.
+        </p>
+      </div>
+    </template>
+  </modal>
+  <modal v-if="showDryRunInfoModal">
+    <template #body>
+      <div class="modal-exit" @click="showDryRunInfoModal = false">&times;</div>
+      <div>
+        <div class="mt-4 text-content font-semibold">Dry Run Output</div>
+        <p class="mt-4 text-sm text-content-secondary">
+          This output was produced in dry run mode. The script ran on the server inside a MongoDB transaction, and Studio aborted that transaction after the script finished.
+        </p>
+        <p class="mt-2 text-sm text-content-secondary">
+          No data changes from the script were persisted. The displayed output and console logs were saved on the chat message so you can review what the script returned.
         </p>
       </div>
     </template>

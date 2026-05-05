@@ -20,6 +20,7 @@ module.exports = app => app.component('chat-message-script', {
       },
       showDetailModal: false,
       showRunInfoModal: false,
+      showDryRunInfoModal: false,
       showCreateDashboardModal: false,
       showOverwriteDashboardConfirmationModal: false,
       showRunDropdown: false,
@@ -104,6 +105,9 @@ module.exports = app => app.component('chat-message-script', {
     },
     openRunInfoModal() {
       this.showRunInfoModal = true;
+    },
+    openDryRunInfoModal() {
+      this.showDryRunInfoModal = true;
     },
     openCreateDashboardModal() {
       this.newDashboardTitle = '';
