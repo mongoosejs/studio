@@ -109,6 +109,39 @@ describe('ChatMessage.executeScript()', function() {
     assert.deepStrictEqual(docs.map(doc => doc.name), ['test']);
   });
 
+  it('rolls back dry run db.db.collection() native driver writes', async function() {
+    const chatMessage = await createChatMessage(
+      '```js\nawait db.db.collection(\'tests\').insertOne({ name: \'native\' }); return \'ok\';\n```',
+      ''
+    );
+
+    await actions.ChatMessage.executeScript({
+      chatMessageId: chatMessage._id,
+      script: 'await db.db.collection(\'tests\').insertOne({ name: \'native\' }); return \'ok\';',
+      dryRun: true,
+      roles: ['admin']
+    });
+
+    assert.strictEqual(await Test.countDocuments({ name: 'native' }), 0);
+  });
+
+  it('rolls back dry run db.collection() writes for unregistered collections', async function() {
+    const chatMessage = await createChatMessage(
+      '```js\nawait db.collection(\'unregistered\').insertOne({ name: \'orphan\' }); return \'ok\';\n```',
+      ''
+    );
+
+    await actions.ChatMessage.executeScript({
+      chatMessageId: chatMessage._id,
+      script: 'await db.collection(\'unregistered\').insertOne({ name: \'orphan\' }); return \'ok\';',
+      dryRun: true,
+      roles: ['admin']
+    });
+
+    const count = await connection.db.collection('unregistered').countDocuments({ name: 'orphan' });
+    assert.strictEqual(count, 0);
+  });
+
   it('rolls back dry run Model.findOneAndUpdate calls', async function() {
     await Test.create({ name: 'test' });
     const chatMessage = await createChatMessage(

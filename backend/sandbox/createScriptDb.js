@@ -36,7 +36,9 @@ function createScriptDb(db) {
   };
 
   let dryRunSession = null;
-  cloneModels(sourceConnection, scriptConnection, () => dryRunSession);
+  const getSession = () => dryRunSession;
+  cloneModels(sourceConnection, scriptConnection, getSession);
+  wrapCollectionAccessors(scriptConnection, getSession);
 
   const originalDebug = sourceConnection.options?.debug;
   scriptConnection.set('debug', function() {
@@ -94,6 +96,39 @@ function setModelCollectionSymbols(target, collection) {
       target[symbol] = collection;
     }
   }
+}
+
+function wrapCollectionAccessors(scriptConnection, getSession) {
+  const wrappedCollections = new WeakMap();
+
+  if (typeof scriptConnection.collection === 'function') {
+    const originalConnectionCollection = scriptConnection.collection;
+    scriptConnection.collection = function() {
+      const collection = originalConnectionCollection.apply(this, arguments);
+      return getOrCreateWrappedCollection(wrappedCollections, collection, getSession);
+    };
+  }
+
+  const nativeDb = scriptConnection.db;
+  if (nativeDb != null && typeof nativeDb.collection === 'function') {
+    const originalDbCollection = nativeDb.collection;
+    nativeDb.collection = function() {
+      const collection = originalDbCollection.apply(this, arguments);
+      return getOrCreateWrappedCollection(wrappedCollections, collection, getSession);
+    };
+  }
+}
+
+function getOrCreateWrappedCollection(cache, collection, getSession) {
+  if (collection == null || (typeof collection !== 'object' && typeof collection !== 'function')) {
+    return collection;
+  }
+  if (cache.has(collection)) {
+    return cache.get(collection);
+  }
+  const wrapped = wrapCollection(collection, getSession);
+  cache.set(collection, wrapped);
+  return wrapped;
 }
 
 function wrapCollection(collection, getSession) {
