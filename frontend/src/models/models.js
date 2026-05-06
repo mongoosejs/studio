@@ -1058,8 +1058,8 @@ module.exports = app => app.component('models', {
                 const projectionPaths = this.normalizeProjectionPathsForDisplay(routeProjectionInput);
                 const fromProjectionInput = Array.isArray(projectionPaths) ?
                   projectionPaths
-                  .map(path => this.schemaPaths.find(p => p.path === path))
-                  .filter(Boolean) :
+                    .map(path => this.schemaPaths.find(p => p.path === path))
+                    .filter(Boolean) :
                   [];
                 this.filteredPaths = fromProjectionInput;
               } else {
