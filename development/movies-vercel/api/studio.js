@@ -8,7 +8,7 @@ const studio = require('../../../backend/next');
 
 const handler = studio(mongoose, {
   apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
-  googleGeminiAPIKey: process.env.GOOGLE_GEMINI_API_KEY
+  // googleGeminiAPIKey: process.env.GOOGLE_GEMINI_API_KEY
 });
 
 let conn = null;
