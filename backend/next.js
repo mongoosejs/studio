@@ -83,6 +83,10 @@ module.exports = function next(conn, options) {
 
     return actionFn(params, req, res)
       .then(result => {
+        if (typeof result === 'string') {
+          res.status(200).send(result);
+          return result;
+        }
         res.status(200).json(result);
         return result;
       })
