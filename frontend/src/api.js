@@ -24,6 +24,9 @@ client.interceptors.response.use(
     if (typeof err?.response?.data === 'string') {
       throw new Error(`Error in ${err.config?.method} ${err.config?.url}: ${err.response.data}`);
     }
+    if (typeof err?.response?.data?.message === 'string') {
+      throw new Error(`Error in ${err.config?.method} ${err.config?.url}: ${err.response.data.message}`);
+    }
     throw err;
   }
 );
