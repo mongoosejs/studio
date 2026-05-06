@@ -163,6 +163,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     dropIndex: function dropIndex(params) {
       return client.post('', { action: 'Model.dropIndex', ...params }).then(res => res.data);
     },
+    dropCollection: function dropCollection(params) {
+      return client.post('', { action: 'Model.dropCollection', ...params }).then(res => res.data);
+    },
     listModels: function listModels() {
       return client.post('', { action: 'Model.listModels' }).then(res => res.data);
     },
