@@ -68,6 +68,12 @@ module.exports = app => app.component('navbar', {
     },
     hasTaskVisualizer() {
       return !!window.MONGOOSE_STUDIO_CONFIG.enableTaskVisualizer;
+    },
+    hasLLMAPIKey() {
+      return !!window.MONGOOSE_STUDIO_CONFIG.hasLLMAPIKey;
+    },
+    chatDisabledReason() {
+      return 'Chat requires an Anthropic, Gemini, or OpenAI API key.';
     }
   },
   methods: {
