@@ -168,6 +168,8 @@ module.exports = app => app.component('models', {
     showAddFieldDropdown: false,
     shouldShowIndexModal: false,
     shouldShowCollectionInfoModal: false,
+    shouldShowDropCollectionModal: false,
+    dropCollectionConfirmName: '',
     shouldShowUpdateMultipleModal: false,
     shouldShowDeleteMultipleModal: false,
     shouldExport: {},
@@ -922,6 +924,30 @@ module.exports = app => app.component('models', {
       this.collectionInfo = null;
       const { info } = await api.Model.getCollectionInfo({ model: this.currentModel });
       this.collectionInfo = info;
+    },
+    openDropCollectionModal() {
+      this.closeActionsMenu();
+      this.dropCollectionConfirmName = '';
+      this.shouldShowDropCollectionModal = true;
+    },
+    requiresDropCollectionNameConfirmation() {
+      const nodeEnv = window?.state?.nodeEnv;
+      return nodeEnv !== 'local';
+    },
+    async dropCollection() {
+      if (this.requiresDropCollectionNameConfirmation() && this.dropCollectionConfirmName !== this.currentModel) {
+        this.$toast.error('Please type the collection name exactly to confirm.');
+        return;
+      }
+
+      await api.Model.dropCollection({ model: this.currentModel });
+      this.shouldShowDropCollectionModal = false;
+      this.dropCollectionConfirmName = '';
+      this.documents = [];
+      this.numDocuments = 0;
+      this.selectedDocuments = [];
+      this.$toast.success(`Collection ${this.currentModel} dropped.`);
+      await this.getDocuments();
     },
     async findOldestDocument() {
       this.closeActionsMenu();

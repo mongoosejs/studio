@@ -17,6 +17,7 @@ const actionsToRequiredRoles = {
   'Model.updateDocument': ['owner', 'admin', 'member'],
   'Model.deleteDocument': ['owner', 'admin', 'member'],
   'Model.deleteDocuments': ['owner', 'admin', 'member'],
+  'Model.dropCollection': ['owner', 'admin'],
   'Model.dropIndex': ['owner', 'admin'],
   'Model.executeDocumentScript': ['owner', 'admin', 'member'],
   'Model.exportQueryResults': ['owner', 'admin', 'member', 'readonly'],
