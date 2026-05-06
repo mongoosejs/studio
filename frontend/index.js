@@ -36,7 +36,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
     isLambda,
     mothershipUrl: apiKey ? mothershipUrl : null,
     workspace: workspaceData,
-    hasLLMAPIKey: !!(options?.anthropicAPIKey || options?.googleGeminiAPIKey || options?.openAIAPIKey)
+    hasLLMAPIKey: [options?.anthropicAPIKey, options?.googleGeminiAPIKey, options?.openAIAPIKey].some(v => v != null)
   };
 
   if (isLambda) {
