@@ -4,7 +4,6 @@ const { createAnthropic } = require('@ai-sdk/anthropic');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
 const { generateText, stepCountIs } = require('ai');
-const { defaultMothershipURL } = require('../../constants');
 
 module.exports = async function callLLM(messages, system, options) {
   let provider = null;
@@ -52,22 +51,5 @@ module.exports = async function callLLM(messages, system, options) {
     });
   }
 
-  const headers = { 'Content-Type': 'application/json' };
-  const response = await fetch(`${defaultMothershipURL}/getChatCompletion`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      messages: [{ role: 'system', content: { type: 'text', text: system } }, ...messages],
-      model: options?.model
-    })
-  }).then(response => {
-    if (!response.ok) {
-      return response.json().then(data => {
-        throw new Error(`Mongoose Studio chat completion error: ${data.message}`);
-      });
-    }
-    return response;
-  });
-
-  return await response.json().then(res => ({ text: res.response }));
+  throw new Error('No LLM API key configured. Set one of anthropicAPIKey, googleGeminiAPIKey, or openAIAPIKey.');
 };

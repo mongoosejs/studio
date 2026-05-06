@@ -4,7 +4,6 @@ const { createAnthropic } = require('@ai-sdk/anthropic');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
 const { streamText, stepCountIs } = require('ai');
-const { defaultMothershipURL } = require('../../constants');
 
 module.exports = async function* streamLLM(messages, system, options) {
   let provider = null;
@@ -69,26 +68,5 @@ module.exports = async function* streamLLM(messages, system, options) {
     return;
   }
 
-  // If not using OpenAI, Anthropic, or Google Gemini, fallback to Mongoose (no streaming)
-  const headers = { 'Content-Type': 'application/json' };
-  const response = await fetch(`${defaultMothershipURL}/getChatCompletion`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      messages: [{ role: 'system', content: { type: 'text', text: system } }, ...messages],
-      model: options?.model
-    })
-  }).then(response => {
-    if (!response.ok) {
-      return response.json().then(data => {
-        throw new Error(`Mongoose Studio chat completion error: ${data.message}`);
-      });
-    }
-    return response;
-  });
-
-  const data = await response.json();
-
-  // Simulate streaming by yielding the whole response at once as a single chunk
-  yield data.response;
+  throw new Error('No LLM API key configured. Set one of anthropicAPIKey, googleGeminiAPIKey, or openAIAPIKey.');
 };

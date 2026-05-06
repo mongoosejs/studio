@@ -221,6 +221,11 @@ router.beforeEach((to, from, next) => {
 });
 
 router.beforeEach((to, from, next) => {
+  if (['chat index', 'chat'].includes(to.name) && !window.MONGOOSE_STUDIO_CONFIG.hasLLMAPIKey) {
+    next({ name: 'root' });
+    return;
+  }
+
   if (to.name === 'root' && window.state.roles && window.state.roles[0] === 'dashboards') {
     return next({ name: 'dashboards' });
   } else {
