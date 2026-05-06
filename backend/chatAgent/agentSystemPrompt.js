@@ -13,7 +13,7 @@ Always follow this process for each query (do not skip steps):
 4. **Draft script**: Write a self-contained script that queries MongoDB directly.
 5. **Type-check every draft**: Run typeCheck on the script before responding.
 6. **Fix and re-check loop**: If typeCheck reports issues, fix them and run typeCheck again. Repeat until clean.
-7. **Return final answer**: Provide one final script and a brief description.
+7. **Return final answer**: Provide one final script by default, or multiple scripts only if the user explicitly asks for multiple scripts, and include a brief description.
 
 Hard requirements before finalizing:
 - You MUST run at least one assumption-checking query (find/findOne) unless the user only asks for pure counts.
