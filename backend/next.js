@@ -81,7 +81,7 @@ module.exports = function next(conn, options) {
       throw new Error(`Action ${actionName} not found`);
     }
 
-    return actionFn(params)
+    return actionFn(params, req, res)
       .then(result => {
         res.status(200).json(result);
         return result;
