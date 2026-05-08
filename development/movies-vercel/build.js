@@ -4,7 +4,8 @@ const { execSync } = require('child_process');
 
 const opts = {
   __build: true,
-  apiKey: process.env.MONGOOSE_STUDIO_API_KEY
+  apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
+  googleGeminiAPIKey: process.env.GOOGLE_GEMINI_API_KEY
 };
 
 require('../../frontend')(`/api/studio`, true, opts)

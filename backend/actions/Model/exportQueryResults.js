@@ -62,9 +62,7 @@ module.exports = ({ db }) => async function exportQueryResults(params, req, res)
   }
   const csv = stringify(rows);
 
-  res.set({
-    'Content-Type': 'text/csv',
-    'Content-Disposition': `attachment; filename="${model.toLowerCase()}-export.csv"`
-  });
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${model.toLowerCase()}-export.csv"`);
   return csv;
 };

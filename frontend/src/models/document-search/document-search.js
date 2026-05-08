@@ -67,6 +67,12 @@ module.exports = app => app.component('document-search', {
         dateEl.blur();
       }
     },
+    focusInput() {
+      const input = this.$refs.searchInput;
+      if (input && typeof input.focus === 'function') {
+        input.focus();
+      }
+    },
     emitSearch() {
       this.$emit('input', this.searchText);
       this.$emit('search', this.searchText);

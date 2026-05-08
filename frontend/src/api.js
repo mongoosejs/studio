@@ -24,11 +24,17 @@ client.interceptors.response.use(
     if (typeof err?.response?.data === 'string') {
       throw new Error(`Error in ${err.config?.method} ${err.config?.url}: ${err.response.data}`);
     }
+    if (typeof err?.response?.data?.message === 'string') {
+      throw new Error(`Error in ${err.config?.method} ${err.config?.url}: ${err.response.data.message}`);
+    }
     throw err;
   }
 );
 
 if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
+  exports.getCapabilities = function getCapabilities() {
+    return client.post('', { action: 'getCapabilities' }).then(res => res.data);
+  };
   exports.status = function status() {
     return client.post('', { action: 'status' }).then(res => res.data);
   };
@@ -163,6 +169,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     dropIndex: function dropIndex(params) {
       return client.post('', { action: 'Model.dropIndex', ...params }).then(res => res.data);
     },
+    dropCollection: function dropCollection(params) {
+      return client.post('', { action: 'Model.dropCollection', ...params }).then(res => res.data);
+    },
     listModels: function listModels() {
       return client.post('', { action: 'Model.listModels' }).then(res => res.data);
     },
@@ -205,6 +214,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     }
   };
 } else {
+  exports.getCapabilities = function getCapabilities() {
+    return client.get('/getCapabilities').then(res => res.data);
+  };
   exports.status = function status() {
     return client.get('/status').then(res => res.data);
   };
