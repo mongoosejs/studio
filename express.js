@@ -3,12 +3,17 @@
 const Backend = require('./backend');
 const express = require('express');
 const frontend = require('./frontend');
+const isBindIPConnection = require('./backend/helpers/isBindIPConnection');
+const isLocalhostConnection = require('./backend/helpers/isLocalhostConnection');
+const normalizeBindIPOption = require('./backend/helpers/normalizeBindIPOption');
 const { toRoute, objectRouter } = require('extrovert');
 const { defaultMothershipURL } = require('./constants');
 
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
   options = options ? { changeStream: true, ...options } : { changeStream: true };
+  const hasBindIpOption = Object.prototype.hasOwnProperty.call(options, 'bindIp');
+  const bindIp = normalizeBindIPOption(options.bindIp);
 
   const mothershipUrl = options._mothershipUrl || defaultMothershipURL;
   let workspace = null;
@@ -30,6 +35,17 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
         return response;
       })
       .then(res => res.json()));
+  }
+
+  if (!workspace && bindIp !== null) {
+    router.use((req, res, next) => {
+      const allowed = hasBindIpOption ? isBindIPConnection(req, bindIp) : isLocalhostConnection(req);
+      if (!allowed) {
+        return res.status(403).json({ message: 'Mongoose Studio without an API key only accepts localhost or configured bindIp connections' });
+      }
+
+      next();
+    });
   }
 
   apiUrl = apiUrl || 'api';

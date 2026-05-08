@@ -20,7 +20,7 @@ module.exports = function backend(db, studioConnection, options) {
 
   let changeStream = null;
   if (options?.changeStream) {
-    const conn = db instanceof mongoose.Mongoose ? db.connection : db;
+    const conn = db.connection ? db.connection : db;
     if (conn.readyState !== mongoose.Connection.STATES.connected) {
       conn._waitForConnect().then(() => {
         changeStream = conn.watch();

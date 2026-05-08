@@ -106,6 +106,12 @@ module.exports = app => app.component('navbar', {
     },
     recentPagesList() {
       return this.localRecentPages;
+    },
+    hasLLMAPIKey() {
+      return !!window.MONGOOSE_STUDIO_CONFIG.hasLLMAPIKey;
+    },
+    chatDisabledReason() {
+      return 'Chat requires an Anthropic, Gemini, or OpenAI API key.';
     }
   },
   methods: {

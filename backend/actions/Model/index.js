@@ -5,6 +5,7 @@ exports.createChatMessage = require('./createChatMessage');
 exports.createDocument = require('./createDocument');
 exports.deleteDocument = require('./deleteDocument');
 exports.deleteDocuments = require('./deleteDocuments');
+exports.dropCollection = require('./dropCollection');
 exports.dropIndex = require('./dropIndex');
 exports.executeDocumentScript = require('./executeDocumentScript');
 exports.exportQueryResults = require('./exportQueryResults');

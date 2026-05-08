@@ -110,7 +110,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-bottom: 0.25em;
 }
 
 .modal-container .modal-exit:hover {

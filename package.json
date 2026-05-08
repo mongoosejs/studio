@@ -1,7 +1,7 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.4.0",
-  "description": "A Mongoose-native MongoDB UI with schema-aware autocomplete, AI-assisted queries, and dashboards that understand your models - not just your data.",
+  "version": "0.5.1",
+  "description": "AI-Powered Data Workspace for MongoDB: Turn your MongoDB data into dashboards, maps, and interactive workflows - powered by your Mongoose models and AI.",
   "homepage": "https://mongoosestudio.app/",
   "repository": {
     "type": "git",
