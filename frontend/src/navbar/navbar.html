@@ -1,3 +1,4 @@
+<div>
 <div class="navbar w-full bg-page border-b border-edge !h-[55px] hidden md:grid grid-cols-[1fr_auto_1fr] items-stretch px-4">
   <!-- Left: Logo + Brand -->
   <div class="flex items-center gap-2 self-center">
@@ -59,6 +60,19 @@
   </nav>
   <!-- Right: Env Badge + User -->
   <div class="flex items-center justify-end gap-3 self-center">
+    <button
+      type="button"
+      class="inline-flex items-center justify-center rounded-md p-2 text-content-tertiary hover:bg-muted hover:text-content-secondary"
+      title="Recent pages"
+      aria-label="Recent pages"
+      aria-haspopup="dialog"
+      :aria-expanded="showRecentPagesModal ? 'true' : 'false'"
+      @click="openRecentPagesModal"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </button>
     <div
       v-if="!!state.nodeEnv"
       title="NODE_ENV"
@@ -141,9 +155,22 @@
       <span class="text-base font-semibold text-content">Mongoose Studio</span>
     </router-link>
   </div>
-  <div class="flex items-center">
+  <div class="flex items-center gap-1 pr-2">
+    <button
+      type="button"
+      class="rounded-md p-2 text-content-tertiary hover:bg-muted hover:text-content-secondary md:hidden"
+      title="Recent pages"
+      aria-label="Recent pages"
+      aria-haspopup="dialog"
+      :aria-expanded="showRecentPagesModal ? 'true' : 'false'"
+      @click="openRecentPagesModal"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </button>
     <!-- Mobile menu toggle, controls the 'mobileMenuOpen' state. -->
-    <button type="button" id="open-mobile-menu" class="-ml-2 rounded-md p-2 pr-4 text-gray-400">
+    <button type="button" id="open-mobile-menu" class="-ml-2 rounded-md p-2 text-gray-400">
       <span class="sr-only">Open menu</span>
       <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -249,4 +276,47 @@
       </div>
     </nav>
   </div>
+</div>
+
+<modal
+  v-if="showRecentPagesModal"
+  containerClass="!max-w-md !w-[min(94vw,28rem)] !rounded-lg !border !border-edge !bg-surface !p-0 !shadow-xl dark:!bg-shark-900 text-content"
+  bodyClass="modal-recent-pages-body !p-4 !pt-5"
+>
+  <template v-slot:body>
+    <div class="modal-exit" @click="closeRecentPagesModal" role="button" aria-label="Close recent pages">&times;</div>
+    <div
+      class="shrink-0 -mx-1 mb-3 flex items-center justify-between gap-3 border-b border-edge bg-surface px-1 pb-3 dark:bg-shark-900"
+    >
+      <h2 class="m-0 text-lg font-semibold text-content">Recent pages</h2>
+      <button
+        type="button"
+        class="rounded px-3 py-1.5 text-sm font-medium text-content-secondary hover:bg-muted"
+        @click="clearRecentPagesHistory"
+        :disabled="recentPagesList.length === 0"
+      >
+        Clear
+      </button>
+    </div>
+    <div class="modal-recent-pages-scroll px-0.5">
+      <div
+        v-if="recentPagesList.length === 0"
+        class="rounded border border-dashed border-edge px-3 py-6 text-center text-sm text-content-tertiary"
+      >
+        No recent pages yet.
+      </div>
+      <button
+        v-for="entry in recentPagesList"
+        :key="entry.path + '-' + entry.visitedAt"
+        type="button"
+        class="mb-1 w-full rounded px-3 py-2.5 text-left hover:bg-muted"
+        :class="entry.path === $route.fullPath ? 'bg-primary-subtle' : ''"
+        @click="goToRecentPage(entry)"
+      >
+        <div class="truncate text-sm font-medium text-content">{{ entry.label }}</div>
+        <div class="truncate font-mono text-xs text-content-tertiary">{{ entry.path }}</div>
+      </button>
+    </div>
+  </template>
+</modal>
 </div>
