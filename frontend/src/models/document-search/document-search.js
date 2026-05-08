@@ -82,6 +82,15 @@ module.exports = app => app.component('document-search', {
         });
       }
     },
+    onSearchKeyup(ev) {
+      if (
+        this.autocompleteSuggestions.length > 0 &&
+        (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')
+      ) {
+        return;
+      }
+      this.updateAutocomplete();
+    },
     updateAutocomplete() {
       const input = this.$refs.searchInput;
       const cursorPos = input ? input.selectionStart : 0;
@@ -111,7 +120,14 @@ module.exports = app => app.component('document-search', {
       if (!localDateTime || !this.datePickerContext) {
         return;
       }
-      const iso = new Date(localDateTime).toISOString();
+      const picked = new Date(localDateTime);
+      if (Number.isNaN(picked.getTime())) {
+        if (this.$toast) {
+          this.$toast.error('Invalid date or time. Enter a valid date and time, then try again.');
+        }
+        return;
+      }
+      const iso = picked.toISOString();
       const result = insertQuotedIsoInDateArgument(
         this.searchText,
         this.datePickerContext,

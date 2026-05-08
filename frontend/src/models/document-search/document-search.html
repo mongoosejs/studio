@@ -5,9 +5,9 @@
     type="text"
     placeholder="Filter (supports JS, dates, ObjectIds, and more)"
     v-model="searchText"
-    @click="initFilter(); updateAutocomplete()"
+    @click="initFilter($event); updateAutocomplete()"
     @input="updateAutocomplete"
-    @keyup="updateAutocomplete"
+    @keyup="onSearchKeyup"
     @keydown="handleKeyDown"
   />
   <div
