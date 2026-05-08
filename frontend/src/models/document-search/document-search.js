@@ -48,8 +48,25 @@ module.exports = app => app.component('document-search', {
   },
   mounted() {
     this.$refs.searchInput.focus();
+    this._onDocPointerDownCloseDatePicker = this.onDocumentPointerDownCloseDatePicker.bind(this);
+    document.addEventListener('pointerdown', this._onDocPointerDownCloseDatePicker, true);
+  },
+  beforeUnmount() {
+    if (this._onDocPointerDownCloseDatePicker) {
+      document.removeEventListener('pointerdown', this._onDocPointerDownCloseDatePicker, true);
+    }
   },
   methods: {
+    onDocumentPointerDownCloseDatePicker(ev) {
+      const drop = this.$refs.autocompleteDropdown;
+      if (!drop || drop.contains(ev.target)) {
+        return;
+      }
+      const dateEl = this.$refs.datePickerInput;
+      if (dateEl) {
+        dateEl.blur();
+      }
+    },
     emitSearch() {
       this.$emit('input', this.searchText);
       this.$emit('search', this.searchText);

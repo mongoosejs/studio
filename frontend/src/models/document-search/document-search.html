@@ -12,6 +12,7 @@
   />
   <div
     v-if="datePickerContext || autocompleteSuggestions.length"
+    ref="autocompleteDropdown"
     class="absolute z-[9999] bg-surface border border-edge-strong rounded mt-1 w-full shadow"
   >
     <div
@@ -20,6 +21,7 @@
     >
       <span class="text-content-secondary shrink-0">Date</span>
       <input
+        ref="datePickerInput"
         class="min-w-0 flex-1 h-8 rounded border border-edge-strong px-1 font-mono text-sm outline-edge-strong focus:ring-1 focus:ring-primary-subtle"
         type="datetime-local"
         :value="datePickerLocalValue"

@@ -246,7 +246,8 @@ function getDatePickerInsertionRange(searchText, cursorPos) {
     }
   }
   const innerEnd = closeIdx >= 0 ? closeIdx : cursorPos;
-  return { innerStart, innerEnd };
+  const needsClosingParen = closeIdx < 0;
+  return { innerStart, innerEnd, needsClosingParen };
 }
 
 function dateArgumentSliceToDatetimeLocal(slice) {
@@ -268,9 +269,10 @@ function dateArgumentSliceToDatetimeLocal(slice) {
 function insertQuotedIsoInDateArgument(searchText, range, isoString) {
   const quoted = JSON.stringify(isoString);
   const { innerStart, innerEnd } = range;
+  const closing = range.needsClosingParen === true ? ')' : '';
   return {
-    text: searchText.slice(0, innerStart) + quoted + searchText.slice(innerEnd),
-    newCursorPos: innerStart + quoted.length
+    text: searchText.slice(0, innerStart) + quoted + closing + searchText.slice(innerEnd),
+    newCursorPos: innerStart + quoted.length + closing.length
   };
 }
 
