@@ -27,15 +27,14 @@
         v-if="shouldShowReferenceLink"
         class="group inline-flex min-w-0 max-w-full items-baseline flex-wrap gap-x-1.5"
       >
-        <span
-          :class="[...valueClasses, ...stringWrapperClasses, 'underline', 'decoration-dotted', 'underline-offset-2']"
-          :style="isStringValue ? { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } : {}"
-          :title="shouldTruncateString && !isStringExpanded ? value : undefined"
-        >
-          {{ displayedValue }}
-        </span>
-        <span class="shrink-0">
-          {{ comma }}
+        <span class="min-w-0 max-w-full">
+          <span
+            :class="[...valueClasses, ...stringWrapperClasses, 'underline', 'decoration-dotted', 'underline-offset-2']"
+            :style="isStringValue ? { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } : {}"
+            :title="shouldTruncateString && !isStringExpanded ? value : undefined"
+          >
+            {{ displayedValue }}
+          </span><template v-if="!(shouldTruncateString && !isStringExpanded)">{{ comma }}</template>
         </span>
         <button
           v-if="shouldTruncateString"
@@ -64,9 +63,8 @@
           :style="isStringValue ? { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } : {}"
           :title="shouldTruncateString && !isStringExpanded ? value : undefined"
         >
-          {{ displayedValue }}
+          {{ displayedValue }}<template v-if="!(shouldTruncateString && !isStringExpanded)">{{ comma }}</template>
         </span>
-        <span class="shrink-0">{{ comma }}</span>
         <button
           v-if="shouldTruncateString"
           type="button"
