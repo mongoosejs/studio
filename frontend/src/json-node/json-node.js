@@ -192,15 +192,6 @@ module.exports = app => app.component('json-node', {
     stringToggleLabel() {
       return this.isStringExpanded ? 'Show less' : 'Show more';
     },
-    stringToggleTitle() {
-      if (!this.shouldTruncateString) {
-        return '';
-      }
-      if (this.isStringExpanded) {
-        return 'Collapse string';
-      }
-      return `Expand full string (${this.value.length} characters)`;
-    },
     valueClasses() {
       const classes = ['text-slate-700'];
       if (this.value === null) {

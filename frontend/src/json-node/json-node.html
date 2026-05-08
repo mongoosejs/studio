@@ -40,7 +40,7 @@
           v-if="shouldTruncateString"
           type="button"
           class="inline-flex shrink-0 items-center gap-1 rounded-full border border-edge bg-surface px-2 py-0.5 text-[11px] font-medium text-content-secondary shadow-sm transition-colors hover:bg-muted hover:text-content focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          :title="stringToggleTitle"
+          :title="stringToggleLabel"
           :aria-expanded="isStringExpanded"
           @click.stop="toggleStringExpansion"
         >
@@ -69,7 +69,7 @@
           v-if="shouldTruncateString"
           type="button"
           class="inline-flex shrink-0 items-center gap-1 rounded-full border border-edge bg-surface px-2 py-0.5 text-[11px] font-medium text-content-secondary shadow-sm transition-colors hover:bg-muted hover:text-content focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          :title="stringToggleTitle"
+          :title="stringToggleLabel"
           :aria-expanded="isStringExpanded"
           @click.stop="toggleStringExpansion"
         >
