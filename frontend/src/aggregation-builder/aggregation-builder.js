@@ -3,9 +3,6 @@
 const api = require('../api');
 const template = require('./aggregation-builder.html');
 
-const appendCSS = require('../appendCSS');
-appendCSS(require('./aggregation-builder.css'));
-
 const STAGE_OPERATORS = [
   '$match',
   '$project',
@@ -22,7 +19,7 @@ const STAGE_OPERATORS = [
   '$facet'
 ];
 const STAGE_PREVIEW_LIMIT = 3;
-const AUTO_RUN_DEBOUNCE_MS = 450;
+const PREVIEW_DEBOUNCE_MS = 450;
 const RESULT_PAGE_SIZE = 20;
 
 function createDefaultStage() {
@@ -50,8 +47,7 @@ module.exports = app => app.component('aggregation-builder', {
     errorMessage: '',
     results: [],
     visibleResultsCount: RESULT_PAGE_SIZE,
-    resultExpandedState: {},
-    autoRunTimer: null,
+    resultsRenderKey: 0,
     previewRefreshTimer: null,
     activeRunId: 0
   }),
@@ -70,13 +66,12 @@ module.exports = app => app.component('aggregation-builder', {
     },
     hasMoreResults() {
       return this.visibleResultsCount < this.results.length;
+    },
+    visibleResultsExpandedFields() {
+      return this.visibleResults.map((_, i) => `root[${i}]`);
     }
   },
   beforeUnmount() {
-    if (this.autoRunTimer != null) {
-      clearTimeout(this.autoRunTimer);
-      this.autoRunTimer = null;
-    }
     if (this.previewRefreshTimer != null) {
       clearTimeout(this.previewRefreshTimer);
       this.previewRefreshTimer = null;
@@ -87,7 +82,6 @@ module.exports = app => app.component('aggregation-builder', {
     this.models = models || [];
     if (this.models.length > 0) {
       this.selectedModel = this.models[0];
-      this.scheduleAutoRun();
       this.scheduleAllStagePreviewsRefresh();
     }
   },
@@ -134,12 +128,6 @@ module.exports = app => app.component('aggregation-builder', {
     formatDoc(doc) {
       return JSON.stringify(doc, null, 2);
     },
-    toggleResult(index) {
-      this.resultExpandedState[index] = !this.resultExpandedState[index];
-    },
-    isResultExpanded(index) {
-      return !!this.resultExpandedState[index];
-    },
     loadMoreResults() {
       this.visibleResultsCount = Math.min(this.visibleResultsCount + RESULT_PAGE_SIZE, this.results.length);
     },
@@ -161,7 +149,7 @@ module.exports = app => app.component('aggregation-builder', {
       this.previewRefreshTimer = setTimeout(() => {
         this.refreshAllStagePreviews();
         this.previewRefreshTimer = null;
-      }, AUTO_RUN_DEBOUNCE_MS);
+      }, PREVIEW_DEBOUNCE_MS);
     },
     refreshAllStagePreviews() {
       if (!this.selectedModel || this.stages.length === 0) {
@@ -206,25 +194,13 @@ module.exports = app => app.component('aggregation-builder', {
         }
       }
     },
-    scheduleAutoRun() {
-      if (this.autoRunTimer != null) {
-        clearTimeout(this.autoRunTimer);
-      }
-      this.autoRunTimer = setTimeout(() => {
-        this.runAggregation({ isAutoRun: true });
-      }, AUTO_RUN_DEBOUNCE_MS);
-    },
-    async runAggregation(options = {}) {
-      const isAutoRun = !!options.isAutoRun;
+    async runAggregation() {
       this.errorMessage = '';
       this.results = [];
-      this.resultExpandedState = {};
       this.visibleResultsCount = RESULT_PAGE_SIZE;
       const pipeline = this.buildPipeline();
       if (this.hasPipelineErrors) {
-        if (!isAutoRun) {
-          this.errorMessage = 'Fix invalid stage JSON before running.';
-        }
+        this.errorMessage = 'Fix invalid stage JSON before running.';
         return;
       }
       if (!this.selectedModel) {
@@ -243,6 +219,7 @@ module.exports = app => app.component('aggregation-builder', {
           return;
         }
         this.results = docs || [];
+        this.resultsRenderKey += 1;
       } catch (err) {
         if (runId !== this.activeRunId) {
           return;
@@ -257,15 +234,10 @@ module.exports = app => app.component('aggregation-builder', {
   },
   watch: {
     pipelineSignature() {
-      this.scheduleAutoRun();
       this.scheduleAllStagePreviewsRefresh();
     },
     selectedModel() {
-      this.scheduleAutoRun();
       this.scheduleAllStagePreviewsRefresh();
-    },
-    resultLimit() {
-      this.scheduleAutoRun();
     }
   }
 });
