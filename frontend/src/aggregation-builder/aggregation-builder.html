@@ -110,13 +110,19 @@
               v-model="stage.bodyText"
               spellcheck="false"
               class="min-h-[11rem] w-full min-w-0 flex-1 resize-y rounded-md border border-edge bg-page px-3 py-2 font-mono text-sm text-content focus:border-edge-strong focus:outline-none [tab-size:2] md:min-h-[12rem]"
-              placeholder="{ status: 'active' }"
+              placeholder="{ _id: ObjectId('...'), createdAt: new Date('2024-01-01') }"
             ></textarea>
+            <p v-if="!getStageError(stage)" class="shrink-0 text-xs leading-snug text-content-tertiary">
+              Same idea as the create document editor: JSON or JavaScript-style objects with
+              <span class="font-mono text-[0.7rem] text-content-secondary">ObjectId()</span>,
+              <span class="font-mono text-[0.7rem] text-content-secondary">new Date()</span>,
+              <span class="font-mono text-[0.7rem] text-content-secondary">RegExp</span>, etc. Types are sent with EJSON so they match on the server.
+            </p>
           </div>
 
           <div class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-edge bg-surface">
             <div class="shrink-0 border-b border-edge px-3 py-2.5 text-xs font-semibold text-content-tertiary">
-              Pipeline JSON
+              Pipeline JSON (EJSON)
               <span class="font-normal text-content-tertiary">· through stage {{index + 1}}</span>
             </div>
             <pre

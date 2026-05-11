@@ -2,7 +2,7 @@
 
 const api = require('../api');
 const template = require('./aggregation-builder.html');
-const { BSON } = require('mongodb/lib/bson');
+const { BSON, EJSON } = require('mongodb/lib/bson');
 
 const ObjectId = new Proxy(BSON.ObjectId, {
   apply(target, thisArg, argumentsList) {
@@ -11,8 +11,16 @@ const ObjectId = new Proxy(BSON.ObjectId, {
 });
 
 /**
- * Parse a stage body as JSON, or as a JavaScript object/function literal
- * (e.g. unquoted keys, single quotes, trailing commas, ObjectId(), Date, RegExp).
+ * Serialize a pipeline for the API — same EJSON round-trip as Model.createDocument.
+ */
+function serializePipelineForWire(pipeline) {
+  return EJSON.serialize(pipeline);
+}
+
+/**
+ * Parse a stage body as JSON, or as a JavaScript object literal like the
+ * create-document modal (unquoted keys, ObjectId(), new Date(), RegExp, etc.)
+ * via a controlled Function scope.
  */
 function parseStageBody(text) {
   const trimmed = typeof text === 'string' ? text.trim() : '';
@@ -175,7 +183,11 @@ module.exports = app => app.component('aggregation-builder', {
     },
     pipelinePreviewThrough(index) {
       const slice = this.buildPipeline().slice(0, index + 1);
-      return JSON.stringify(slice, null, 2);
+      try {
+        return JSON.stringify(serializePipelineForWire(slice), null, 2);
+      } catch (err) {
+        return `/* Could not serialize pipeline for preview: ${err.message} */\n${JSON.stringify(slice, null, 2)}`;
+      }
     },
     formatDoc(doc) {
       return JSON.stringify(doc, null, 2);
@@ -218,9 +230,10 @@ module.exports = app => app.component('aggregation-builder', {
       stage.previewError = '';
       try {
         const partialPipeline = this.buildPipeline().slice(0, index + 1);
+        const wirePipeline = serializePipelineForWire(partialPipeline);
         const { docs } = await api.Model.aggregate({
           model: this.selectedModel,
-          pipeline: partialPipeline,
+          pipeline: wirePipeline,
           limit: STAGE_PREVIEW_LIMIT,
           roles: this.roles
         });
@@ -264,9 +277,16 @@ module.exports = app => app.component('aggregation-builder', {
       const runId = ++this.activeRunId;
       this.isRunning = true;
       try {
+        let wirePipeline;
+        try {
+          wirePipeline = serializePipelineForWire(pipeline);
+        } catch (err) {
+          this.errorMessage = `Could not serialize pipeline: ${err.message}`;
+          return;
+        }
         const { docs } = await api.Model.aggregate({
           model: this.selectedModel,
-          pipeline,
+          pipeline: wirePipeline,
           limit: this.resultLimit,
           roles: this.roles
         });

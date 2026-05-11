@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const { EJSON } = require('mongoose').mongo.BSON;
 const authorize = require('../../authorize');
 
 const AggregateParams = new Archetype({
@@ -35,7 +36,18 @@ module.exports = ({ db }) => async function aggregate(params) {
     throw new Error('`pipeline` must be an array');
   }
 
-  const pipeline = params.pipeline.map((stage, index) => {
+  let pipeline;
+  try {
+    pipeline = EJSON.deserialize(params.pipeline);
+  } catch (err) {
+    throw new Error(`Invalid pipeline (EJSON): ${err.message}`);
+  }
+
+  if (!Array.isArray(pipeline)) {
+    throw new Error('`pipeline` must be an array');
+  }
+
+  pipeline = pipeline.map((stage, index) => {
     if (stage == null || Array.isArray(stage) || typeof stage !== 'object') {
       throw new Error(`Invalid stage at index ${index}`);
     }
