@@ -163,24 +163,15 @@ module.exports = app => app.component('json-node', {
     isStringValue() {
       return typeof this.value === 'string';
     },
-    effectiveMaxStringLength() {
-      if (typeof this.maxStringLength !== 'number' || this.maxStringLength <= 0) {
-        return null;
-      }
-      return this.maxStringLength;
-    },
     shouldTruncateString() {
-      if (!this.isStringValue || this.effectiveMaxStringLength == null) {
-        return false;
-      }
-      return this.formattedValue.length > this.effectiveMaxStringLength;
+      return this.formattedValue.length > this.maxStringLength;
     },
     displayedValue() {
       if (!this.shouldTruncateString || this.isStringExpanded) {
         return this.formattedValue;
       }
-      const keep = Math.max(0, this.effectiveMaxStringLength - 1);
-      return `${this.formattedValue.slice(0, keep)}...`;
+      const keep = Math.max(0, this.maxStringLength - 1);
+      return `${this.formattedValue.slice(0, keep)}…`;
     },
     stringWrapperClasses() {
       const classes = ['min-w-0', 'max-w-full', 'break-words'];
