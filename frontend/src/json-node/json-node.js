@@ -164,7 +164,7 @@ module.exports = app => app.component('json-node', {
       return typeof this.value === 'string';
     },
     shouldTruncateString() {
-      return this.formattedValue.length > this.maxStringLength;
+      return this.isStringValue && this.formattedValue.length > this.maxStringLength;
     },
     displayedValue() {
       if (!this.shouldTruncateString || this.isStringExpanded) {
