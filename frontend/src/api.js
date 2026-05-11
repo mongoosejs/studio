@@ -31,6 +31,84 @@ client.interceptors.response.use(
   }
 );
 
+async function* streamSSE(url, options = {}) {
+  const response = await fetch(url, {
+    method: 'GET',
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Accept: 'text/event-stream'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+
+    let eventEnd;
+    while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
+      const eventStr = buffer.slice(0, eventEnd);
+      buffer = buffer.slice(eventEnd + 2);
+
+      const event = parseSSEEvent(eventStr);
+      if (event == null) {
+        continue;
+      }
+      if (event.type === 'error') {
+        const message = getSSEErrorMessage(event.data);
+        throw new Error(message);
+      }
+      yield event.data;
+    }
+  }
+}
+
+function parseSSEEvent(eventStr) {
+  const lines = eventStr.split('\n');
+  let type = 'message';
+  let data = '';
+  for (const line of lines) {
+    if (line.startsWith('event:')) {
+      type = line.slice(6).trim() || 'message';
+    } else if (line.startsWith('data:')) {
+      data += line.slice(5).trim();
+    }
+  }
+  if (!data) {
+    return null;
+  }
+
+  try {
+    return { type, data: JSON.parse(data) };
+  } catch (err) {
+    return { type, data };
+  }
+}
+
+function getSSEErrorMessage(data) {
+  if (typeof data === 'string') {
+    return data || 'Streaming request failed.';
+  }
+  if (typeof data?.message === 'string' && data.message.length > 0) {
+    return data.message;
+  }
+  if (typeof data?.error === 'string' && data.error.length > 0) {
+    return data.error;
+  }
+  return 'Streaming request failed.';
+}
+
 if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
   exports.getCapabilities = function getCapabilities() {
     return client.post('', { action: 'getCapabilities' }).then(res => res.data);
@@ -260,50 +338,11 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/ChatThread/streamChatMessage?' + new URLSearchParams(params).toString();
 
-      const response = await fetch(url, {
-        method: 'GET',
+      yield* streamSSE(url, {
         headers: {
-          Authorization: `${accessToken}`,
-          Accept: 'text/event-stream'
+          Authorization: `${accessToken}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEnd;
-        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
-          const eventStr = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          // Parse SSE event
-          const lines = eventStr.split('\n');
-          let data = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              data += line.slice(5).trim();
-            }
-          }
-          if (data) {
-            try {
-              const res = JSON.parse(data);
-              yield res;
-            } catch (err) {
-              yield data;
-            }
-          }
-        }
-      }
     }
   };
   exports.ChatMessage = {
@@ -373,50 +412,11 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/getDocumentsStream?' + new URLSearchParams(params).toString();
 
-      const response = await fetch(url, {
-        method: 'GET',
+      yield* streamSSE(url, {
         headers: {
-          Authorization: `${accessToken}`,
-          Accept: 'text/event-stream'
+          Authorization: `${accessToken}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEnd;
-        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
-          const eventStr = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          // Parse SSE event
-          const lines = eventStr.split('\n');
-          let data = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              data += line.slice(5).trim();
-            }
-          }
-          if (data) {
-            try {
-              yield JSON.parse(data);
-            } catch (err) {
-              // If not JSON, yield as string
-              yield data;
-            }
-          }
-        }
-      }
     },
     getEstimatedDocumentCounts: function getEstimatedDocumentCounts() {
       return client.post('/Model/getEstimatedDocumentCounts', {}).then(res => res.data);
@@ -425,51 +425,12 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/streamDocumentChanges?' + new URLSearchParams(params).toString();
 
-      const response = await fetch(url, {
-        method: 'GET',
+      yield* streamSSE(url, {
         headers: {
-          Authorization: `${accessToken}`,
-          Accept: 'text/event-stream'
+          Authorization: `${accessToken}`
         },
         signal: options.signal
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEnd;
-        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
-          const eventStr = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          // Parse SSE event
-          const lines = eventStr.split('\n');
-          let data = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              data += line.slice(5).trim();
-            }
-          }
-          if (data) {
-            try {
-              yield JSON.parse(data);
-            } catch (err) {
-              // If not JSON, yield as string
-              yield data;
-            }
-          }
-        }
-      }
     },
     getCollectionInfo: function getCollectionInfo(params) {
       return client.post('/Model/getCollectionInfo', params).then(res => res.data);
@@ -490,50 +451,11 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/streamChatMessage?' + new URLSearchParams(params).toString();
 
-      const response = await fetch(url, {
-        method: 'GET',
+      yield* streamSSE(url, {
         headers: {
-          Authorization: `${accessToken}`,
-          Accept: 'text/event-stream'
+          Authorization: `${accessToken}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEnd;
-        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
-          const eventStr = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          // Parse SSE event
-          const lines = eventStr.split('\n');
-          let data = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              data += line.slice(5).trim();
-            }
-          }
-          if (data) {
-            try {
-              yield JSON.parse(data);
-            } catch (err) {
-              // If not JSON, yield as string
-              yield data;
-            }
-          }
-        }
-      }
     },
     updateDocuments: function updateDocument(params) {
       return client.post('/Model/updateDocuments', params).then(res => res.data);
