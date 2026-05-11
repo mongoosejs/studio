@@ -117,7 +117,7 @@
             @click="stagingSelect"
             type="button"
             :class="{
-              'bg-gray-700 ring-inset ring-2 ring-gray-300 hover:bg-gray-200 text-content-secondary': selectMultiple,
+              'bg-gray-700 ring-inset ring-2 ring-gray-300 text-white hover:bg-gray-600': selectMultiple,
               'bg-primary hover:bg-primary-hover text-primary-text': !selectMultiple
             }"
             class="rounded px-2 py-2 text-sm font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -411,8 +411,10 @@
                 v-for="(document, docIndex) in documents"
                 :key="document._id"
                 @click="handleDocumentClick(document, $event)"
-                class="border-b border-edge cursor-pointer transition-colors hover:bg-muted/60"
-                :class="{ 'bg-primary-subtle/50 hover:bg-primary-subtle/70': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
+                class="border-b border-edge cursor-pointer transition-colors"
+                :class="selectedDocuments.some(x => x._id.toString() === document._id.toString())
+                  ? 'bg-blue-200'
+                  : 'hover:bg-muted/60'"
               >
                 <td v-if="showRowNumbers" class="px-3 py-2 border-r border-edge align-top text-content-tertiary whitespace-nowrap">
                   {{ docIndex + 1 }}
