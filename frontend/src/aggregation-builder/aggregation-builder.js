@@ -2,6 +2,41 @@
 
 const api = require('../api');
 const template = require('./aggregation-builder.html');
+const { BSON } = require('mongodb/lib/bson');
+
+const ObjectId = new Proxy(BSON.ObjectId, {
+  apply(target, thisArg, argumentsList) {
+    return new target(...argumentsList);
+  }
+});
+
+/**
+ * Parse a stage body as JSON, or as a JavaScript object/function literal
+ * (e.g. unquoted keys, single quotes, trailing commas, ObjectId(), Date, RegExp).
+ */
+function parseStageBody(text) {
+  const trimmed = typeof text === 'string' ? text.trim() : '';
+  if (!trimmed) {
+    return {};
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // Not strict JSON — try a JS expression in a controlled scope.
+  }
+  try {
+    const fn = new Function(
+      'ObjectId',
+      'Date',
+      'Math',
+      'RegExp',
+      `return (${trimmed});`
+    );
+    return fn(ObjectId, Date, Math, RegExp);
+  } catch (err) {
+    throw new Error(err.message || String(err));
+  }
+}
 
 const STAGE_OPERATORS = [
   '$match',
@@ -19,7 +54,6 @@ const STAGE_OPERATORS = [
   '$facet'
 ];
 const STAGE_PREVIEW_LIMIT = 3;
-const PREVIEW_DEBOUNCE_MS = 450;
 const RESULT_PAGE_SIZE = 20;
 
 function createDefaultStage() {
@@ -30,7 +64,8 @@ function createDefaultStage() {
     previewDocs: [],
     previewError: '',
     previewLoading: false,
-    previewExpanded: false
+    previewExpanded: false,
+    previewLoaded: false
   };
 }
 
@@ -48,18 +83,24 @@ module.exports = app => app.component('aggregation-builder', {
     results: [],
     visibleResultsCount: RESULT_PAGE_SIZE,
     resultsRenderKey: 0,
-    previewRefreshTimer: null,
     activeRunId: 0
   }),
   computed: {
     hasPipelineErrors() {
       return this.stages.some(stage => this.getStageError(stage) != null);
     },
+    pipelineStageErrors() {
+      const errors = [];
+      for (let i = 0; i < this.stages.length; i++) {
+        const message = this.getStageError(this.stages[i]);
+        if (message) {
+          errors.push({ stageNumber: i + 1, message });
+        }
+      }
+      return errors;
+    },
     pipelineSignature() {
       return this.stages.map(stage => `${stage.operator}::${stage.bodyText || ''}`).join('||');
-    },
-    pipelinePreview() {
-      return JSON.stringify(this.buildPipeline(), null, 2);
     },
     visibleResults() {
       return this.results.slice(0, this.visibleResultsCount);
@@ -67,14 +108,11 @@ module.exports = app => app.component('aggregation-builder', {
     hasMoreResults() {
       return this.visibleResultsCount < this.results.length;
     },
+    nextLoadMoreCount() {
+      return Math.min(RESULT_PAGE_SIZE, this.results.length - this.visibleResultsCount);
+    },
     visibleResultsExpandedFields() {
       return this.visibleResults.map((_, i) => `root[${i}]`);
-    }
-  },
-  beforeUnmount() {
-    if (this.previewRefreshTimer != null) {
-      clearTimeout(this.previewRefreshTimer);
-      this.previewRefreshTimer = null;
     }
   },
   async mounted() {
@@ -82,15 +120,25 @@ module.exports = app => app.component('aggregation-builder', {
     this.models = models || [];
     if (this.models.length > 0) {
       this.selectedModel = this.models[0];
-      this.scheduleAllStagePreviewsRefresh();
     }
   },
   methods: {
     addStage() {
       this.stages.push(createDefaultStage());
+      this.$nextTick(() => {
+        const rows = this.$refs.workflowStageRows;
+        const el = Array.isArray(rows) ? rows[rows.length - 1] : rows;
+        if (el && typeof el.scrollIntoView === 'function') {
+          el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      });
     },
     removeStage(index) {
-      if (this.stages.length <= 1) {
+      if (index < 0 || index >= this.stages.length) {
+        return;
+      }
+      if (this.stages.length === 1) {
+        this.stages.splice(0, 1, createDefaultStage());
         return;
       }
       this.stages.splice(index, 1);
@@ -102,12 +150,12 @@ module.exports = app => app.component('aggregation-builder', {
       }
       let parsedBody = null;
       try {
-        parsedBody = JSON.parse(text);
+        parsedBody = parseStageBody(text);
       } catch (err) {
         return err.message;
       }
       if (parsedBody == null || Array.isArray(parsedBody) || typeof parsedBody !== 'object') {
-        return 'Stage body must be a JSON object';
+        return 'Stage body must be a plain object';
       }
       return null;
     },
@@ -117,13 +165,17 @@ module.exports = app => app.component('aggregation-builder', {
         let parsedBody = {};
         if (text) {
           try {
-            parsedBody = JSON.parse(text);
+            parsedBody = parseStageBody(text);
           } catch (err) {
             parsedBody = {};
           }
         }
         return { [stage.operator]: parsedBody };
       });
+    },
+    pipelinePreviewThrough(index) {
+      const slice = this.buildPipeline().slice(0, index + 1);
+      return JSON.stringify(slice, null, 2);
     },
     formatDoc(doc) {
       return JSON.stringify(doc, null, 2);
@@ -133,31 +185,25 @@ module.exports = app => app.component('aggregation-builder', {
     },
     toggleStagePreview(stage) {
       stage.previewExpanded = !stage.previewExpanded;
-      if (stage.previewExpanded) {
-        const stageIndex = this.stages.findIndex(s => s.id === stage.id);
-        this.loadSingleStagePreview(stageIndex);
-      }
     },
-    /**
-     * Keep every stage’s sample in sync (including while collapsed) so the header
-     * count and expand content match the current pipeline.
-     */
-    scheduleAllStagePreviewsRefresh() {
-      if (this.previewRefreshTimer != null) {
-        clearTimeout(this.previewRefreshTimer);
+    pipelineThroughIndexHasErrors(index) {
+      for (let i = 0; i <= index; i++) {
+        if (this.getStageError(this.stages[i]) != null) {
+          return true;
+        }
       }
-      this.previewRefreshTimer = setTimeout(() => {
-        this.refreshAllStagePreviews();
-        this.previewRefreshTimer = null;
-      }, PREVIEW_DEBOUNCE_MS);
+      return false;
     },
-    refreshAllStagePreviews() {
-      if (!this.selectedModel || this.stages.length === 0) {
+    runStagePreview(index) {
+      if (index < 0 || index >= this.stages.length || !this.selectedModel) {
         return;
       }
-      for (let i = 0; i < this.stages.length; i++) {
-        this.loadSingleStagePreview(i);
+      if (this.pipelineThroughIndexHasErrors(index)) {
+        return;
       }
+      const stage = this.stages[index];
+      stage.previewExpanded = true;
+      this.loadSingleStagePreview(index);
     },
     async loadSingleStagePreview(index) {
       if (index < 0 || index >= this.stages.length) {
@@ -182,25 +228,34 @@ module.exports = app => app.component('aggregation-builder', {
           return;
         }
         stage.previewDocs = docs || [];
+        stage.previewLoaded = true;
       } catch (err) {
         if (token !== stage._previewRequestId) {
           return;
         }
         stage.previewError = err?.response?.data?.message || err.message || 'Could not preview this stage';
         stage.previewDocs = [];
+        stage.previewLoaded = true;
       } finally {
         if (token === stage._previewRequestId) {
           stage.previewLoading = false;
         }
       }
     },
+    invalidateStagePreviews() {
+      for (const stage of this.stages) {
+        stage._previewRequestId = (stage._previewRequestId || 0) + 1;
+        stage.previewDocs = [];
+        stage.previewError = '';
+        stage.previewLoading = false;
+        stage.previewLoaded = false;
+      }
+    },
     async runAggregation() {
       this.errorMessage = '';
-      this.results = [];
-      this.visibleResultsCount = RESULT_PAGE_SIZE;
       const pipeline = this.buildPipeline();
       if (this.hasPipelineErrors) {
-        this.errorMessage = 'Fix invalid stage JSON before running.';
+        this.errorMessage = 'Fix invalid stage syntax before running.';
         return;
       }
       if (!this.selectedModel) {
@@ -219,6 +274,7 @@ module.exports = app => app.component('aggregation-builder', {
           return;
         }
         this.results = docs || [];
+        this.visibleResultsCount = RESULT_PAGE_SIZE;
         this.resultsRenderKey += 1;
       } catch (err) {
         if (runId !== this.activeRunId) {
@@ -234,10 +290,10 @@ module.exports = app => app.component('aggregation-builder', {
   },
   watch: {
     pipelineSignature() {
-      this.scheduleAllStagePreviewsRefresh();
+      this.invalidateStagePreviews();
     },
     selectedModel() {
-      this.scheduleAllStagePreviewsRefresh();
+      this.invalidateStagePreviews();
     }
   }
 });

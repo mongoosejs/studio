@@ -42,7 +42,7 @@ module.exports = ({ db }) => async function aggregate(params) {
     return stage;
   });
 
-  const limit = Math.max(1, Math.min(200, Math.floor(params.limit || 20)));
+  const limit = Math.max(1, Math.min(200, Math.floor(params.limit ?? 20)));
   pipeline.push({ $limit: limit });
 
   const docs = await Model.aggregate(pipeline).exec();
