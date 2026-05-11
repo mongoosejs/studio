@@ -9,6 +9,7 @@ const client = axios.create({
 console.log('API baseURL:', window.MONGOOSE_STUDIO_CONFIG.baseURL);
 
 window.apiClient = client;
+exports.fetch = fetch;
 client.interceptors.request.use(req => {
   const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
   if (accessToken) {
@@ -32,7 +33,7 @@ client.interceptors.response.use(
 );
 
 async function* streamSSE(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await exports.fetch(url, {
     method: 'GET',
     ...options,
     headers: {
@@ -184,7 +185,7 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
-      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '?' + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
+      return exports.fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '?' + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
         method: 'GET',
         headers: {
           Authorization: `${accessToken}`, // Set your authorization token here
@@ -375,7 +376,7 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
-      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + new URLSearchParams(params).toString(), {
+      return exports.fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + new URLSearchParams(params).toString(), {
         method: 'GET',
         headers: {
           Authorization: `${accessToken}`, // Set your authorization token here

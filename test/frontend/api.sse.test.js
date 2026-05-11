@@ -1,21 +1,22 @@
 'use strict';
 
 const assert = require('assert');
+const sinon = require('sinon');
 require('./setup');
 
 const api = require('../../frontend/src/api');
 
 describe('frontend api SSE streams', function() {
   afterEach(function() {
-    delete global.fetch;
+    sinon.restore();
     window.localStorage.getItem = () => null;
   });
 
   it('throws a useful error for empty SSE error events', async function() {
-    global.fetch = async() => streamResponse([
+    sinon.stub(api, 'fetch').callsFake(async() => streamResponse([
       'data: {"chatMessage":{"_id":"1","role":"user","content":"hi"}}\n\n',
       'event: error\ndata: {}\n\n'
-    ]);
+    ]));
 
     const iterator = api.ChatThread.streamChatMessage({ chatThreadId: '1', content: 'hi' });
     const first = await iterator.next();
@@ -30,9 +31,9 @@ describe('frontend api SSE streams', function() {
   });
 
   it('throws the server message for SSE error events', async function() {
-    global.fetch = async() => streamResponse([
+    sinon.stub(api, 'fetch').callsFake(async() => streamResponse([
       'event: error\ndata: {"message":"LLM stream failed"}\n\n'
-    ]);
+    ]));
 
     const iterator = api.Model.streamChatMessage({ model: 'Test', content: 'hi' });
     await assert.rejects(
