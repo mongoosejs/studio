@@ -414,7 +414,7 @@
                 class="border-b border-edge cursor-pointer transition-colors"
                 :class="selectedDocuments.some(x => x._id.toString() === document._id.toString())
                   ? 'bg-blue-200'
-                  : 'hover:bg-muted/60'"
+                  : 'hover:bg-muted'"
               >
                 <td v-if="showRowNumbers" class="px-3 py-2 border-r border-edge align-top text-content-tertiary whitespace-nowrap">
                   {{ docIndex + 1 }}
