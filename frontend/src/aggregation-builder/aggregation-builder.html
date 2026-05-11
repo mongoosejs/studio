@@ -1,0 +1,225 @@
+<div
+  class="aggregation-builder flex min-h-0 flex-col overflow-hidden bg-slate-50 p-4 md:p-6"
+  style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
+  <div class="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col gap-4">
+    <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pr-1 md:gap-4">
+      <div
+        class="flex w-full min-h-0 shrink-0 flex-col overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] max-h-[min(42vh,26rem)]">
+        <section class="overflow-hidden rounded-lg border border-edge bg-page shadow-sm">
+          <header class="shrink-0 border-b border-edge bg-surface/60 px-4 py-2.5 md:px-5">
+            <h2 class="text-sm font-semibold tracking-tight text-content">Aggregation options</h2>
+            <p class="mt-1 text-xs leading-snug text-content-tertiary">Model, how many documents to return, and pipeline actions.</p>
+          </header>
+          <div class="flex flex-col gap-5 p-4 md:flex-row md:items-end md:justify-between md:gap-6 md:p-5">
+            <div class="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-stretch sm:gap-x-5 sm:gap-y-4">
+              <div class="flex min-w-0 flex-1 flex-col justify-end gap-1.5 sm:max-w-md">
+                <label
+                  for="aggregation-builder-model"
+                  class="text-xs font-medium text-content-secondary">Model</label>
+                <select
+                  id="aggregation-builder-model"
+                  v-model="selectedModel"
+                  class="box-border h-11 w-full rounded-lg border border-edge bg-surface px-3 text-sm leading-none text-content shadow-sm focus:border-edge-strong focus:outline-none focus:ring-2 focus:ring-gray-300/50">
+                  <option v-for="modelName in models" :key="modelName" :value="modelName">{{modelName}}</option>
+                </select>
+              </div>
+              <div class="flex w-full flex-col justify-end gap-1.5 sm:w-[6.5rem] sm:flex-none">
+                <label
+                  for="aggregation-builder-limit"
+                  class="text-xs font-medium text-content-secondary">Limit</label>
+                <input
+                  id="aggregation-builder-limit"
+                  v-model.number="resultLimit"
+                  type="number"
+                  min="1"
+                  max="200"
+                  class="box-border h-11 w-full rounded-lg border border-edge bg-surface px-3 text-sm tabular-nums leading-none text-content shadow-sm focus:border-edge-strong focus:outline-none focus:ring-2 focus:ring-gray-300/50" />
+              </div>
+            </div>
+            <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end sm:gap-3">
+              <button
+                type="button"
+                @click="addStage"
+                class="min-h-[2.5rem] flex-1 rounded-lg border border-edge bg-surface px-4 py-2 text-sm font-medium text-content-secondary shadow-sm transition-colors hover:bg-muted sm:flex-none">
+                Add Stage
+              </button>
+              <button
+                type="button"
+                @click="runAggregation"
+                :disabled="isRunning || !selectedModel || hasPipelineErrors"
+                class="min-h-[2.5rem] flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-text shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-500 disabled:opacity-90 sm:flex-none">
+                {{ isRunning ? 'Running...' : 'Run Now' }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section
+        class="flex min-h-[32vh] min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-edge bg-page shadow-sm md:min-h-[36vh]">
+        <div class="shrink-0 border-b border-edge px-4 py-2">
+          <h2 class="text-sm font-semibold text-content">Pipeline stages</h2>
+        </div>
+        <div
+          class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-y-contain p-4 pb-3 [-webkit-overflow-scrolling:touch] md:gap-6 md:p-5 md:pb-4">
+        <div
+          v-if="pipelineStageErrors.length"
+          role="alert"
+          aria-live="polite"
+          class="sticky top-0 z-[1] -mx-px shrink-0 rounded-md border border-red-200 bg-red-50 p-3 shadow-sm md:p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-red-800">Pipeline errors</p>
+          <ul class="mt-2 list-none space-y-1.5 text-sm text-red-800">
+            <li v-for="(item, errIdx) in pipelineStageErrors" :key="'pipeline-err-' + errIdx">
+              <span class="font-semibold">Stage {{ item.stageNumber }}:</span>
+              {{ item.message }}
+            </li>
+          </ul>
+        </div>
+        <div
+          v-for="(stage, index) in stages"
+          :key="stage.id + '-workflow-row'"
+          ref="workflowStageRows"
+          class="flex min-h-[min(21rem,38vh)] shrink-0 flex-col gap-4 overflow-hidden rounded-xl border border-edge bg-surface p-4 shadow-sm md:min-h-[min(24rem,42vh)] md:gap-5 md:p-5 lg:min-h-[26rem]">
+          <div class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-edge pb-3">
+            <span class="text-sm font-semibold text-content">Stage {{index + 1}}</span>
+            <button
+              type="button"
+              @click="removeStage(index)"
+              class="rounded-md border border-edge bg-surface px-3 py-1.5 text-xs font-semibold text-content-secondary hover:bg-muted">
+              Remove stage
+            </button>
+          </div>
+          <div
+            class="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)_minmax(0,1.1fr)] lg:grid-rows-1 lg:items-stretch lg:gap-5">
+          <div class="flex min-h-0 flex-col gap-3 overflow-hidden rounded-lg border border-edge bg-surface p-4">
+            <div class="flex shrink-0 flex-wrap items-center gap-2 border-b border-edge pb-2">
+              <span class="text-xs font-semibold uppercase tracking-wide text-content-tertiary">Operator</span>
+              <select
+                v-model="stage.operator"
+                class="min-w-0 flex-1 rounded-md border border-edge bg-page px-2 py-1 text-sm text-content focus:border-edge-strong focus:outline-none sm:max-w-[11rem]">
+                <option v-for="operator in stageOperators" :key="operator" :value="operator">{{operator}}</option>
+              </select>
+            </div>
+            <p
+              v-if="getStageError(stage)"
+              role="alert"
+              class="shrink-0 rounded-md border border-red-200 bg-red-50 px-2.5 py-2 text-sm leading-snug text-red-800">
+              {{ getStageError(stage) }}
+            </p>
+            <textarea
+              v-model="stage.bodyText"
+              spellcheck="false"
+              class="min-h-[11rem] w-full min-w-0 flex-1 resize-y rounded-md border border-edge bg-page px-3 py-2 font-mono text-sm text-content focus:border-edge-strong focus:outline-none [tab-size:2] md:min-h-[12rem]"
+              placeholder="{ _id: ObjectId('...'), createdAt: new Date('2024-01-01') }"
+            ></textarea>
+            <p v-if="!getStageError(stage)" class="shrink-0 text-xs leading-snug text-content-tertiary">
+              Same idea as the create document editor: JSON or JavaScript-style objects with
+              <span class="font-mono text-[0.7rem] text-content-secondary">ObjectId()</span>,
+              <span class="font-mono text-[0.7rem] text-content-secondary">new Date()</span>,
+              <span class="font-mono text-[0.7rem] text-content-secondary">RegExp</span>, etc. Types are sent with EJSON so they match on the server.
+            </p>
+          </div>
+
+          <div class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-edge bg-surface">
+            <div class="shrink-0 border-b border-edge px-3 py-2.5 text-xs font-semibold text-content-tertiary">
+              Pipeline JSON (EJSON)
+              <span class="font-normal text-content-tertiary">· through stage {{index + 1}}</span>
+            </div>
+            <pre
+              class="min-h-0 flex-1 overflow-auto p-3 font-mono text-xs text-content [&_code]:text-inherit md:p-4"><code>{{ pipelinePreviewThrough(index) }}</code></pre>
+          </div>
+
+          <div class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-edge bg-surface lg:h-full lg:max-h-full">
+            <div class="shrink-0 border-b border-edge px-3 py-2 text-xs font-semibold text-content-tertiary">Stage output preview</div>
+            <div class="flex min-h-0 flex-1 flex-col overflow-hidden p-2">
+              <div class="flex shrink-0 flex-col gap-2">
+                <button
+                  type="button"
+                  @click="runStagePreview(index)"
+                  :disabled="!selectedModel || stage.previewLoading || pipelineThroughIndexHasErrors(index)"
+                  class="w-full rounded-md border border-edge bg-page px-3 py-1.5 text-xs font-semibold text-content-secondary hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+                  Run preview
+                </button>
+                <button
+                  type="button"
+                  @click="toggleStagePreview(stage)"
+                  class="flex w-full shrink-0 items-center justify-between rounded-md px-2 py-1.5 text-xs font-semibold text-content-tertiary hover:bg-muted">
+                  <span>Preview</span>
+                  <span>
+                    <span v-if="stage.previewLoading">Loading...</span>
+                    <span v-else-if="stage.previewError" class="text-red-600">Error</span>
+                    <span v-else-if="!stage.previewLoaded" class="text-content-tertiary">Not previewed</span>
+                    <span v-else-if="stage.previewDocs.length">{{stage.previewDocs.length}} doc(s)</span>
+                    <span v-else class="text-content-tertiary">0 doc(s)</span>
+                    <span class="ml-2">{{stage.previewExpanded ? 'Hide' : 'Show'}}</span>
+                  </span>
+                </button>
+              </div>
+              <div
+                class="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overscroll-y-contain border-t border-edge pt-2 [-webkit-overflow-scrolling:touch] max-h-[min(38vh,320px)] lg:max-h-[min(42vh,400px)]">
+                <template v-if="stage.previewExpanded">
+                  <p v-if="stage.previewLoading" class="text-xs text-content-tertiary">Loading preview...</p>
+                  <p v-else-if="stage.previewError" class="text-xs text-red-600">{{stage.previewError}}</p>
+                  <p v-else-if="!stage.previewLoaded" class="text-xs text-content-tertiary">
+                    Click Run preview to load sample documents through this stage.
+                  </p>
+                  <p v-else-if="stage.previewDocs.length === 0" class="text-xs text-content-tertiary">No documents returned.</p>
+                  <div v-else class="flex flex-col gap-2">
+                    <div
+                      v-for="(doc, docIndex) in stage.previewDocs"
+                      :key="stage.id + '-preview-' + docIndex"
+                      class="shrink-0 overflow-hidden rounded-md border border-edge bg-page">
+                      <div class="border-b border-edge px-[0.6rem] py-[0.4rem] text-xs font-semibold text-content-tertiary">
+                        Document {{docIndex + 1}}
+                      </div>
+                      <pre
+                        class="m-0 max-w-full overflow-x-auto whitespace-pre-wrap break-words border-0 bg-surface p-2 font-mono text-xs text-content [&_code]:text-inherit"><code>{{formatDoc(doc)}}</code></pre>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+        </div>
+      </section>
+    </div>
+
+    <section
+      class="flex h-[min(34vh,440px)] min-h-[13rem] shrink-0 flex-col overflow-hidden rounded-lg border border-edge bg-page">
+      <div class="flex shrink-0 items-center justify-between gap-3 border-b border-edge px-4 py-2">
+        <span class="text-sm font-semibold text-content">Results</span>
+        <span v-if="isRunning" class="text-xs font-medium text-content-tertiary">Running…</span>
+      </div>
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden p-3">
+        <p v-if="errorMessage" class="shrink-0 text-sm text-red-600">{{errorMessage}}</p>
+        <p v-else-if="results.length === 0 && !isRunning" class="shrink-0 text-sm text-content-tertiary">
+          Click Run Now to execute the aggregation and show results here.
+        </p>
+        <p v-else-if="results.length === 0 && isRunning" class="shrink-0 py-2 text-sm text-content-tertiary">Fetching results…</p>
+        <div v-else class="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+          <p class="shrink-0 text-xs text-content-tertiary">
+            Showing {{ visibleResults.length }} of {{ results.length }} document(s).
+          </p>
+          <div
+            class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-md border border-edge bg-surface p-2 [-webkit-overflow-scrolling:touch]"
+            :class="{ 'pointer-events-none opacity-60': isRunning }">
+            <list-json
+              :key="resultsRenderKey"
+              :value="visibleResults"
+              :expanded-fields="visibleResultsExpandedFields"
+            />
+          </div>
+          <button
+            v-if="hasMoreResults"
+            type="button"
+            @click="loadMoreResults"
+            class="shrink-0 rounded-md border border-edge bg-surface px-3 py-1.5 text-xs font-semibold text-content-secondary hover:bg-muted">
+            Load {{ nextLoadMoreCount }} more
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

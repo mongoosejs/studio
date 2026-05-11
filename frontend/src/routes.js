@@ -2,14 +2,14 @@
 
 // Role-based access control configuration
 const roleAccess = {
-  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'tasks', 'taskByName', 'taskSingle'],
-  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'tasks', 'taskByName', 'taskSingle'],
-  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat', 'tasks', 'taskByName', 'taskSingle'],
-  readonly: ['root', 'model', 'document', 'chat'],
+  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'aggregationBuilder', 'tasks', 'taskByName', 'taskSingle'],
+  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'aggregationBuilder', 'tasks', 'taskByName', 'taskSingle'],
+  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat', 'aggregationBuilder', 'tasks', 'taskByName', 'taskSingle'],
+  readonly: ['root', 'model', 'document', 'chat', 'aggregationBuilder'],
   dashboards: ['dashboards', 'dashboard']
 };
 
-const allowedRoutesForLocalDev = ['document', 'dashboards', 'dashboard', 'root', 'chat', 'model', 'tasks', 'taskByName', 'taskSingle'];
+const allowedRoutesForLocalDev = ['document', 'dashboards', 'dashboard', 'root', 'chat', 'aggregationBuilder', 'model', 'tasks', 'taskByName', 'taskSingle'];
 
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {
@@ -104,6 +104,14 @@ module.exports = {
       path: '/chat/:threadId',
       name: 'chat',
       component: 'chat',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/aggregation-builder',
+      name: 'aggregationBuilder',
+      component: 'aggregation-builder',
       meta: {
         authorized: true
       }

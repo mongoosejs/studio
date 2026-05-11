@@ -1,6 +1,7 @@
 'use strict';
 
 exports.addField = require('./addField');
+exports.aggregate = require('./aggregate');
 exports.createChatMessage = require('./createChatMessage');
 exports.createDocument = require('./createDocument');
 exports.deleteDocument = require('./deleteDocument');
