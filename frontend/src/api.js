@@ -33,7 +33,8 @@ client.interceptors.response.use(
 );
 
 async function* streamSSE(url, options = {}) {
-  const response = await exports.fetch(url, {
+  const fetch = exports.fetch;
+  const response = await fetch(url, {
     method: 'GET',
     ...options,
     headers: {
@@ -185,7 +186,8 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
-      return exports.fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '?' + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
+      const fetch = exports.fetch;
+      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '?' + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
         method: 'GET',
         headers: {
           Authorization: `${accessToken}`, // Set your authorization token here
@@ -376,7 +378,8 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
-      return exports.fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + new URLSearchParams(params).toString(), {
+      const fetch = exports.fetch;
+      return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + new URLSearchParams(params).toString(), {
         method: 'GET',
         headers: {
           Authorization: `${accessToken}`, // Set your authorization token here
