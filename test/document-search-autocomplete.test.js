@@ -5,7 +5,11 @@ const {
   buildAutocompleteTrie,
   getAutocompleteContext,
   getAutocompleteSuggestions,
-  applySuggestion
+  applySuggestion,
+  getDatePickerInsertionRange,
+  dateArgumentSliceToDatetimeLocal,
+  insertQuotedIsoInDateArgument,
+  FUNCTION_HELPERS
 } = require('../frontend/src/_util/document-search-autocomplete');
 
 describe('document-search-autocomplete', function() {
@@ -275,6 +279,124 @@ describe('document-search-autocomplete', function() {
       const result = applySuggestion(searchText, cursorPos, '"name"');
       
       assert.strictEqual(result.text, '{ "name":');
+    });
+  });
+
+  describe('getDatePickerInsertionRange()', function() {
+    it('returns null when the cursor is not inside Date(...)', function() {
+      assert.strictEqual(getDatePickerInsertionRange('{ x: 1 }', 5), null);
+      assert.strictEqual(getDatePickerInsertionRange('{ d: 1 }', '{ d: '.length), null);
+    });
+
+    it('detects new Date( at end of before', function() {
+      const searchText = '{ x: new Date(';
+      const cursorPos = searchText.length;
+      const range = getDatePickerInsertionRange(searchText, cursorPos);
+
+      assert.ok(range);
+      assert.strictEqual(searchText.slice(0, range.innerStart).endsWith('new Date('), true);
+      assert.strictEqual(range.needsClosingParen, true);
+      assert.strictEqual(range.innerEnd, cursorPos);
+    });
+
+    it('sets needsClosingParen false when ) is present after the cursor', function() {
+      const searchText = '{ createdAt: Date() }';
+      const cursorPos = '{ createdAt: Date('.length;
+      const range = getDatePickerInsertionRange(searchText, cursorPos);
+
+      assert.ok(range);
+      assert.strictEqual(range.needsClosingParen, false);
+      assert.strictEqual(searchText.slice(range.innerStart, range.innerEnd), '');
+      assert.strictEqual(searchText[range.innerEnd], ')');
+    });
+
+    it('sets needsClosingParen true when no ) appears after the cursor', function() {
+      const searchText = '{ createdAt: Date( }';
+      const cursorPos = '{ createdAt: Date('.length;
+      const range = getDatePickerInsertionRange(searchText, cursorPos);
+
+      assert.ok(range);
+      assert.strictEqual(range.needsClosingParen, true);
+      assert.strictEqual(range.innerEnd, cursorPos);
+    });
+
+    it('finds inner slice when cursor is before the closing quote of a literal', function() {
+      const searchText = '{ createdAt: Date("2020-01-01") }';
+      const cursorPos = '{ createdAt: Date("2020-01-01'.length;
+      const range = getDatePickerInsertionRange(searchText, cursorPos);
+
+      assert.ok(range);
+      assert.strictEqual(searchText.slice(range.innerStart, range.innerEnd), '"2020-01-01"');
+      assert.strictEqual(range.needsClosingParen, false);
+    });
+  });
+
+  describe('dateArgumentSliceToDatetimeLocal()', function() {
+    it('returns empty string for blank or invalid input', function() {
+      assert.strictEqual(dateArgumentSliceToDatetimeLocal(''), '');
+      assert.strictEqual(dateArgumentSliceToDatetimeLocal('   '), '');
+      assert.strictEqual(dateArgumentSliceToDatetimeLocal('not-a-date'), '');
+    });
+
+    it('returns YYYY-MM-DDTHH:mm for a parseable slice', function() {
+      const result = dateArgumentSliceToDatetimeLocal('2020-06-15T14:30');
+      assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(result));
+      assert.strictEqual(result.slice(0, 10), '2020-06-15');
+    });
+
+    it('strips surrounding quotes before parsing', function() {
+      const result = dateArgumentSliceToDatetimeLocal('"2021-12-25T08:00:00.000Z"');
+      assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(result));
+    });
+  });
+
+  describe('insertQuotedIsoInDateArgument()', function() {
+    it('replaces the inner range with JSON-stringified ISO and no extra ) by default', function() {
+      const searchText = '{ d: Date(OLD) }';
+      const prefix = '{ d: Date(';
+      const inner = 'OLD';
+      const innerStart = prefix.length;
+      const innerEnd = innerStart + inner.length;
+      const range = { innerStart, innerEnd, needsClosingParen: false };
+      const iso = '2022-03-04T12:00:00.000Z';
+
+      const result = insertQuotedIsoInDateArgument(searchText, range, iso);
+      const expectedQuoted = JSON.stringify(iso);
+
+      assert.strictEqual(result.text, '{ d: Date(' + expectedQuoted + ') }');
+      assert.strictEqual(result.newCursorPos, innerStart + expectedQuoted.length);
+    });
+
+    it('appends ) when needsClosingParen is true', function() {
+      const searchText = '{ d: Date( }';
+      const innerStart = '{ d: Date('.length;
+      const range = { innerStart, innerEnd: innerStart, needsClosingParen: true };
+      const iso = '2023-01-02T00:00:00.000Z';
+
+      const result = insertQuotedIsoInDateArgument(searchText, range, iso);
+      const expectedQuoted = JSON.stringify(iso);
+
+      assert.ok(result.text.includes('{ d: Date(' + expectedQuoted + ')'));
+      assert.strictEqual(result.newCursorPos, innerStart + expectedQuoted.length + 1);
+    });
+
+    it('does not append ) when needsClosingParen is omitted (falsy)', function() {
+      const searchText = '{ d: Date(x) }';
+      const innerStart = '{ d: Date('.length;
+      const range = { innerStart, innerEnd: innerStart + 1, needsClosingParen: false };
+      const result = insertQuotedIsoInDateArgument(searchText, range, '2000-01-01T00:00:00.000Z');
+
+      assert.strictEqual(result.text.indexOf('))'), -1);
+      assert.ok(result.text.endsWith(') }'));
+    });
+  });
+
+  describe('FUNCTION_HELPERS', function() {
+    it('includes Date ObjectId and objectIdRange', function() {
+      assert.ok(FUNCTION_HELPERS.has('Date'));
+      assert.ok(FUNCTION_HELPERS.has('ObjectId'));
+      assert.ok(FUNCTION_HELPERS.has('objectIdRange'));
+      assert.ok(!FUNCTION_HELPERS.has('Math'));
     });
   });
 });

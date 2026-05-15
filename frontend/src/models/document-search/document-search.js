@@ -4,7 +4,10 @@ const template = require('./document-search.html');
 const {
   buildAutocompleteTrie,
   getAutocompleteSuggestions,
-  applySuggestion
+  applySuggestion,
+  getDatePickerInsertionRange,
+  dateArgumentSliceToDatetimeLocal,
+  insertQuotedIsoInDateArgument
 } = require('../../_util/document-search-autocomplete');
 
 module.exports = app => app.component('document-search', {
@@ -24,7 +27,9 @@ module.exports = app => app.component('document-search', {
       autocompleteSuggestions: [],
       autocompleteIndex: 0,
       autocompleteTrie: null,
-      searchText: this.value || ''
+      searchText: this.value || '',
+      datePickerContext: null,
+      datePickerLocalValue: ''
     };
   },
   watch: {
@@ -43,8 +48,25 @@ module.exports = app => app.component('document-search', {
   },
   mounted() {
     this.$refs.searchInput.focus();
+    this._onDocPointerDownCloseDatePicker = this.onDocumentPointerDownCloseDatePicker.bind(this);
+    document.addEventListener('pointerdown', this._onDocPointerDownCloseDatePicker, true);
+  },
+  beforeUnmount() {
+    if (this._onDocPointerDownCloseDatePicker) {
+      document.removeEventListener('pointerdown', this._onDocPointerDownCloseDatePicker, true);
+    }
   },
   methods: {
+    onDocumentPointerDownCloseDatePicker(ev) {
+      const drop = this.$refs.autocompleteDropdown;
+      if (!drop || drop.contains(ev.target)) {
+        return;
+      }
+      const dateEl = this.$refs.datePickerInput;
+      if (dateEl) {
+        dateEl.blur();
+      }
+    },
     focusInput() {
       const input = this.$refs.searchInput;
       if (input && typeof input.focus === 'function') {
@@ -66,9 +88,27 @@ module.exports = app => app.component('document-search', {
         });
       }
     },
+    onSearchKeyup(ev) {
+      if (
+        this.autocompleteSuggestions.length > 0 &&
+        (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')
+      ) {
+        return;
+      }
+      this.updateAutocomplete();
+    },
     updateAutocomplete() {
       const input = this.$refs.searchInput;
       const cursorPos = input ? input.selectionStart : 0;
+
+      const dateRange = getDatePickerInsertionRange(this.searchText, cursorPos);
+      this.datePickerContext = dateRange;
+      if (dateRange) {
+        const argSlice = this.searchText.slice(dateRange.innerStart, dateRange.innerEnd);
+        this.datePickerLocalValue = dateArgumentSliceToDatetimeLocal(argSlice);
+      } else {
+        this.datePickerLocalValue = '';
+      }
 
       if (this.autocompleteTrie) {
         this.autocompleteSuggestions = getAutocompleteSuggestions(
@@ -81,6 +121,34 @@ module.exports = app => app.component('document-search', {
       } else {
         this.autocompleteSuggestions = [];
       }
+    },
+    applyDateFromPicker(localDateTime) {
+      if (!localDateTime || !this.datePickerContext) {
+        return;
+      }
+      const picked = new Date(localDateTime);
+      if (Number.isNaN(picked.getTime())) {
+        if (this.$toast) {
+          this.$toast.error('Invalid date or time. Enter a valid date and time, then try again.');
+        }
+        return;
+      }
+      const iso = picked.toISOString();
+      const result = insertQuotedIsoInDateArgument(
+        this.searchText,
+        this.datePickerContext,
+        iso
+      );
+      const input = this.$refs.searchInput;
+      this.searchText = result.text;
+      this.autocompleteSuggestions = [];
+      this.$nextTick(() => {
+        if (input) {
+          input.focus();
+          input.setSelectionRange(result.newCursorPos, result.newCursorPos);
+        }
+        this.updateAutocomplete();
+      });
     },
     handleKeyDown(ev) {
       if (this.autocompleteSuggestions.length === 0) {
