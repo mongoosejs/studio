@@ -15,7 +15,63 @@ const { routes, hasAccess } = require('./routes');
 const Toast = require('vue-toastification').default;
 const { useToast } = require('vue-toastification');
 const appendCSS = require('./appendCSS');
+const {
+  safeReadRecentPages,
+  saveRecentPages,
+  MAX_RECENT_PAGES,
+  normalizeTrackedPath,
+  withRecentPagesStorageLock
+} = require('./_util/recent-pages-history');
 appendCSS(require('vue-toastification/dist/index.css'));
+
+const TRACKED_RECENT_PAGE_ROUTE_NAMES = new Set(['model', 'document', 'dashboard', 'chat']);
+
+function formatHistoryLabel(route) {
+  if (!route || typeof route.path !== 'string') {
+    return 'Unknown page';
+  }
+  if (route.name === 'model') {
+    return route.params?.model ? `Model: ${route.params.model}` : 'Model';
+  }
+  if (route.name === 'document') {
+    const model = route.params?.model ? `${route.params.model} ` : '';
+    const documentId = route.params?.documentId ? String(route.params.documentId) : '';
+    const shortDocumentId = documentId ? documentId.slice(0, 8) : '';
+    return `Document: ${model}${shortDocumentId}`.trim();
+  }
+  if (route.name === 'dashboard') {
+    return route.params?.dashboardId ? `Dashboard: ${route.params.dashboardId}` : 'Dashboard';
+  }
+  if (route.name === 'chat') {
+    return route.params?.threadId ? `Chat: ${route.params.threadId}` : 'Chat';
+  }
+  const normalizedPath = route.path.replace(/^\//, '');
+  return normalizedPath || 'Home';
+}
+
+function trackRecentPage(route) {
+  if (!route || typeof route.path !== 'string') {
+    return;
+  }
+  if (!TRACKED_RECENT_PAGE_ROUTE_NAMES.has(route.name)) {
+    return;
+  }
+  if (typeof route.path === 'string' && route.path.includes('code=')) {
+    return;
+  }
+  const path = normalizeTrackedPath(route.fullPath || route.path || '/');
+  const label = formatHistoryLabel(route);
+  const visitedAt = Date.now();
+
+  void withRecentPagesStorageLock(() => {
+    const existing = safeReadRecentPages();
+    const deduped = existing.filter(entry => normalizeTrackedPath(entry.path) !== path);
+    const next = [...deduped, { path, label, visitedAt }]
+      .sort((a, b) => b.visitedAt - a.visitedAt)
+      .slice(0, MAX_RECENT_PAGES);
+    saveRecentPages(next);
+  });
+}
 
 const app = Vue.createApp({
   template: '<app-component />'
@@ -169,7 +225,14 @@ app.component('app-component', {
     const authError = Vue.ref(null);
     const modelSchemaPaths = Vue.ref(null);
 
-    const state = Vue.reactive({ user, roles, status, nodeEnv, authError, modelSchemaPaths });
+    const state = Vue.reactive({
+      user,
+      roles,
+      status,
+      nodeEnv,
+      authError,
+      modelSchemaPaths
+    });
     Vue.provide('state', state);
 
     return state;
@@ -231,6 +294,10 @@ router.beforeEach((to, from, next) => {
   } else {
     next();
   }
+});
+
+router.afterEach((to) => {
+  trackRecentPage(to);
 });
 
 app.config.globalProperties = { format, arrayUtils, $toast: toast };

@@ -2,7 +2,7 @@
 
 .modal-mask {
   position: fixed;
-  z-index: 9998;
+  z-index: 10050;
   top: 0;
   left: 0;
   width: 100%;
@@ -50,6 +50,25 @@
   overflow: auto;
 }
 
+/* Recent pages: one scroll region — inner .modal-recent-pages-scroll only (avoids double scrollbars with .modal-body overflow). */
+.modal-body.modal-recent-pages-body {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  height: min(48vh, 18rem);
+  max-height: min(48vh, 18rem);
+  overflow: hidden;
+}
+
+.modal-body.modal-recent-pages-body .modal-recent-pages-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .modal__button--default {
   float: right;
 }
@@ -79,6 +98,7 @@
 
 .modal-container .modal-exit {
   position: absolute;
+  z-index: 2;
   right: 0.25em;
   top: 0.25em;
   cursor: pointer;
