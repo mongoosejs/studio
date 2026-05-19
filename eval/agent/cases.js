@@ -129,12 +129,13 @@ module.exports = [
     id: 'dashboard-3-revenue-by-month',
     category: 'dashboard',
     fixture: 'ecommerce',
-    prompt: 'Chart total revenue per month from paid orders.',
+    prompt: 'Chart total revenue per month from paid orders. Include only months that contain at least one paid order, in chronological order, using "YYYY-MM" format for the labels.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
       assert.ok(trace.output?.$chart, `expected $chart, got ${JSON.stringify(trace.output)}`);
-      const labels = trace.output.$chart.data?.labels;
-      assert.ok(Array.isArray(labels) && labels.length >= 2, `expected ≥2 month labels, got ${JSON.stringify(labels)}`);
+      assert.deepEqual(trace.output.$chart.data.labels, ['2026-02', '2026-03', '2026-04']);
+      assert.equal(trace.output.$chart.data.datasets.length, 1, `expected 1 dataset, got ${JSON.stringify(trace.output.$chart.data.datasets)}`);
+      assert.deepEqual(trace.output.$chart.data.datasets[0].data, [300, 60, 222]);
     }
   },
 
