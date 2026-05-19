@@ -53,6 +53,9 @@ module.exports = app => app.component('create-document', {
           documentData: this.aiOriginalDocument,
           currentDateTime: getCurrentDateTimeContext()
         })) {
+          if (event?.message) {
+            throw new Error(event.message);
+          }
           if (event?.textPart) {
             this.aiSuggestion += event.textPart;
           }

@@ -6,3 +6,4 @@ exports.getChatThread = require('./getChatThread');
 exports.listChatThreads = require('./listChatThreads');
 exports.shareChatThread = require('./shareChatThread');
 exports.streamChatMessage = require('./streamChatMessage');
+exports.toggleAgentMode = require('./toggleAgentMode');

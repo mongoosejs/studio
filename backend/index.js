@@ -11,6 +11,9 @@ const dashboardResultSchema = require('./db/dashboardResultSchema');
 
 module.exports = function backend(db, studioConnection, options) {
   db = db || mongoose.connection;
+  if (db instanceof mongoose.Mongoose) {
+    db = db.connection;
+  }
 
   studioConnection = studioConnection ?? db;
   const Dashboard = studioConnection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
@@ -20,7 +23,7 @@ module.exports = function backend(db, studioConnection, options) {
 
   let changeStream = null;
   if (options?.changeStream) {
-    const conn = db instanceof mongoose.Mongoose ? db.connection : db;
+    const conn = db.connection ? db.connection : db;
     if (conn.readyState !== mongoose.Connection.STATES.connected) {
       conn._waitForConnect().then(() => {
         changeStream = conn.watch();

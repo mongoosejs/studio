@@ -1,0 +1,12 @@
+<div class="flex items-center gap-2" @click.stop>
+  <select
+    :value="format"
+    @input="onFormatChange($event.target.value)"
+    class="text-xs border border-edge rounded-md bg-surface px-2 py-1"
+  >
+    <option value="hex">Hex string</option>
+    <option value="object_call">ObjectId('...')</option>
+    <option value="unix_seconds">Unix timestamp</option>
+    <option value="date">Date</option>
+  </select>
+</div>

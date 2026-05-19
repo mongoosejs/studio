@@ -13,6 +13,9 @@ const time = require('time-commando');
 
 describe('chat component', function() {
   afterEach(function() {
+    delete window.matchMedia;
+    window.localStorage.getItem = () => null;
+    window.localStorage.setItem = () => {};
     sinon.restore();
   });
 
@@ -178,12 +181,79 @@ describe('chat component', function() {
       chatThreads: [],
       $refs: {},
       $toast: { success: () => {} },
-      $nextTick: fn => fn && fn()
+      $nextTick: fn => fn && fn(),
+      scrollToBottom: () => {}
     };
 
     await chat.methods.sendMessage.call(state);
 
     const params = streamStub.firstCall.args[0];
     assert.strictEqual(params.currentDateTime, '2026-03-22T15:04:05');
+  });
+
+  it('surfaces a streamed error message', async function() {
+    const toast = { success: () => {}, error: sinon.spy() };
+    sinon.stub(api.ChatThread, 'streamChatMessage').callsFake(async function* () {
+      yield { message: 'LLM stream failed' };
+    });
+
+    const state = {
+      sendingMessage: false,
+      newMessage: 'Hello',
+      chatThreadId: '1'.repeat(24),
+      chatMessages: [],
+      chatThreads: [],
+      $refs: {},
+      $toast: toast,
+      $nextTick: fn => fn && fn(),
+      scrollToBottom: () => {}
+    };
+
+    await chat.methods.sendMessage.call(state);
+
+    assert.ok(toast.error.calledOnceWithExactly('LLM stream failed'));
+    assert.strictEqual(state.sendingMessage, false);
+  });
+
+  it('opens the agent sidebar when agent mode is enabled on desktop', async function() {
+    window.matchMedia = sinon.stub().returns({ matches: true });
+    const setItem = sinon.spy();
+    window.localStorage.setItem = setItem;
+
+    const state = {
+      chatThreadId: null,
+      draftAgentMode: false,
+      showAgentSidebar: false,
+      isAgentModeEnabled: false,
+      isDesktopViewport: chat.methods.isDesktopViewport,
+      persistAgentModePreference: chat.methods.persistAgentModePreference,
+      maybeOpenAgentSidebar: chat.methods.maybeOpenAgentSidebar
+    };
+
+    await chat.methods.toggleAgentMode.call(state);
+
+    assert.strictEqual(state.draftAgentMode, true);
+    assert.strictEqual(state.showAgentSidebar, true);
+    assert.ok(setItem.calledOnceWithExactly('_mongooseStudioAgentMode', 'true'));
+  });
+
+  it('turns agent mode on for a thread when the sticky preference is on', async function() {
+    const toggledThread = { _id: '1'.repeat(24), agentMode: true };
+    const toggleStub = sinon.stub(api.ChatThread, 'toggleAgentMode').resolves({ chatThread: toggledThread });
+
+    const state = {
+      chatThreadId: toggledThread._id,
+      draftAgentMode: true,
+      chatThreads: [{ _id: toggledThread._id, agentMode: false }],
+      currentThread: { _id: toggledThread._id, agentMode: false }
+    };
+
+    await chat.methods.syncCurrentThreadAgentMode.call(state);
+
+    assert.ok(toggleStub.calledOnceWithExactly({
+      chatThreadId: toggledThread._id,
+      agentMode: true
+    }));
+    assert.strictEqual(state.chatThreads[0].agentMode, true);
   });
 });

@@ -3,8 +3,7 @@
 const { createAnthropic } = require('@ai-sdk/anthropic');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 const { createOpenAI } = require('@ai-sdk/openai');
-const { generateText } = require('ai');
-const { defaultMothershipURL } = require('../../constants');
+const { generateText, stepCountIs } = require('ai');
 
 module.exports = async function callLLM(messages, system, options) {
   let provider = null;
@@ -13,6 +12,7 @@ module.exports = async function callLLM(messages, system, options) {
 
   if (options?.openAIAPIKey) {
     providers.push({
+      name: 'OpenAI',
       provider: createOpenAI({ apiKey: options.openAIAPIKey }),
       model: options?.model ?? 'gpt-4o-mini'
     });
@@ -20,6 +20,7 @@ module.exports = async function callLLM(messages, system, options) {
 
   if (options?.anthropicAPIKey) {
     providers.push({
+      name: 'Anthropic',
       provider: createAnthropic({ apiKey: options.anthropicAPIKey }),
       model: options?.model ?? 'claude-haiku-4-5-20251001'
     });
@@ -27,13 +28,14 @@ module.exports = async function callLLM(messages, system, options) {
 
   if (options?.googleGeminiAPIKey) {
     providers.push({
+      name: 'Gemini',
       provider: createGoogleGenerativeAI({ apiKey: options.googleGeminiAPIKey }),
       model: options?.model ?? 'gemini-2.5-flash'
     });
   }
 
   if (providers.length > 1) {
-    throw new Error('Cannot set multiple LLM API keys');
+    throw new Error(`Cannot set multiple LLM API keys, found ${providers.map(p => p.name).join(', ')}`);
   }
 
   if (providers.length > 0) {
@@ -46,26 +48,11 @@ module.exports = async function callLLM(messages, system, options) {
     return generateText({
       model: provider(model),
       system,
-      messages
+      messages,
+      tools: options?.tools,
+      stopWhen: options?.tools ? stepCountIs(10) : undefined
     });
   }
 
-  const headers = { 'Content-Type': 'application/json' };
-  const response = await fetch(`${defaultMothershipURL}/getChatCompletion`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      messages: [{ role: 'system', content: { type: 'text', text: system } }, ...messages],
-      model: options?.model
-    })
-  }).then(response => {
-    if (!response.ok) {
-      return response.json().then(data => {
-        throw new Error(`Mongoose Studio chat completion error: ${data.message}`);
-      });
-    }
-    return response;
-  });
-
-  return await response.json().then(res => ({ text: res.response }));
+  throw new Error('No LLM API key configured. Set one of anthropicAPIKey, googleGeminiAPIKey, or openAIAPIKey.');
 };

@@ -15,7 +15,8 @@ module.exports = defineConfig([
         fetch: true,
         setTimeout: true,
         process: true,
-        console: true
+        console: true,
+        __dirname: true
       }
     },
     extends: [config]

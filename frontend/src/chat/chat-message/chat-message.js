@@ -6,7 +6,7 @@ const template = require('./chat-message.html');
 
 module.exports = app => app.component('chat-message', {
   template: template,
-  props: ['message', 'targetDashboardId'],
+  props: ['message', 'targetDashboardId', 'capabilities'],
   computed: {
     styleForMessage() {
       return this.message.role === 'user' ? 'p-3 bg-muted' : 'py-3 pr-3';
@@ -54,10 +54,19 @@ module.exports = app => app.component('chat-message', {
     marked(text) {
       return marked(text);
     },
-    async executeScript(message, script) {
+    formatToolInput(input) {
+      if (!input) return '';
+      const parts = [];
+      if (input.modelName) parts.push(input.modelName);
+      if (input.filter && Object.keys(input.filter).length) parts.push(JSON.stringify(input.filter));
+      if (input.limit && input.limit !== 10) parts.push('limit=' + input.limit);
+      return parts.length ? '(' + parts.join(', ') + ')' : '';
+    },
+    async executeScript(message, script, dryRun) {
       const { chatMessage } = await api.ChatMessage.executeScript({
         chatMessageId: message._id,
-        script
+        script,
+        dryRun
       });
       message.executionResult = chatMessage.executionResult;
       console.log(message);

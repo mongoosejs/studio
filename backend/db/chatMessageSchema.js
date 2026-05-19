@@ -20,10 +20,16 @@ const chatMessageSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  toolCalls: [{
+    toolName: String,
+    input: mongoose.Schema.Types.Mixed,
+    status: String
+  }],
   executionResult: {
     output: mongoose.Schema.Types.Mixed,
     logs: String,
-    error: String
+    error: String,
+    dryRun: Boolean
   }
 }, { timestamps: true });
 

@@ -56,7 +56,16 @@ module.exports = app => app.component('json-node', {
     references: {
       type: Object,
       default: () => ({})
+    },
+    maxStringLength: {
+      type: Number,
+      default: 200
     }
+  },
+  data() {
+    return {
+      isStringExpanded: false
+    };
   },
   computed: {
     hasKey() {
@@ -150,6 +159,29 @@ module.exports = app => app.component('json-node', {
         return String(this.value);
       }
       return stringified;
+    },
+    isStringValue() {
+      return typeof this.value === 'string';
+    },
+    shouldTruncateString() {
+      return this.isStringValue && this.formattedValue.length > this.maxStringLength;
+    },
+    displayedValue() {
+      if (!this.shouldTruncateString || this.isStringExpanded) {
+        return this.formattedValue;
+      }
+      const keep = Math.max(0, this.maxStringLength - 1);
+      return `${this.formattedValue.slice(0, keep)}…`;
+    },
+    stringWrapperClasses() {
+      const classes = ['min-w-0', 'max-w-full', 'break-words'];
+      if (this.shouldTruncateString && this.isStringExpanded) {
+        classes.push('rounded-md', 'border', 'border-edge', 'bg-muted/60', 'px-2', 'py-1');
+      }
+      return classes;
+    },
+    stringToggleLabel() {
+      return this.isStringExpanded ? 'Show less' : 'Show more';
     },
     valueClasses() {
       const classes = ['text-slate-700'];
@@ -267,6 +299,12 @@ module.exports = app => app.component('json-node', {
         return;
       }
       this.$router.push({ path: `/model/${this.referenceModel}/document/${id}` });
+    },
+    toggleStringExpansion() {
+      if (!this.shouldTruncateString) {
+        return;
+      }
+      this.isStringExpanded = !this.isStringExpanded;
     }
   }
 });

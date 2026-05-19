@@ -4,6 +4,13 @@ const api = require('../api');
 const mothership = require('../mothership');
 const template = require('./navbar.html');
 const { routes, hasAccess } = require('../routes');
+const {
+  RECENT_PAGES_STORAGE_KEY,
+  RECENT_PAGES_CHANGED_EVENT,
+  safeReadRecentPages,
+  saveRecentPages,
+  withRecentPagesStorageLock
+} = require('../_util/recent-pages-history');
 
 const appendCSS = require('../appendCSS');
 
@@ -15,7 +22,9 @@ module.exports = app => app.component('navbar', {
   inject: ['state'],
   data: () => ({
     showFlyout: false,
-    darkMode: typeof localStorage !== 'undefined' && localStorage.getItem('studio-theme') === 'dark'
+    darkMode: typeof localStorage !== 'undefined' && localStorage.getItem('studio-theme') === 'dark',
+    showRecentPagesModal: false,
+    localRecentPages: []
   }),
   mounted: function() {
     window.navbar = this;
@@ -36,6 +45,32 @@ module.exports = app => app.component('navbar', {
         mobileMenu.classList.remove('translate-x-0');
         mobileMenu.classList.add('translate-x-full');
       });
+    }
+
+    this.localRecentPages = safeReadRecentPages();
+
+    this._syncRecentPagesFromOtherTab = ev => {
+      if (ev.storageArea !== window.localStorage || ev.key !== RECENT_PAGES_STORAGE_KEY) {
+        return;
+      }
+      this.refreshRecentPagesFromStorage();
+    };
+    this._syncRecentPagesFromBroadcast = () => this.refreshRecentPagesFromStorage();
+
+    window.addEventListener('storage', this._syncRecentPagesFromOtherTab);
+    window.addEventListener(RECENT_PAGES_CHANGED_EVENT, this._syncRecentPagesFromBroadcast);
+  },
+  beforeUnmount() {
+    if (this._syncRecentPagesFromOtherTab) {
+      window.removeEventListener('storage', this._syncRecentPagesFromOtherTab);
+    }
+    if (this._syncRecentPagesFromBroadcast) {
+      window.removeEventListener(RECENT_PAGES_CHANGED_EVENT, this._syncRecentPagesFromBroadcast);
+    }
+  },
+  watch: {
+    '$route.fullPath'() {
+      this.refreshRecentPagesFromStorage();
     }
   },
   computed: {
@@ -71,6 +106,15 @@ module.exports = app => app.component('navbar', {
     },
     hasTaskVisualizer() {
       return !!window.MONGOOSE_STUDIO_CONFIG.enableTaskVisualizer;
+    },
+    recentPagesList() {
+      return this.localRecentPages;
+    },
+    hasLLMAPIKey() {
+      return !!window.MONGOOSE_STUDIO_CONFIG.hasLLMAPIKey;
+    },
+    chatDisabledReason() {
+      return 'Chat requires an Anthropic, Gemini, or OpenAI API key.';
     }
   },
   methods: {
@@ -100,6 +144,30 @@ module.exports = app => app.component('navbar', {
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', this.darkMode ? '#0f0f0f' : '#ffffff');
       document.documentElement.dispatchEvent(new CustomEvent('studio-theme-changed', { detail: { dark: this.darkMode } }));
+    },
+    refreshRecentPagesFromStorage() {
+      this.localRecentPages = safeReadRecentPages();
+    },
+    openRecentPagesModal() {
+      this.showRecentPagesModal = true;
+      this.refreshRecentPagesFromStorage();
+    },
+    closeRecentPagesModal() {
+      this.showRecentPagesModal = false;
+    },
+    clearRecentPagesHistory() {
+      this.localRecentPages = [];
+      void withRecentPagesStorageLock(() => saveRecentPages([]));
+    },
+    goToRecentPage(entry) {
+      if (!entry || !entry.path) {
+        return;
+      }
+      this.showRecentPagesModal = false;
+      if (entry.path === this.$route.fullPath) {
+        return;
+      }
+      this.$router.push(entry.path);
     }
   },
   directives: {
