@@ -25,6 +25,7 @@ const {
 appendCSS(require('vue-toastification/dist/index.css'));
 
 const TRACKED_RECENT_PAGE_ROUTE_NAMES = new Set(['model', 'document', 'dashboard', 'chat']);
+const CHAT_ROUTE_NAMES = new Set(['chat index', 'chat']);
 
 function formatHistoryLabel(route) {
   if (!route || typeof route.path !== 'string') {
@@ -240,8 +241,12 @@ app.component('app-component', {
         window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
 
         try {
-          const { nodeEnv } = await api.status();
+          const [{ nodeEnv }, capabilities] = await Promise.all([
+            api.status(),
+            loadStudioCapabilities()
+          ]);
           this.nodeEnv = nodeEnv;
+          this.capabilities = capabilities;
         } catch (err) {
           this.authError = 'Error connecting to Mongoose Studio API: ' + err.response?.data?.message ?? err.message;
           this.status = 'loaded';
@@ -261,12 +266,14 @@ app.component('app-component', {
           const { user, roles } = await mothership.me();
 
           try {
-            const [{ nodeEnv }, { modelSchemaPaths }] = await Promise.all([
+            const [{ nodeEnv }, { modelSchemaPaths }, capabilities] = await Promise.all([
               api.status(),
-              api.Model.listModels()
+              api.Model.listModels(),
+              loadStudioCapabilities()
             ]);
             this.nodeEnv = nodeEnv;
             this.modelSchemaPaths = modelSchemaPaths;
+            this.capabilities = capabilities;
           } catch (err) {
             this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
             this.status = 'loaded';
@@ -279,12 +286,14 @@ app.component('app-component', {
       }
     } else {
       try {
-        const [{ nodeEnv }, { modelSchemaPaths }] = await Promise.all([
+        const [{ nodeEnv }, { modelSchemaPaths }, capabilities] = await Promise.all([
           api.status(),
-          api.Model.listModels()
+          api.Model.listModels(),
+          loadStudioCapabilities()
         ]);
         this.nodeEnv = nodeEnv;
         this.modelSchemaPaths = modelSchemaPaths;
+        this.capabilities = capabilities;
       } catch (err) {
         this.authError = 'Error connecting to Mongoose Studio API: ' + (err.response?.data?.message ?? err.message);
       }
@@ -299,6 +308,7 @@ app.component('app-component', {
     const nodeEnv = Vue.ref(null);
     const authError = Vue.ref(null);
     const modelSchemaPaths = Vue.ref(null);
+    const capabilities = Vue.ref(null);
 
     const state = Vue.reactive({
       user,
@@ -306,7 +316,8 @@ app.component('app-component', {
       status,
       nodeEnv,
       authError,
-      modelSchemaPaths
+      modelSchemaPaths,
+      capabilities
     });
     Vue.provide('state', state);
 
@@ -358,13 +369,13 @@ router.beforeEach((to, from, next) => {
   next();
 });
 
-router.beforeEach((to, from, next) => {
-  if (['chat index', 'chat'].includes(to.name) && !window.MONGOOSE_STUDIO_CONFIG.hasLLMAPIKey) {
+router.beforeEach(async(to, from, next) => {
+  if (CHAT_ROUTE_NAMES.has(to.name) && !(await supportsAI())) {
     next({ name: 'root' });
     return;
   }
 
-  if (to.name === 'root' && window.state.roles && window.state.roles[0] === 'dashboards') {
+  if (to.name === 'root' && window.state?.roles && window.state.roles[0] === 'dashboards') {
     return next({ name: 'dashboards' });
   } else {
     next();
@@ -379,3 +390,28 @@ app.config.globalProperties = { format, arrayUtils, $toast: toast };
 app.use(router);
 
 app.mount('#content');
+
+async function getStudioCapabilities() {
+  if (window.__mongooseStudioCapabilitiesPromise == null) {
+    window.__mongooseStudioCapabilitiesPromise = api.getCapabilities().catch(err => {
+      window.__mongooseStudioCapabilitiesPromise = null;
+      throw err;
+    });
+  }
+  return window.__mongooseStudioCapabilitiesPromise;
+}
+
+async function loadStudioCapabilities() {
+  try {
+    return await getStudioCapabilities();
+  } catch (err) {
+    return null;
+  }
+}
+
+async function supportsAI() {
+  if (window.state?.capabilities == null) {
+    return true;
+  }
+  return window.state.capabilities.supportsAI !== false;
+}
