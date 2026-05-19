@@ -61,8 +61,8 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  height: min(48vh, 18rem);
-  max-height: min(48vh, 18rem);
+  height: min(60vh, 22.5rem);
+  max-height: min(60vh, 22.5rem);
   overflow: hidden;
 }
 
