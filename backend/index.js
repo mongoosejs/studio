@@ -12,7 +12,7 @@ const dashboardResultSchema = require('./db/dashboardResultSchema');
 module.exports = function backend(db, studioConnection, options) {
   db = db || mongoose.connection;
   if (db instanceof mongoose.Mongoose) {
-    db = mongoose.connection;
+    db = db.connection;
   }
 
   studioConnection = studioConnection ?? db;
