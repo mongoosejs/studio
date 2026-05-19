@@ -5,6 +5,7 @@ const ts = require('typescript');
 const { tool } = require('ai');
 const { jsonSchema } = require('@ai-sdk/provider-utils');
 const agentToolMetadata = require('./agentToolMetadata');
+const debugging = require('../../debugging');
 
 module.exports = function getAgentTools(db) {
   const modelNames = Object.keys(db.models).filter(name => !name.startsWith('__Studio'));
@@ -21,7 +22,7 @@ module.exports = function getAgentTools(db) {
         required: ['modelName']
       }),
       execute: async({ modelName }) => {
-        console.log(`estimatedDocumentCount: modelName=${modelName}`);
+        debugLog(`estimatedDocumentCount: modelName=${modelName}`);
         const Model = db.models[modelName];
         if (Model == null) {
           return { error: `Model ${modelName} not found. Available models: ${modelNames.join(', ')}` };
@@ -42,7 +43,7 @@ module.exports = function getAgentTools(db) {
         required: ['modelName']
       }),
       execute: async({ modelName, filter = {}, limit = 10 }) => {
-        console.log(`find: modelName=${modelName}, filter=${JSON.stringify(filter)}, limit=${limit}`);
+        debugLog(`find: modelName=${modelName}, filter=${JSON.stringify(filter)}, limit=${limit}`);
         const Model = db.models[modelName];
         if (Model == null) {
           return { error: `Model ${modelName} not found. Available models: ${modelNames.join(', ')}` };
@@ -62,7 +63,7 @@ module.exports = function getAgentTools(db) {
         required: ['modelName']
       }),
       execute: async({ modelName, filter = {} }) => {
-        console.log(`findOne: modelName=${modelName}, filter=${JSON.stringify(filter)}`);
+        debugLog(`findOne: modelName=${modelName}, filter=${JSON.stringify(filter)}`);
         const Model = db.models[modelName];
         if (Model == null) {
           return { error: `Model ${modelName} not found. Available models: ${modelNames.join(', ')}` };
@@ -72,7 +73,7 @@ module.exports = function getAgentTools(db) {
       }
     }),
     typeCheck: tool({
-      description: toolDescriptions.typeCheck + ' The script will run in a sandbox with globals: db (mongoose.Connection), mongoose, ObjectId (mongoose.Types.ObjectId), console, and MongooseStudioChartColors (string[]). Pass the raw script body (no imports, no wrapping function). Returns any TypeScript errors or JavaScript syntax errors found. Remember that you should write JavaScript, NOT TypeScript. This tool is just to check for obvious errors.',
+      description: toolDescriptions.typeCheck + ' The script will run in a sandbox with globals: db (mongoose.Connection — access models via db.models.ModelName), mongoose, ObjectId (mongoose.Types.ObjectId), console, and MongooseStudioChartColors (string[]). Pass the raw script body (no imports, no wrapping function). Returns any TypeScript errors or JavaScript syntax errors found. Remember that you should write JavaScript, NOT TypeScript. This tool is just to check for obvious errors.',
       inputSchema: jsonSchema({
         type: 'object',
         properties: {
@@ -81,7 +82,8 @@ module.exports = function getAgentTools(db) {
         required: ['script']
       }),
       execute: async({ script }) => {
-        const wrapped = wrapScriptForTypeCheck(script);
+        debugLog(`typeCheck: script=${script}`);
+        const wrapped = wrapScriptForTypeCheck(script, modelNames);
         const fileName = '__check.ts';
         const compilerOptions = {
           noEmit: true,
@@ -118,7 +120,7 @@ module.exports = function getAgentTools(db) {
           return { ok: true };
         }
 
-        console.log('Errors', errors);
+        debugLog('Errors', errors);
 
         return { ok: false, errors };
       }
@@ -126,10 +128,19 @@ module.exports = function getAgentTools(db) {
   };
 };
 
-const wrapScriptForTypeCheck = (script) => `
+function debugLog() {
+  if (debugging.isDebuggingEnabled()) {
+    console.log(...arguments);
+  }
+}
+
+const wrapScriptForTypeCheck = (script, modelNames) => `
 import mongoose from 'mongoose';
-declare const db: Omit<mongoose.Connection, 'model'> & {
+declare const db: Omit<mongoose.Connection, 'model' | 'models'> & {
   model(name: string): mongoose.Model<any>;
+  models: {
+${modelNames.map(name => `    ${JSON.stringify(name)}: mongoose.Model<any>;`).join('\n')}
+  };
 };
 declare const ObjectId: typeof mongoose.Types.ObjectId;
 declare const console: Console;

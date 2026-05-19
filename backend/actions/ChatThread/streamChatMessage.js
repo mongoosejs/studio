@@ -4,8 +4,7 @@ const Archetype = require('archetype');
 const assert = require('assert');
 const authorize = require('../../authorize');
 const callLLM = require('../../integrations/callLLM');
-const agentSystemPrompt = require('../../chatAgent/agentSystemPrompt');
-const getAgentTools = require('../../chatAgent/getAgentTools');
+const runChatAgent = require('../../chatAgent/runChatAgent');
 const streamLLM = require('../../integrations/streamLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
 const mongoose = require('mongoose');
@@ -86,14 +85,6 @@ module.exports = ({ db, studioConnection, options }) => async function* streamCh
     );
   }
 
-  const modelDescriptions = getModelDescriptions(db);
-  const system = [
-    chatThread.agentMode ? agentSystemPrompt : systemPrompt,
-    currentDateTime ? `Current date: ${currentDateTime}` : null,
-    modelDescriptions,
-    options?.context
-  ].filter(Boolean).join('\n\n');
-
   const userChatMessage = await ChatMessage.create({
     chatThreadId,
     role: 'user',
@@ -111,10 +102,19 @@ module.exports = ({ db, studioConnection, options }) => async function* streamCh
     script: null,
     executionResult: null
   });
-  const llmOptions = chatThread.agentMode ? { ...options, tools: getAgentTools(db) } : options;
   let textStream;
   try {
-    textStream = streamLLM(llmMessages, system, llmOptions);
+    if (chatThread.agentMode) {
+      textStream = runChatAgent({ db, llmMessages, currentDateTime, options });
+    } else {
+      const system = [
+        systemPrompt,
+        currentDateTime ? `Current date: ${currentDateTime}` : null,
+        getModelDescriptions(db),
+        options?.context
+      ].filter(Boolean).join('\n\n');
+      textStream = streamLLM(llmMessages, system, options);
+    }
   } catch (err) {
     yield { message: err?.message || 'Failed to stream response' };
     return {};
