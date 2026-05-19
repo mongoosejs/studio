@@ -6,6 +6,13 @@ require('./setup');
 const modalComponent = require('../../frontend/src/modal/modal');
 
 describe('modal component escape handling', function() {
+  it('supports a flush container prop for padding-free modal content', function() {
+    const componentDef = modalComponent({ component: (_name, def) => def });
+
+    assert.deepStrictEqual(componentDef.props.flushContainer, Boolean);
+    assert.ok(componentDef.template.includes('modal-container--flush'));
+  });
+
   it('clicks the close button for the top-most modal when escape is pressed', function() {
     const componentDef = modalComponent({ component: (_name, def) => def });
 

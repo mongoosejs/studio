@@ -3,7 +3,7 @@
 const RECENT_PAGES_STORAGE_KEY = 'studio:recent-pages-history';
 const RECENT_PAGES_CHANGED_EVENT = 'studio-recent-pages-changed';
 const RECENT_PAGES_LOCK_NAME = `studio-lock:${RECENT_PAGES_STORAGE_KEY}`;
-const MAX_RECENT_PAGES = 10;
+const MAX_RECENT_PAGES = 50;
 
 /** Collapses hash-style prefixes (e.g. `/#/`) to a normal path; keeps query string. */
 function normalizeTrackedPath(fullPath) {

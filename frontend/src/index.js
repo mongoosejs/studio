@@ -36,7 +36,7 @@ function formatHistoryLabel(route) {
   if (route.name === 'document') {
     const model = route.params?.model ? `${route.params.model} ` : '';
     const documentId = route.params?.documentId ? String(route.params.documentId) : '';
-    const shortDocumentId = documentId ? documentId.slice(0, 8) : '';
+    const shortDocumentId = documentId ? documentId.slice(0, 24) : '';
     return `Document: ${model}${shortDocumentId}`.trim();
   }
   if (route.name === 'dashboard') {

@@ -30,6 +30,11 @@
   position: relative;
 }
 
+.modal-container.modal-container--flush {
+  padding: 0;
+  padding-bottom: 0;
+}
+
 .modal-header {
   margin-top: 0;
   font-size: 18px;

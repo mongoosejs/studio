@@ -296,28 +296,29 @@
 
 <modal
   v-if="showRecentPagesModal"
-  containerClass="!max-w-md !w-[min(94vw,28rem)] !rounded-lg !border !border-edge !bg-surface !p-0 !shadow-xl dark:!bg-shark-900 text-content"
-  bodyClass="modal-recent-pages-body !p-4 !pt-5"
+  flush-container
+  containerClass="!max-w-md !w-[min(94vw,28rem)] !overflow-hidden !rounded-lg !border !border-edge !bg-surface !shadow-xl dark:!bg-shark-900 text-content"
+  bodyClass="modal-recent-pages-body !p-0"
 >
   <template v-slot:body>
     <div class="modal-exit" @click="closeRecentPagesModal" role="button" aria-label="Close recent pages">&times;</div>
     <div
-      class="shrink-0 -mx-1 mb-3 flex items-center justify-between gap-3 border-b border-edge bg-surface px-1 pb-3 dark:bg-shark-900"
+      class="shrink-0 flex items-center gap-3 border-b border-edge bg-surface px-4 py-4 pr-12 dark:bg-shark-900"
     >
       <h2 class="m-0 text-lg font-semibold text-content">Recent pages</h2>
       <button
         type="button"
-        class="rounded px-3 py-1.5 text-sm font-medium text-content-secondary hover:bg-muted"
+        class="rounded px-2 py-1 text-sm font-medium text-content-secondary hover:bg-muted disabled:opacity-50"
         @click="clearRecentPagesHistory"
         :disabled="recentPagesList.length === 0"
       >
         Clear
       </button>
     </div>
-    <div class="modal-recent-pages-scroll px-0.5">
+    <div class="modal-recent-pages-scroll">
       <div
         v-if="recentPagesList.length === 0"
-        class="rounded border border-dashed border-edge px-3 py-6 text-center text-sm text-content-tertiary"
+        class="m-4 rounded border border-dashed border-edge px-3 py-6 text-center text-sm text-content-tertiary"
       >
         No recent pages yet.
       </div>
@@ -325,7 +326,7 @@
         v-for="entry in recentPagesList"
         :key="entry.path + '-' + entry.visitedAt"
         type="button"
-        class="mb-1 w-full rounded px-3 py-2.5 text-left hover:bg-muted"
+        class="w-full px-4 py-2.5 text-left hover:bg-muted"
         :class="entry.path === $route.fullPath ? 'bg-primary-subtle' : ''"
         @click="goToRecentPage(entry)"
       >
