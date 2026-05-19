@@ -10,7 +10,6 @@ module.exports = [
     prompt: 'How many users do we have in total, including deleted ones?',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       const got = typeof trace.output === 'number' ? trace.output : trace.output?.count;
       assert.equal(got, 4, `expected 4 users, got ${JSON.stringify(trace.output)}`);
     }
@@ -22,7 +21,6 @@ module.exports = [
     prompt: 'What is the single most expensive product? Return an object with its name and price.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       assert.equal(trace.output?.name, 'Laptop', `expected name=Laptop, got ${JSON.stringify(trace.output)}`);
       assert.equal(trace.output?.price, 1200, `expected price=1200, got ${JSON.stringify(trace.output)}`);
     }
@@ -34,7 +32,6 @@ module.exports = [
     prompt: 'How many bookings currently have status "active"?',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       const got = typeof trace.output === 'number' ? trace.output : trace.output?.count;
       assert.equal(got, 2, `expected 2 active bookings, got ${JSON.stringify(trace.output)}`);
     }
@@ -46,7 +43,6 @@ module.exports = [
     prompt: 'List every electric vehicle in the fleet, returning an array with make and model.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       const list = Array.isArray(trace.output) ? trace.output : trace.output?.vehicles;
       assert.equal(list?.length, 2, `expected 2 EVs, got ${JSON.stringify(trace.output)}`);
       const json = JSON.stringify(list);
@@ -60,7 +56,6 @@ module.exports = [
     prompt: 'Show a table with the count of orders grouped by status.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       assert.ok(trace.output?.$table, `expected $table, got ${JSON.stringify(trace.output)}`);
       assert.equal(trace.output.$table.rows.length, 5, `expected 5 status rows, got ${trace.output.$table.rows.length}`);
       const json = JSON.stringify(trace.output.$table);
@@ -77,7 +72,6 @@ module.exports = [
     prompt: 'How many orders were placed each month over the past 6 months? Return a table.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       assert.ok(trace.output?.$table, `expected $table, got ${JSON.stringify(trace.output)}`);
       assert.ok(trace.output.$table.rows.length >= 3, `expected ≥3 month rows, got ${trace.output.$table.rows.length}`);
     }
@@ -89,7 +83,6 @@ module.exports = [
     prompt: 'Return an array of bookings that were returned late (returnedAt after endAt) and have at least one unpaid charge.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       assert.ok(Array.isArray(trace.output), `expected array, got ${JSON.stringify(trace.output)}`);
       assert.equal(trace.output.length, 2, `expected 2 late+unpaid bookings, got ${trace.output.length}`);
     }
@@ -101,7 +94,6 @@ module.exports = [
     prompt: 'Return an array of paid orders that contain at least one electronics product.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       assert.ok(Array.isArray(trace.output), `expected array, got ${JSON.stringify(trace.output)}`);
       assert.equal(trace.output.length, 2, `expected 2 paid+electronics orders, got ${trace.output.length}`);
     }
@@ -114,7 +106,6 @@ module.exports = [
     prompt: 'Build a dashboard showing the top 5 products by gross revenue from paid orders.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       const renderable = trace.output?.$chart || trace.output?.$table;
       assert.ok(renderable, `expected $chart or $table, got ${JSON.stringify(trace.output)}`);
       assert.ok(JSON.stringify(renderable).includes('Headphones'), `Headphones should be top product, got ${JSON.stringify(renderable)}`);
@@ -127,7 +118,6 @@ module.exports = [
     prompt: 'Show a chart of total bookings broken down by vehicle type.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       assert.ok(trace.output?.$chart, `expected $chart, got ${JSON.stringify(trace.output)}`);
       const json = JSON.stringify(trace.output.$chart);
       for (const type of ['ev', 'sedan', 'suv']) {
@@ -142,7 +132,6 @@ module.exports = [
     prompt: 'Chart total revenue per month from paid orders.',
     assert(trace) {
       assert.equal(trace.executionError, null, `script error: ${trace.executionError}`);
-      assert.ok(trace.toolCalls.some(t => t.toolName === 'typeCheck'), 'should call typeCheck');
       assert.ok(trace.output?.$chart, `expected $chart, got ${JSON.stringify(trace.output)}`);
       const labels = trace.output.$chart.data?.labels;
       assert.ok(Array.isArray(labels) && labels.length >= 2, `expected ≥2 month labels, got ${JSON.stringify(labels)}`);

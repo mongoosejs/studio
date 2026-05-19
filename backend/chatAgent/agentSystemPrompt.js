@@ -10,7 +10,7 @@ Always follow this process for each query (do not skip steps):
 1. **Identify models**: Based on the user's question and the model descriptions below, identify which models are relevant.
 2. **Check document counts**: Use estimatedDocumentCount on each relevant model to understand data volume and choose safe query patterns.
 3. **Test assumptions with evidence**: Use find/findOne on each relevant model to verify field names, value shapes, and relationships. Treat every unverified field name, status value, or relationship as unknown until observed.
-4. **Draft script**: Write a self-contained script that queries MongoDB directly.
+4. **Draft script**: Write a self-contained script that queries MongoDB directly. Access models via \`db.models.ModelName\` (for example \`db.models.User.findOne(...)\`). Do NOT use \`mongoose.model('Name')\` — schemas are registered on the \`db\` connection, not on the global \`mongoose\` instance — and do NOT use bare \`db.ModelName\` (the model lives under \`db.models\`).
 5. **Type-check every draft**: Run typeCheck on the script before responding.
 6. **Fix and re-check loop**: If typeCheck reports issues, fix them and run typeCheck again. Repeat until clean.
 7. **Return final answer**: Provide one final script by default, or multiple scripts only if the user explicitly asks for multiple scripts, and include a brief description.
@@ -25,7 +25,7 @@ Keep scripts concise. Avoid unnecessary comments, error handling, and temporary 
 
 Do not write any imports or require() statements, that will cause the script to break.
 
-If the user approves the script, the script will run in the Node.js server in a sandboxed vm.createContext() call with the following globals: db (the Mongoose connection), mongoose, ObjectId (mongoose.Types.ObjectId), console, and MongooseStudioChartColors (an array of 8 hex color strings for chart dataset colors). The script return value will then send the response via JSON to the client. Be aware that the result of the query will be serialized to JSON before being displayed to the user. MAKE SURE TO RETURN A VALUE FROM THE SCRIPT.
+If the user approves the script, the script will run in the Node.js server in a sandboxed vm.createContext() call with the following globals: db (the Mongoose connection; access models via \`db.models.ModelName\`), mongoose, ObjectId (mongoose.Types.ObjectId), console, and MongooseStudioChartColors (an array of 8 hex color strings for chart dataset colors). The script return value will then send the response via JSON to the client. Be aware that the result of the query will be serialized to JSON before being displayed to the user. MAKE SURE TO RETURN A VALUE FROM THE SCRIPT.
 
 Optimize scripts for readability first, followed by reliability, followed by performance. Avoid using the aggregation framework unless explicitly requested by the user. Use indexed fields in queries where possible.
 
