@@ -5,6 +5,7 @@ const ts = require('typescript');
 const { tool } = require('ai');
 const { jsonSchema } = require('@ai-sdk/provider-utils');
 const agentToolMetadata = require('./agentToolMetadata');
+const debugging = require('../../debugging');
 
 module.exports = function getAgentTools(db) {
   const modelNames = Object.keys(db.models).filter(name => !name.startsWith('__Studio'));
@@ -21,7 +22,7 @@ module.exports = function getAgentTools(db) {
         required: ['modelName']
       }),
       execute: async({ modelName }) => {
-        console.log(`estimatedDocumentCount: modelName=${modelName}`);
+        debugLog(`estimatedDocumentCount: modelName=${modelName}`);
         const Model = db.models[modelName];
         if (Model == null) {
           return { error: `Model ${modelName} not found. Available models: ${modelNames.join(', ')}` };
@@ -42,7 +43,7 @@ module.exports = function getAgentTools(db) {
         required: ['modelName']
       }),
       execute: async({ modelName, filter = {}, limit = 10 }) => {
-        console.log(`find: modelName=${modelName}, filter=${JSON.stringify(filter)}, limit=${limit}`);
+        debugLog(`find: modelName=${modelName}, filter=${JSON.stringify(filter)}, limit=${limit}`);
         const Model = db.models[modelName];
         if (Model == null) {
           return { error: `Model ${modelName} not found. Available models: ${modelNames.join(', ')}` };
@@ -62,7 +63,7 @@ module.exports = function getAgentTools(db) {
         required: ['modelName']
       }),
       execute: async({ modelName, filter = {} }) => {
-        console.log(`findOne: modelName=${modelName}, filter=${JSON.stringify(filter)}`);
+        debugLog(`findOne: modelName=${modelName}, filter=${JSON.stringify(filter)}`);
         const Model = db.models[modelName];
         if (Model == null) {
           return { error: `Model ${modelName} not found. Available models: ${modelNames.join(', ')}` };
@@ -81,7 +82,7 @@ module.exports = function getAgentTools(db) {
         required: ['script']
       }),
       execute: async({ script }) => {
-        console.log(`typeCheck: script=${script}`);
+        debugLog(`typeCheck: script=${script}`);
         const wrapped = wrapScriptForTypeCheck(script, modelNames);
         const fileName = '__check.ts';
         const compilerOptions = {
@@ -119,13 +120,19 @@ module.exports = function getAgentTools(db) {
           return { ok: true };
         }
 
-        console.log('Errors', errors);
+        debugLog('Errors', errors);
 
         return { ok: false, errors };
       }
     })
   };
 };
+
+function debugLog() {
+  if (debugging.isDebuggingEnabled()) {
+    console.log(...arguments);
+  }
+}
 
 const wrapScriptForTypeCheck = (script, modelNames) => `
 import mongoose from 'mongoose';

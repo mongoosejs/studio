@@ -6,6 +6,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const { MongoMemoryReplSet } = require('mongodb-memory-server');
 
+const studio = require('../..');
 const runChatAgent = require('../../backend/chatAgent/runChatAgent');
 const createSandbox = require('../../backend/sandbox/createSandbox');
 const allCases = require('./cases');
@@ -15,6 +16,8 @@ const fixtures = {
 };
 
 const args = parseArgs(process.argv.slice(2));
+
+studio.enableDebugging();
 
 main().catch(err => {
   console.error(err);
