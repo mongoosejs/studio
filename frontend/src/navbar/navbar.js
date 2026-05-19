@@ -1,6 +1,5 @@
 'use strict';
 
-const api = require('../api');
 const mothership = require('../mothership');
 const template = require('./navbar.html');
 const { routes, hasAccess } = require('../routes');
@@ -107,8 +106,8 @@ module.exports = app => app.component('navbar', {
     recentPagesList() {
       return this.localRecentPages;
     },
-    hasLLMAPIKey() {
-      return !!window.MONGOOSE_STUDIO_CONFIG.hasLLMAPIKey;
+    supportsAI() {
+      return this.state.capabilities == null || this.state.capabilities.supportsAI !== false;
     },
     chatDisabledReason() {
       return 'Chat requires an Anthropic, Gemini, or OpenAI API key.';
