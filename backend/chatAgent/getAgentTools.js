@@ -80,7 +80,8 @@ module.exports = function getAgentTools(db) {
         },
         required: ['script']
       }),
-      execute: async({ script }) => {
+      execute: async ({ script }) => {
+        console.log(`typeCheck: script=${script}`);
         const wrapped = wrapScriptForTypeCheck(script);
         const fileName = '__check.ts';
         const compilerOptions = {
