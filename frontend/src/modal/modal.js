@@ -7,7 +7,11 @@ appendCSS(require('./modal.css'));
 
 module.exports = app => app.component('modal', {
   template,
-  props: ['containerClass'],
+  props: {
+    containerClass: String,
+    bodyClass: String,
+    flushContainer: Boolean
+  },
   mounted() {
     window.addEventListener('keydown', this.onEscape);
   },
