@@ -186,9 +186,6 @@ module.exports = app => app.component('document-property', {
     setArrayDetailViewMode(mode) {
       this.arrayDetailViewMode = mode;
       if (mode === 'table') {
-        if (this.needsTruncation && !this.isValueExpanded) {
-          this.isValueExpanded = true;
-        }
         if (this.isCollapsed) {
           this.isCollapsed = false;
         }
