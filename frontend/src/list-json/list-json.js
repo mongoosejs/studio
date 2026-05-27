@@ -1,6 +1,7 @@
 'use strict';
 
 const template = require('./list-json.html');
+const DEFAULT_MAX_STRING_LENGTH = 200;
 
 module.exports = app => app.component('list-json', {
   template: template,
@@ -19,6 +20,10 @@ module.exports = app => app.component('list-json', {
     expandedFields: {
       type: Array,
       default: () => []
+    },
+    maxStringLength: {
+      type: Number,
+      default: DEFAULT_MAX_STRING_LENGTH
     }
   },
   data() {

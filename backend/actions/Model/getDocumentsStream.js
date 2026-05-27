@@ -5,7 +5,7 @@ const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const evaluateFilter = require('../../helpers/evaluateFilter');
 const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const getSuggestedProjection = require('../../helpers/getSuggestedProjection');
-const parseFieldsParam = require('../../helpers/parseFieldsParam');
+const parseProjectionParam = require('../../helpers/parseProjectionParam');
 const authorize = require('../../authorize');
 
 const GetDocumentsParams = new Archetype({
@@ -32,7 +32,7 @@ const GetDocumentsParams = new Archetype({
   sortDirection: {
     $type: 'number'
   },
-  fields: {
+  projectionInput: {
     $type: 'string'
   },
   roles: {
@@ -45,7 +45,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   const { roles } = params;
   await authorize('Model.getDocumentsStream', roles);
 
-  const { model, limit, skip, sortKey, sortDirection, searchText, fields } = params;
+  const { model, limit, skip, sortKey, sortDirection, searchText, projectionInput } = params;
 
   const Model = db.models[model];
   if (Model == null) {
@@ -68,7 +68,10 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   }
 
   let query = Model.find(filter).limit(limit).skip(skip).sort(sortObj).batchSize(1);
-  const projection = parseFieldsParam(fields);
+  const projection = parseProjectionParam({
+    projectionInput,
+    schemaPaths: Object.keys(Model.schema.paths)
+  });
   if (projection != null) {
     query = query.select(projection);
   }

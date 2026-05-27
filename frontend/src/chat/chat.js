@@ -23,7 +23,12 @@ module.exports = {
     sharingThread: false,
     threadSearch: '',
     showProUpgradeModal: false,
-    agentTools: agentToolMetadata
+    agentTools: agentToolMetadata,
+    capabilities: {
+      supportsChangeStreams: false,
+      supportsTransactions: true,
+      supportsAI: false
+    }
   }),
   methods: {
     async sendMessage() {
@@ -300,8 +305,12 @@ module.exports = {
 
     this.draftAgentMode = this.getAgentModePreference();
     this.chatThreadId = this.threadId;
-    const { chatThreads } = await api.ChatThread.listChatThreads();
+    const [{ chatThreads }, capabilities] = await Promise.all([
+      api.ChatThread.listChatThreads(),
+      api.getCapabilities().catch(() => this.capabilities)
+    ]);
     this.chatThreads = chatThreads;
+    this.capabilities = capabilities;
     if (this.chatThreadId) {
       await this.syncCurrentThreadAgentMode();
       const { chatMessages } = await api.ChatThread.getChatThread({ chatThreadId: this.chatThreadId });

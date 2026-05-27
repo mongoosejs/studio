@@ -6,15 +6,20 @@ const template = require('./chat-message-script.html');
 
 module.exports = app => app.component('chat-message-script', {
   template,
-  props: ['message', 'script', 'language', 'targetDashboardId'],
+  props: ['message', 'script', 'language', 'targetDashboardId', 'capabilities'],
   emits: ['copyMessage'],
   data() {
     return {
       activeTab: 'code',
+      selectedRunMode: 'run',
       showDetailModal: false,
+      showRunInfoModal: false,
+      showDryRunInfoModal: false,
       showCreateDashboardModal: false,
       showOverwriteDashboardConfirmationModal: false,
+      showRunDropdown: false,
       showDropdown: false,
+      isExecuting: false,
       newDashboardTitle: '',
       dashboardCode: '',
       createError: null,
@@ -30,31 +35,59 @@ module.exports = app => app.component('chat-message-script', {
     },
     canOverwriteDashboard() {
       return !!this.targetDashboardId;
+    },
+    canUseDryRun() {
+      return this.capabilities?.supportsTransactions !== false;
+    },
+    dryRunDisabledTitle() {
+      return this.canUseDryRun ? null : 'dry run mode requires MongoDB transactions support';
+    },
+    isDryRunResult() {
+      return !!this.message.executionResult?.dryRun;
+    },
+    selectedRunLabel() {
+      return this.selectedRunMode === 'dryRun' ? 'Dry Run' : 'Run';
     }
   },
   methods: {
-    async executeScript() {
+    async executeScript(dryRun = this.selectedRunMode === 'dryRun') {
       const scriptToRun = this.isEditing ? this.editedScript : this.script;
-      this.editedScript = scriptToRun;
-      const { chatMessage } = await api.ChatMessage.executeScript({
-        chatMessageId: this.message._id,
-        script: scriptToRun
-      });
-      this.message.executionResult = chatMessage.executionResult;
-      this.message.script = chatMessage.script;
-      this.message.content = chatMessage.content;
-      this.editedScript = chatMessage.script;
-      if (this.isEditing) {
-        this.finishEditing();
-      } else {
-        this.highlightCode();
+      if (this.isExecuting) {
+        return;
       }
-      this.activeTab = 'output';
-      this.$toast.success('Script executed successfully!');
-      return chatMessage;
+      this.showRunDropdown = false;
+      this.editedScript = scriptToRun;
+      this.isExecuting = true;
+      try {
+        const { chatMessage } = await api.ChatMessage.executeScript({
+          chatMessageId: this.message._id,
+          script: scriptToRun,
+          dryRun
+        });
+        this.message.executionResult = chatMessage.executionResult;
+        this.message.script = chatMessage.script;
+        this.message.content = chatMessage.content;
+        this.editedScript = chatMessage.script;
+        if (this.isEditing) {
+          this.finishEditing();
+        } else {
+          this.highlightCode();
+        }
+        this.activeTab = 'output';
+        this.$toast.success('Script executed successfully!');
+        return chatMessage;
+      } finally {
+        this.isExecuting = false;
+      }
     },
     openDetailModal() {
       this.showDetailModal = true;
+    },
+    openRunInfoModal() {
+      this.showRunInfoModal = true;
+    },
+    openDryRunInfoModal() {
+      this.showDryRunInfoModal = true;
     },
     openCreateDashboardModal() {
       this.newDashboardTitle = '';
@@ -72,6 +105,21 @@ module.exports = app => app.component('chat-message-script', {
     },
     toggleDropdown() {
       this.showDropdown = !this.showDropdown;
+      this.showRunDropdown = false;
+    },
+    toggleRunDropdown() {
+      this.showRunDropdown = !this.showRunDropdown;
+      this.showDropdown = false;
+    },
+    selectRunMode(mode) {
+      if (this.isExecuting) {
+        return;
+      }
+      if (mode === 'dryRun' && !this.canUseDryRun) {
+        return;
+      }
+      this.selectedRunMode = mode;
+      this.showRunDropdown = false;
     },
     startEditing() {
       this.isEditing = true;
@@ -97,7 +145,11 @@ module.exports = app => app.component('chat-message-script', {
       });
     },
     handleBodyClick(event) {
+      const runDropdown = this.$refs.runDropdown;
       const dropdown = this.$refs.dropdown;
+      if (runDropdown && typeof runDropdown.contains === 'function' && !runDropdown.contains(event.target)) {
+        this.showRunDropdown = false;
+      }
       if (dropdown && typeof dropdown.contains === 'function' && !dropdown.contains(event.target)) {
         this.showDropdown = false;
       }
@@ -171,6 +223,14 @@ module.exports = app => app.component('chat-message-script', {
       if (!this.isEditing) {
         this.editedScript = newScript;
         this.highlightCode();
+      }
+    },
+    capabilities: {
+      immediate: true,
+      handler(capabilities) {
+        if (capabilities?.supportsTransactions === false && this.selectedRunMode === 'dryRun') {
+          this.selectedRunMode = 'run';
+        }
       }
     }
   },

@@ -1,0 +1,27 @@
+<div class="relative flex-grow m-0">
+  <input
+    ref="projectionInput"
+    class="w-full min-w-0 rounded border border-edge bg-surface px-2 py-1.5 text-sm font-mono placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+    type="text"
+    placeholder="Projection: name email, or -password"
+    v-model="projectionText"
+    @focus="initProjection"
+    @input="handleInput"
+    @keydown="handleKeyDown"
+    @blur="hideAutocomplete"
+  />
+  <ul
+    v-if="autocompleteSuggestions.length"
+    class="absolute left-0 right-0 top-full z-[9999] mt-1 max-h-40 overflow-y-auto rounded border border-edge bg-surface shadow"
+  >
+    <li
+      v-for="(suggestion, index) in autocompleteSuggestions"
+      :key="suggestion"
+      class="cursor-pointer px-2 py-1 text-sm font-mono"
+      :class="{ 'bg-primary-subtle': index === autocompleteIndex }"
+      @mousedown.prevent="applySuggestion(index)"
+    >
+      {{ suggestion }}
+    </li>
+  </ul>
+</div>

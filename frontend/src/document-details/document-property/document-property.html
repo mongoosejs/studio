@@ -94,6 +94,11 @@
         :path="path"
         @update:viewMode="dateViewMode = $event"
       ></date-view-mode-picker>
+      <objectid-view-mode-picker
+        v-if="isObjectIdPath"
+        :viewMode="objectIdViewMode"
+        @update:viewMode="objectIdViewMode = $event"
+      ></objectid-view-mode-picker>
       <button
         type="button"
         class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded-md border border-transparent hover:border-edge-strong bg-surface"

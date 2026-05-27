@@ -19,6 +19,7 @@ module.exports = app => app.component('document-property', {
     return {
       dateType: 'picker', // picker, iso
       dateViewMode: 'utc_iso',
+      objectIdViewMode: 'hex',
       renderedValue: UNSET,
       isCollapsed: false, // Start uncollapsed by default
       isValueExpanded: false, // Track if the value is expanded
@@ -40,6 +41,9 @@ module.exports = app => app.component('document-property', {
   computed: {
     isDatePath() {
       return this.path?.instance === 'Date';
+    },
+    isObjectIdPath() {
+      return this.path?.instance === 'ObjectID' || this.path?.instance === 'ObjectId';
     },
     rawValue() {
       return this.getValueForPath(this.path.path);
@@ -145,6 +149,9 @@ module.exports = app => app.component('document-property', {
       if (this.isDatePath) {
         return this.dateViewMode;
       }
+      if (this.isObjectIdPath) {
+        return this.objectIdViewMode;
+      }
       if (this.path?.instance === 'Array') {
         return this.arrayDetailViewMode;
       }
@@ -189,7 +196,7 @@ module.exports = app => app.component('document-property', {
     },
     setDetailViewMode(mode) {
       this.detailViewMode = mode;
-      
+
       // When switching to map view, expand the container and value so the map is visible
       if (mode === 'map' && this.isGeoJsonGeometry) {
         if (this.isCollapsed) {
@@ -220,6 +227,9 @@ module.exports = app => app.component('document-property', {
       }
       if (schemaPath.instance === 'Date') {
         return 'detail-date';
+      }
+      if (schemaPath.instance === 'ObjectID' || schemaPath.instance === 'ObjectId') {
+        return 'detail-objectid';
       }
       return 'detail-default';
     },

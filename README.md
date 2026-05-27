@@ -12,6 +12,7 @@ For local dev, if your app runs on `localhost:3000`, Studio will be on `localhos
 
 By default, Mongoose Studio does **not** provide any authentication or authorization.
 You can use Mongoose Studio for free for local development, but we recommend [Mongoose Studio Pro](https://studio.mongoosejs.io/#pricing) for when you want to go into production.
+When you omit an API key, Mongoose Studio only accepts localhost connections by default.
 
 First, `npm install @mongoosejs/studio`.
 
@@ -41,6 +42,14 @@ opts.googleGeminiAPIKey = process.env.GOOGLE_GEMINI_API_KEY;
 
 // Mount Mongoose Studio on '/studio'
 app.use('/studio', await studio('/studio/api', mongoose, opts));
+```
+
+Without an API key, you can allow access from additional IP addresses with `bindIp`, similar to MongoDB's `bindIp` option. `bindIp` may be a comma-separated string or an array of exact IP addresses. Set `bindIp` to `null` to allow unauthenticated connections from anywhere.
+
+```javascript
+app.use('/studio', await studio('/studio/api', mongoose, {
+  bindIp: '127.0.0.1,192.168.0.10'
+}));
 ```
 
 ### Next.js
