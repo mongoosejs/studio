@@ -1,9 +1,144 @@
 <div class="w-full">
-  <ace-editor
-    :value="arrayStr"
-    @input="onEditorInput"
-    mode="json"
-    :line-numbers="true"
-    class="min-h-[300px]"
-  />
+  <div v-if="!useTableEditor">
+    <ace-editor
+      :value="arrayStr"
+      @input="onEditorInput"
+      mode="json"
+      :line-numbers="true"
+      class="min-h-[300px]"
+    />
+  </div>
+  <div v-else class="overflow-hidden rounded-lg border border-edge bg-surface">
+    <div class="border-b border-edge bg-slate-50/90 px-3 py-2.5">
+      <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
+        <div class="flex flex-wrap items-stretch gap-2">
+          <button
+            type="button"
+            class="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-text shadow-sm hover:bg-primary-hover"
+            @click="addRow">
+            + Row
+          </button>
+          <div class="flex min-w-0 max-w-full sm:max-w-md">
+            <input
+              id="edit-array-new-column"
+              v-model="newColumnKeyInput"
+              type="text"
+              class="min-w-0 flex-1 rounded-l-md border border-r-0 border-edge bg-surface px-2.5 py-1.5 text-xs font-mono text-content placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="New field name"
+              autocomplete="off"
+              @keyup.enter="addColumn"
+            />
+            <button
+              type="button"
+              class="shrink-0 rounded-r-md border border-edge bg-slate-100 px-3 py-1.5 text-xs font-semibold text-content hover:bg-slate-200"
+              @click="addColumn">
+              Add field
+            </button>
+          </div>
+        </div>
+        <p class="text-[11px] leading-snug text-content-tertiary lg:ml-auto lg:max-w-[18rem] lg:text-right">
+          Each cell is JSON. Clear a cell to remove that field from the row.
+        </p>
+      </div>
+      <p v-if="newColumnKeyError" class="mt-2 text-xs font-medium text-red-600">{{ newColumnKeyError }}</p>
+    </div>
+
+    <div v-if="arrayValue.length > 0" class="border-b border-edge bg-slate-50/50 px-3 py-2">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div class="relative min-w-0 flex-1 sm:max-w-md">
+          <input
+            v-model="arraySearchQuery"
+            type="search"
+            autocomplete="off"
+            aria-label="Search rows in this array"
+            placeholder="Search rows…"
+            class="w-full rounded-md border border-edge bg-surface py-1.5 pl-2 pr-16 text-xs text-content placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <button
+            v-if="arraySearchNormalized"
+            type="button"
+            class="absolute right-1 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-[11px] text-content-tertiary hover:bg-slate-200 hover:text-content"
+            title="Clear search"
+            @click="arraySearchQuery = ''">
+            Clear
+          </button>
+        </div>
+        <span v-if="arraySearchNormalized" class="shrink-0 text-xs text-content-tertiary">
+          {{ filteredTableRows.length }} of {{ arrayValue.length }} shown
+        </span>
+      </div>
+    </div>
+
+    <div v-if="arrayValue.length === 0" class="px-4 py-10 text-center text-sm text-content-secondary">
+      No rows yet. Use <span class="font-medium text-content">+ Row</span> or enter a field name and choose <span class="font-medium text-content">Add field</span>.
+    </div>
+
+    <div
+      v-else-if="filteredTableRows.length === 0"
+      class="px-4 py-8 text-center text-sm text-content-secondary">
+      No rows match "{{ arraySearchQuery.trim() }}".
+    </div>
+
+    <div v-else class="overflow-x-auto">
+      <table class="min-w-full text-left text-xs font-mono">
+        <thead class="border-b border-edge bg-slate-100 text-content-secondary">
+          <tr>
+            <th scope="col" class="w-24 border-r border-edge px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">
+              Actions
+            </th>
+            <th
+              v-for="key in tableColumnKeys"
+              :key="key"
+              scope="col"
+              class="border-r border-edge px-3 py-2 text-left text-xs font-semibold last:border-r-0 min-w-[8rem] whitespace-nowrap">
+              {{ key }}
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-edge bg-surface">
+          <tr v-for="entry in filteredTableRows" :key="entry.index" class="hover:bg-slate-50/60">
+            <td class="align-middle border-r border-edge p-2">
+              <div class="flex flex-col gap-1">
+                <span class="text-center text-[10px] font-medium text-content-tertiary">#{{ entry.index }}</span>
+                <button
+                  type="button"
+                  class="rounded border border-edge bg-surface px-2 py-1 text-[11px] font-medium hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="entry.index === 0"
+                  title="Move row up"
+                  @click="moveRow(entry.index, -1)">
+                  Up
+                </button>
+                <button
+                  type="button"
+                  class="rounded border border-edge bg-surface px-2 py-1 text-[11px] font-medium hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="entry.index === arrayValue.length - 1"
+                  title="Move row down"
+                  @click="moveRow(entry.index, 1)">
+                  Down
+                </button>
+                <button
+                  type="button"
+                  class="rounded border border-red-200 bg-surface px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50"
+                  title="Remove this row"
+                  @click="removeRow(entry.index)">
+                  Remove
+                </button>
+              </div>
+            </td>
+            <td
+              v-for="key in tableColumnKeys"
+              :key="key"
+              class="max-w-md min-w-[8rem] border-r border-edge p-1.5 align-top last:border-r-0">
+              <textarea
+                rows="2"
+                class="w-full resize-y rounded border border-edge bg-surface px-2 py-1.5 text-xs text-content focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                :value="serializeCell(entry.item[key])"
+                @blur="onCellChange(entry.index, key, $event.target.value)"
+              ></textarea>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
