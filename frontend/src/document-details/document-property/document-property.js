@@ -37,7 +37,7 @@ module.exports = app => app.component('document-property', {
       this.copyResetTimeoutId = null;
     }
   },
-  props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid', 'highlight'],
+  props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid', 'highlight', 'searchQuery'],
   computed: {
     isDatePath() {
       return this.path?.instance === 'Date';
@@ -156,6 +156,9 @@ module.exports = app => app.component('document-property', {
         return this.arrayDetailViewMode;
       }
       return this.detailViewMode;
+    },
+    pathNameParts() {
+      return this.getSearchMatchParts(this.path?.path || '', this.searchQuery);
     }
   },
   watch: {
@@ -183,6 +186,34 @@ module.exports = app => app.component('document-property', {
     }
   },
   methods: {
+    getSearchMatchParts(text, query) {
+      const normalizedQuery = typeof query === 'string' ? query.trim() : '';
+      if (!normalizedQuery) {
+        return [{ text, matched: false }];
+      }
+
+      const lowerText = String(text).toLowerCase();
+      const lowerQuery = normalizedQuery.toLowerCase();
+      const parts = [];
+      let position = 0;
+      let matchIndex = lowerText.indexOf(lowerQuery, position);
+
+      while (matchIndex !== -1) {
+        if (matchIndex > position) {
+          parts.push({ text: text.slice(position, matchIndex), matched: false });
+        }
+        const matchEnd = matchIndex + normalizedQuery.length;
+        parts.push({ text: text.slice(matchIndex, matchEnd), matched: true });
+        position = matchEnd;
+        matchIndex = lowerText.indexOf(lowerQuery, position);
+      }
+
+      if (position < text.length) {
+        parts.push({ text: text.slice(position), matched: false });
+      }
+
+      return parts.length > 0 ? parts : [{ text, matched: false }];
+    },
     setArrayDetailViewMode(mode) {
       this.arrayDetailViewMode = mode;
       if (mode === 'table') {
