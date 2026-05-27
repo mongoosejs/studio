@@ -6,6 +6,7 @@ const sinon = require('sinon');
 require('./setup');
 const documentComponent = require('../../frontend/src/document/document');
 const createDocumentComponent = require('../../frontend/src/create-document/create-document');
+const detailArrayComponent = require('../../frontend/src/detail-array/detail-array');
 const api = require('../../frontend/src/api');
 const time = require('time-commando');
 
@@ -86,5 +87,55 @@ describe('document component keyboard shortcuts', function() {
     await componentDef.methods.requestAiSuggestion.call(state);
     const params = streamStub.firstCall.args[0];
     assert.strictEqual(params.currentDateTime, '2026-03-22T15:04:05');
+  });
+});
+
+describe('detail-array component', function() {
+  function computeRows(componentDef, state) {
+    state.arraySearchNormalized = componentDef.computed.arraySearchNormalized.call(state);
+    state.filteredArrayRows = componentDef.computed.filteredArrayRows.call(state);
+    state.shouldLimitRows = componentDef.computed.shouldLimitRows.call(state);
+    state.displayedArrayRows = componentDef.computed.displayedArrayRows.call(state);
+    state.remainingArrayCount = componentDef.computed.remainingArrayCount.call(state);
+  }
+
+  it('searches the full array even when display is truncated', function() {
+    const componentDef = detailArrayComponent({ component: (_name, def) => def });
+    const state = {
+      arrayValue: [
+        { name: 'first' },
+        { name: 'second' },
+        { name: 'hidden target' }
+      ],
+      arraySearchQuery: 'target',
+      truncate: true,
+      initialLimit: 2,
+      isExpanded: false
+    };
+
+    computeRows(componentDef, state);
+
+    assert.deepStrictEqual(state.displayedArrayRows.map(row => row.index), [2]);
+    assert.strictEqual(state.remainingArrayCount, 0);
+  });
+
+  it('limits displayed rows only when there is no array search', function() {
+    const componentDef = detailArrayComponent({ component: (_name, def) => def });
+    const state = {
+      arrayValue: [
+        { name: 'first' },
+        { name: 'second' },
+        { name: 'third' }
+      ],
+      arraySearchQuery: '',
+      truncate: true,
+      initialLimit: 2,
+      isExpanded: false
+    };
+
+    computeRows(componentDef, state);
+
+    assert.deepStrictEqual(state.displayedArrayRows.map(row => row.index), [0, 1]);
+    assert.strictEqual(state.remainingArrayCount, 1);
   });
 });

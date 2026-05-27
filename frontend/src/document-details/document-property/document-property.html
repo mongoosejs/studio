@@ -173,31 +173,14 @@
       </component>
     </div>
     <div v-else>
-      <!-- Show truncated or full value based on needsTruncation and isValueExpanded -->
-      <!-- Special handling for truncated arrays -->
-      <div v-if="isArray && shouldShowTruncated" class="w-full">
-        <div class="mt-2 mb-1.5">
-          <component
-            :is="getComponentForPath(path)"
-            :value="truncatedArrayItems"
-            :viewMode="propertyDetailViewMode"
-            @updated="renderedValue = $event"></component>
-          <div class="mb-1.5 py-2.5 px-3 pl-4 bg-transparent border-none border-l-[3px] border-l-slate-100 rounded-none transition-all duration-200 cursor-pointer relative opacity-70 hover:opacity-100">
-            <div class="text-xs py-1.5 px-2 font-mono text-content-tertiary italic break-words whitespace-pre-wrap mt-1">
-              ... and {{ remainingArrayCount }} more item{{ remainingArrayCount !== 1 ? 's' : '' }}
-            </div>
-          </div>
-        </div>
-        <button
-          @click="toggleValueExpansion"
-          class="mt-2 text-merlot-700 hover:text-merlot-900 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
-          Show all {{ arrayValue.length }} items
-        </button>
-      </div>
+      <!-- Arrays own their truncation and array search behavior in detail-array. -->
+      <component
+        v-if="isArray"
+        :is="getComponentForPath(path)"
+        :value="rawValue"
+        :viewMode="propertyDetailViewMode"
+        :truncate="needsTruncation"
+        @updated="renderedValue = $event"></component>
       <!-- Non-array truncated view -->
       <div v-else-if="shouldShowTruncated && !isArray" class="relative">
         <div class="text-content-secondary whitespace-pre-wrap break-words font-mono text-sm">{{truncatedString}}</div>

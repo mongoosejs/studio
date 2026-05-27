@@ -11,12 +11,21 @@ module.exports = app => app.component('detail-array', {
     viewMode: {
       type: String,
       default: 'list'
+    },
+    truncate: {
+      type: Boolean,
+      default: false
+    },
+    initialLimit: {
+      type: Number,
+      default: 2
     }
   },
   data() {
     return {
       arrayValue: [],
-      arraySearchQuery: ''
+      arraySearchQuery: '',
+      isExpanded: false
     };
   },
   computed: {
@@ -39,9 +48,36 @@ module.exports = app => app.component('detail-array', {
       return this.arrayValue
         .map((item, index) => ({ item, index }))
         .filter(({ item }) => arrayItemMatchesSearch(item, this.arraySearchNormalized));
+    },
+    displayedArrayRows() {
+      if (!this.shouldLimitRows) {
+        return this.filteredArrayRows;
+      }
+      return this.filteredArrayRows.slice(0, this.initialLimit);
+    },
+    shouldLimitRows() {
+      return this.truncate
+        && !this.isExpanded
+        && !this.arraySearchNormalized
+        && this.filteredArrayRows.length > this.initialLimit;
+    },
+    canToggleRows() {
+      return this.truncate && !this.arraySearchNormalized && this.arrayValue.length > this.initialLimit;
+    },
+    expansionToggleLabel() {
+      return this.isExpanded ? 'Show less' : `Show all ${this.arrayValue.length} items`;
+    },
+    remainingArrayCount() {
+      if (!this.shouldLimitRows) {
+        return 0;
+      }
+      return this.filteredArrayRows.length - this.displayedArrayRows.length;
     }
   },
   methods: {
+    toggleExpansion() {
+      this.isExpanded = !this.isExpanded;
+    },
     initializeArray() {
       if (this.value == null) {
         this.arrayValue = [];
@@ -59,6 +95,9 @@ module.exports = app => app.component('detail-array', {
     value: {
       handler(newValue) {
         this.initializeArray();
+        if (this.arrayValue.length <= this.initialLimit) {
+          this.isExpanded = false;
+        }
       },
       deep: true,
       immediate: true

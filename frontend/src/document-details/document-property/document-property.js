@@ -100,18 +100,6 @@ module.exports = app => app.component('document-property', {
       }
       return this.valueAsString;
     },
-    truncatedArrayItems() {
-      if (this.isArray && this.needsTruncation && !this.isValueExpanded) {
-        return this.arrayValue.slice(0, 2);
-      }
-      return [];
-    },
-    remainingArrayCount() {
-      if (this.isArray && this.needsTruncation && !this.isValueExpanded) {
-        return this.arrayValue.length - 2;
-      }
-      return 0;
-    },
     isGeoJsonGeometry() {
       const value = this.getValueForPath(this.path.path);
       return value != null

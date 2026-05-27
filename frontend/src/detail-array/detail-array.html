@@ -49,7 +49,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-edge bg-surface">
-          <tr v-for="row in filteredArrayRows" :key="row.index" class="hover:bg-slate-50/80">
+          <tr v-for="row in displayedArrayRows" :key="row.index" class="hover:bg-slate-50/80">
             <td class="sticky left-0 z-[1] bg-inherit px-2 py-2 text-center text-content-tertiary border-r border-edge">{{ row.index }}</td>
             <td
               v-for="key in tableColumnKeys"
@@ -64,7 +64,7 @@
 
     <div v-else class="mt-2">
       <div
-        v-for="row in filteredArrayRows"
+        v-for="row in displayedArrayRows"
         :key="row.index"
         :title="'Index: ' + row.index"
         class="mb-1.5 last:mb-0 py-2.5 px-3 pl-4 bg-transparent border-l-[3px] border-l-slate-100 rounded-none transition-all duration-200 cursor-pointer relative hover:bg-slate-50 hover:border-l-slate-100 hover:shadow-lg hover:-translate-y-0.5">
@@ -81,5 +81,29 @@
         <div v-else class="text-xs py-1.5 px-2 font-mono text-gray-800 break-words whitespace-pre-wrap mt-1">{{ arrayUtils.formatValue(row.item) }}</div>
       </div>
     </div>
+
+    <div
+      v-if="remainingArrayCount > 0"
+      class="mb-1.5 py-2.5 px-3 pl-4 bg-transparent border-none border-l-[3px] border-l-slate-100 rounded-none transition-all duration-200 cursor-pointer relative opacity-70 hover:opacity-100">
+      <div class="text-xs py-1.5 px-2 font-mono text-content-tertiary italic break-words whitespace-pre-wrap mt-1">
+        ... and {{ remainingArrayCount }} more item{{ remainingArrayCount !== 1 ? 's' : '' }}
+      </div>
+    </div>
+
+    <button
+      v-if="canToggleRows"
+      @click="toggleExpansion"
+      class="mt-2 text-merlot-700 hover:text-merlot-900 text-sm font-medium flex items-center gap-1 transform transition-all duration-200 ease-in-out hover:translate-x-0.5"
+    >
+      <svg
+        class="w-4 h-4"
+        :class="{ 'rotate-180': isExpanded }"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+      </svg>
+      {{ expansionToggleLabel }}
+    </button>
   </div>
 </div>
