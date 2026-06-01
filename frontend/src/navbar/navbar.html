@@ -1,3 +1,4 @@
+<div>
 <div class="navbar w-full bg-page border-b border-edge !h-[55px] hidden md:grid grid-cols-[1fr_auto_1fr] items-stretch px-4">
   <!-- Left: Logo + Brand -->
   <div class="flex items-center gap-2 self-center">
@@ -31,10 +32,18 @@
         <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
       </svg>
     </span>
-    <a v-if="hasAccess(roles, 'chat')"
+    <a v-if="hasAccess(roles, 'chat') && supportsAI"
       href="#/chat"
       class="inline-flex items-center px-1 border-b-2 text-sm font-medium"
       :class="chatView ? 'text-content border-primary' : 'border-transparent text-content-tertiary hover:text-content'">Chat</a>
+    <span v-else-if="hasAccess(roles, 'chat') && !supportsAI"
+      class="inline-flex items-center px-1 border-b-2 border-transparent text-sm font-medium text-gray-300 cursor-not-allowed"
+      :title="chatDisabledReason">
+      Chat
+      <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+      </svg>
+    </span>
     <span v-else class="inline-flex items-center px-1 border-b-2 border-transparent text-sm font-medium text-gray-300 cursor-not-allowed">
       Chat
       <svg class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -68,7 +77,20 @@
     </a>
   </nav>
   <!-- Right: Env Badge + User -->
-  <div class="flex items-center justify-end gap-3 self-center pr-4">
+  <div class="flex items-center justify-end gap-3 self-center">
+    <button
+      type="button"
+      class="inline-flex items-center justify-center rounded-md p-2 text-content-tertiary hover:bg-muted hover:text-content-secondary"
+      title="Recent pages"
+      aria-label="Recent pages"
+      aria-haspopup="dialog"
+      :aria-expanded="showRecentPagesModal ? 'true' : 'false'"
+      @click="openRecentPagesModal"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </button>
     <div
       v-if="!!state.nodeEnv"
       title="NODE_ENV"
@@ -151,9 +173,22 @@
       <span class="text-base font-semibold text-content">Mongoose Studio</span>
     </router-link>
   </div>
-  <div class="flex items-center">
+  <div class="flex items-center gap-1 pr-2">
+    <button
+      type="button"
+      class="rounded-md p-2 text-content-tertiary hover:bg-muted hover:text-content-secondary md:hidden"
+      title="Recent pages"
+      aria-label="Recent pages"
+      aria-haspopup="dialog"
+      :aria-expanded="showRecentPagesModal ? 'true' : 'false'"
+      @click="openRecentPagesModal"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </button>
     <!-- Mobile menu toggle, controls the 'mobileMenuOpen' state. -->
-    <button type="button" id="open-mobile-menu" class="-ml-2 rounded-md p-2 pr-4 text-gray-400">
+    <button type="button" id="open-mobile-menu" class="-ml-2 rounded-md p-2 text-gray-400">
       <span class="sr-only">Open menu</span>
       <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -164,7 +199,7 @@
   <!-- Mobile menu mask -->
   <div id="mobile-menu-mask" class="fixed inset-0 bg-black bg-opacity-40 z-40 hidden"></div>
   <!-- Mobile menu drawer -->
-  <div id="mobile-menu" style="z-index: 10000" class="fixed inset-0 bg-page shadow-lg transform translate-x-full transition-transform duration-200 ease-in-out flex flex-col">
+  <div id="mobile-menu" style="z-index: 100000" class="fixed inset-0 bg-page shadow-lg transform translate-x-full transition-transform duration-200 ease-in-out flex flex-col">
     <div class="flex items-center justify-between px-4 !h-[55px] border-b border-edge">
       <router-link :to="{ name: defaultRoute }">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-[32px] text-primary" viewBox="0 0 250 250" fill="currentColor" aria-label="Mongoose Studio Logo">
@@ -211,10 +246,18 @@
           <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
         </svg>
       </span>
-      <a v-if="hasAccess(roles, 'chat')"
+      <a v-if="hasAccess(roles, 'chat') && supportsAI"
         href="#/chat"
         class="block px-3 py-2 rounded-md text-base font-medium"
         :class="chatView ? 'text-content bg-primary-subtle' : 'text-content-secondary hover:bg-muted'">Chat</a>
+      <span v-else-if="hasAccess(roles, 'chat') && !supportsAI"
+        class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 cursor-not-allowed"
+        :title="chatDisabledReason">
+        Chat
+        <svg class="h-4 w-4 ml-1 inline" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm-3 6V6a3 3 0 116 0v2H7z" clip-rule="evenodd" />
+        </svg>
+      </span>
       <span v-else class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 cursor-not-allowed">
         Chat
         <svg class="h-4 w-4 ml-1 inline" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -269,4 +312,48 @@
       </div>
     </nav>
   </div>
+</div>
+
+<modal
+  v-if="showRecentPagesModal"
+  flush-container
+  containerClass="!max-w-md !w-[min(94vw,28rem)] !overflow-hidden !rounded-lg !border !border-edge !bg-surface !shadow-xl dark:!bg-shark-900 text-content"
+  bodyClass="modal-recent-pages-body !p-0"
+>
+  <template v-slot:body>
+    <div class="modal-exit" @click="closeRecentPagesModal" role="button" aria-label="Close recent pages">&times;</div>
+    <div
+      class="shrink-0 flex items-center gap-3 border-b border-edge bg-surface px-4 py-4 pr-12 dark:bg-shark-900"
+    >
+      <h2 class="m-0 text-lg font-semibold text-content">Recent pages</h2>
+      <button
+        type="button"
+        class="rounded px-2 py-1 text-sm font-medium text-content-secondary hover:bg-muted disabled:opacity-50"
+        @click="clearRecentPagesHistory"
+        :disabled="recentPagesList.length === 0"
+      >
+        Clear
+      </button>
+    </div>
+    <div class="modal-recent-pages-scroll">
+      <div
+        v-if="recentPagesList.length === 0"
+        class="m-4 rounded border border-dashed border-edge px-3 py-6 text-center text-sm text-content-tertiary"
+      >
+        No recent pages yet.
+      </div>
+      <button
+        v-for="entry in recentPagesList"
+        :key="entry.path + '-' + entry.visitedAt"
+        type="button"
+        class="w-full px-4 py-2.5 text-left hover:bg-muted"
+        :class="entry.path === $route.fullPath ? 'bg-primary-subtle' : ''"
+        @click="goToRecentPage(entry)"
+      >
+        <div class="truncate text-sm font-medium text-content">{{ entry.label }}</div>
+        <div class="truncate font-mono text-xs text-content-tertiary">{{ entry.path }}</div>
+      </button>
+    </div>
+  </template>
+</modal>
 </div>

@@ -11,6 +11,7 @@ const appendCSS = require('../../appendCSS');
 appendCSS(require('./document-property.css'));
 
 const UNSET = Symbol('unset');
+const { isArrayOfObjects } = require('../../array-utils');
 
 module.exports = app => app.component('document-property', {
   template,
@@ -18,9 +19,12 @@ module.exports = app => app.component('document-property', {
     return {
       dateType: 'picker', // picker, iso
       dateViewMode: 'utc_iso',
+      objectIdViewMode: 'hex',
       renderedValue: UNSET,
       isCollapsed: false, // Start uncollapsed by default
       isValueExpanded: false, // Track if the value is expanded
+      /** 'list' | 'table' for array-of-objects display and editing */
+      arrayDetailViewMode: 'list',
       detailViewMode: 'text',
       copyButtonLabel: 'Copy',
       copyResetTimeoutId: null,
@@ -33,10 +37,13 @@ module.exports = app => app.component('document-property', {
       this.copyResetTimeoutId = null;
     }
   },
-  props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid', 'highlight'],
+  props: ['path', 'document', 'schemaPaths', 'editting', 'changes', 'invalid', 'highlight', 'searchQuery'],
   computed: {
     isDatePath() {
       return this.path?.instance === 'Date';
+    },
+    isObjectIdPath() {
+      return this.path?.instance === 'ObjectID' || this.path?.instance === 'ObjectId';
     },
     rawValue() {
       return this.getValueForPath(this.path.path);
@@ -93,18 +100,6 @@ module.exports = app => app.component('document-property', {
       }
       return this.valueAsString;
     },
-    truncatedArrayItems() {
-      if (this.isArray && this.needsTruncation && !this.isValueExpanded) {
-        return this.arrayValue.slice(0, 2);
-      }
-      return [];
-    },
-    remainingArrayCount() {
-      if (this.isArray && this.needsTruncation && !this.isValueExpanded) {
-        return this.arrayValue.length - 2;
-      }
-      return 0;
-    },
     isGeoJsonGeometry() {
       const value = this.getValueForPath(this.path.path);
       return value != null
@@ -124,6 +119,34 @@ module.exports = app => app.component('document-property', {
     isMultiPolygon() {
       const value = this.getValueForPath(this.path.path);
       return this.isGeoJsonGeometry && value.type === 'MultiPolygon';
+    },
+    arrayPathCurrentValue() {
+      if (!this.path || this.path.instance !== 'Array') {
+        return null;
+      }
+      if (this.editting) {
+        return this.getEditValueForPath(this.path);
+      }
+      return this.getValueForPath(this.path.path);
+    },
+    canUseArrayTableView() {
+      const v = this.arrayPathCurrentValue;
+      return Array.isArray(v) && isArrayOfObjects(v);
+    },
+    propertyDetailViewMode() {
+      if (this.isDatePath) {
+        return this.dateViewMode;
+      }
+      if (this.isObjectIdPath) {
+        return this.objectIdViewMode;
+      }
+      if (this.path?.instance === 'Array') {
+        return this.arrayDetailViewMode;
+      }
+      return this.detailViewMode;
+    },
+    pathNameParts() {
+      return this.getSearchMatchParts(this.path?.path || '', this.searchQuery);
     }
   },
   watch: {
@@ -140,12 +163,56 @@ module.exports = app => app.component('document-property', {
       if (newValue && this.isGeoJsonGeometry) {
         this.detailViewMode = 'map';
       }
+    },
+    canUseArrayTableView(can) {
+      if (!can && this.arrayDetailViewMode === 'table') {
+        this.arrayDetailViewMode = 'list';
+      }
+    },
+    'path.path'() {
+      this.arrayDetailViewMode = 'list';
     }
   },
   methods: {
+    getSearchMatchParts(text, query) {
+      const normalizedQuery = typeof query === 'string' ? query.trim() : '';
+      if (!normalizedQuery) {
+        return [{ text, matched: false }];
+      }
+
+      const lowerText = String(text).toLowerCase();
+      const lowerQuery = normalizedQuery.toLowerCase();
+      const parts = [];
+      let position = 0;
+      let matchIndex = lowerText.indexOf(lowerQuery, position);
+
+      while (matchIndex !== -1) {
+        if (matchIndex > position) {
+          parts.push({ text: text.slice(position, matchIndex), matched: false });
+        }
+        const matchEnd = matchIndex + normalizedQuery.length;
+        parts.push({ text: text.slice(matchIndex, matchEnd), matched: true });
+        position = matchEnd;
+        matchIndex = lowerText.indexOf(lowerQuery, position);
+      }
+
+      if (position < text.length) {
+        parts.push({ text: text.slice(position), matched: false });
+      }
+
+      return parts.length > 0 ? parts : [{ text, matched: false }];
+    },
+    setArrayDetailViewMode(mode) {
+      this.arrayDetailViewMode = mode;
+      if (mode === 'table') {
+        if (this.isCollapsed) {
+          this.isCollapsed = false;
+        }
+      }
+    },
     setDetailViewMode(mode) {
       this.detailViewMode = mode;
-      
+
       // When switching to map view, expand the container and value so the map is visible
       if (mode === 'map' && this.isGeoJsonGeometry) {
         if (this.isCollapsed) {
@@ -176,6 +243,9 @@ module.exports = app => app.component('document-property', {
       }
       if (schemaPath.instance === 'Date') {
         return 'detail-date';
+      }
+      if (schemaPath.instance === 'ObjectID' || schemaPath.instance === 'ObjectId') {
+        return 'detail-objectid';
       }
       return 'detail-default';
     },
@@ -213,6 +283,7 @@ module.exports = app => app.component('document-property', {
       if (path.instance === 'Array') {
         props.path = path;
         props.schemaPaths = this.schemaPaths;
+        props.viewMode = this.arrayDetailViewMode === 'table' ? 'table' : 'json';
       }
       return props;
     },

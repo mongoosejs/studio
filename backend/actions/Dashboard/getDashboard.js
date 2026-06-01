@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const createSandbox = require('../../sandbox/createSandbox');
 const mongoose = require('mongoose');
 const { defaultMothershipURL } = require('../../../constants');
 
@@ -27,7 +28,7 @@ const GetDashboardParams = new Archetype({
   }
 }).compile('GetDashboardParams');
 
-module.exports = ({ studioConnection, options }) => async function getDashboard(params) {
+module.exports = ({ db, studioConnection, options }) => async function getDashboard(params) {
   const { $workspaceId, authorization, userId, dashboardId, evaluate, roles } = new GetDashboardParams(params);
   const Dashboard = studioConnection.model('__Studio_Dashboard');
   const DashboardResult = studioConnection.model('__Studio_DashboardResult');
@@ -38,10 +39,12 @@ module.exports = ({ studioConnection, options }) => async function getDashboard(
   const dashboard = await Dashboard.findOne({ _id: dashboardId });
   if (evaluate) {
     let result = null;
+    const sandbox = createSandbox({ db });
     const startExec = startDashboardEvaluate(DashboardResult, dashboardId, $workspaceId, userId);
     startExec.catch(() => {}); // Avoid unhandled promise rejections - we will handle this error later.
     try {
-      result = await dashboard.evaluate();
+      result = await sandbox.runScript({ script: dashboard.code });
+      addDocumentSchemaPaths(result);
     } catch (error) {
       const { dashboardResult } = await startExec.then(({ dashboardResult }) => {
         if (!dashboardResult) {
@@ -56,6 +59,12 @@ module.exports = ({ studioConnection, options }) => async function getDashboard(
         );
       });
       return { dashboard, dashboardResult, error: { message: error.message } };
+    } finally {
+      try {
+        await sandbox.close();
+      } catch (_) {
+        // Ignore sandbox cleanup errors so they do not mask the primary result.
+      }
     }
 
     try {
@@ -169,4 +178,22 @@ function getSortTime(result) {
   const candidate = result?.finishedEvaluatingAt ?? result?.startedEvaluatingAt ?? result?.createdAt ?? result?._id;
   const time = new Date(candidate).getTime();
   return Number.isNaN(time) ? 0 : time;
+}
+
+function addDocumentSchemaPaths(result) {
+  const Model = result?.$document?.constructor;
+  if (!Model?.modelName || !Model.schema?.paths) {
+    return;
+  }
+
+  const schemaPaths = {};
+  for (const path of Object.keys(Model.schema.paths)) {
+    schemaPaths[path] = {
+      instance: Model.schema.paths[path].instance,
+      path,
+      ref: Model.schema.paths[path].options?.ref,
+      required: Model.schema.paths[path].options?.required
+    };
+  }
+  result.$document.schemaPaths = schemaPaths;
 }

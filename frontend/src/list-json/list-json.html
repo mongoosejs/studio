@@ -1,5 +1,5 @@
-<div class="tooltip w-full font-mono text-sm py-1 text-slate-800">
-  <div class="w-full">
+<div class="tooltip w-full min-w-0 max-w-full font-mono text-sm py-1 text-slate-800">
+  <div class="w-full min-w-0 max-w-full">
     <json-node
       :node-key="null"
       :value="value"
@@ -14,6 +14,7 @@
       :top-level-expanded="topLevelExpanded"
       :expand-top-level="expandTopLevel"
       :references="references"
+      :max-string-length="maxStringLength"
     ></json-node>
   </div>
 </div>

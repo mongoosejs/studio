@@ -26,9 +26,29 @@ module.exports = app => app.component('confirm-changes', {
     },
     startSave() {
       this.$emit('save');
+    },
+    onEnter(event) {
+      if (event.key !== 'Enter') {
+        return;
+      }
+
+      const modalMasks = Array.from(document.querySelectorAll('.modal-mask'));
+      const currentMask = this.$el?.closest('.modal-mask');
+      const isTopMostModal = modalMasks.length > 0 && modalMasks[modalMasks.length - 1] === currentMask;
+
+      if (!isTopMostModal) {
+        return;
+      }
+
+      event.preventDefault();
+      this.startSave();
     }
   },
   mounted() {
+    window.addEventListener('keydown', this.onEnter);
     Prism.highlightElement(this.$refs.code);
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.onEnter);
   }
 });
