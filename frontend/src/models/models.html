@@ -109,10 +109,6 @@
             @search="search"
           >
           </document-search>
-          <date-range-filter
-            :schema-paths="schemaPaths"
-            @apply="search"
-          ></date-range-filter>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
             <span v-else-if="typeof numDocuments === 'number'">{{documents.length}}/{{numDocuments === 1 ? numDocuments + ' document' : numDocuments + ' documents'}}</span>
