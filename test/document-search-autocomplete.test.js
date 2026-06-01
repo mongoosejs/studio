@@ -8,6 +8,8 @@ const {
   applySuggestion,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
+  detectDateArgumentFormat,
+  insertDateInDateArgument,
   insertQuotedIsoInDateArgument,
   FUNCTION_HELPERS
 } = require('../frontend/src/_util/document-search-autocomplete');
@@ -338,25 +340,90 @@ describe('document-search-autocomplete', function() {
       assert.strictEqual(dateArgumentSliceToDatetimeLocal('not-a-date'), '');
     });
 
-    it('returns YYYY-MM-DDTHH:mm for a parseable slice', function() {
+    it('returns YYYY-MM-DDTHH:mm:ss.SSS for a parseable slice', function() {
       const result = dateArgumentSliceToDatetimeLocal('2020-06-15T14:30');
-      assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(result));
+      assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$/.test(result));
       assert.strictEqual(result.slice(0, 10), '2020-06-15');
     });
 
     it('strips surrounding quotes before parsing', function() {
       const result = dateArgumentSliceToDatetimeLocal('"2021-12-25T08:00:00.000Z"');
-      assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(result));
+      assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$/.test(result));
+    });
+  });
+
+  describe('detectDateArgumentFormat()', function() {
+    it('defaults to timestamp for empty argument', function() {
+      assert.strictEqual(detectDateArgumentFormat(''), 'timestamp');
+      assert.strictEqual(detectDateArgumentFormat('   '), 'timestamp');
+    });
+
+    it('detects quoted string arguments', function() {
+      assert.strictEqual(detectDateArgumentFormat('"2020-01-01"'), 'quoted');
+      assert.strictEqual(detectDateArgumentFormat('\'2020-01-01\''), 'quoted');
+    });
+
+    it('detects unquoted numeric arguments as timestamp', function() {
+      assert.strictEqual(detectDateArgumentFormat('1735689600000'), 'timestamp');
+      assert.strictEqual(detectDateArgumentFormat('2020-01-01'), 'timestamp');
+    });
+  });
+
+  describe('insertDateInDateArgument()', function() {
+    it('inserts unquoted timestamp for empty or unquoted arguments', function() {
+      const searchText = '{ d: Date(OLD) }';
+      const innerStart = '{ d: Date('.length;
+      const innerEnd = innerStart + 3;
+      const range = { innerStart, innerEnd, needsClosingParen: false };
+      const date = new Date('2022-03-04T12:00:00.000Z');
+
+      const result = insertDateInDateArgument(searchText, range, date);
+
+      assert.strictEqual(result.text, '{ d: Date(' + date.getTime() + ') }');
+      assert.strictEqual(result.newCursorPos, innerStart + String(date.getTime()).length);
+    });
+
+    it('preserves quoted ISO style when replacing a quoted argument', function() {
+      const searchText = '{ d: Date("OLD") }';
+      const innerStart = '{ d: Date('.length;
+      const innerEnd = innerStart + 5;
+      const range = { innerStart, innerEnd, needsClosingParen: false };
+      const date = new Date('2022-03-04T12:00:00.000Z');
+      const expectedQuoted = JSON.stringify(date.toISOString());
+
+      const result = insertDateInDateArgument(searchText, range, date);
+
+      assert.strictEqual(result.text, '{ d: Date(' + expectedQuoted + ') }');
+    });
+
+    it('appends ) when needsClosingParen is true', function() {
+      const searchText = '{ d: Date( }';
+      const innerStart = '{ d: Date('.length;
+      const range = { innerStart, innerEnd: innerStart, needsClosingParen: true };
+      const date = new Date('2023-01-02T00:00:00.000Z');
+
+      const result = insertDateInDateArgument(searchText, range, date);
+
+      assert.ok(result.text.includes('{ d: Date(' + date.getTime() + ')'));
+      assert.strictEqual(result.newCursorPos, innerStart + String(date.getTime()).length + 1);
+    });
+
+    it('does not append extra ) when needsClosingParen is false', function() {
+      const searchText = '{ d: Date(x) }';
+      const innerStart = '{ d: Date('.length;
+      const range = { innerStart, innerEnd: innerStart + 1, needsClosingParen: false };
+      const result = insertDateInDateArgument(searchText, range, new Date('2000-01-01T00:00:00.000Z'));
+
+      assert.strictEqual(result.text.indexOf('))'), -1);
+      assert.ok(result.text.endsWith(') }'));
     });
   });
 
   describe('insertQuotedIsoInDateArgument()', function() {
-    it('replaces the inner range with JSON-stringified ISO and no extra ) by default', function() {
-      const searchText = '{ d: Date(OLD) }';
-      const prefix = '{ d: Date(';
-      const inner = 'OLD';
-      const innerStart = prefix.length;
-      const innerEnd = innerStart + inner.length;
+    it('still inserts quoted ISO when the existing argument was quoted', function() {
+      const searchText = '{ d: Date("OLD") }';
+      const innerStart = '{ d: Date('.length;
+      const innerEnd = innerStart + 5;
       const range = { innerStart, innerEnd, needsClosingParen: false };
       const iso = '2022-03-04T12:00:00.000Z';
 
@@ -364,30 +431,6 @@ describe('document-search-autocomplete', function() {
       const expectedQuoted = JSON.stringify(iso);
 
       assert.strictEqual(result.text, '{ d: Date(' + expectedQuoted + ') }');
-      assert.strictEqual(result.newCursorPos, innerStart + expectedQuoted.length);
-    });
-
-    it('appends ) when needsClosingParen is true', function() {
-      const searchText = '{ d: Date( }';
-      const innerStart = '{ d: Date('.length;
-      const range = { innerStart, innerEnd: innerStart, needsClosingParen: true };
-      const iso = '2023-01-02T00:00:00.000Z';
-
-      const result = insertQuotedIsoInDateArgument(searchText, range, iso);
-      const expectedQuoted = JSON.stringify(iso);
-
-      assert.ok(result.text.includes('{ d: Date(' + expectedQuoted + ')'));
-      assert.strictEqual(result.newCursorPos, innerStart + expectedQuoted.length + 1);
-    });
-
-    it('does not append ) when needsClosingParen is omitted (falsy)', function() {
-      const searchText = '{ d: Date(x) }';
-      const innerStart = '{ d: Date('.length;
-      const range = { innerStart, innerEnd: innerStart + 1, needsClosingParen: false };
-      const result = insertQuotedIsoInDateArgument(searchText, range, '2000-01-01T00:00:00.000Z');
-
-      assert.strictEqual(result.text.indexOf('))'), -1);
-      assert.ok(result.text.endsWith(') }'));
     });
   });
 

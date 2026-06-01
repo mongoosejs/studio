@@ -7,7 +7,7 @@ const {
   applySuggestion,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
-  insertQuotedIsoInDateArgument
+  insertDateInDateArgument
 } = require('../../_util/document-search-autocomplete');
 
 module.exports = app => app.component('document-search', {
@@ -29,7 +29,8 @@ module.exports = app => app.component('document-search', {
       autocompleteTrie: null,
       searchText: this.value || '',
       datePickerContext: null,
-      datePickerLocalValue: ''
+      datePickerLocalValue: '',
+      showDateCalendar: false
     };
   },
   watch: {
@@ -48,25 +49,8 @@ module.exports = app => app.component('document-search', {
   },
   mounted() {
     this.$refs.searchInput.focus();
-    this._onDocPointerDownCloseDatePicker = this.onDocumentPointerDownCloseDatePicker.bind(this);
-    document.addEventListener('pointerdown', this._onDocPointerDownCloseDatePicker, true);
-  },
-  beforeUnmount() {
-    if (this._onDocPointerDownCloseDatePicker) {
-      document.removeEventListener('pointerdown', this._onDocPointerDownCloseDatePicker, true);
-    }
   },
   methods: {
-    onDocumentPointerDownCloseDatePicker(ev) {
-      const drop = this.$refs.autocompleteDropdown;
-      if (!drop || drop.contains(ev.target)) {
-        return;
-      }
-      const dateEl = this.$refs.datePickerInput;
-      if (dateEl) {
-        dateEl.blur();
-      }
-    },
     focusInput() {
       const input = this.$refs.searchInput;
       if (input && typeof input.focus === 'function') {
@@ -102,6 +86,9 @@ module.exports = app => app.component('document-search', {
       const cursorPos = input ? input.selectionStart : 0;
 
       const dateRange = getDatePickerInsertionRange(this.searchText, cursorPos);
+      if (!dateRange) {
+        this.showDateCalendar = false;
+      }
       this.datePickerContext = dateRange;
       if (dateRange) {
         const argSlice = this.searchText.slice(dateRange.innerStart, dateRange.innerEnd);
@@ -122,6 +109,9 @@ module.exports = app => app.component('document-search', {
         this.autocompleteSuggestions = [];
       }
     },
+    toggleDateCalendar() {
+      this.showDateCalendar = !this.showDateCalendar;
+    },
     applyDateFromPicker(localDateTime) {
       if (!localDateTime || !this.datePickerContext) {
         return;
@@ -133,14 +123,14 @@ module.exports = app => app.component('document-search', {
         }
         return;
       }
-      const iso = picked.toISOString();
-      const result = insertQuotedIsoInDateArgument(
+      const result = insertDateInDateArgument(
         this.searchText,
         this.datePickerContext,
-        iso
+        picked
       );
       const input = this.$refs.searchInput;
       this.searchText = result.text;
+      this.showDateCalendar = false;
       this.autocompleteSuggestions = [];
       this.$nextTick(() => {
         if (input) {

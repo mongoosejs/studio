@@ -1,5 +1,7 @@
 'use strict';
 
+const { dateToDatetimeLocal } = require('./calendar');
+
 const { Trie } = require('../models/trie');
 
 const QUERY_SELECTORS = [
@@ -262,18 +264,59 @@ function dateArgumentSliceToDatetimeLocal(slice) {
   if (Number.isNaN(d.getTime())) {
     return '';
   }
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return dateToDatetimeLocal(d);
 }
 
-function insertQuotedIsoInDateArgument(searchText, range, isoString) {
-  const quoted = JSON.stringify(isoString);
+/**
+ * @param {string} slice - existing Date(...) argument text
+ * @returns {'quoted'|'timestamp'}
+ */
+function detectDateArgumentFormat(slice) {
+  const t = slice.trim();
+  if (!t) {
+    return 'timestamp';
+  }
+  if (
+    (t.startsWith('"') && t.endsWith('"'))
+    || (t.startsWith('\'') && t.endsWith('\''))
+  ) {
+    return 'quoted';
+  }
+  return 'timestamp';
+}
+
+/**
+ * @param {Date} date
+ * @param {'quoted'|'timestamp'} format
+ */
+function formatDateArgumentValue(date, format) {
+  if (format === 'quoted') {
+    return JSON.stringify(date.toISOString());
+  }
+  return String(date.getTime());
+}
+
+/**
+ * Inserts a Date argument value, preserving quoted ISO vs unquoted timestamp style.
+ * @param {string} searchText
+ * @param {{ innerStart: number, innerEnd: number, needsClosingParen?: boolean }} range
+ * @param {Date} date
+ */
+function insertDateInDateArgument(searchText, range, date) {
+  const slice = searchText.slice(range.innerStart, range.innerEnd);
+  const format = detectDateArgumentFormat(slice);
+  const insertion = formatDateArgumentValue(date, format);
   const { innerStart, innerEnd } = range;
   const closing = range.needsClosingParen === true ? ')' : '';
   return {
-    text: searchText.slice(0, innerStart) + quoted + closing + searchText.slice(innerEnd),
-    newCursorPos: innerStart + quoted.length + closing.length
+    text: searchText.slice(0, innerStart) + insertion + closing + searchText.slice(innerEnd),
+    newCursorPos: innerStart + insertion.length + closing.length
   };
+}
+
+/** @deprecated Use insertDateInDateArgument */
+function insertQuotedIsoInDateArgument(searchText, range, isoString) {
+  return insertDateInDateArgument(searchText, range, new Date(isoString));
 }
 
 module.exports = {
@@ -283,6 +326,9 @@ module.exports = {
   applySuggestion,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
+  detectDateArgumentFormat,
+  formatDateArgumentValue,
+  insertDateInDateArgument,
   insertQuotedIsoInDateArgument,
   QUERY_SELECTORS,
   VALUE_HELPERS,

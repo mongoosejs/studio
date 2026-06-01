@@ -16,16 +16,38 @@
     class="absolute z-[9999] bg-surface border border-edge-strong rounded mt-1 w-full shadow"
   >
     <div
-      v-if="datePickerContext"
-      class="flex flex-wrap items-center gap-2 px-2 py-2 border-b border-edge-strong text-sm"
+      v-if="datePickerContext && !showDateCalendar"
+      class="flex items-center gap-2 px-2 py-1.5 border-b border-edge-strong text-sm"
     >
       <span class="text-content-secondary shrink-0">Date</span>
-      <input
-        ref="datePickerInput"
-        class="min-w-0 flex-1 h-8 rounded border border-edge-strong px-1 font-mono text-sm outline-edge-strong focus:ring-1 focus:ring-primary-subtle"
-        type="datetime-local"
+      <button
+        type="button"
+        class="text-xs font-medium text-teal-700 hover:text-teal-900 px-2 py-1 rounded border border-edge-strong hover:bg-surface-hover"
+        @mousedown.prevent
+        @click="toggleDateCalendar"
+      >Open calendar</button>
+    </div>
+    <div
+      v-if="datePickerContext && showDateCalendar"
+      class="px-1 py-1 border-b border-edge-strong"
+      @mousedown.stop
+    >
+      <div class="flex items-center justify-between gap-2 px-1 pb-1">
+        <span class="text-content-secondary text-xs">Date</span>
+        <button
+          type="button"
+          class="text-xs text-content-secondary hover:text-content-primary"
+          @mousedown.prevent
+          @click="toggleDateCalendar"
+        >Close</button>
+      </div>
+      <custom-date-picker
+        compact
+        mini
+        :immediate="false"
+        mode="datetime"
         :value="datePickerLocalValue"
-        @change="applyDateFromPicker($event.target.value)"
+        @commit="applyDateFromPicker"
       />
     </div>
     <ul v-if="autocompleteSuggestions.length" class="max-h-40 overflow-y-auto">
