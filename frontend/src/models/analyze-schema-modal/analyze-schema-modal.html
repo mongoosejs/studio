@@ -1,0 +1,169 @@
+<div>
+  <div class="modal-exit" @click="close">&times;</div>
+  <div class="text-xl font-bold mb-2">Analyze Schema</div>
+  <div class="space-y-4">
+    <div class="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+      <div>
+        <div class="font-semibold text-content-secondary">Documents</div>
+        <div v-if="schemaAnalysis" class="text-content">{{ formatNumber(schemaAnalysis.documentCount) }}</div>
+        <div v-else class="mt-1 h-4 w-20 animate-pulse rounded bg-muted"></div>
+      </div>
+      <div>
+        <div class="font-semibold text-content-secondary">Analyzed</div>
+        <div v-if="schemaAnalysis" class="text-content">{{ formatNumber(schemaAnalysis.sampleSize) }}{{ schemaAnalysis.sampled ? ' sampled' : '' }}</div>
+        <div v-else class="mt-1 h-4 w-24 animate-pulse rounded bg-muted"></div>
+      </div>
+      <div>
+        <div class="font-semibold text-content-secondary">Valid</div>
+        <div v-if="schemaAnalysis" class="text-content">
+          {{ formatNumber(schemaAnalysis.validDocumentCount) }} ({{ formatPercent(schemaAnalysis.validDocumentCount, schemaAnalysis.sampleSize) }})
+          <router-link
+            v-if="schemaAnalysis.firstValidDocumentId"
+            :to="documentRoute(schemaAnalysis.firstValidDocumentId)"
+            class="ml-1 text-xs text-primary underline"
+          >[Example]</router-link>
+        </div>
+        <div v-else class="mt-1 h-4 w-28 animate-pulse rounded bg-muted"></div>
+      </div>
+      <div>
+        <div class="flex items-center gap-2 font-semibold text-content-secondary">
+          <span>Invalid</span>
+          <button
+            v-if="schemaAnalysis && schemaAnalysis.invalidDocuments.length > 0"
+            type="button"
+            class="text-xs font-semibold text-primary underline"
+            @click="showInvalidDocuments = !showInvalidDocuments"
+          >{{ showInvalidDocuments ? 'Hide' : 'Show' }}</button>
+        </div>
+        <div v-if="schemaAnalysis" class="text-content">
+          {{ formatNumber(schemaAnalysis.invalidDocumentCount) }} ({{ formatPercent(schemaAnalysis.invalidDocumentCount, schemaAnalysis.sampleSize) }})
+          <router-link
+            v-if="schemaAnalysis.firstInvalidDocumentId"
+            :to="documentRoute(schemaAnalysis.firstInvalidDocumentId)"
+            class="ml-1 text-xs text-primary underline"
+          >[Example]</router-link>
+        </div>
+        <div v-else class="mt-1 h-4 w-28 animate-pulse rounded bg-muted"></div>
+      </div>
+    </div>
+    <div v-if="schemaAnalysis && showInvalidDocuments && schemaAnalysis.invalidDocuments.length > 0" class="rounded border border-edge">
+      <div class="max-h-48 overflow-auto">
+        <div
+          v-for="invalidDocument in schemaAnalysis.invalidDocuments"
+          :key="invalidDocument.documentId"
+          class="grid gap-2 border-b border-edge px-3 py-2 text-sm last:border-b-0 md:grid-cols-[minmax(180px,240px)_1fr]"
+        >
+          <router-link
+            :to="documentRoute(invalidDocument.documentId)"
+            class="font-mono text-primary underline"
+          >{{ invalidDocument.documentId }}</router-link>
+          <div class="text-content-secondary">{{ invalidDocument.error }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="px-px py-px">
+      <input
+        ref="fieldSearch"
+        v-model="fieldSearch"
+        type="text"
+        :disabled="!schemaAnalysis"
+        placeholder="Filter fields..."
+        class="w-full rounded border border-edge bg-surface px-3 py-2 text-sm text-content placeholder:text-content-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-wait disabled:bg-muted disabled:text-content-tertiary"
+      />
+    </div>
+    <div class="max-h-[55vh] overflow-auto rounded border border-edge">
+      <table class="min-w-full table-fixed border-collapse text-sm">
+        <colgroup>
+          <col class="w-[40%]" />
+          <col class="w-[60%]" />
+        </colgroup>
+        <thead class="sticky top-0 bg-slate-100 border-b border-edge">
+          <tr>
+            <th class="px-3 py-2 text-left font-medium text-content border-r border-edge">Property</th>
+            <th class="px-3 py-2 text-left font-medium text-content">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span>Types</span>
+                <div class="isolate inline-flex shrink-0 rounded-md shadow-sm">
+                  <button
+                    type="button"
+                    class="relative inline-flex items-center rounded-l-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ring-edge-strong focus:z-10"
+                    :class="typeDisplayMode === 'badges' ? 'bg-merlot-700 text-white' : 'bg-surface text-content-secondary hover:bg-muted'"
+                    @click="typeDisplayMode = 'badges'"
+                  >
+                    Badges
+                  </button>
+                  <button
+                    type="button"
+                    class="relative -ml-px inline-flex items-center rounded-r-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ring-edge-strong focus:z-10"
+                    :class="typeDisplayMode === 'bars' ? 'bg-merlot-700 text-white' : 'bg-surface text-content-secondary hover:bg-muted'"
+                    @click="typeDisplayMode = 'bars'"
+                  >
+                    Bars
+                  </button>
+                </div>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-surface">
+          <template v-if="!schemaAnalysis">
+            <tr v-for="index in 6" :key="'skeleton-' + index" class="border-b border-edge last:border-b-0">
+              <td class="px-3 py-3 align-top border-r border-edge">
+                <div class="h-4 w-44 animate-pulse rounded bg-muted"></div>
+              </td>
+              <td class="px-3 py-3 align-top">
+                <div class="flex flex-wrap gap-1.5">
+                  <div class="h-6 w-24 animate-pulse rounded bg-muted"></div>
+                  <div class="h-6 w-20 animate-pulse rounded bg-muted"></div>
+                  <div class="h-6 w-28 animate-pulse rounded bg-muted"></div>
+                </div>
+              </td>
+            </tr>
+          </template>
+          <tr v-for="path in filteredPaths" :key="path.path" class="border-b border-edge last:border-b-0">
+            <td class="px-3 py-2 align-top border-r border-edge text-xs text-content">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="font-mono" v-html="highlightPath(path.path)"></span>
+                <span
+                  v-if="primaryType(path)"
+                  class="rounded px-1.5 py-0.5 text-[11px] font-semibold"
+                  :style="typeBadgeStyle(primaryType(path).type)"
+                >{{ primaryType(path).type }}</span>
+                <span v-if="path.required" class="rounded bg-red-50 px-1.5 py-0.5 text-[11px] font-semibold text-red-700">required</span>
+              </div>
+            </td>
+            <td class="px-3 py-2 align-top">
+              <div v-if="typeDisplayMode === 'badges'" class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="typeInfo in path.types"
+                  :key="typeInfo.type"
+                  class="rounded px-2 py-1 text-xs font-semibold"
+                  :style="typeBadgeStyle(typeInfo.type)"
+                >
+                  <span class="font-mono">{{ typeInfo.type }}</span>:
+                  {{ formatPercent(typeInfo.count, pathValueCount(path)) }}
+                </span>
+              </div>
+              <div v-else class="min-w-[260px]">
+                <div class="flex h-7 overflow-hidden rounded-lg border border-edge bg-surface">
+                  <div
+                    v-for="typeInfo in path.types"
+                    :key="typeInfo.type"
+                    :title="`${typeInfo.type}: ${formatPercent(typeInfo.count, pathValueCount(path))}`"
+                    class="flex h-full items-center overflow-hidden px-2 text-xs font-semibold"
+                    :style="typeSegmentStyle(typeInfo.type, typeInfo.count, pathValueCount(path))"
+                  >
+                    <span class="truncate">{{ typeInfo.type }}</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="schemaAnalysis && filteredPaths.length === 0">
+            <td colspan="2" class="px-3 py-4 text-sm text-content-tertiary">No fields match "{{ fieldSearch }}".</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
