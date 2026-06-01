@@ -297,15 +297,16 @@ function formatDateArgumentValue(date, format) {
 }
 
 /**
- * Inserts a Date argument value, preserving quoted ISO vs unquoted timestamp style.
+ * Inserts a Date argument value as timestamp or quoted ISO string.
  * @param {string} searchText
  * @param {{ innerStart: number, innerEnd: number, needsClosingParen?: boolean }} range
  * @param {Date} date
+ * @param {'quoted'|'timestamp'} [format] - when omitted, inferred from the existing argument
  */
-function insertDateInDateArgument(searchText, range, date) {
+function insertDateInDateArgument(searchText, range, date, format) {
   const slice = searchText.slice(range.innerStart, range.innerEnd);
-  const format = detectDateArgumentFormat(slice);
-  const insertion = formatDateArgumentValue(date, format);
+  const resolvedFormat = format || detectDateArgumentFormat(slice);
+  const insertion = formatDateArgumentValue(date, resolvedFormat);
   const { innerStart, innerEnd } = range;
   const closing = range.needsClosingParen === true ? ')' : '';
   return {

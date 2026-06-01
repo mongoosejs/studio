@@ -417,6 +417,18 @@ describe('document-search-autocomplete', function() {
       assert.strictEqual(result.text.indexOf('))'), -1);
       assert.ok(result.text.endsWith(') }'));
     });
+
+    it('uses explicit format when provided, overriding detection', function() {
+      const searchText = '{ d: Date("OLD") }';
+      const innerStart = '{ d: Date('.length;
+      const innerEnd = innerStart + 5;
+      const range = { innerStart, innerEnd, needsClosingParen: false };
+      const date = new Date('2022-03-04T12:00:00.000Z');
+
+      const result = insertDateInDateArgument(searchText, range, date, 'timestamp');
+
+      assert.strictEqual(result.text, '{ d: Date(' + date.getTime() + ') }');
+    });
   });
 
   describe('insertQuotedIsoInDateArgument()', function() {

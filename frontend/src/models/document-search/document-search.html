@@ -17,9 +17,17 @@
   >
     <div
       v-if="datePickerContext && !showDateCalendar"
-      class="flex items-center gap-2 px-2 py-1.5 border-b border-edge-strong text-sm"
+      class="flex flex-wrap items-center gap-2 px-2 py-1.5 border-b border-edge-strong text-sm"
     >
       <span class="text-content-secondary shrink-0">Date</span>
+      <select
+        v-model="dateInsertFormat"
+        class="text-xs border border-edge rounded-md bg-surface px-2 py-1"
+        @mousedown.stop
+      >
+        <option value="timestamp">Milliseconds</option>
+        <option value="quoted">Date string</option>
+      </select>
       <button
         type="button"
         class="text-xs font-medium text-teal-700 hover:text-teal-900 px-2 py-1 rounded border border-edge-strong hover:bg-surface-hover"
@@ -32,8 +40,18 @@
       class="px-1 py-1 border-b border-edge-strong"
       @mousedown.stop
     >
-      <div class="flex items-center justify-between gap-2 px-1 pb-1">
-        <span class="text-content-secondary text-xs">Date</span>
+      <div class="flex flex-wrap items-center justify-between gap-2 px-1 pb-1">
+        <div class="flex items-center gap-2">
+          <span class="text-content-secondary text-xs">Date</span>
+          <select
+            v-model="dateInsertFormat"
+            class="text-xs border border-edge rounded-md bg-surface px-2 py-1"
+            @mousedown.stop
+          >
+            <option value="timestamp">Milliseconds</option>
+            <option value="quoted">Date string</option>
+          </select>
+        </div>
         <button
           type="button"
           class="text-xs text-content-secondary hover:text-content-primary"
