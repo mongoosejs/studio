@@ -73,7 +73,9 @@ function createDefaultStage() {
     previewError: '',
     previewLoading: false,
     previewExpanded: false,
-    previewLoaded: false
+    previewLoaded: false,
+    showBodyError: false,
+    frozenBodyError: null
   };
 }
 
@@ -91,16 +93,25 @@ module.exports = app => app.component('aggregation-builder', {
     results: [],
     visibleResultsCount: RESULT_PAGE_SIZE,
     resultsRenderKey: 0,
-    activeRunId: 0
+    activeRunId: 0,
+    editingStageId: null,
+    pipelineErrorsRevealed: false,
+    pipelineErrorsPanelOpen: false
   }),
   computed: {
     hasPipelineErrors() {
       return this.stages.some(stage => this.getStageError(stage) != null);
     },
-    pipelineStageErrors() {
+    hasVisibleErrors() {
+      return this.visiblePipelineStageErrors.length > 0 || !!this.errorMessage;
+    },
+    visibleErrorCount() {
+      return this.visiblePipelineStageErrors.length + (this.errorMessage ? 1 : 0);
+    },
+    visiblePipelineStageErrors() {
       const errors = [];
       for (let i = 0; i < this.stages.length; i++) {
-        const message = this.getStageError(this.stages[i]);
+        const message = this.getVisibleStageError(this.stages[i]);
         if (message) {
           errors.push({ stageNumber: i + 1, message });
         }
@@ -145,6 +156,10 @@ module.exports = app => app.component('aggregation-builder', {
       if (index < 0 || index >= this.stages.length) {
         return;
       }
+      const removed = this.stages[index];
+      if (removed && this.editingStageId === removed.id) {
+        this.editingStageId = null;
+      }
       if (this.stages.length === 1) {
         this.stages.splice(0, 1, createDefaultStage());
         return;
@@ -166,6 +181,51 @@ module.exports = app => app.component('aggregation-builder', {
         return 'Stage body must be a plain object';
       }
       return null;
+    },
+    getVisibleStageError(stage) {
+      if (this.editingStageId === stage.id) {
+        return null;
+      }
+      if (!stage.showBodyError && !this.pipelineErrorsRevealed) {
+        return null;
+      }
+      return stage.frozenBodyError;
+    },
+    syncStageFrozenError(stage) {
+      stage.frozenBodyError = this.getStageError(stage);
+    },
+    onStageBodyFocus(stage) {
+      this.editingStageId = stage.id;
+    },
+    onStageBodyBlur(stage) {
+      this.editingStageId = null;
+      stage.showBodyError = true;
+      this.syncStageFrozenError(stage);
+    },
+    revealAllPipelineErrors() {
+      this.pipelineErrorsRevealed = true;
+      this.editingStageId = null;
+      for (const stage of this.stages) {
+        stage.showBodyError = true;
+        this.syncStageFrozenError(stage);
+      }
+      if (this.hasVisibleErrors) {
+        this.pipelineErrorsPanelOpen = true;
+      }
+    },
+    clearRevealedPipelineErrors() {
+      this.pipelineErrorsRevealed = false;
+      this.pipelineErrorsPanelOpen = false;
+      for (const stage of this.stages) {
+        stage.showBodyError = false;
+        stage.frozenBodyError = null;
+      }
+    },
+    togglePipelineErrorsPanel() {
+      this.pipelineErrorsPanelOpen = !this.pipelineErrorsPanelOpen;
+    },
+    closePipelineErrorsPanel() {
+      this.pipelineErrorsPanelOpen = false;
     },
     buildPipeline() {
       return this.stages.map(stage => {
@@ -207,10 +267,12 @@ module.exports = app => app.component('aggregation-builder', {
       return false;
     },
     runStagePreview(index) {
+      this.editingStageId = null;
       if (index < 0 || index >= this.stages.length || !this.selectedModel) {
         return;
       }
       if (this.pipelineThroughIndexHasErrors(index)) {
+        this.revealAllPipelineErrors();
         return;
       }
       const stage = this.stages[index];
@@ -265,9 +327,11 @@ module.exports = app => app.component('aggregation-builder', {
       }
     },
     async runAggregation() {
+      this.editingStageId = null;
       this.errorMessage = '';
       const pipeline = this.buildPipeline();
       if (this.hasPipelineErrors) {
+        this.revealAllPipelineErrors();
         this.errorMessage = 'Fix invalid stage syntax before running.';
         return;
       }
@@ -296,6 +360,7 @@ module.exports = app => app.component('aggregation-builder', {
         this.results = docs || [];
         this.visibleResultsCount = RESULT_PAGE_SIZE;
         this.resultsRenderKey += 1;
+        this.clearRevealedPipelineErrors();
       } catch (err) {
         if (runId !== this.activeRunId) {
           return;

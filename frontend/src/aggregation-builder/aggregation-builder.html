@@ -1,11 +1,11 @@
 <div
   class="aggregation-builder flex min-h-0 flex-col overflow-hidden bg-slate-50 p-4 md:p-6"
   style="height: calc(100vh - 55px); height: calc(100dvh - 55px)">
-  <div class="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col gap-4">
-    <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pr-1 md:gap-4">
+  <div class="relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col gap-4">
+    <div class="relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pr-1 md:gap-4">
       <div
-        class="flex w-full min-h-0 shrink-0 flex-col overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] max-h-[min(42vh,26rem)]">
-        <section class="overflow-hidden rounded-lg border border-edge bg-page shadow-sm">
+        class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain pb-2 [-webkit-overflow-scrolling:touch] md:gap-5">
+        <section class="shrink-0 overflow-hidden rounded-lg border border-edge bg-page shadow-sm">
           <header class="shrink-0 border-b border-edge bg-surface/60 px-4 py-2.5 md:px-5">
             <h2 class="text-sm font-semibold tracking-tight text-content">Aggregation options</h2>
             <p class="mt-1 text-xs leading-snug text-content-tertiary">Model, how many documents to return, and pipeline actions.</p>
@@ -46,51 +46,31 @@
               <button
                 type="button"
                 @click="runAggregation"
-                :disabled="isRunning || !selectedModel || hasPipelineErrors"
+                :disabled="isRunning || !selectedModel"
                 class="min-h-[2.5rem] flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-text shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-500 disabled:opacity-90 sm:flex-none">
                 {{ isRunning ? 'Running...' : 'Run Now' }}
               </button>
             </div>
           </div>
         </section>
-      </div>
 
-      <section
-        class="flex min-h-[32vh] min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-edge bg-page shadow-sm md:min-h-[36vh]">
-        <div class="shrink-0 border-b border-edge px-4 py-2">
-          <h2 class="text-sm font-semibold text-content">Pipeline stages</h2>
-        </div>
-        <div
-          class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-y-contain p-4 pb-3 [-webkit-overflow-scrolling:touch] md:gap-6 md:p-5 md:pb-4">
-        <div
-          v-if="pipelineStageErrors.length"
-          role="alert"
-          aria-live="polite"
-          class="sticky top-0 z-[1] -mx-px shrink-0 rounded-md border border-red-200 bg-red-50 p-3 shadow-sm md:p-4">
-          <p class="text-xs font-semibold uppercase tracking-wide text-red-800">Pipeline errors</p>
-          <ul class="mt-2 list-none space-y-1.5 text-sm text-red-800">
-            <li v-for="(item, errIdx) in pipelineStageErrors" :key="'pipeline-err-' + errIdx">
-              <span class="font-semibold">Stage {{ item.stageNumber }}:</span>
-              {{ item.message }}
-            </li>
-          </ul>
-        </div>
-        <div
+        <section
           v-for="(stage, index) in stages"
           :key="stage.id + '-workflow-row'"
           ref="workflowStageRows"
-          class="flex min-h-[min(21rem,38vh)] shrink-0 flex-col gap-4 overflow-hidden rounded-xl border border-edge bg-surface p-4 shadow-sm md:min-h-[min(24rem,42vh)] md:gap-5 md:p-5 lg:min-h-[26rem]">
-          <div class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-edge pb-3">
-            <span class="text-sm font-semibold text-content">Stage {{index + 1}}</span>
+          class="flex shrink-0 flex-col overflow-hidden rounded-lg border border-edge bg-page shadow-sm">
+          <header class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-edge bg-surface/60 px-4 py-2.5 md:px-5">
+            <h2 class="text-sm font-semibold tracking-tight text-content">Stage {{index + 1}}</h2>
             <button
               type="button"
               @click="removeStage(index)"
-              class="rounded-md border border-edge bg-surface px-3 py-1.5 text-xs font-semibold text-content-secondary hover:bg-muted">
+              class="rounded-md border border-edge bg-page px-3 py-1.5 text-xs font-semibold text-content-secondary shadow-sm hover:bg-muted">
               Remove stage
             </button>
-          </div>
+          </header>
+          <div class="p-4 md:p-5">
           <div
-            class="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)_minmax(0,1.1fr)] lg:grid-rows-1 lg:items-stretch lg:gap-5">
+            class="grid min-h-0 grid-cols-1 gap-4 lg:min-h-[20rem] lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)_minmax(0,1.1fr)] lg:grid-rows-1 lg:items-stretch lg:gap-5">
           <div class="flex min-h-0 flex-col gap-3 overflow-hidden rounded-lg border border-edge bg-surface p-4">
             <div class="flex shrink-0 flex-wrap items-center gap-2 border-b border-edge pb-2">
               <span class="text-xs font-semibold uppercase tracking-wide text-content-tertiary">Operator</span>
@@ -100,19 +80,15 @@
                 <option v-for="operator in stageOperators" :key="operator" :value="operator">{{operator}}</option>
               </select>
             </div>
-            <p
-              v-if="getStageError(stage)"
-              role="alert"
-              class="shrink-0 rounded-md border border-red-200 bg-red-50 px-2.5 py-2 text-sm leading-snug text-red-800">
-              {{ getStageError(stage) }}
-            </p>
             <textarea
               v-model="stage.bodyText"
               spellcheck="false"
+              @focus="onStageBodyFocus(stage)"
+              @blur="onStageBodyBlur(stage)"
               class="min-h-[11rem] w-full min-w-0 flex-1 resize-y rounded-md border border-edge bg-page px-3 py-2 font-mono text-sm text-content focus:border-edge-strong focus:outline-none [tab-size:2] md:min-h-[12rem]"
               placeholder="{ _id: ObjectId('...'), createdAt: new Date('2024-01-01') }"
             ></textarea>
-            <p v-if="!getStageError(stage)" class="shrink-0 text-xs leading-snug text-content-tertiary">
+            <p class="shrink-0 text-xs leading-snug text-content-tertiary">
               Same idea as the create document editor: JSON or JavaScript-style objects with
               <span class="font-mono text-[0.7rem] text-content-secondary">ObjectId()</span>,
               <span class="font-mono text-[0.7rem] text-content-secondary">new Date()</span>,
@@ -136,7 +112,7 @@
                 <button
                   type="button"
                   @click="runStagePreview(index)"
-                  :disabled="!selectedModel || stage.previewLoading || pipelineThroughIndexHasErrors(index)"
+                  :disabled="!selectedModel || stage.previewLoading"
                   class="w-full rounded-md border border-edge bg-page px-3 py-1.5 text-xs font-semibold text-content-secondary hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
                   Run preview
                 </button>
@@ -181,9 +157,53 @@
             </div>
           </div>
           </div>
+          </div>
+        </section>
+      </div>
+
+      <div
+        v-if="hasVisibleErrors"
+        class="pointer-events-none absolute bottom-3 right-3 z-20 flex flex-col items-end gap-2 md:bottom-4 md:right-4">
+        <div
+          v-if="pipelineErrorsPanelOpen"
+          role="dialog"
+          aria-labelledby="aggregation-pipeline-errors-title"
+          class="pointer-events-auto flex max-h-[min(50vh,22rem)] w-[min(100vw-2rem,22rem)] flex-col overflow-hidden rounded-lg border border-red-200 bg-page shadow-lg">
+          <div class="flex shrink-0 items-center justify-between gap-2 border-b border-red-200 bg-red-50 px-3 py-2">
+            <h3 id="aggregation-pipeline-errors-title" class="text-sm font-semibold text-red-900">Pipeline errors</h3>
+            <button
+              type="button"
+              @click="closePipelineErrorsPanel"
+              class="rounded-md px-2 py-1 text-xs font-semibold text-red-800 hover:bg-red-100"
+              aria-label="Close errors">
+              Close
+            </button>
+          </div>
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-3 [-webkit-overflow-scrolling:touch]">
+            <p v-if="errorMessage" class="mb-3 text-sm leading-snug text-red-800">{{ errorMessage }}</p>
+            <ul v-if="visiblePipelineStageErrors.length" class="list-none space-y-2.5 text-sm text-red-800">
+              <li
+                v-for="(item, errIdx) in visiblePipelineStageErrors"
+                :key="'pipeline-err-' + errIdx"
+                class="rounded-md border border-red-100 bg-red-50/80 px-2.5 py-2">
+                <span class="font-semibold">Stage {{ item.stageNumber }}</span>
+                <p class="mt-0.5 font-mono text-xs leading-snug">{{ item.message }}</p>
+              </li>
+            </ul>
+          </div>
         </div>
-        </div>
-      </section>
+        <button
+          type="button"
+          @click="togglePipelineErrorsPanel"
+          class="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-900 shadow-md transition-colors hover:bg-red-100"
+          :aria-expanded="pipelineErrorsPanelOpen"
+          aria-controls="aggregation-pipeline-errors-title">
+          <span>Errors</span>
+          <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
+            {{ visibleErrorCount }}
+          </span>
+        </button>
+      </div>
     </div>
 
     <section
@@ -193,11 +213,13 @@
         <span v-if="isRunning" class="text-xs font-medium text-content-tertiary">Running…</span>
       </div>
       <div class="flex min-h-0 flex-1 flex-col overflow-hidden p-3">
-        <p v-if="errorMessage" class="shrink-0 text-sm text-red-600">{{errorMessage}}</p>
-        <p v-else-if="results.length === 0 && !isRunning" class="shrink-0 text-sm text-content-tertiary">
+        <p v-if="results.length === 0 && !isRunning && !errorMessage" class="shrink-0 text-sm text-content-tertiary">
           Click Run Now to execute the aggregation and show results here.
         </p>
-        <p v-else-if="results.length === 0 && isRunning" class="shrink-0 py-2 text-sm text-content-tertiary">Fetching results…</p>
+        <p v-else-if="results.length === 0 && isRunning && !errorMessage" class="shrink-0 py-2 text-sm text-content-tertiary">Fetching results…</p>
+        <p v-else-if="errorMessage && results.length === 0 && !isRunning" class="shrink-0 text-sm text-content-tertiary">
+          Aggregation failed. Open <button type="button" @click="togglePipelineErrorsPanel" class="font-semibold text-red-700 underline hover:text-red-900">Errors</button> for details.
+        </p>
         <div v-else class="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <p class="shrink-0 text-xs text-content-tertiary">
             Showing {{ visibleResults.length }} of {{ results.length }} document(s).
