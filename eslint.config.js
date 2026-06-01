@@ -47,7 +47,8 @@ module.exports = defineConfig([
         requestAnimationFrame: true,
         localStorage: true,
         getComputedStyle: true,
-        CustomEvent: true
+        CustomEvent: true,
+        Buffer: true
       },
       sourceType: 'commonjs'
     },
