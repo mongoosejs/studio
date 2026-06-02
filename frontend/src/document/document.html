@@ -312,7 +312,7 @@
             <div v-if="!validationResult.valid" class="rounded border border-edge bg-muted p-3 text-sm text-content-secondary">
               {{ validationResult.error }}
             </div>
-            <div v-if="Object.keys(validationResult.errors).length > 0" class="rounded border border-edge">
+            <div v-if="validationResult?.errors && Object.keys(validationResult.errors).length > 0" class="rounded border border-edge">
               <div class="border-b border-edge px-3 py-2 text-sm font-semibold text-content-secondary">Invalid Paths</div>
               <div class="max-h-72 overflow-auto">
                 <div
