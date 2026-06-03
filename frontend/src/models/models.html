@@ -177,6 +177,13 @@
                   Indexes
                 </button>
                 <button
+                  @click="openAnalyzeSchemaModal"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Analyze Schema
+                </button>
+                <button
                   @click="openCollectionInfo"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
@@ -546,6 +553,14 @@
           </div>
         </div>
       </div>
+    </template>
+  </modal>
+  <modal v-if="shouldShowAnalyzeSchemaModal" containerClass="md:!w-[70vw]">
+    <template v-slot:body>
+      <analyze-schema-modal
+        :current-model="currentModel"
+        @close="shouldShowAnalyzeSchemaModal = false"
+      ></analyze-schema-modal>
     </template>
   </modal>
   <modal v-if="shouldShowCollectionInfoModal">

@@ -121,6 +121,13 @@
                 Copy Document
               </button>
               <button
+                @click="openValidationModal()"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-green-100"
+              >
+                Validate
+              </button>
+              <button
                 @click="openScriptDrawer()"
                 type="button"
                 class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-indigo-100"
@@ -223,6 +230,13 @@
                 Copy Document
               </button>
               <button
+                @click="openValidationModal()"
+                type="button"
+                class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-green-100"
+              >
+                Validate
+              </button>
+              <button
                 @click="openScriptDrawer()"
                 type="button"
                 class="flex items-center px-4 py-2 text-sm text-content-secondary hover:bg-indigo-100"
@@ -278,6 +292,43 @@
         <template v-slot:body>
           <div class="modal-exit" @click="shouldShowCloneModal = false;">&times;</div>
             <clone-document :currentModel="model" :doc="document" :schemaPaths="schemaPaths" @close="showClonedDocument"></clone-document>
+        </template>
+      </modal>
+      <modal v-if="shouldShowValidationModal">
+        <template v-slot:body>
+          <div class="modal-exit" @click="shouldShowValidationModal = false;">&times;</div>
+          <div class="text-xl font-bold mb-2">Validate Document</div>
+          <div v-if="!validationResult" class="space-y-3">
+            <div class="h-4 w-32 animate-pulse rounded bg-muted"></div>
+            <div class="h-20 w-full animate-pulse rounded bg-muted"></div>
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              class="rounded px-3 py-2 text-sm font-semibold"
+              :class="validationResult.valid ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'"
+            >
+              {{ validationResult.valid ? 'Document is valid' : 'Document is invalid' }}
+            </div>
+            <div v-if="!validationResult.valid" class="rounded border border-edge bg-muted p-3 text-sm text-content-secondary">
+              {{ validationResult.error }}
+            </div>
+            <div v-if="validationResult?.errors && Object.keys(validationResult.errors).length > 0" class="rounded border border-edge">
+              <div class="border-b border-edge px-3 py-2 text-sm font-semibold text-content-secondary">Invalid Paths</div>
+              <div class="max-h-72 overflow-auto">
+                <div
+                  v-for="[path, pathError] in Object.entries(validationResult.errors)"
+                  :key="path"
+                  class="grid gap-2 border-b border-edge px-3 py-2 text-sm last:border-b-0 md:grid-cols-[minmax(160px,220px)_1fr]"
+                >
+                  <div class="font-mono text-content">{{ path }}</div>
+                  <div class="text-content-secondary">
+                    <div>{{ pathError.message }}</div>
+                    <div v-if="pathError.kind" class="mt-1 text-xs text-content-tertiary">Kind: {{ pathError.kind }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </template>
       </modal>
     </div>

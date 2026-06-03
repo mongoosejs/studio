@@ -167,6 +167,7 @@ module.exports = app => app.component('models', {
     addFieldFilterText: '',
     showAddFieldDropdown: false,
     shouldShowIndexModal: false,
+    shouldShowAnalyzeSchemaModal: false,
     shouldShowCollectionInfoModal: false,
     shouldShowDropCollectionModal: false,
     dropCollectionConfirmName: '',
@@ -888,6 +889,10 @@ module.exports = app => app.component('models', {
       const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel });
       this.mongoDBIndexes = mongoDBIndexes;
       this.schemaIndexes = schemaIndexes;
+    },
+    openAnalyzeSchemaModal() {
+      this.closeActionsMenu();
+      this.shouldShowAnalyzeSchemaModal = true;
     },
     toggleActionsMenu() {
       this.showActionsMenu = !this.showActionsMenu;

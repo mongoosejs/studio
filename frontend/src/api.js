@@ -168,6 +168,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     addField(params) {
       return client.post('', { action: 'Model.addField', ...params }).then(res => res.data);
     },
+    analyzeSchema(params) {
+      return client.post('', { action: 'Model.analyzeSchema', ...params }).then(res => res.data);
+    },
     createChart(params) {
       return client.post('', { action: 'Model.createChart', ...params }).then(res => res.data);
     },
@@ -182,6 +185,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     executeDocumentScript(params) {
       return client.post('', { action: 'Model.executeDocumentScript', ...params }).then(res => res.data);
+    },
+    validateDocument(params) {
+      return client.post('', { action: 'Model.validateDocument', ...params }).then(res => res.data);
     },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
@@ -439,6 +445,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getCollectionInfo: function getCollectionInfo(params) {
       return client.post('/Model/getCollectionInfo', params).then(res => res.data);
     },
+    analyzeSchema: function analyzeSchema(params) {
+      return client.post('/Model/analyzeSchema', params).then(res => res.data);
+    },
     getIndexes: function getIndexes(params) {
       return client.post('/Model/getIndexes', params).then(res => res.data);
     },
@@ -450,6 +459,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocument: function updateDocument(params) {
       return client.post('/Model/updateDocument', params).then(res => res.data);
+    },
+    validateDocument: function validateDocument(params) {
+      return client.post('/Model/validateDocument', params).then(res => res.data);
     },
     streamChatMessage: async function* streamChatMessage(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
