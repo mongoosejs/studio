@@ -38,9 +38,27 @@
       </div>
     </div>
 
-    <div v-else class="space-y-3">
+    <div v-else class="space-y-8">
+      <section
+        v-for="section in dashboardSections"
+        :key="section.key"
+        :class="section.pinned ? 'rounded-lg border border-primary/30 bg-primary-subtle/40 px-4 py-4' : ''"
+      >
+        <div v-if="section.title" class="flex items-center gap-2 mb-3">
+          <svg
+            v-if="section.pinned"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="h-4 w-4 text-primary"
+            aria-hidden="true">
+            <path d="M10.921 2.868a1.25 1.25 0 0 0-1.842 0l-6.368 6.935A1.25 1.25 0 0 0 3.25 11.5h1.129v5.75a.75.75 0 0 0 1.5 0v-5.75h4.242v5.75a.75.75 0 0 0 1.5 0v-5.75h1.129a1.25 1.25 0 0 0 .539-2.697l-6.368-6.935Z" />
+          </svg>
+          <h2 class="text-sm font-semibold text-content">{{ section.title }}</h2>
+        </div>
+        <div class="space-y-3">
       <div
-        v-for="dashboard in dashboards"
+        v-for="dashboard in section.dashboards"
         :key="dashboard._id"
         class="bg-surface rounded-lg border border-edge px-5 py-4 flex items-center justify-between hover:border-edge-strong transition-colors"
       >
@@ -53,6 +71,14 @@
           <p v-if="dashboard.description" class="mt-0.5 text-sm text-content-tertiary truncate">{{ dashboard.description }}</p>
         </div>
         <div class="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            @click="togglePin(dashboard)"
+            :title="dashboard.isPinned ? 'Unpin dashboard' : 'Pin dashboard'"
+            class="rounded-md bg-surface px-2 py-1.5 text-content-tertiary ring-1 ring-inset ring-gray-300 hover:bg-page"
+            :class="dashboard.isPinned ? 'text-primary ring-primary/40' : ''">
+            <img :src="dashboard.isPinned ? 'images/pin-off.svg' : 'images/pin.svg'" class="w-4 h-4" alt="" />
+          </button>
           <router-link
             :to="'/dashboard/' + dashboard._id"
             class="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover">
@@ -88,6 +114,8 @@
           </div>
         </div>
       </div>
+        </div>
+      </section>
     </div>
   </div>
 

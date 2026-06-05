@@ -13,6 +13,10 @@ const dashboardSchema = new mongoose.Schema({
   },
   description: {
     type: String
+  },
+  isPinned: {
+    type: Boolean,
+    default: false
   }
 });
 

@@ -35,6 +35,44 @@ module.exports = app => app.component('dashboards', {
     insertNewDashboard(dashboard) {
       this.dashboards.push(dashboard);
       this.showCreateDashboardModal = false;
+    },
+    async togglePin(dashboard) {
+      if (!dashboard) {
+        return;
+      }
+
+      const { doc } = await api.Dashboard.updateDashboard({
+        dashboardId: dashboard._id,
+        isPinned: !dashboard.isPinned
+      });
+      dashboard.isPinned = doc.isPinned;
+    }
+  },
+  computed: {
+    dashboardSections() {
+      const pinned = this.dashboards.filter(dashboard => dashboard.isPinned);
+      const other = this.dashboards.filter(dashboard => !dashboard.isPinned);
+      const sections = [];
+
+      if (pinned.length > 0) {
+        sections.push({
+          key: 'pinned',
+          title: 'Pinned',
+          dashboards: pinned,
+          pinned: true
+        });
+      }
+
+      if (other.length > 0) {
+        sections.push({
+          key: 'other',
+          title: pinned.length > 0 ? 'All Dashboards' : null,
+          dashboards: other,
+          pinned: false
+        });
+      }
+
+      return sections;
     }
   },
   directives: {
