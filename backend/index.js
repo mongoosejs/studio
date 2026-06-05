@@ -8,6 +8,7 @@ const chatMessageSchema = require('./db/chatMessageSchema');
 const chatThreadSchema = require('./db/chatThreadSchema');
 const dashboardSchema = require('./db/dashboardSchema');
 const dashboardResultSchema = require('./db/dashboardResultSchema');
+const modelSkillSchema = require('./db/modelSkillSchema');
 
 module.exports = function backend(db, studioConnection, options) {
   db = db || mongoose.connection;
@@ -20,6 +21,7 @@ module.exports = function backend(db, studioConnection, options) {
   const DashboardResult = studioConnection.model('__Studio_DashboardResult', dashboardResultSchema, 'studio__dashboardResults');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
   const ChatThread = studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
+  studioConnection.model('__Studio_ModelSkill', modelSkillSchema, 'studio__modelSkills');
 
   let changeStream = null;
   if (options?.changeStream) {

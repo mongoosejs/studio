@@ -189,6 +189,10 @@ module.exports = app => app.component('models', {
     showActionsMenu: false,
     collectionInfo: null,
     modelSearch: '',
+    modelSkills: {},
+    shouldShowModelSkillsModal: false,
+    editingModelSkillsName: null,
+    editingModelSkills: '',
     recentlyViewedModels: [],
     showModelSwitcher: false,
     showRowNumbers: true,
@@ -263,8 +267,9 @@ module.exports = app => app.component('models', {
     this.query = Object.assign({}, this.$route.query);
     // Keep UI mode in sync with the URL on remounts.
     this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
-    const { models, readyState } = await api.Model.listModels();
+    const { models, modelSkills, readyState } = await api.Model.listModels();
     this.models = models;
+    this.modelSkills = modelSkills || {};
     await this.loadModelCounts();
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
@@ -441,6 +446,19 @@ module.exports = app => app.component('models', {
       const match = model.slice(idx, idx + search.length);
       const after = model.slice(idx + search.length);
       return `${xss(before)}<strong>${xss(match)}</strong>${xss(after)}`;
+    },
+    openModelSkillsModal(model) {
+      this.editingModelSkillsName = model;
+      this.editingModelSkills = this.modelSkills[model] || '';
+      this.shouldShowModelSkillsModal = true;
+    },
+    async saveModelSkills() {
+      const modelName = this.editingModelSkillsName;
+      const skills = this.editingModelSkills;
+      await api.Model.updateModelSkill({ modelName, skills });
+      this.modelSkills = { ...this.modelSkills, [modelName]: skills };
+      this.shouldShowModelSkillsModal = false;
+      this.$toast.success('Skills saved!');
     },
     loadRecentlyViewedModels() {
       if (typeof window === 'undefined' || !window.localStorage) {

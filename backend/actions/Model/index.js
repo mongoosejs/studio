@@ -22,4 +22,5 @@ exports.streamDocumentChanges = require('./streamDocumentChanges');
 exports.streamChatMessage = require('./streamChatMessage');
 exports.updateDocument = require('./updateDocument');
 exports.updateDocuments = require('./updateDocuments');
+exports.updateModelSkill = require('./updateModelSkill');
 exports.validateDocument = require('./validateDocument');

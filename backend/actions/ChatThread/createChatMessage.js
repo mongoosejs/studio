@@ -7,6 +7,8 @@ const agentSystemPrompt = require('../../chatAgent/agentSystemPrompt');
 const callLLM = require('../../integrations/callLLM');
 const getAgentTools = require('../../chatAgent/getAgentTools');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
+const getModelSkillsMap = require('../../helpers/getModelSkillsMap');
+const formatModelSkillsPrompt = require('../../helpers/formatModelSkillsPrompt');
 const mongoose = require('mongoose');
 
 const CreateChatMessageParams = new Archetype({
@@ -81,11 +83,12 @@ module.exports = ({ db, studioConnection, options }) => async function createCha
     });
   }
 
-  const modelDescriptions = getModelDescriptions(db);
+  const modelSkills = await getModelSkillsMap(studioConnection);
   const system = [
     chatThread.agentMode ? agentSystemPrompt : systemPrompt,
     currentDateTime ? `Current date: ${currentDateTime}` : null,
-    modelDescriptions,
+    formatModelSkillsPrompt(modelSkills),
+    getModelDescriptions(db, modelSkills),
     options?.context
   ].filter(Boolean).join('\n\n');
 
@@ -169,5 +172,5 @@ return { numUsers: users.length };
 
 -----------
 
-Here is a description of the user's models. Assume these are the only models available in the system unless explicitly instructed otherwise by the user.
+Here is a description of the user's models, including any model-specific skills defined by the user. Assume these are the only models available in the system unless explicitly instructed otherwise by the user. Follow model-specific skills exactly when they apply.
 `.trim();

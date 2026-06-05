@@ -38,9 +38,13 @@ const listModelPaths = Model => [
   )
 ].join('\n');
 
-const getModelDescriptions = db => Object.values(db.models).filter(Model => !Model.modelName.startsWith('__Studio')).map(Model => `
+const getModelDescriptions = (db, modelSkills = {}) => Object.values(db.models).filter(Model => !Model.modelName.startsWith('__Studio')).map(Model => {
+  const skills = modelSkills[Model.modelName];
+  const skillsSection = skills ? `\nSkills: ${skills}` : '';
+  return `
 ${Model.modelName} (collection: ${Model.collection.collectionName})
-${listModelPaths(Model)}
-`.trim()).join('\n\n');
+${listModelPaths(Model)}${skillsSection}
+`.trim();
+}).join('\n\n');
 
 module.exports = getModelDescriptions;
