@@ -9,6 +9,14 @@ appendCSS(require('./sleuth-unified.css'));
 module.exports = app => app.component('sleuth-unified', {
   template,
   inject: ['sleuthContext'],
+  data() {
+    return {
+      caseReportSections: {
+        documents: true,
+        notes: true
+      }
+    };
+  },
   methods: {
     renderMarkdown(text) {
       if (!text) return '';
@@ -17,6 +25,14 @@ module.exports = app => app.component('sleuth-unified', {
     hasAiSummary() {
       const s = this.sleuthContext && this.sleuthContext.aiSummary;
       return typeof s === 'string' && s.trim().length > 0;
+    },
+    toggleCaseReportSection(section) {
+      if (typeof section === 'string' && Object.prototype.hasOwnProperty.call(this.caseReportSections, section)) {
+        this.caseReportSections[section] = !this.caseReportSections[section];
+      }
+    },
+    isCaseReportSectionOpen(section) {
+      return !!this.caseReportSections[section];
     }
   }
 });

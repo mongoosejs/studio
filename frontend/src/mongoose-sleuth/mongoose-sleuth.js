@@ -7,6 +7,207 @@ const mpath = require('mpath');
 const limit = 20;
 const OUTPUT_TYPE_STORAGE_KEY = 'studio:mongoose-sleuth-output-type';
 
+function normalizeProjectionTokens(trimmed) {
+  const rawTokens = trimmed.split(/[,\s]+/).filter(Boolean);
+  const tokens = [];
+  for (let i = 0; i < rawTokens.length; i++) {
+    const t = rawTokens[i];
+    if (t === '-' || t === '+') {
+      if (i + 1 >= rawTokens.length) {
+        return null;
+      }
+      tokens.push(t + rawTokens[++i]);
+    } else {
+      tokens.push(t);
+    }
+  }
+  return tokens;
+}
+
+function parseProjectionObjectNotation(trimmed, schemaPaths) {
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+    return null;
+  }
+  const body = trimmed.slice(1, -1).trim();
+  if (!body) {
+    return [];
+  }
+
+  const pairRe = /(?:^|,)\s*(?:"([^"]+)"|'([^']+)'|([a-zA-Z_$][\w.$]*))\s*:\s*("[^"]*"|'[^']*'|[^,]+?)\s*(?=,|$)/g;
+  const includeKeys = [];
+  const excludeKeys = [];
+  let matchedChars = '';
+  let match;
+
+  while ((match = pairRe.exec(body)) !== null) {
+    matchedChars += match[0];
+    const key = (match[1] || match[2] || match[3] || '').trim();
+    const rawValue = (match[4] || '').trim();
+    if (!key || !rawValue) {
+      return null;
+    }
+
+    const valueLower = rawValue.replace(/^['"]|['"]$/g, '').trim().toLowerCase();
+    const isInclude = valueLower === '1' || valueLower === 'true';
+    const isExclude = valueLower === '0' || valueLower === 'false';
+    if (!isInclude && !isExclude) {
+      return null;
+    }
+    if (isInclude) {
+      includeKeys.push(key);
+    } else {
+      excludeKeys.push(key);
+    }
+  }
+
+  const normalizedBody = body.replace(/\s+/g, '');
+  const normalizedMatched = matchedChars.replace(/\s+/g, '').replace(/^,/, '');
+  if (!normalizedMatched || normalizedMatched !== normalizedBody) {
+    return null;
+  }
+
+  const normalizeKey = (key) => String(key).trim();
+  if (includeKeys.length > 0 && excludeKeys.length > 0) {
+    const includeSet = new Set(includeKeys.map(normalizeKey));
+    for (const path of excludeKeys) {
+      const ex = normalizeKey(path);
+      for (const k of Array.from(includeSet)) {
+        if (k.toLowerCase() === ex.toLowerCase()) {
+          includeSet.delete(k);
+        }
+      }
+    }
+    if (includeSet.size === 0) {
+      return null;
+    }
+    return Array.from(includeSet);
+  }
+
+  if (excludeKeys.length > 0) {
+    const excludeNorm = excludeKeys.map(normalizeKey);
+    return schemaPaths
+      .map(p => p.path)
+      .filter(p => !excludeNorm.some(ex => ex === p || p.toLowerCase() === ex.toLowerCase()));
+  }
+
+  return includeKeys.map(normalizeKey);
+}
+
+function parseProjectionInput(text, schemaPaths) {
+  if (!text || typeof text !== 'string') {
+    return [];
+  }
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return [];
+  }
+  const normalizeKey = (key) => String(key).trim();
+
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    return parseProjectionObjectNotation(trimmed, schemaPaths);
+  }
+
+  const tokens = normalizeProjectionTokens(trimmed);
+  if (tokens === null) {
+    return null;
+  }
+  if (tokens.length === 0) {
+    return [];
+  }
+
+  const includeKeys = [];
+  const excludeKeys = [];
+
+  for (const rawToken of tokens) {
+    const token = rawToken.trim();
+    if (!token) {
+      continue;
+    }
+
+    const prefix = token[0];
+    if (prefix === '-') {
+      const path = token.slice(1).trim();
+      if (!path) {
+        return null;
+      }
+      excludeKeys.push(path);
+    } else if (prefix === '+') {
+      const path = token.slice(1).trim();
+      if (!path) {
+        return null;
+      }
+      includeKeys.push(path);
+    } else {
+      includeKeys.push(token);
+    }
+  }
+
+  if (includeKeys.length > 0 && excludeKeys.length > 0) {
+    const includeSet = new Set(includeKeys.map(normalizeKey));
+    for (const path of excludeKeys) {
+      const ex = normalizeKey(path);
+      for (const k of Array.from(includeSet)) {
+        if (k.toLowerCase() === ex.toLowerCase()) {
+          includeSet.delete(k);
+        }
+      }
+    }
+    if (includeSet.size === 0) {
+      return null;
+    }
+    return Array.from(includeSet);
+  }
+
+  if (excludeKeys.length > 0) {
+    const excludeNorm = excludeKeys.map(normalizeKey);
+    return schemaPaths
+      .map(p => p.path)
+      .filter(p => !excludeNorm.some(ex => ex === p || p.toLowerCase() === ex.toLowerCase()));
+  }
+
+  return includeKeys.map(normalizeKey);
+}
+
+function projectionExplicitlyExcludesId(text) {
+  if (!text || typeof text !== 'string') {
+    return false;
+  }
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    const body = trimmed.slice(1, -1).trim();
+    if (!body) {
+      return false;
+    }
+    const pairRe = /(?:^|,)\s*(?:"([^"]+)"|'([^']+)'|([a-zA-Z_$][\w.$]*))\s*:\s*("[^"]*"|'[^']*'|[^,]+?)\s*(?=,|$)/g;
+    let match;
+    while ((match = pairRe.exec(body)) !== null) {
+      const key = (match[1] || match[2] || match[3] || '').trim();
+      if (!key || key.toLowerCase() !== '_id') {
+        continue;
+      }
+      const rawValue = (match[4] || '').trim();
+      const valueLower = rawValue.replace(/^['"]|['"]$/g, '').trim().toLowerCase();
+      if (valueLower === '0' || valueLower === 'false') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const tokens = normalizeProjectionTokens(trimmed);
+  if (!tokens) {
+    return false;
+  }
+  return tokens.some((rawToken) => {
+    const token = rawToken.trim();
+    return token.toLowerCase() === '-_id';
+  });
+}
+
 // Models view is mounted with router-view :key="$route.fullPath", so changing models
 // remounts the parent and destroys this component. Keep working Sleuth state in
 // memory so the case report / selection survives model switches.
@@ -19,7 +220,7 @@ const embeddedModelsSleuthState = {
   summary: '',
   aiSummary: '',
   identifierPathByModel: {},
-  investigationPreviewZoomPercent: 65
+  projectionTextByModel: {}
 };
 
 function persistEmbeddedModelsSleuthState(vm) {
@@ -37,9 +238,9 @@ function persistEmbeddedModelsSleuthState(vm) {
   s.identifierPathByModel = vm.identifierPathByModel && typeof vm.identifierPathByModel === 'object'
     ? { ...vm.identifierPathByModel }
     : {};
-  s.investigationPreviewZoomPercent = typeof vm.investigationPreviewZoomPercent === 'number'
-    ? vm.investigationPreviewZoomPercent
-    : 65;
+  s.projectionTextByModel = vm.projectionTextByModel && typeof vm.projectionTextByModel === 'object'
+    ? { ...vm.projectionTextByModel }
+    : {};
 }
 
 function pathsObjectToSortedArray(pathsObj) {
@@ -74,9 +275,9 @@ function hydrateEmbeddedModelsSleuthState(vm) {
   vm.identifierPathByModel = s.identifierPathByModel && typeof s.identifierPathByModel === 'object'
     ? { ...s.identifierPathByModel }
     : {};
-  vm.investigationPreviewZoomPercent = typeof s.investigationPreviewZoomPercent === 'number'
-    ? s.investigationPreviewZoomPercent
-    : 65;
+  vm.projectionTextByModel = s.projectionTextByModel && typeof s.projectionTextByModel === 'object'
+    ? { ...s.projectionTextByModel }
+    : {};
   vm.investigationDocPreviewExpanded = {};
   vm.shouldShowCaseReportModal = false;
   vm.caseReportName = '';
@@ -132,10 +333,10 @@ module.exports = app => app.component('mongoose-sleuth', {
     schemaPathsByModel: {},
     // Step 2: per-model Mongoose path (e.g. "email", "profile.name") used as human label
     identifierPathByModel: {},
+    // Step 2: per-model projection string for document previews
+    projectionTextByModel: {},
     // Step 2: getDocumentKey -> show embedded JSON preview
-    investigationDocPreviewExpanded: {},
-    // Step 2: CSS zoom % for JSON preview (40–150)
-    investigationPreviewZoomPercent: 65
+    investigationDocPreviewExpanded: {}
   }),
   created() {
     this.loadOutputPreference();
@@ -183,9 +384,9 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     }
 
-    // When embedded in models view: add document from document view if user clicked "Add to Sleuth"
-    if (this.hasSourceFromModelsView) {
-      this.applyPendingAddFromDocumentView();
+    // Add document from document view if user clicked "Add to Sleuth"
+    if (this.hasSourceFromModelsView || this.$route?.name === 'case-report') {
+      await this.applyPendingAddFromDocumentView();
     }
 
     await this.maybeRunPendingAISummary();
@@ -271,6 +472,13 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
       return this.filteredPaths;
     },
+    browseTablePaths() {
+      const paths = this.displayFilteredPaths;
+      if (Array.isArray(paths) && paths.length > 0) {
+        return paths;
+      }
+      return this.displaySchemaPaths;
+    },
     referenceMap() {
       const map = {};
       for (const path of this.displayFilteredPaths) {
@@ -334,6 +542,26 @@ module.exports = app => app.component('mongoose-sleuth', {
       if (container) {
         container.removeEventListener('scroll', this.onScroll, true);
         container.addEventListener('scroll', this.onScroll, true);
+      }
+    },
+    async persistCaseReportDocuments(options = {}) {
+      if (!this.currentCaseReportId) {
+        return false;
+      }
+      const documentsPayload = this.buildDocumentsPayload();
+      try {
+        await api.CaseReport.updateCaseReport({
+          caseReportId: this.currentCaseReportId,
+          documents: documentsPayload
+        });
+        if (options.toast !== false) {
+          this.$toast.success(options.toastMessage || 'Case report updated');
+        }
+        return true;
+      } catch (err) {
+        console.error('Error updating case report documents', err);
+        this.$toast.error(err?.message || 'Error updating case report');
+        return false;
       }
     },
     buildDocumentsPayload() {
@@ -403,7 +631,67 @@ module.exports = app => app.component('mongoose-sleuth', {
         params.searchText = this.searchText;
       }
 
+      const projectionInput = this.getProjectionTextForModel(this.currentModel);
+      if (typeof projectionInput === 'string' && projectionInput.trim().length > 0) {
+        params.projectionInput = projectionInput.trim();
+      } else if (this.filteredPaths.length > 0) {
+        const fieldPaths = this.filteredPaths.map(p => p.path).filter(Boolean);
+        if (fieldPaths.length > 0) {
+          params.projectionInput = fieldPaths.join(' ');
+        }
+      }
+
       return params;
+    },
+    syncFilteredPathsFromBrowseProjection() {
+      if (!this.currentModel || !Array.isArray(this.schemaPaths) || this.schemaPaths.length === 0) {
+        return;
+      }
+      const text = this.getProjectionTextForModel(this.currentModel);
+      if (!text || !text.trim()) {
+        this.filteredPaths = [...this.schemaPaths];
+        return;
+      }
+      const paths = this.normalizeProjectionPathsForModel(this.currentModel, text);
+      if (paths == null) {
+        return;
+      }
+      if (paths.length === 0) {
+        this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+        if (this.filteredPaths.length === 0 && this.schemaPaths.length > 0) {
+          const idPath = this.schemaPaths.find(p => p.path === '_id');
+          this.filteredPaths = idPath ? [idPath] : [this.schemaPaths[0]];
+        }
+        return;
+      }
+      this.filteredPaths = paths
+        .map(path => this.schemaPaths.find(p => p.path === path))
+        .filter(Boolean);
+      const validPaths = new Set(this.schemaPaths.map(p => p.path));
+      for (const path of paths) {
+        if (validPaths.has(path) && !this.filteredPaths.find(p => p.path === path)) {
+          this.filteredPaths.push(this.schemaPaths.find(p => p.path === path));
+        }
+      }
+      if (this.filteredPaths.length === 0) {
+        this.filteredPaths = this.schemaPaths.filter(p => p.path === '_id');
+      }
+    },
+    async applyBrowseProjection() {
+      if (!this.currentModel) {
+        return;
+      }
+      this.syncFilteredPathsFromBrowseProjection();
+      this.status = 'loading';
+      this.error = null;
+      try {
+        await this.getDocuments();
+        this.status = 'loaded';
+        this.$nextTick(() => this.attachScrollListener());
+      } catch (err) {
+        this.error = err?.message || 'Error loading documents';
+        this.status = 'loaded';
+      }
     },
     async selectModel(model) {
       this.currentModel = model;
@@ -524,6 +812,99 @@ module.exports = app => app.component('mongoose-sleuth', {
         next[model] = path;
       }
       this.identifierPathByModel = next;
+    },
+    getProjectionTextForModel(model) {
+      if (!model) {
+        return '';
+      }
+      return this.projectionTextByModel[model] || '';
+    },
+    setProjectionTextForModel(model, text) {
+      if (!model) {
+        return;
+      }
+      const next = { ...this.projectionTextByModel };
+      const trimmed = typeof text === 'string' ? text.trim() : '';
+      if (!trimmed) {
+        delete next[model];
+      } else {
+        next[model] = text;
+      }
+      this.projectionTextByModel = next;
+    },
+    clearProjectionForModel(model) {
+      if (!model) {
+        return;
+      }
+      const next = { ...this.projectionTextByModel };
+      delete next[model];
+      this.projectionTextByModel = next;
+    },
+    getProjectionSchemaPathsForModel(model) {
+      return this.getSchemaPathsArrayForModel(model);
+    },
+    getSchemaPathsArrayForModel(model) {
+      if (!model) {
+        return [];
+      }
+      const cached = this.schemaPathsByModel[model];
+      if (cached && typeof cached === 'object') {
+        return pathsObjectToSortedArray(cached);
+      }
+      const sample = this.selectedDocuments.find(d => d && d.model === model);
+      if (sample) {
+        return this.inferSchemaPathsFromDocument(sample);
+      }
+      return [];
+    },
+    normalizeProjectionPathsForModel(model, text) {
+      const schemaPaths = this.getSchemaPathsArrayForModel(model);
+      const paths = parseProjectionInput(text, schemaPaths);
+      if (paths == null) {
+        return null;
+      }
+      const excludesId = projectionExplicitlyExcludesId(text);
+      const hasIdSchemaPath = schemaPaths.some(p => p.path === '_id');
+      if (hasIdSchemaPath && !excludesId) {
+        const hasIdAlready = paths.some(p => String(p).toLowerCase() === '_id');
+        if (!hasIdAlready) {
+          paths.unshift('_id');
+        }
+      }
+      return paths;
+    },
+    getProjectionFilteredPathsForModel(model) {
+      const text = this.getProjectionTextForModel(model);
+      if (!text || !text.trim()) {
+        return null;
+      }
+      return this.normalizeProjectionPathsForModel(model, text);
+    },
+    filterInvestigationDocument(doc) {
+      if (!doc) {
+        return doc;
+      }
+      const model = doc.model != null ? String(doc.model) : '';
+      const filteredPaths = this.getProjectionFilteredPathsForModel(model);
+      if (!filteredPaths || filteredPaths.length === 0) {
+        return doc;
+      }
+      const filteredDoc = {};
+      for (let i = 0; i < filteredPaths.length; i++) {
+        const path = filteredPaths[i];
+        const value = mpath.get(path, doc);
+        mpath.set(path, value, filteredDoc, function(cur, pathPart, val) {
+          if (arguments.length === 2) {
+            if (cur[pathPart] == null) {
+              cur[pathPart] = {};
+            }
+            return cur[pathPart];
+          }
+          cur[pathPart] = val;
+          return val;
+        });
+      }
+      return filteredDoc;
     },
     getIdentifierFieldOptions(model) {
       if (!model) {
@@ -737,14 +1118,8 @@ module.exports = app => app.component('mongoose-sleuth', {
         if (!this.selectedDocuments.some(d => this.getDocumentKey(d) === key)) {
           this.selectedDocuments.push(withModel);
         }
-        // If we're already working on a case report, persist the updated docs.
         if (this.currentCaseReportId && this.selectedDocuments.length > 0) {
-          const documentsPayload = this.buildDocumentsPayload();
-          await api.CaseReport.updateCaseReport({
-            caseReportId: this.currentCaseReportId,
-            documents: documentsPayload
-          });
-          this.$toast.success('Case report updated');
+          await this.persistCaseReportDocuments({ toastMessage: 'Document added to case report' });
         }
       } catch (e) {
         console.error('Apply pending add to Sleuth', e);
@@ -774,17 +1149,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       if (this.selectedDocuments.length === 0) return;
 
       if (this.currentCaseReportId) {
-        const documentsPayload = this.buildDocumentsPayload();
-        try {
-          await api.CaseReport.updateCaseReport({
-            caseReportId: this.currentCaseReportId,
-            documents: documentsPayload
-          });
-          this.$toast.success('Case report updated');
-        } catch (err) {
-          console.error('Error saving case report', err);
-          this.$toast.error(err?.message || 'Error saving case report');
-        }
+        await this.persistCaseReportDocuments({ toastMessage: 'Documents added to case report' });
       } else {
         // No active case report yet: open the naming modal instead of
         // auto-creating with a generated name.
@@ -815,10 +1180,10 @@ module.exports = app => app.component('mongoose-sleuth', {
             }
             return 0;
           }).map(key => event.schemaPaths[key]);
-          this.filteredPaths = [...this.schemaPaths];
           if (this.currentModel) {
             this.schemaPathsByModel[this.currentModel] = event.schemaPaths;
           }
+          this.syncFilteredPathsFromBrowseProjection();
           schemaPathsReceived = true;
         }
         if (event.numDocs !== undefined) {
@@ -907,6 +1272,22 @@ module.exports = app => app.component('mongoose-sleuth', {
         }
 
         this.selectedDocuments = loadedDocs.length > 0 ? loadedDocs : [];
+
+        if (!this.hasSourceFromModelsView && loadedDocs.length > 0) {
+          const modelFromReport = loadedDocs.find(d => d && d.model)?.model;
+          if (modelFromReport && !this.currentModel) {
+            this.currentModel = String(modelFromReport);
+          }
+          if (this.currentModel) {
+            try {
+              await this.getDocuments();
+            } catch (err) {
+              console.error('Error loading documents for case report browse', err);
+              this.error = err?.message || 'Error loading documents';
+            }
+            this.$nextTick(() => this.attachScrollListener());
+          }
+        }
       } finally {
         this.loadingCaseReport = false;
       }
@@ -948,7 +1329,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     },
     filterDocument(doc) {
-      return doc;
+      return this.filterInvestigationDocument(doc);
     },
     getComponentForPath(schemaPath) {
       if (schemaPath.instance === 'Array') {
@@ -974,21 +1355,26 @@ module.exports = app => app.component('mongoose-sleuth', {
     isDocumentSelected(document) {
       return this.selectedDocuments.some(x => x._id.toString() === document._id.toString() && x.model === this.currentModel);
     },
-    handleDocumentSelection(document, event) {
+    async handleDocumentSelection(document, event) {
       const documentWithModel = { ...document, model: this.currentModel };
       const index = this.selectedDocuments.findIndex(x =>
         x._id.toString() === document._id.toString() && x.model === this.currentModel
       );
 
+      const wasAdd = index === -1;
       if (index !== -1) {
-        // Deselect
         this.selectedDocuments.splice(index, 1);
       } else {
-        // Select
         this.selectedDocuments.push(documentWithModel);
       }
+
+      if (this.currentCaseReportId) {
+        await this.persistCaseReportDocuments({
+          toastMessage: wasAdd ? 'Document added to case report' : 'Document removed from case report'
+        });
+      }
     },
-    removeSelectedDocument(doc) {
+    async removeSelectedDocument(doc) {
       const key = this.getDocumentKey(doc);
       if (!key) {
         return;
@@ -996,6 +1382,9 @@ module.exports = app => app.component('mongoose-sleuth', {
       const index = this.selectedDocuments.findIndex(x => this.getDocumentKey(x) === key);
       if (index !== -1) {
         this.selectedDocuments.splice(index, 1);
+        if (this.currentCaseReportId) {
+          await this.persistCaseReportDocuments({ toastMessage: 'Document removed from case report' });
+        }
       }
     },
     async saveCaseReport() {
@@ -1083,13 +1472,6 @@ module.exports = app => app.component('mongoose-sleuth', {
         console.error('Error saving progress', err);
         this.$toast.error(err?.message || 'Error saving progress');
       }
-    },
-    adjustInvestigationPreviewZoom(delta) {
-      const next = Math.round(this.investigationPreviewZoomPercent + delta);
-      this.investigationPreviewZoomPercent = Math.min(150, Math.max(40, next));
-    },
-    resetInvestigationPreviewZoom() {
-      this.investigationPreviewZoomPercent = 65;
     },
     async saveDocumentNote(doc) {
       if (!this.currentCaseReportId) {
