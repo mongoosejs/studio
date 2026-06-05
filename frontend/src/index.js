@@ -22,6 +22,7 @@ const {
   normalizeTrackedPath,
   withRecentPagesStorageLock
 } = require('./_util/recent-pages-history');
+const { startInactivityTimeout } = require('./_util/inactivity-timeout');
 appendCSS(require('vue-toastification/dist/index.css'));
 
 const TRACKED_RECENT_PAGE_ROUTE_NAMES = new Set(['model', 'document', 'dashboard', 'chat']);
@@ -214,6 +215,9 @@ app.component('app-component', {
     window.$router = this.$router;
     window.state = this;
 
+    let freshLogin = false;
+    let inactivityTimeoutMinutes = 15;
+
     if (mothership.hasAPIKey) {
       const hash = window.location.hash.replace(/^#?\/?/, '') || '';
       const hashQuery = hash.split('?')[1] || '';
@@ -241,11 +245,12 @@ app.component('app-component', {
         window.localStorage.setItem('_mongooseStudioAccessToken', accessToken._id);
 
         try {
-          const [{ nodeEnv }, capabilities] = await Promise.all([
+          const [{ nodeEnv, inactivityTimeoutMinutes: timeoutMinutes }, capabilities] = await Promise.all([
             api.status(),
             loadStudioCapabilities()
           ]);
           this.nodeEnv = nodeEnv;
+          inactivityTimeoutMinutes = timeoutMinutes;
           this.capabilities = capabilities;
         } catch (err) {
           this.authError = 'Error connecting to Mongoose Studio API: ' + err.response?.data?.message ?? err.message;
@@ -256,6 +261,7 @@ app.component('app-component', {
 
         this.user = user;
         this.roles = roles;
+        freshLogin = true;
 
         setTimeout(() => {
           this.$router.replace(this.$router.currentRoute.value.path);
@@ -266,12 +272,13 @@ app.component('app-component', {
           const { user, roles } = await mothership.me();
 
           try {
-            const [{ nodeEnv }, { modelSchemaPaths }, capabilities] = await Promise.all([
+            const [{ nodeEnv, inactivityTimeoutMinutes: timeoutMinutes }, { modelSchemaPaths }, capabilities] = await Promise.all([
               api.status(),
               api.Model.listModels(),
               loadStudioCapabilities()
             ]);
             this.nodeEnv = nodeEnv;
+            inactivityTimeoutMinutes = timeoutMinutes;
             this.modelSchemaPaths = modelSchemaPaths;
             this.capabilities = capabilities;
           } catch (err) {
@@ -286,12 +293,13 @@ app.component('app-component', {
       }
     } else {
       try {
-        const [{ nodeEnv }, { modelSchemaPaths }, capabilities] = await Promise.all([
+        const [{ nodeEnv, inactivityTimeoutMinutes: timeoutMinutes }, { modelSchemaPaths }, capabilities] = await Promise.all([
           api.status(),
           api.Model.listModels(),
           loadStudioCapabilities()
         ]);
         this.nodeEnv = nodeEnv;
+        inactivityTimeoutMinutes = timeoutMinutes;
         this.modelSchemaPaths = modelSchemaPaths;
         this.capabilities = capabilities;
       } catch (err) {
@@ -300,6 +308,10 @@ app.component('app-component', {
     }
 
     this.status = 'loaded';
+
+    if (mothership.hasAPIKey && this.user) {
+      startInactivityTimeout(this.nodeEnv, { freshLogin, timeoutMinutes: inactivityTimeoutMinutes });
+    }
   },
   setup() {
     const user = Vue.ref(null);
