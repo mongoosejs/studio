@@ -28,8 +28,6 @@ module.exports = ({ studioConnection }) => async function createDashboard(params
 
   await authorize('Dashboard.createDashboard', roles);
 
-  console.log('Test', params)
-
   const dashboard = await Dashboard.create({
     title,
     code,

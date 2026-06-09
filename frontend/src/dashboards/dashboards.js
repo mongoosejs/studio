@@ -16,14 +16,15 @@ module.exports = app => app.component('dashboards', {
   }),
   computed: {
     filteredDashboards() {
-      const searchText = this.searchText.trim().toLowerCase();
-      if (!searchText) {
+      const searchWords = getSearchWords(this.searchText);
+      if (searchWords.length === 0) {
         return this.dashboards;
       }
+      const searchPatterns = searchWords.map(word => new RegExp(escapeRegExp(word), 'i'));
 
       return this.dashboards.filter(dashboard => {
-        return (dashboard.title || '').toLowerCase().includes(searchText) ||
-          (dashboard.description || '').toLowerCase().includes(searchText);
+        const searchableText = `${dashboard.title || ''} ${dashboard.description || ''}`;
+        return searchPatterns.every(pattern => pattern.test(searchableText));
       });
     }
   },
@@ -36,20 +37,20 @@ module.exports = app => app.component('dashboards', {
     },
     highlightSearchText(value, className) {
       const text = value || '';
-      const searchText = this.searchText.trim();
-      if (!searchText) {
+      const searchWords = getSearchWords(this.searchText);
+      if (searchWords.length === 0) {
         return escapeHtml(text);
       }
+      const searchPattern = new RegExp(searchWords.map(escapeRegExp).join('|'), 'ig');
 
-      const pattern = new RegExp(escapeRegExp(searchText), 'ig');
       let html = '';
       let lastIndex = 0;
-      let match = pattern.exec(text);
+      let match = searchPattern.exec(text);
       while (match != null) {
         html += escapeHtml(text.slice(lastIndex, match.index));
         html += `<span class="${className}">${escapeHtml(match[0])}</span>`;
         lastIndex = match.index + match[0].length;
-        match = pattern.exec(text);
+        match = searchPattern.exec(text);
       }
       html += escapeHtml(text.slice(lastIndex));
       return html;
@@ -128,4 +129,9 @@ function escapeHtml(value) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getSearchWords(searchText) {
+  return Array.from(new Set(searchText.trim().split(/\s+/).filter(Boolean))).
+    sort((a, b) => b.length - a.length);
 }
