@@ -96,6 +96,7 @@
             type="button"
             @click="togglePin(dashboard)"
             :title="dashboard.isPinned ? 'Unpin dashboard' : 'Pin dashboard'"
+            :aria-label="dashboard.isPinned ? 'Unpin dashboard' : 'Pin dashboard'"
             class="rounded-md bg-surface px-2 py-1.5 text-content-tertiary ring-1 ring-inset ring-gray-300 hover:bg-page"
             :class="dashboard.isPinned ? 'text-primary ring-primary/40' : ''">
             <img :src="dashboard.isPinned ? 'images/pin-off.svg' : 'images/pin.svg'" class="w-4 h-4" alt="" />
