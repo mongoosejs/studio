@@ -87,6 +87,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
           req._internals.initiatedById = user._id;
           req._internals.roles = roles;
           req._internals.$workspaceId = workspace._id;
+          req._internals.initiatedBy = user;
 
           next();
         })

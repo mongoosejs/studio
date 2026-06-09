@@ -37,6 +37,12 @@ describe('Dashboard.getDashboard() results', function () {
     assert.ok(persisted);
     assert.strictEqual(persisted.status, 'completed');
     assert.deepStrictEqual(persisted.result, { total: 42 });
+
+    const persistedDashboard = await Dashboard.findById(dashboard._id).lean();
+    assert.strictEqual(
+      persistedDashboard.lastEvaluatedAt.toISOString(),
+      persisted.finishedEvaluatingAt.toISOString()
+    );
   });
 
   it('returns persisted results from studioConnection', async function () {

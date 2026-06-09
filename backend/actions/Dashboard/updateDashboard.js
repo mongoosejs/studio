@@ -50,8 +50,11 @@ module.exports = ({ studioConnection }) => async function updateDashboard(params
     updateObj.isPinned = isPinned;
   }
 
-  const doc = await Dashboard.
-    findByIdAndUpdate(dashboardId, updateObj, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true });
+  const doc = await Dashboard.findByIdAndUpdate(
+    dashboardId,
+    updateObj,
+    { sanitizeFilter: true, returnDocument: 'after' }
+  );
 
   return { doc };
 };
