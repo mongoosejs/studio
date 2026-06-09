@@ -17,15 +17,18 @@ module.exports = app => app.component('dashboards', {
   computed: {
     filteredDashboards() {
       const searchWords = getSearchWords(this.searchText);
+      let dashboards = this.dashboards;
       if (searchWords.length === 0) {
-        return this.dashboards;
+        return sortPinnedFirst(dashboards);
       }
       const searchPatterns = searchWords.map(word => new RegExp(escapeRegExp(word), 'i'));
 
-      return this.dashboards.filter(dashboard => {
+      dashboards = dashboards.filter(dashboard => {
         const searchableText = `${dashboard.title || ''} ${dashboard.description || ''}`;
         return searchPatterns.every(pattern => pattern.test(searchableText));
       });
+
+      return sortPinnedFirst(dashboards);
     }
   },
   methods: {
@@ -94,6 +97,17 @@ module.exports = app => app.component('dashboards', {
     insertNewDashboard(dashboard) {
       this.dashboards.unshift(dashboard);
       this.showCreateDashboardModal = false;
+    },
+    async togglePin(dashboard) {
+      if (!dashboard) {
+        return;
+      }
+
+      const { doc } = await api.Dashboard.updateDashboard({
+        dashboardId: dashboard._id,
+        isPinned: !dashboard.isPinned
+      });
+      dashboard.isPinned = doc.isPinned;
     }
   },
   directives: {
@@ -134,4 +148,8 @@ function escapeRegExp(value) {
 function getSearchWords(searchText) {
   return Array.from(new Set(searchText.trim().split(/\s+/).filter(Boolean))).
     sort((a, b) => b.length - a.length);
+}
+
+function sortPinnedFirst(dashboards) {
+  return dashboards.slice().sort((a, b) => Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned)));
 }

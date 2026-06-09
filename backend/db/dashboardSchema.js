@@ -14,6 +14,9 @@ const dashboardSchema = new mongoose.Schema({
   description: {
     type: String
   },
+  isPinned: {
+    type: Boolean
+  },
   createdById: {
     type: mongoose.Schema.Types.ObjectId
   },
@@ -30,10 +33,14 @@ dashboardSchema.post(['find', 'findOne'], async function(docs) {
   const dashboards = Array.isArray(docs) ? docs : [docs];
   for (const dashboard of dashboards) {
     if (dashboard != null && dashboard.createdAt == null && dashboard._id?.getTimestamp) {
-      dashboard.createdAt = dashboard._id.getTimestamp();
+      const createdAt = dashboard._id.getTimestamp();
+      if (!createdAt.valueOf()) {
+        continue;
+      }
+      dashboard.set('createdAt', createdAt, { overwriteImmutable: true });
       await this.model.db.model('__Studio_Dashboard').updateOne(
         { _id: dashboard._id },
-        { createdAt: dashboard._id.getTimestamp() },
+        { createdAt },
         { overwriteImmutable: true }
       );
     }
