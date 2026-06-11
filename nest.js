@@ -25,10 +25,14 @@ class MongooseStudioModule {
 
         const originalUrl = req.url;
         req.url = req.url.slice(normalizeExpressMountPath(mountPath).length) || '/';
-        return this.expressRouter(req, res, err => {
+        try {
+          return this.expressRouter(req, res, err => {
+            req.url = originalUrl;
+            next(err);
+          });
+        } finally {
           req.url = originalUrl;
-          next(err);
-        });
+        }
       })
       .forRoutes({
         path: '*path',
@@ -71,6 +75,8 @@ class MongooseStudioModule {
 
     if (options.connectionToken) {
       providers.push({ provide: MONGOOSE_STUDIO_CONNECTION, useExisting: options.connectionToken });
+    } else if (options.connection) {
+      providers.push({ provide: MONGOOSE_STUDIO_CONNECTION, useValue: options.connection });
     } else {
       providers.push({ provide: MONGOOSE_STUDIO_CONNECTION, useValue: mongoose });
     }
@@ -105,7 +111,10 @@ function createExpressRouterProvider() {
 
 function isMountedStudioRequest(req, mountPath) {
   const normalizedMountPath = normalizeExpressMountPath(mountPath);
-  return req.url === normalizedMountPath || req.url.startsWith(`${normalizedMountPath}/`);
+  return req.url === normalizedMountPath ||
+    req.url.startsWith(`${normalizedMountPath}/`) ||
+    req.url.startsWith(`${normalizedMountPath}?`) ||
+    req.url.startsWith(`${normalizedMountPath}#`);
 }
 
 function normalizeExpressMountPath(path) {
