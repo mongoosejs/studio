@@ -1,16 +1,21 @@
 .models {
-  position: relative;
   display: flex;
   flex-direction: row;
-  min-height: calc(100% - 56px);
+  height: calc(100vh - 55px);
+}
+
+.models > aside {
+  height: 100%;
+  overflow-y: auto;
 }
 
 .models .documents {
-  flex-grow: 1;
-  overflow: visible;
-  max-height: calc(100vh - 56px);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .models .documents-container {

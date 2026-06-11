@@ -1,0 +1,658 @@
+<div
+  class="relative flex flex-col w-full h-full min-h-0 bg-page"
+  :class="{
+    'overflow-hidden h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)]': sleuthContext.isCaseReportDetailRoute,
+    'overflow-y-auto': !sleuthContext.isCaseReportDetailRoute
+  }"
+>
+  <div
+    v-if="sleuthContext.savingSummary || sleuthContext.loadingCaseReport"
+    class="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-white/95 px-4 py-8 text-center backdrop-blur-[1px]"
+    aria-busy="true"
+  >
+    <mongoose-loading class="opacity-90" />
+    <template v-if="sleuthContext.savingSummary">
+      <p class="text-sm font-semibold text-gray-900">Generating AI summary</p>
+      <p class="text-xs text-gray-600 max-w-xs leading-snug">
+        Producing an AI-enhanced markdown write-up from your saved summary, investigation notes, and document data. This may take a little while.
+      </p>
+    </template>
+    <template v-else>
+      <p class="text-sm font-semibold text-gray-900">Loading case report</p>
+      <p class="text-xs text-gray-600 max-w-xs leading-snug">Fetching documents and saved notes…</p>
+    </template>
+  </div>
+
+  <!-- ── Case report detail page ───────────────────────────────────────── -->
+  <template v-if="sleuthContext.isCaseReportDetailRoute">
+    <div class="flex flex-col flex-1 min-h-0 overflow-hidden gap-3 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-3">
+      <!-- Page header -->
+      <div class="flex flex-wrap items-center justify-between gap-3 shrink-0 pb-1">
+        <div class="min-w-0 flex items-center gap-3">
+          <router-link
+            to="/case-reports"
+            class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 -960 960 960" fill="currentColor"><path d="M400-80 0-480l400-400 71 71-329 329 329 329-71 71Z"/></svg>
+            Case reports
+          </router-link>
+          <h1 class="text-lg font-bold text-gray-900 truncate">
+            {{ sleuthContext.currentCaseReportName || 'Case report' }}
+          </h1>
+          <span class="text-xs text-gray-500 shrink-0">{{ sleuthContext.selectedDocuments.length }} doc{{ sleuthContext.selectedDocuments.length === 1 ? '' : 's' }}</span>
+        </div>
+        <div v-if="sleuthContext.currentCaseReportId" class="flex items-center gap-2 shrink-0">
+          <label for="sleuth-case-report-status" class="text-xs font-medium text-gray-600">Status</label>
+          <select
+            id="sleuth-case-report-status"
+            class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+            :value="sleuthContext.currentCaseReportStatus"
+            :disabled="sleuthContext.updatingCaseReportStatus"
+            @change="sleuthContext.updateCaseReportStatus($event.target.value)"
+          >
+            <option value="created">Created</option>
+            <option value="in_progress">In progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Documents -->
+      <section
+        class="flex flex-col min-h-0 shrink-0 overflow-hidden rounded-xl border border-edge bg-surface shadow-sm transition-shadow"
+        :class="{ 'flex-1 min-h-0 shadow-md': isCaseReportSectionOpen('documents') }"
+      >
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left shrink-0 border-0 cursor-pointer bg-gradient-to-b from-surface to-muted hover:bg-surface-hover transition-colors border-b border-l-[3px]"
+          :class="isCaseReportSectionOpen('documents') ? 'border-b border-edge border-l-primary' : 'border-b border-transparent border-l-transparent'"
+          @click="toggleCaseReportSection('documents')"
+        >
+          <span class="flex items-center gap-2.5 min-w-0">
+            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-subtle text-primary shrink-0" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm160-240h320v-80H320v80Zm0-160h320v-80H320v80ZM160-240v-480 480Z"/></svg>
+            </span>
+            <span class="text-sm font-semibold text-content tracking-tight">Documents</span>
+            <span class="text-[10px] font-semibold leading-none px-2 py-0.5 rounded-full bg-primary-subtle text-primary shrink-0">{{ sleuthContext.selectedDocuments.length }}</span>
+          </span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-content-tertiary transition-all duration-150" :class="{ 'rotate-180 text-primary': isCaseReportSectionOpen('documents') }" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg>
+        </button>
+        <div v-show="isCaseReportSectionOpen('documents')" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
+            <div class="flex flex-col min-h-0 min-w-0 overflow-hidden border-b border-edge md:border-b-0 md:border-r border-edge bg-gradient-to-b from-primary-subtle to-surface">
+              <div class="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-primary-subtle via-muted to-muted border-b border-edge shrink-0 text-[11px] font-semibold uppercase tracking-wider text-content-secondary">
+                <span class="flex items-center justify-center w-5 h-5 rounded-md bg-surface text-primary shadow-sm shrink-0" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M382-240 154-472l57-56 171 170 367-367 57 57-424 424Z"/></svg>
+                </span>
+                <span>In this report</span>
+              </div>
+              <div v-if="sleuthContext.selectedDocuments.length > 0" class="flex-1 min-h-0 overflow-y-auto px-1 py-1.5">
+                <template v-for="group in sleuthContext.selectedDocumentsByModel" :key="group.model">
+                  <div class="sticky top-0 z-[5] mx-2 mt-1.5 mb-1 px-2 py-0.5 rounded-full bg-surface border border-edge text-[10px] font-bold uppercase tracking-wider text-content-tertiary w-fit shadow-sm">{{ group.model }}</div>
+                  <div
+                    v-for="doc in group.documents"
+                    :key="sleuthContext.getDocumentKey(doc)"
+                    class="flex items-center justify-between gap-2 mx-2 my-0.5 px-2.5 py-1.5 rounded-lg text-xs bg-surface border border-transparent hover:border-edge hover:shadow-sm transition-all"
+                  >
+                    <span class="truncate flex-1 min-w-0 text-content">{{ sleuthContext.getDocumentLabel(doc) }}</span>
+                    <button type="button" class="inline-flex items-center justify-center p-1 rounded-md border-0 bg-transparent text-content-tertiary hover:bg-red-50 hover:text-red-700 shrink-0 transition-colors" aria-label="Remove" @click="sleuthContext.removeSelectedDocument(doc)">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                    </button>
+                  </div>
+                </template>
+              </div>
+              <div v-else class="flex flex-1 flex-col items-center justify-center gap-1.5 py-8 px-4 text-center text-content-tertiary text-[13px]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 opacity-40" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm160-240h320v-80H320v80Zm0-160h320v-80H320v80ZM160-240v-480 480Z"/></svg>
+                <p>No documents yet</p>
+                <p class="text-[11px] opacity-80">Browse collections on the right to add them.</p>
+              </div>
+            </div>
+            <div class="flex flex-col min-h-0 min-w-0 overflow-hidden">
+              <div class="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-primary-subtle via-muted to-muted border-b border-edge shrink-0 text-[11px] font-semibold uppercase tracking-wider text-content-secondary">
+                <span class="flex items-center justify-center w-5 h-5 rounded-md bg-surface text-primary shadow-sm shrink-0" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M440-440H200v-80h240v-80h80v80h240v80H520v80h-80v-80Zm40 320q-75 0-140.5-28.5t-114-77q-48.5-48.5-77-114T120-440q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-800q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-440q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Z"/></svg>
+                </span>
+                <span>Add documents</span>
+              </div>
+              <div class="flex flex-col flex-1 min-h-0 p-3 gap-2 overflow-hidden">
+                <div class="flex flex-wrap items-end gap-2 shrink-0">
+                  <div class="flex-1 min-w-[7rem]">
+                    <label for="case-report-browse-model" class="block text-[11px] font-medium text-gray-500 mb-0.5">Collection</label>
+                    <select
+                      id="case-report-browse-model"
+                      class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      :value="sleuthContext.currentModel || ''"
+                      @change="$event.target.value ? sleuthContext.selectModel($event.target.value) : null"
+                    >
+                      <option value="" disabled>Select…</option>
+                      <option v-for="m in sleuthContext.models" :key="m" :value="m">{{ m }}</option>
+                    </select>
+                  </div>
+                </div>
+                <template v-if="sleuthContext.displayModel">
+                  <div class="flex flex-wrap gap-1.5 items-end shrink-0">
+                    <document-search ref="documentSearch" class="flex-1 min-w-[7rem]" :value="sleuthContext.searchText" :schema-paths="sleuthContext.schemaPaths" @search="sleuthContext.search" />
+                    <div class="flex-1 min-w-[7rem]">
+                      <label class="block text-[11px] font-medium text-content-tertiary mb-0.5">Projection</label>
+                      <projection-search
+                        :value="sleuthContext.getProjectionTextForModel(sleuthContext.displayModel)"
+                        :schema-paths="sleuthContext.schemaPaths"
+                        @projection-input="sleuthContext.setProjectionTextForModel(sleuthContext.displayModel, $event)"
+                        @apply="sleuthContext.applyBrowseProjection()"
+                      />
+                    </div>
+                    <span class="isolate inline-flex rounded shadow-sm shrink-0 self-end">
+                      <button type="button" class="relative inline-flex rounded-l px-2 py-1 text-[11px] ring-1 ring-inset ring-gray-300" :class="sleuthContext.outputType === 'table' ? 'bg-gray-200' : 'bg-white'" @click="sleuthContext.setOutputType('table')">Table</button>
+                      <button type="button" class="relative -ml-px inline-flex rounded-r px-2 py-1 text-[11px] ring-1 ring-inset ring-gray-300" :class="sleuthContext.outputType === 'json' ? 'bg-gray-200' : 'bg-white'" @click="sleuthContext.setOutputType('json')">JSON</button>
+                    </span>
+                  </div>
+                  <div v-if="sleuthContext.error" class="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1 shrink-0">{{ sleuthContext.error }}</div>
+                  <div ref="documentsList" class="documents-container overflow-x-auto overflow-y-auto min-h-0 flex-1 rounded-lg border border-edge bg-surface shadow-inner">
+                    <table v-if="sleuthContext.outputType === 'table' && sleuthContext.displayDocuments.length > 0" class="min-w-max w-full text-xs border-separate border-spacing-0">
+                      <thead>
+                        <tr>
+                          <th class="sticky top-0 left-0 z-30 bg-muted shadow-[0_1px_0_var(--color-edge)] w-7 px-1.5 py-1 text-left font-medium text-content-secondary"></th>
+                          <th v-for="path in sleuthContext.browseTablePaths" :key="path.path" class="sticky top-0 z-20 bg-muted shadow-[0_1px_0_var(--color-edge)] px-2 py-1 text-left font-medium text-content-secondary whitespace-nowrap">{{ path.path }}</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100 bg-white">
+                        <tr
+                          v-for="doc in sleuthContext.displayDocuments"
+                          :key="doc._id"
+                          @click="sleuthContext.handleDocumentSelection(doc, $event)"
+                          :class="sleuthContext.isDocumentSelected(doc) ? 'bg-primary-subtle' : 'hover:bg-gray-50'"
+                          class="cursor-pointer"
+                        >
+                          <td class="sticky left-0 z-10 bg-inherit px-1.5 py-1 shadow-[1px_0_0_var(--color-edge)]" @click.stop="sleuthContext.handleDocumentSelection(doc, $event)">
+                            <input type="checkbox" :checked="sleuthContext.isDocumentSelected(doc)" @change.stop="sleuthContext.handleDocumentSelection(doc, $event)" class="h-3 w-3 rounded border-gray-300 text-primary" />
+                          </td>
+                          <td v-for="path in sleuthContext.browseTablePaths" :key="path.path" class="bg-inherit px-2 py-1 text-content whitespace-nowrap max-w-[16rem] truncate">
+                            <component :is="sleuthContext.getComponentForPath(path)" :value="sleuthContext.getValueForPath(doc, path.path)" :allude="sleuthContext.getReferenceModel(path)" />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div v-else-if="sleuthContext.outputType === 'json' && sleuthContext.displayDocuments.length > 0" class="p-1.5 space-y-1">
+                      <div v-for="doc in sleuthContext.displayDocuments" :key="doc._id" @click="sleuthContext.handleDocumentSelection(doc, $event)" :class="sleuthContext.isDocumentSelected(doc) ? 'bg-primary-subtle' : 'hover:bg-gray-50'" class="cursor-pointer rounded border border-gray-100 p-1.5 text-xs">
+                        <input type="checkbox" :checked="sleuthContext.isDocumentSelected(doc)" @change.stop="sleuthContext.handleDocumentSelection(doc, $event)" class="h-3 w-3 rounded mr-1 align-middle border-gray-300 text-primary" />
+                        <list-json :value="sleuthContext.filterDocument(doc)" :references="sleuthContext.referenceMap" />
+                      </div>
+                    </div>
+                    <div v-else-if="sleuthContext.status === 'loading'" class="py-6 text-center text-xs text-gray-500">Loading…</div>
+                    <div v-else-if="sleuthContext.displayDocuments.length === 0" class="py-6 text-center text-xs text-gray-500">No matches.</div>
+                  </div>
+                </template>
+                <p v-else class="text-xs text-gray-500 shrink-0">Select a collection.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Investigation & Summary -->
+      <section
+        class="flex flex-col min-h-0 shrink-0 overflow-hidden rounded-xl border border-edge bg-surface shadow-sm transition-shadow"
+        :class="{ 'flex-1 min-h-0 shadow-md': isCaseReportSectionOpen('notes') }"
+      >
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left shrink-0 border-0 cursor-pointer bg-gradient-to-b from-surface to-muted hover:bg-surface-hover transition-colors border-b border-l-[3px]"
+          :class="isCaseReportSectionOpen('notes') ? 'border-b border-edge border-l-primary' : 'border-b border-transparent border-l-transparent'"
+          @click="toggleCaseReportSection('notes')"
+        >
+          <span class="flex items-center gap-2.5 min-w-0">
+            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-subtle text-primary shrink-0" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h360q-33 0-56.5 23.5T480-760v560q0 33-23.5 56.5T400-120H200Zm480-160v-560q0-33 23.5-56.5T760-920h80q33 0 56.5 23.5T920-840v560q0 33-23.5 56.5T840-200h-80q-33 0-56.5-23.5T680-280Zm-280 0h360v-560H400v560Zm0 0v-560 560Z"/></svg>
+            </span>
+            <span class="text-sm font-semibold text-content tracking-tight">Investigation &amp; summary</span>
+            <span v-if="hasAiSummary()" class="text-[10px] font-semibold leading-none px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 shrink-0">AI summary</span>
+          </span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-content-tertiary transition-all duration-150" :class="{ 'rotate-180 text-primary': isCaseReportSectionOpen('notes') }" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg>
+        </button>
+        <div v-show="isCaseReportSectionOpen('notes')" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 overflow-hidden">
+            <div class="flex flex-col min-h-0 min-w-0 overflow-hidden border-b border-edge md:border-b-0 md:border-r border-edge bg-gradient-to-b from-primary-subtle to-surface">
+              <div class="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-primary-subtle via-muted to-muted border-b border-edge shrink-0 text-[11px] font-semibold uppercase tracking-wider text-content-secondary">
+                <span class="flex items-center justify-center w-5 h-5 rounded-md bg-surface text-primary shadow-sm shrink-0" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h360q-33 0-56.5 23.5T480-760v560q0 33-23.5 56.5T400-120H200Zm480-160v-560q0-33 23.5-56.5T760-920h80q33 0 56.5 23.5T920-840v560q0 33-23.5 56.5T840-200h-80q-33 0-56.5-23.5T680-280Zm-280 0h360v-560H400v560Zm0 0v-560 560Z"/></svg>
+                </span>
+                <span>Investigation notes</span>
+              </div>
+              <div class="flex flex-col flex-1 min-h-0 p-3 gap-2 overflow-hidden">
+                <details v-if="sleuthContext.investigationModelNames.length" class="border border-edge rounded-lg bg-surface text-xs overflow-hidden shrink-0">
+                  <summary class="cursor-pointer select-none px-2.5 py-1.5 font-semibold text-content-secondary list-none hover:bg-muted transition-colors [&::-webkit-details-marker]:hidden">Display settings (per model)</summary>
+                  <div class="border-t border-edge p-2.5 max-h-32 overflow-y-auto">
+                    <div v-for="model in sleuthContext.investigationModelNames" :key="'settings-' + model" class="grid grid-cols-1 gap-1.5 pb-2 mb-2 border-b border-edge last:border-0 last:pb-0 last:mb-0">
+                      <span class="font-medium text-content-secondary truncate" :title="model">{{ model }}</span>
+                      <select class="w-full rounded-md border border-edge-strong bg-surface px-2 py-1 text-[11px] text-content focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle" :value="sleuthContext.identifierPathByModel[model] || ''" @change="sleuthContext.setIdentifierPathForModel(model, $event.target.value)">
+                        <option value="">Label: Auto</option>
+                        <option v-for="opt in sleuthContext.getIdentifierFieldOptions(model)" :key="model + ':' + opt.path" :value="opt.path">Label: {{ opt.path }}</option>
+                      </select>
+                      <projection-search :value="sleuthContext.getProjectionTextForModel(model)" :schema-paths="sleuthContext.getProjectionSchemaPathsForModel(model)" @projection-input="sleuthContext.setProjectionTextForModel(model, $event)" />
+                    </div>
+                  </div>
+                </details>
+                <div class="flex-1 min-h-0 overflow-y-auto px-1 py-1.5 space-y-2">
+                  <div v-for="doc in sleuthContext.selectedDocuments" :key="sleuthContext.getDocumentKey(doc)" class="border border-edge rounded-[10px] p-3 bg-surface text-xs shadow-sm hover:border-edge-strong hover:shadow-md focus-within:border-primary focus-within:ring-1 focus-within:ring-primary-subtle transition-all">
+                    <div class="flex flex-wrap items-start justify-between gap-1">
+                      <div class="font-semibold text-content leading-snug flex-1 min-w-0">{{ sleuthContext.getInvestigationDocumentHeading(doc) }}</div>
+                      <div class="flex shrink-0 gap-1">
+                        <a :href="sleuthContext.documentHref(doc)" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-md border border-edge-strong bg-surface px-2 py-0.5 text-[11px] font-medium text-content-secondary hover:bg-muted hover:text-content transition-colors">Open</a>
+                        <button type="button" class="inline-flex items-center rounded-md border border-edge-strong bg-surface px-2 py-0.5 text-[11px] font-medium text-content-secondary hover:bg-muted hover:text-content transition-colors" @click="sleuthContext.toggleInvestigationDocPreview(doc)">{{ sleuthContext.isInvestigationDocPreviewOpen(doc) ? 'Hide' : 'Preview' }}</button>
+                      </div>
+                    </div>
+                    <div v-if="sleuthContext.isInvestigationDocPreviewOpen(doc)" class="mt-2 max-h-32 overflow-auto rounded-md border border-edge bg-muted p-2">
+                      <list-json :value="sleuthContext.filterInvestigationDocument(doc)" :references="{}" />
+                    </div>
+                    <div class="mt-2 flex gap-1.5 items-start">
+                      <textarea class="flex-1 min-w-0 w-full rounded-md border border-edge-strong bg-surface px-2 py-1.5 text-xs text-content resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle" rows="2" :value="sleuthContext.getDocumentNote(doc)" @input="sleuthContext.setDocumentNote(doc, $event.target.value)" placeholder="Notes for this document…" />
+                      <async-button type="button" class="inline-flex items-center rounded-md border border-primary-subtle bg-primary-subtle px-2 py-0.5 text-[11px] font-medium text-primary hover:border-primary shrink-0 transition-colors disabled:opacity-50" :disabled="!sleuthContext.currentCaseReportId" @click="sleuthContext.saveDocumentNote(doc)">Save</async-button>
+                    </div>
+                  </div>
+                  <div v-if="sleuthContext.selectedDocuments.length === 0" class="flex flex-col items-center justify-center gap-1.5 py-8 px-4 text-center text-content-tertiary text-[13px]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 opacity-40" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h360q-33 0-56.5 23.5T480-760v560q0 33-23.5 56.5T400-120H200Zm480-160v-560q0-33 23.5-56.5T760-920h80q33 0 56.5 23.5T920-840v560q0 33-23.5 56.5T840-200h-80q-33 0-56.5-23.5T680-280Zm-280 0h360v-560H400v560Zm0 0v-560 560Z"/></svg>
+                    <p>No notes yet</p>
+                    <p class="text-[11px] opacity-80">Add documents above, then write per-document notes here.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col min-h-0 min-w-0 overflow-hidden">
+              <div class="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-primary-subtle via-muted to-muted border-b border-edge shrink-0 text-[11px] font-semibold uppercase tracking-wider text-content-secondary">
+                <span class="flex items-center justify-center w-5 h-5 rounded-md bg-surface text-primary shadow-sm shrink-0" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/></svg>
+                </span>
+                <span>Summary</span>
+              </div>
+              <div class="flex flex-col flex-1 min-h-0 p-3 gap-2.5 overflow-hidden">
+                <template v-if="!hasAiSummary()">
+                  <textarea v-model="sleuthContext.summary" class="flex-1 min-h-0 w-full rounded-lg border border-edge-strong bg-surface px-3 py-2 text-sm leading-relaxed text-content resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle" rows="4" placeholder="Findings, conclusions, next steps…" />
+                  <div class="flex justify-end shrink-0">
+                    <async-button type="button" class="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-text hover:bg-primary-hover disabled:opacity-50" :disabled="!sleuthContext.currentCaseReportId" @click="sleuthContext.saveSummary()">Save summary</async-button>
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="flex-1 min-h-0 overflow-y-auto rounded-[10px] border border-edge border-l-[3px] border-l-primary bg-surface px-3.5 py-3 shadow-inner">
+                    <div class="sleuth-ai-summary-markdown" v-html="renderMarkdown(sleuthContext.aiSummary)" />
+                  </div>
+                  <details v-if="sleuthContext.summary && sleuthContext.summary.trim().length" class="border border-edge rounded-lg bg-surface text-xs overflow-hidden shrink-0">
+                    <summary class="cursor-pointer select-none px-2.5 py-1.5 font-semibold text-content-secondary list-none hover:bg-muted transition-colors [&::-webkit-details-marker]:hidden">Original summary</summary>
+                    <div class="border-t border-edge p-2.5 whitespace-pre-wrap text-content-secondary">{{ sleuthContext.summary }}</div>
+                  </details>
+                  <textarea v-model="sleuthContext.summary" class="shrink-0 w-full rounded-lg border border-edge-strong bg-surface px-3 py-2 text-sm text-content resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle" rows="2" placeholder="Revise summary…" />
+                  <div class="flex justify-end shrink-0">
+                    <async-button type="button" class="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-text hover:bg-primary-hover disabled:opacity-50" :disabled="!sleuthContext.currentCaseReportId" @click="sleuthContext.saveSummary()">Save &amp; regenerate</async-button>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </template>
+
+  <!-- ── Sleuth sidebar / embedded panel ───────────────────────────────── -->
+  <template v-else>
+    <div class="bg-white border-b p-3 shrink-0">
+      <h2 class="text-sm font-bold text-gray-900 mb-2">Sleuth</h2>
+      <div class="flex flex-wrap gap-2 items-center">
+        <template v-if="!sleuthContext.hasSourceFromModelsView">
+          <label class="sr-only" for="sleuth-unified-model">Model</label>
+          <select
+            id="sleuth-unified-model"
+            class="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            :value="sleuthContext.currentModel"
+            @change="$event.target.value && sleuthContext.selectModel($event.target.value)"
+          >
+            <option value="">Select model…</option>
+            <option v-for="m in sleuthContext.models" :key="m" :value="m">{{ m }}</option>
+          </select>
+        </template>
+        <template v-else>
+          <span class="text-sm text-gray-700">{{ sleuthContext.displayModel }}</span>
+        </template>
+        <template v-if="!sleuthContext.currentCaseReportId">
+          <button
+            type="button"
+            class="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-text shadow-sm hover:bg-primary-hover"
+            @click="sleuthContext.shouldShowCaseReportModal = true"
+            :disabled="sleuthContext.selectedDocuments.length === 0"
+          >
+            Save as case report
+          </button>
+        </template>
+        <span v-else class="text-xs text-gray-500">
+          Case report: {{ sleuthContext.currentCaseReportName || 'Saved' }}
+        </span>
+        <div v-if="sleuthContext.availableCaseReports.length" class="flex items-center gap-1 text-xs text-gray-600">
+          <label for="sleuth-existing-report" class="sr-only">Use existing case report</label>
+          <span>Use existing:</span>
+          <select
+            id="sleuth-existing-report"
+            class="rounded-md border border-gray-300 px-2 py-1 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            @change="sleuthContext.selectExistingCaseReport($event.target.value)"
+          >
+            <option value="">Select…</option>
+            <option
+              v-for="cr in sleuthContext.availableCaseReports"
+              :key="cr._id"
+              :value="cr._id"
+            >
+              {{ cr.name || ('Case report ' + cr._id) }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-b border-gray-200 p-3 shrink-0">
+      <h3 class="text-xs font-semibold text-gray-700 mb-2">1. Select documents</h3>
+      <div v-if="sleuthContext.displayModel" class="space-y-2">
+        <template v-if="sleuthContext.hasSourceFromModelsView">
+          <p class="text-xs text-gray-600">
+            Select documents in the main list (current model: <span class="font-medium text-gray-800">{{ sleuthContext.displayModel }}</span>), then use <span class="font-medium">Add to Sleuth</span> to attach them to the case report. You can switch models; documents already added stay listed below.
+          </p>
+        </template>
+        <div v-if="!sleuthContext.hasSourceFromModelsView" class="flex flex-wrap gap-2 items-center">
+          <document-search
+            ref="documentSearch"
+            :value="sleuthContext.searchText"
+            :schema-paths="sleuthContext.schemaPaths"
+            @search="sleuthContext.search"
+          />
+          <span class="isolate inline-flex rounded-md shadow-sm">
+            <button
+              type="button"
+              class="relative inline-flex rounded-l-md px-2 py-1.5 text-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              :class="sleuthContext.outputType === 'table' ? 'bg-gray-200' : 'bg-white'"
+              @click="sleuthContext.setOutputType('table')"
+            >
+              Table
+            </button>
+            <button
+              type="button"
+              class="relative -ml-px inline-flex rounded-r-md px-2 py-1.5 text-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              :class="sleuthContext.outputType === 'json' ? 'bg-gray-200' : 'bg-white'"
+              @click="sleuthContext.setOutputType('json')"
+            >
+              JSON
+            </button>
+          </span>
+        </div>
+        <div v-if="sleuthContext.selectedDocuments.length > 0" class="space-y-1">
+          <p class="text-xs text-gray-700">
+            {{ sleuthContext.selectedDocuments.length }} document{{ sleuthContext.selectedDocuments.length === 1 ? '' : 's' }} in this case report
+            <span v-if="!sleuthContext.hasSourceFromModelsView" class="text-gray-500 font-normal">(other models appear here when you change the model above)</span>
+          </p>
+          <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
+            <template v-for="group in sleuthContext.selectedDocumentsByModel" :key="group.model">
+              <div class="sticky top-0 z-10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-600 bg-gray-100 border-b border-gray-200">
+                {{ group.model }}
+              </div>
+              <div
+                v-for="doc in group.documents"
+                :key="sleuthContext.getDocumentKey(doc)"
+                class="flex items-center justify-between gap-2 px-2 py-1.5 text-xs border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+              >
+                <span class="truncate flex-1 min-w-0 text-gray-800">{{ sleuthContext.getDocumentLabel(doc) }}</span>
+                <button
+                  type="button"
+                  class="shrink-0 p-1 rounded text-gray-500 hover:bg-red-100 hover:text-red-700"
+                  aria-label="Remove from case report"
+                  @click="sleuthContext.removeSelectedDocument(doc)"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+        <template v-if="!sleuthContext.hasSourceFromModelsView && sleuthContext.displayModel">
+          <span class="text-xs text-gray-500">
+            <span v-if="sleuthContext.displayNumDocuments == null">Loading…</span>
+            <span v-else>{{ sleuthContext.displayNumDocuments === 1 ? '1 document' : (sleuthContext.displayNumDocuments || 0) + ' documents' }}</span>
+          </span>
+          <div v-if="sleuthContext.error" class="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">{{ sleuthContext.error }}</div>
+          <div ref="documentsList" class="documents-container overflow-auto max-h-48 rounded-md border border-edge bg-surface">
+            <table v-if="sleuthContext.outputType === 'table' && sleuthContext.displayDocuments.length > 0" class="min-w-full text-xs border-separate border-spacing-0">
+              <thead>
+                <tr>
+                  <th class="sticky top-0 z-20 bg-muted shadow-[0_1px_0_var(--color-edge)] w-8 px-1 py-1"></th>
+                  <th v-for="path in sleuthContext.displayFilteredPaths.slice(0, 3)" :key="path.path" class="sticky top-0 z-20 bg-muted shadow-[0_1px_0_var(--color-edge)] px-1 py-1 text-left">{{ path.path }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="doc in sleuthContext.displayDocuments"
+                  :key="doc._id"
+                  @click="sleuthContext.handleDocumentSelection(doc, $event)"
+                  :class="{ 'bg-blue-100': sleuthContext.isDocumentSelected(doc) }"
+                  class="cursor-pointer hover:bg-gray-50"
+                >
+                  <td class="bg-inherit" @click.stop="sleuthContext.handleDocumentSelection(doc, $event)">
+                    <input
+                      type="checkbox"
+                      :checked="sleuthContext.isDocumentSelected(doc)"
+                      @change.stop="sleuthContext.handleDocumentSelection(doc, $event)"
+                      class="h-3 w-3 rounded border-gray-300 text-primary"
+                    />
+                  </td>
+                  <td v-for="path in sleuthContext.displayFilteredPaths.slice(0, 3)" :key="path.path" class="bg-inherit px-1 py-0.5 truncate max-w-[6rem]">
+                    <component
+                      :is="sleuthContext.getComponentForPath(path)"
+                      :value="sleuthContext.getValueForPath(doc, path.path)"
+                      :allude="sleuthContext.getReferenceModel(path)"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else-if="sleuthContext.outputType === 'json' && sleuthContext.displayDocuments.length > 0" class="p-2 space-y-2">
+              <div
+                v-for="doc in sleuthContext.displayDocuments"
+                :key="doc._id"
+                @click="sleuthContext.handleDocumentSelection(doc, $event)"
+                :class="{ 'bg-blue-100': sleuthContext.isDocumentSelected(doc) }"
+                class="cursor-pointer border border-gray-100 rounded p-2 text-xs"
+              >
+                <input
+                  type="checkbox"
+                  :checked="sleuthContext.isDocumentSelected(doc)"
+                  @change.stop="sleuthContext.handleDocumentSelection(doc, $event)"
+                  class="h-3 w-3 rounded mr-2 align-middle"
+                />
+                <list-json :value="sleuthContext.filterDocument(doc)" :references="sleuthContext.referenceMap" />
+              </div>
+            </div>
+            <div v-else-if="sleuthContext.status === 'loading'" class="flex items-center justify-center py-8 text-gray-500 text-sm">Loading…</div>
+            <div v-else-if="sleuthContext.displayDocuments.length === 0" class="py-6 text-center text-gray-500 text-sm">No documents. Adjust search.</div>
+          </div>
+        </template>
+      </div>
+      <p v-else class="text-xs text-gray-500">Select a model above or use documents from the Models view.</p>
+    </div>
+  </template>
+
+  <!-- ── Investigation notes (sidebar only) ────────────────────────────── -->
+  <div v-if="!sleuthContext.isCaseReportDetailRoute" class="border-b border-gray-200 shrink-0 p-3">
+    <div>
+      <h3 class="text-xs font-semibold text-gray-700 mb-2">Investigation notes</h3>
+      <p class="text-xs text-gray-600 mb-3 leading-snug">
+        Notes apply to the same documents you added in step 1. Change that list there to add or remove documents from this case report.
+      </p>
+      <div v-if="sleuthContext.investigationModelNames.length" class="mb-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 space-y-2">
+        <p class="text-xs font-semibold text-gray-800">Identifier (per model)</p>
+        <p class="text-xs text-gray-600 leading-snug">Choose a Mongoose path to label each document of that model. “Auto” guesses from common fields (name, title, email, …).</p>
+        <div
+          v-for="model in sleuthContext.investigationModelNames"
+          :key="'id-field-' + model"
+          class="flex flex-wrap items-center gap-2 text-xs"
+        >
+          <span class="font-semibold text-gray-700 shrink-0 max-w-[40%] truncate" :title="model">{{ model }}</span>
+          <select
+            class="min-w-[10rem] flex-1 max-w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs"
+            :value="sleuthContext.identifierPathByModel[model] || ''"
+            @change="sleuthContext.setIdentifierPathForModel(model, $event.target.value)"
+          >
+            <option value="">Auto</option>
+            <option
+              v-for="opt in sleuthContext.getIdentifierFieldOptions(model)"
+              :key="model + ':' + opt.path"
+              :value="opt.path"
+            >
+              {{ opt.path }} ({{ opt.instance }})
+            </option>
+          </select>
+        </div>
+      </div>
+      <div v-if="sleuthContext.investigationModelNames.length" class="mb-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 space-y-3">
+        <p class="text-xs font-semibold text-gray-800">Projection (per model)</p>
+        <p class="text-xs text-gray-600 leading-snug">Limit which fields appear in document previews. Use <span class="font-mono">name email</span>, <span class="font-mono">-password</span>, or object notation like <span class="font-mono">{ email: 1 }</span>.</p>
+        <div
+          v-for="model in sleuthContext.investigationModelNames"
+          :key="'projection-' + model"
+          class="space-y-1 text-xs"
+        >
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-semibold text-gray-700 shrink-0 max-w-[40%] truncate" :title="model">{{ model }}</span>
+            <button
+              v-if="sleuthContext.getProjectionTextForModel(model)"
+              type="button"
+              class="rounded border border-gray-300 bg-white px-2 py-0.5 text-[11px] font-medium text-gray-700 hover:bg-gray-50"
+              @click="sleuthContext.clearProjectionForModel(model)"
+            >
+              Clear
+            </button>
+          </div>
+          <projection-search
+            :value="sleuthContext.getProjectionTextForModel(model)"
+            :schema-paths="sleuthContext.getProjectionSchemaPathsForModel(model)"
+            @projection-input="sleuthContext.setProjectionTextForModel(model, $event)"
+          />
+        </div>
+      </div>
+      <div class="max-h-72 overflow-y-auto space-y-2">
+        <div
+          v-for="doc in sleuthContext.selectedDocuments"
+          :key="sleuthContext.getDocumentKey(doc)"
+          class="border border-gray-200 rounded p-2 text-xs"
+          :class="sleuthContext.isCaseReportDetailRoute ? 'text-sm p-3' : ''"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div class="font-medium text-gray-900 leading-snug flex-1 min-w-0">{{ sleuthContext.getInvestigationDocumentHeading(doc) }}</div>
+            <div class="flex shrink-0 flex-wrap justify-end gap-1">
+              <a
+                :href="sleuthContext.documentHref(doc)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs font-medium text-primary hover:bg-gray-50"
+              >Open document</a>
+              <button
+                type="button"
+                class="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                @click="sleuthContext.toggleInvestigationDocPreview(doc)"
+              >
+                {{ sleuthContext.isInvestigationDocPreviewOpen(doc) ? 'Hide preview' : 'Preview' }}
+              </button>
+            </div>
+          </div>
+          <div
+            v-if="sleuthContext.isInvestigationDocPreviewOpen(doc)"
+            class="mt-2 max-h-[min(22rem,65vh)] overflow-auto rounded border border-gray-100 bg-gray-50 p-2"
+          >
+            <list-json :value="sleuthContext.filterInvestigationDocument(doc)" :references="{}" />
+          </div>
+          <div class="mt-1 flex gap-2 items-start">
+            <textarea
+              class="flex-1 min-w-0 rounded border border-gray-300 px-2 py-1 text-xs resize-none"
+              rows="2"
+              :value="sleuthContext.getDocumentNote(doc)"
+              @input="sleuthContext.setDocumentNote(doc, $event.target.value)"
+              placeholder="Notes…"
+            />
+            <async-button
+              type="button"
+              class="shrink-0 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              :disabled="!sleuthContext.currentCaseReportId"
+              @click="sleuthContext.saveDocumentNote(doc)"
+            >
+              Save
+            </async-button>
+          </div>
+        </div>
+        <p v-if="sleuthContext.selectedDocuments.length === 0" class="text-xs text-gray-500">
+          Add one or more documents in step 1 to write investigation notes here.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Summary (sidebar only) ────────────────────────────────────────── -->
+  <div v-if="!sleuthContext.isCaseReportDetailRoute" class="shrink-0 p-3 border-t border-gray-100 bg-white">
+    <div>
+      <h3 class="text-xs font-semibold text-gray-700 mb-2">Summary</h3>
+      <template v-if="!hasAiSummary()">
+        <textarea
+          v-model="sleuthContext.summary"
+          class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs resize-none"
+          rows="4"
+          placeholder="Case summary…"
+        />
+        <async-button
+          type="button"
+          class="mt-2 rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-text hover:bg-primary-hover"
+          :disabled="!sleuthContext.currentCaseReportId"
+          @click="sleuthContext.saveSummary()"
+        >
+          Save summary
+        </async-button>
+      </template>
+      <div v-else class="space-y-3">
+        <div>
+          <h4 class="text-xs font-semibold text-gray-900">AI summary</h4>
+          <p class="mt-0.5 text-[11px] leading-snug text-gray-500">
+            Markdown generated from your summary, investigation notes, and document data.
+          </p>
+          <div
+            class="sleuth-ai-summary-markdown mt-2 max-h-[min(24rem,50vh)] overflow-y-auto overflow-x-auto rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5"
+            v-html="renderMarkdown(sleuthContext.aiSummary)"
+          />
+        </div>
+        <details
+          v-if="sleuthContext.summary && sleuthContext.summary.trim().length"
+          class="rounded-md border border-gray-100 bg-gray-50/80 text-xs text-gray-800"
+        >
+          <summary class="cursor-pointer select-none px-2 py-1.5 font-medium text-gray-700 hover:bg-gray-100/80">
+            Your original summary
+          </summary>
+          <pre class="max-h-40 overflow-y-auto whitespace-pre-wrap border-t border-gray-100 bg-white px-2 py-2 font-mono text-[11px] text-gray-700">{{ sleuthContext.summary }}</pre>
+        </details>
+      </div>
+    </div>
+  </div>
+  <modal v-if="sleuthContext.shouldShowCaseReportModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="sleuthContext.shouldShowCaseReportModal = false">&times;</div>
+      <div class="text-xl font-bold mb-4">Save Case Report</div>
+      <div class="mb-4">
+        <label for="caseReportName" class="block text-sm font-medium text-gray-700 mb-2">Case Report Name</label>
+        <input
+          id="caseReportName"
+          type="text"
+          v-model="sleuthContext.caseReportName"
+          placeholder="Enter case report name"
+          class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          @keyup.enter="sleuthContext.saveCaseReport"
+        />
+      </div>
+      <div class="flex gap-4 justify-end">
+        <button type="button" class="rounded bg-gray-400 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-500" @click="sleuthContext.shouldShowCaseReportModal = false">Cancel</button>
+        <async-button type="button" class="rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-text hover:bg-primary-hover" @click="sleuthContext.saveCaseReport">Save</async-button>
+      </div>
+    </template>
+  </modal>
+
+</div>

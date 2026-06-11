@@ -2,14 +2,14 @@
 
 // Role-based access control configuration
 const roleAccess = {
-  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'tasks', 'taskByName', 'taskSingle'],
-  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'tasks', 'taskByName', 'taskSingle'],
-  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat', 'tasks', 'taskByName', 'taskSingle'],
-  readonly: ['root', 'model', 'document', 'chat'],
+  owner: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'tasks', 'taskByName', 'taskSingle', 'mongoose-sleuth', 'case-reports', 'case-report'],
+  admin: ['root', 'model', 'document', 'dashboards', 'dashboard', 'team', 'chat', 'tasks', 'taskByName', 'taskSingle', 'mongoose-sleuth', 'case-reports', 'case-report'],
+  member: ['root', 'model', 'document', 'dashboards', 'dashboard', 'chat', 'tasks', 'taskByName', 'taskSingle', 'mongoose-sleuth', 'case-reports', 'case-report'],
+  readonly: ['root', 'model', 'document', 'chat', 'mongoose-sleuth', 'case-reports', 'case-report'],
   dashboards: ['dashboards', 'dashboard']
 };
 
-const allowedRoutesForLocalDev = ['document', 'dashboards', 'dashboard', 'root', 'chat', 'model', 'tasks', 'taskByName', 'taskSingle'];
+const allowedRoutesForLocalDev = ['document', 'dashboards', 'dashboard', 'root', 'chat', 'model', 'tasks', 'taskByName', 'taskSingle', 'mongoose-sleuth', 'case-reports', 'case-report'];
 
 // Helper function to check if a role has access to a route
 function hasAccess(roles, routeName) {
@@ -42,6 +42,22 @@ module.exports = {
       component: 'document',
       meta: {
         authorized: false
+      }
+    },
+    {
+      path: '/case-reports',
+      name: 'case-reports',
+      component: 'case-reports',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/case-reports/:caseReportId',
+      name: 'case-report',
+      component: 'mongoose-sleuth',
+      meta: {
+        authorized: true
       }
     },
     {
