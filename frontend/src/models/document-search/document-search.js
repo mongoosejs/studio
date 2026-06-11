@@ -4,7 +4,11 @@ const template = require('./document-search.html');
 const {
   buildAutocompleteTrie,
   getAutocompleteSuggestions,
-  applySuggestion
+  applySuggestion,
+  getDatePickerInsertionRange,
+  dateArgumentSliceToDatetimeLocal,
+  detectDateArgumentFormat,
+  insertDateInDateArgument
 } = require('../../_util/document-search-autocomplete');
 
 module.exports = app => app.component('document-search', {
@@ -24,7 +28,11 @@ module.exports = app => app.component('document-search', {
       autocompleteSuggestions: [],
       autocompleteIndex: 0,
       autocompleteTrie: null,
-      searchText: this.value || ''
+      searchText: this.value || '',
+      datePickerContext: null,
+      datePickerLocalValue: '',
+      showDateCalendar: false,
+      dateInsertFormat: 'timestamp' // 'timestamp' | 'quoted'
     };
   },
   watch: {
@@ -66,9 +74,31 @@ module.exports = app => app.component('document-search', {
         });
       }
     },
+    onSearchKeyup(ev) {
+      if (
+        this.autocompleteSuggestions.length > 0 &&
+        (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')
+      ) {
+        return;
+      }
+      this.updateAutocomplete();
+    },
     updateAutocomplete() {
       const input = this.$refs.searchInput;
       const cursorPos = input ? input.selectionStart : 0;
+
+      const dateRange = getDatePickerInsertionRange(this.searchText, cursorPos);
+      if (!dateRange) {
+        this.showDateCalendar = false;
+      }
+      this.datePickerContext = dateRange;
+      if (dateRange) {
+        const argSlice = this.searchText.slice(dateRange.innerStart, dateRange.innerEnd);
+        this.datePickerLocalValue = dateArgumentSliceToDatetimeLocal(argSlice);
+        this.dateInsertFormat = detectDateArgumentFormat(argSlice);
+      } else {
+        this.datePickerLocalValue = '';
+      }
 
       if (this.autocompleteTrie) {
         this.autocompleteSuggestions = getAutocompleteSuggestions(
@@ -81,6 +111,38 @@ module.exports = app => app.component('document-search', {
       } else {
         this.autocompleteSuggestions = [];
       }
+    },
+    toggleDateCalendar() {
+      this.showDateCalendar = !this.showDateCalendar;
+    },
+    applyDateFromPicker(localDateTime) {
+      if (!localDateTime || !this.datePickerContext) {
+        return;
+      }
+      const picked = new Date(localDateTime);
+      if (Number.isNaN(picked.getTime())) {
+        if (this.$toast) {
+          this.$toast.error('Invalid date or time. Enter a valid date and time, then try again.');
+        }
+        return;
+      }
+      const result = insertDateInDateArgument(
+        this.searchText,
+        this.datePickerContext,
+        picked,
+        this.dateInsertFormat
+      );
+      const input = this.$refs.searchInput;
+      this.searchText = result.text;
+      this.showDateCalendar = false;
+      this.autocompleteSuggestions = [];
+      this.$nextTick(() => {
+        if (input) {
+          input.focus();
+          input.setSelectionRange(result.newCursorPos, result.newCursorPos);
+        }
+        this.updateAutocomplete();
+      });
     },
     handleKeyDown(ev) {
       if (this.autocompleteSuggestions.length === 0) {

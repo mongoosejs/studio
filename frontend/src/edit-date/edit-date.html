@@ -1,10 +1,10 @@
 <div>
-  <input
+  <custom-date-picker
     v-if="dateSelection == 'picker'"
-    class="w-64 h-8 border border-edge-strong outline-0"
-    type="datetime-local"
-    :value="valueAsLocalString"
-    @input="$emit('input', $event.target.value)">
+    :value="value"
+    mode="datetime"
+    @input="$emit('input', $event)"
+  />
   <input
     v-if="dateSelection == 'iso'"
     type="text"

@@ -1,0 +1,128 @@
+<div
+  class="custom-date-picker"
+  :class="[
+    mini ? 'p-0.5 text-[10px]' : (compact ? 'p-2 text-xs' : 'p-3 text-sm'),
+    mini ? '' : 'bg-surface border border-edge-strong rounded-md shadow-sm'
+  ]"
+>
+  <div class="flex items-center justify-between gap-1 mb-1" :class="mini ? 'mb-0.5' : 'mb-2'">
+    <button
+      type="button"
+      class="shrink-0 flex items-center justify-center rounded border border-edge-strong hover:bg-surface-hover text-content-secondary"
+      :class="mini ? 'w-5 h-5 text-[10px]' : 'w-7 h-7'"
+      aria-label="Previous month"
+      @click="prevMonth"
+    >‹</button>
+    <span
+      class="font-medium text-content-primary truncate"
+      :class="mini ? 'text-[10px]' : ''"
+    >{{ monthLabel }}</span>
+    <button
+      type="button"
+      class="shrink-0 flex items-center justify-center rounded border border-edge-strong hover:bg-surface-hover text-content-secondary"
+      :class="mini ? 'w-5 h-5 text-[10px]' : 'w-7 h-7'"
+      aria-label="Next month"
+      @click="nextMonth"
+    >›</button>
+  </div>
+
+  <div class="grid grid-cols-7 gap-px mb-0.5">
+    <div
+      v-for="label in weekdayLabels"
+      :key="label"
+      class="text-center text-content-tertiary font-medium"
+      :class="mini ? 'text-[9px] py-0' : (compact ? 'text-[10px] py-0.5' : 'text-xs py-0.5')"
+    >{{ mini ? label.charAt(0) : label }}</div>
+  </div>
+
+  <div class="grid grid-cols-7 gap-px">
+    <button
+      v-for="day in calendarDays"
+      :key="day.key"
+      type="button"
+      class="min-w-0 flex items-center justify-center rounded transition-colors"
+      :class="[
+        mini ? 'w-6 h-6 text-[10px]' : (compact ? 'w-7 h-7 text-xs' : 'aspect-square text-sm'),
+        dayClasses(day)
+      ]"
+      :aria-label="day.label"
+      :aria-pressed="isSelectedDay(day)"
+      @click="selectDay(day)"
+    >{{ day.label }}</button>
+  </div>
+
+  <div
+    v-if="showTime"
+    class="flex flex-wrap items-center gap-x-1 gap-y-0.5 border-t border-edge-strong"
+    :class="mini ? 'mt-1 pt-1' : 'mt-3 pt-3'"
+    @mousedown.stop
+  >
+    <span class="text-content-secondary shrink-0 w-full" :class="mini ? 'text-[9px]' : 'text-xs'">Time</span>
+    <label class="flex items-center gap-0.5 text-content-secondary" :class="mini ? 'text-[9px]' : 'text-xs'">
+      <span>h</span>
+      <input
+        type="number"
+        min="0"
+        max="23"
+        :class="timeInputClass"
+        v-model.number="hour"
+        @input="applyTimeToSelection"
+      />
+    </label>
+    <span class="text-content-secondary">:</span>
+    <label class="flex items-center gap-0.5 text-content-secondary" :class="mini ? 'text-[9px]' : 'text-xs'">
+      <span>m</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        :class="timeInputClass"
+        v-model.number="minute"
+        @input="applyTimeToSelection"
+      />
+    </label>
+    <span class="text-content-secondary">:</span>
+    <label class="flex items-center gap-0.5 text-content-secondary" :class="mini ? 'text-[9px]' : 'text-xs'">
+      <span>s</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        :class="timeInputClass"
+        v-model.number="second"
+        @input="applyTimeToSelection"
+      />
+    </label>
+    <span class="text-content-secondary">.</span>
+    <label class="flex items-center gap-0.5 text-content-secondary" :class="mini ? 'text-[9px]' : 'text-xs'">
+      <span>ms</span>
+      <input
+        type="number"
+        min="0"
+        max="999"
+        :class="[timeInputClass, mini ? 'w-12' : 'w-14']"
+        v-model.number="millisecond"
+        @input="applyTimeToSelection"
+      />
+    </label>
+  </div>
+
+  <div
+    class="flex justify-end gap-2"
+    :class="mini ? 'mt-1' : 'mt-2'"
+  >
+    <button
+      v-if="!mini"
+      type="button"
+      class="text-xs text-teal-700 hover:text-teal-900 font-medium px-2 py-1 rounded hover:bg-surface-hover"
+      @click="goToToday"
+    >Today</button>
+    <button
+      v-if="!immediate"
+      type="button"
+      class="text-xs font-medium text-white bg-teal-600 hover:bg-teal-700 px-2 py-1 rounded"
+      :class="mini ? 'py-0.5 px-1.5' : ''"
+      @click="commit"
+    >Apply</button>
+  </div>
+</div>
