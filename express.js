@@ -9,6 +9,8 @@ const normalizeBindIPOption = require('./backend/helpers/normalizeBindIPOption')
 const { toRoute, objectRouter } = require('extrovert');
 const { defaultMothershipURL } = require('./constants');
 
+const jsonParser = express.json();
+
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
   options = options ? { changeStream: true, ...options } : { changeStream: true };
@@ -95,7 +97,12 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
           return res.status(500).json({ message: err.message });
         });
     },
-    express.json(),
+    function parseJson(req, res, next) {
+      if (req.body !== undefined || req.readable === false) {
+        return next();
+      }
+      return jsonParser(req, res, next);
+    },
     objectRouter(backend, toRoute)
   );
 
