@@ -7,7 +7,6 @@ const {
   applySuggestion,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
-  detectDateArgumentFormat,
   insertDateInDateArgument
 } = require('../../_util/document-search-autocomplete');
 
@@ -31,7 +30,7 @@ module.exports = app => app.component('document-search', {
       searchText: this.value || '',
       datePickerContext: null,
       datePickerLocalValue: '',
-      dateInsertFormat: 'timestamp', // 'timestamp' | 'quoted'
+      dateInsertFormat: 'quoted', // 'timestamp' | 'quoted'
       datePickerMinimized: false
     };
   },
@@ -95,7 +94,6 @@ module.exports = app => app.component('document-search', {
       if (dateRange) {
         const argSlice = this.searchText.slice(dateRange.innerStart, dateRange.innerEnd);
         this.datePickerLocalValue = dateArgumentSliceToDatetimeLocal(argSlice);
-        this.dateInsertFormat = detectDateArgumentFormat(argSlice);
       } else {
         this.datePickerLocalValue = '';
       }

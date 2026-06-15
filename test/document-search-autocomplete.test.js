@@ -8,7 +8,6 @@ const {
   applySuggestion,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
-  detectDateArgumentFormat,
   insertDateInDateArgument,
   FUNCTION_HELPERS
 } = require('../frontend/src/_util/document-search-autocomplete');
@@ -351,23 +350,6 @@ describe('document-search-autocomplete', function() {
     });
   });
 
-  describe('detectDateArgumentFormat()', function() {
-    it('defaults to timestamp for empty argument', function() {
-      assert.strictEqual(detectDateArgumentFormat(''), 'timestamp');
-      assert.strictEqual(detectDateArgumentFormat('   '), 'timestamp');
-    });
-
-    it('detects quoted string arguments', function() {
-      assert.strictEqual(detectDateArgumentFormat('"2020-01-01"'), 'quoted');
-      assert.strictEqual(detectDateArgumentFormat('\'2020-01-01\''), 'quoted');
-    });
-
-    it('detects unquoted numeric arguments as timestamp', function() {
-      assert.strictEqual(detectDateArgumentFormat('1735689600000'), 'timestamp');
-      assert.strictEqual(detectDateArgumentFormat('2020-01-01'), 'timestamp');
-    });
-  });
-
   describe('insertDateInDateArgument()', function() {
     it('inserts unquoted timestamp for empty or unquoted arguments', function() {
       const searchText = '{ d: Date(OLD) }';
@@ -380,19 +362,6 @@ describe('document-search-autocomplete', function() {
 
       assert.strictEqual(result.text, '{ d: Date(' + date.getTime() + ') }');
       assert.strictEqual(result.newCursorPos, innerStart + String(date.getTime()).length);
-    });
-
-    it('preserves quoted ISO style when replacing a quoted argument', function() {
-      const searchText = '{ d: Date("OLD") }';
-      const innerStart = '{ d: Date('.length;
-      const innerEnd = innerStart + 5;
-      const range = { innerStart, innerEnd, needsClosingParen: false };
-      const date = new Date('2022-03-04T12:00:00.000Z');
-      const expectedQuoted = JSON.stringify(date.toISOString());
-
-      const result = insertDateInDateArgument(searchText, range, date);
-
-      assert.strictEqual(result.text, '{ d: Date(' + expectedQuoted + ') }');
     });
 
     it('appends ) when needsClosingParen is true', function() {

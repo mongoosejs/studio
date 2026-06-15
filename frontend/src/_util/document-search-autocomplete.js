@@ -268,24 +268,6 @@ function dateArgumentSliceToDatetimeLocal(slice) {
 }
 
 /**
- * @param {string} slice - existing Date(...) argument text
- * @returns {'quoted'|'timestamp'}
- */
-function detectDateArgumentFormat(slice) {
-  const t = slice.trim();
-  if (!t) {
-    return 'timestamp';
-  }
-  if (
-    (t.startsWith('"') && t.endsWith('"'))
-    || (t.startsWith('\'') && t.endsWith('\''))
-  ) {
-    return 'quoted';
-  }
-  return 'timestamp';
-}
-
-/**
  * @param {Date} date
  * @param {'quoted'|'timestamp'} format
  */
@@ -305,8 +287,7 @@ function formatDateArgumentValue(date, format) {
  */
 function insertDateInDateArgument(searchText, range, date, format) {
   const slice = searchText.slice(range.innerStart, range.innerEnd);
-  const resolvedFormat = format || detectDateArgumentFormat(slice);
-  const insertion = formatDateArgumentValue(date, resolvedFormat);
+  const insertion = formatDateArgumentValue(date, format);
   const { innerStart, innerEnd } = range;
   const closing = range.needsClosingParen === true ? ')' : '';
   return {
@@ -322,7 +303,6 @@ module.exports = {
   applySuggestion,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
-  detectDateArgumentFormat,
   formatDateArgumentValue,
   insertDateInDateArgument,
   QUERY_SELECTORS,
