@@ -1,54 +1,70 @@
-<form @submit.prevent="emitSearch" class="relative flex-grow m-0">
-  <input
-    ref="searchInput"
-    class="w-full font-mono rounded-md p-1 border border-edge-strong outline-edge-strong text-lg focus:ring-1 focus:ring-primary-subtle focus:ring-offset-0 focus:outline-none"
-    type="text"
-    placeholder="Filter (supports JS, dates, ObjectIds, and more)"
-    v-model="searchText"
-    @click="initFilter($event); updateAutocomplete()"
-    @input="updateAutocomplete"
-    @keyup="onSearchKeyup"
-    @keydown="handleKeyDown"
-  />
-  <div
-    v-if="autocompleteSuggestions.length"
-    ref="autocompleteDropdown"
-    class="absolute z-[9999] bg-surface border border-edge-strong rounded mt-1 w-full shadow"
-  >
-    <ul class="max-h-40 overflow-y-auto">
-      <li
-        v-for="(suggestion, index) in autocompleteSuggestions"
-        :key="suggestion"
-        class="px-2 py-1 cursor-pointer"
-        :class="{ 'bg-primary-subtle': index === autocompleteIndex }"
-        @mousedown.prevent="applySuggestion(index)"
-      >
-        {{ suggestion }}
-      </li>
-    </ul>
-  </div>
-</form>
+<div class="relative flex-grow m-0" @focusout="onWrapperFocusOut">
+  <form @submit.prevent="emitSearch" class="w-full mb-0">
+    <input
+      ref="searchInput"
+      class="w-full font-mono rounded-md p-1 border border-edge-strong outline-edge-strong text-lg focus:ring-1 focus:ring-primary-subtle focus:ring-offset-0 focus:outline-none"
+      type="text"
+      placeholder="Filter (supports JS, dates, ObjectIds, and more)"
+      v-model="searchText"
+      @click="initFilter($event); updateAutocomplete()"
+      @input="updateAutocomplete"
+      @keyup="onSearchKeyup"
+      @keydown="handleKeyDown"
+    />
+    <div
+      v-if="autocompleteSuggestions.length"
+      ref="autocompleteDropdown"
+      class="absolute z-[9999] bg-surface border border-edge-strong rounded mt-1 w-full shadow"
+    >
+      <ul class="max-h-40 overflow-y-auto">
+        <li
+          v-for="(suggestion, index) in autocompleteSuggestions"
+          :key="suggestion"
+          class="px-2 py-1 cursor-pointer"
+          :class="{ 'bg-primary-subtle': index === autocompleteIndex }"
+          @mousedown.prevent="applySuggestion(index)"
+        >
+          {{ suggestion }}
+        </li>
+      </ul>
+    </div>
+  </form>
 
-<Teleport to="body">
   <div
     v-if="datePickerContext"
-    class="fixed bottom-4 right-4 z-[10000] w-[400px] max-w-[calc(100vw-2rem)] bg-surface border border-edge-strong rounded-lg shadow-xl"
+    class="absolute top-full left-0 z-[10000] mt-0 w-[400px] max-w-[calc(100vw-2rem)] bg-surface border border-edge-strong rounded-lg shadow-xl"
     role="dialog"
     aria-label="Date picker"
     @mousedown.stop
   >
     <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-edge-strong">
       <span class="text-sm font-medium text-content-primary">Insert date into filter</span>
-      <select
-        v-model="dateInsertFormat"
-        class="text-xs border border-edge rounded-md bg-surface px-2 py-1 shrink-0"
-        @mousedown.stop
-      >
-        <option value="timestamp">Milliseconds</option>
-        <option value="quoted">Date string</option>
-      </select>
+      <div class="flex items-center gap-2 shrink-0">
+        <select
+          v-if="!datePickerMinimized"
+          v-model="dateInsertFormat"
+          class="text-xs border border-edge rounded-md bg-surface px-2 py-1"
+          @mousedown.stop
+        >
+          <option value="timestamp">Milliseconds</option>
+          <option value="quoted">Date string</option>
+        </select>
+        <button
+          type="button"
+          class="flex items-center justify-center w-5 h-5 rounded hover:bg-surface-hover text-content-secondary"
+          :aria-label="datePickerMinimized ? 'Expand date picker' : 'Minimize date picker'"
+          @click.stop="datePickerMinimized = !datePickerMinimized"
+        >
+          <svg v-if="datePickerMinimized" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
+          </svg>
+        </button>
+      </div>
     </div>
-    <div class="p-2">
+    <div v-if="!datePickerMinimized" class="p-2">
       <custom-date-picker
         compact
         horizontal
@@ -60,4 +76,4 @@
       />
     </div>
   </div>
-</Teleport>
+</div>

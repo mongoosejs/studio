@@ -65,11 +65,11 @@ module.exports = app => app.component('custom-date-picker', {
   data() {
     const selected = parseValueToDate(this.value);
     const anchor = selected || new Date();
-    const time = timePartsFromDate(selected);
+    const time = timePartsFromDate(anchor);
     return {
       viewYear: anchor.getFullYear(),
       viewMonth: anchor.getMonth(),
-      selectedDate: selected,
+      selectedDate: anchor,
       hour: time.hour,
       minute: time.minute,
       second: time.second,
@@ -110,10 +110,10 @@ module.exports = app => app.component('custom-date-picker', {
       ];
     },
     wheelPadCount() {
-      return this.horizontal ? 1 : WHEEL_PAD;
+      return 2;
     },
     wheelVisibleRows() {
-      return this.horizontal ? 3 : 5;
+      return 5;
     },
     weekdayLabels() {
       return WEEKDAY_LABELS;
@@ -139,6 +139,11 @@ module.exports = app => app.component('custom-date-picker', {
         return 'h-7';
       }
       return 'aspect-square';
+    },
+    calendarSectionClass() {
+      if (this.mini) return 'w-36';
+      if (this.compact) return 'w-44';
+      return 'w-48';
     },
     wheelItemPx() {
       if (this.mini) {
@@ -184,16 +189,15 @@ module.exports = app => app.component('custom-date-picker', {
   methods: {
     syncFromValue() {
       const selected = parseValueToDate(this.value);
-      this.selectedDate = selected;
-      if (selected) {
-        this.viewYear = selected.getFullYear();
-        this.viewMonth = selected.getMonth();
-        const time = timePartsFromDate(selected);
-        this.hour = time.hour;
-        this.minute = time.minute;
-        this.second = time.second;
-        this.millisecond = time.millisecond;
-      }
+      const anchor = selected || new Date();
+      this.selectedDate = anchor;
+      this.viewYear = anchor.getFullYear();
+      this.viewMonth = anchor.getMonth();
+      const time = timePartsFromDate(anchor);
+      this.hour = time.hour;
+      this.minute = time.minute;
+      this.second = time.second;
+      this.millisecond = time.millisecond;
       this.$nextTick(() => this.scrollWheelsToValues());
     },
     clampedTimeParts() {

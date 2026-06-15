@@ -3,7 +3,7 @@
   :class="rootClasses"
 >
   <div :class="horizontal ? 'flex gap-3 items-start' : ''">
-    <div :class="horizontal ? 'shrink-0' : ''">
+    <div :class="[horizontal ? 'shrink-0' : '', calendarSectionClass]">
       <div class="flex items-center justify-between gap-1 mb-1" :class="mini ? 'mb-0.5' : 'mb-2'">
         <button
           type="button"
@@ -13,7 +13,7 @@
           @click="prevMonth"
         >‹</button>
         <span
-          class="font-medium text-content-primary truncate"
+          class="flex-1 min-w-0 text-center font-medium text-content-primary truncate"
           :class="mini ? 'text-[10px]' : ''"
         >{{ monthLabel }}</span>
         <button
