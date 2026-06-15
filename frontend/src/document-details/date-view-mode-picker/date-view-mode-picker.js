@@ -4,7 +4,7 @@ const template = require('./date-view-mode-picker.html');
 
 module.exports = app => app.component('date-view-mode-picker', {
   template,
-  props: ['viewMode', 'path'],
+  props: ['viewMode', 'path', 'editting'],
   emits: ['update:viewMode'],
   computed: {
     format() {

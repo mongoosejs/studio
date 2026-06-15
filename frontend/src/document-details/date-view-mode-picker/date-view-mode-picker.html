@@ -2,6 +2,7 @@
   <select
     :value="format"
     @input="onFormatChange($event.target.value)"
+    :disabled="editting"
     class="text-xs border border-edge rounded-md bg-surface px-2 py-1"
   >
     <option value="utc_iso">UTC (ISO)</option>

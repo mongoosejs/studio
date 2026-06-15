@@ -1,5 +1,7 @@
 'use strict';
 
+const { dateToDatetimeLocal } = require('./calendar');
+
 const { Trie } = require('../models/trie');
 
 const QUERY_SELECTORS = [
@@ -218,11 +220,117 @@ function applySuggestion(searchText, cursorPos, suggestion) {
   return null;
 }
 
+/**
+ * When the cursor is inside a Date(…) or new Date(…) argument, returns the
+ * slice indices of that argument so a picker can replace it with a quoted ISO string.
+ */
+function getDatePickerInsertionRange(searchText, cursorPos) {
+  const before = searchText.slice(0, cursorPos);
+  const re = /((?:new\s+)?Date\s*\(\s*)([^)]*)$/i;
+  const m = before.match(re);
+  if (!m) {
+    return null;
+  }
+  const innerStart = m.index + m[1].length;
+  const after = searchText.slice(cursorPos);
+  let closeIdx = -1;
+  let parenDepth = 0;
+  for (let k = 0; k < after.length; k++) {
+    const ch = after[k];
+    if (ch === '(') {
+      parenDepth++;
+    } else if (ch === ')') {
+      if (parenDepth === 0) {
+        closeIdx = cursorPos + k;
+        break;
+      }
+      parenDepth--;
+    }
+  }
+  const innerEnd = closeIdx >= 0 ? closeIdx : cursorPos;
+  const needsClosingParen = closeIdx < 0;
+  return { innerStart, innerEnd, needsClosingParen };
+}
+
+function dateArgumentSliceToDatetimeLocal(slice) {
+  const t = slice.trim();
+  if (!t) {
+    return '';
+  }
+  const unquoted = (t.startsWith('"') && t.endsWith('"')) || (t.startsWith('\'') && t.endsWith('\''))
+    ? t.slice(1, -1)
+    : t;
+  const d = new Date(unquoted);
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
+  return dateToDatetimeLocal(d);
+}
+
+/**
+ * @param {string} slice - existing Date(...) argument text
+ * @returns {'quoted'|'timestamp'}
+ */
+function detectDateArgumentFormat(slice) {
+  const t = slice.trim();
+  if (!t) {
+    return 'timestamp';
+  }
+  if (
+    (t.startsWith('"') && t.endsWith('"'))
+    || (t.startsWith('\'') && t.endsWith('\''))
+  ) {
+    return 'quoted';
+  }
+  return 'timestamp';
+}
+
+/**
+ * @param {Date} date
+ * @param {'quoted'|'timestamp'} format
+ */
+function formatDateArgumentValue(date, format) {
+  if (format === 'quoted') {
+    return JSON.stringify(date.toISOString());
+  }
+  return String(date.getTime());
+}
+
+/**
+ * Inserts a Date argument value as timestamp or quoted ISO string.
+ * @param {string} searchText
+ * @param {{ innerStart: number, innerEnd: number, needsClosingParen?: boolean }} range
+ * @param {Date} date
+ * @param {'quoted'|'timestamp'} [format] - when omitted, inferred from the existing argument
+ */
+function insertDateInDateArgument(searchText, range, date, format) {
+  const slice = searchText.slice(range.innerStart, range.innerEnd);
+  const resolvedFormat = format || detectDateArgumentFormat(slice);
+  const insertion = formatDateArgumentValue(date, resolvedFormat);
+  const { innerStart, innerEnd } = range;
+  const closing = range.needsClosingParen === true ? ')' : '';
+  return {
+    text: searchText.slice(0, innerStart) + insertion + closing + searchText.slice(innerEnd),
+    newCursorPos: innerStart + insertion.length + closing.length
+  };
+}
+
+/** @deprecated Use insertDateInDateArgument */
+function insertQuotedIsoInDateArgument(searchText, range, isoString) {
+  return insertDateInDateArgument(searchText, range, new Date(isoString));
+}
+
 module.exports = {
   buildAutocompleteTrie,
   getAutocompleteContext,
   getAutocompleteSuggestions,
   applySuggestion,
+  getDatePickerInsertionRange,
+  dateArgumentSliceToDatetimeLocal,
+  detectDateArgumentFormat,
+  formatDateArgumentValue,
+  insertDateInDateArgument,
+  insertQuotedIsoInDateArgument,
   QUERY_SELECTORS,
   VALUE_HELPERS,
   FUNCTION_HELPERS
