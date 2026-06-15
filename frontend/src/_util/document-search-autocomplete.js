@@ -51,7 +51,7 @@ function buildAutocompleteTrie(schemaPaths) {
   trie.bulkInsert(QUERY_SELECTORS, 5, 'operator');
   trie.bulkInsert(QUERY_SELECTORS, 5, 'fieldName');
   trie.bulkInsert(VALUE_HELPERS, 5, 'value');
-  
+
   if (Array.isArray(schemaPaths) && schemaPaths.length > 0) {
     const paths = schemaPaths
       .map(path => path?.path)
@@ -63,13 +63,13 @@ function buildAutocompleteTrie(schemaPaths) {
     }
     trie.bulkInsert(paths, 10, 'fieldName');
   }
-  
+
   return trie;
 }
 
 function getAutocompleteContext(searchText, cursorPos) {
   const before = searchText.slice(0, cursorPos);
-  
+
   // Check if we're in a field name context (after { or ,)
   // This takes precedence over value context to handle cases like { _id: { $gt
   const fieldMatch = before.match(/(?:\{|,)\s*([^:\s]*)$/);
@@ -81,7 +81,7 @@ function getAutocompleteContext(searchText, cursorPos) {
       startPos: cursorPos - token.length
     };
   }
-  
+
   // Check if we're in a value context (after a colon)
   // Match the last colon followed by optional whitespace and capture everything after
   const valueMatch = before.match(/:\s*(\{?\s*)([^\s,\}\]:]*)$/);
@@ -93,19 +93,19 @@ function getAutocompleteContext(searchText, cursorPos) {
       startPos: cursorPos - token.length
     };
   }
-  
+
   return null;
 }
 
 function getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths) {
   const context = getAutocompleteContext(searchText, cursorPos);
-  
+
   if (!context) {
     return [];
   }
-  
+
   const { token, role } = context;
-  
+
   // Extract the actual term without quotes
   const leadingQuoteMatch = token.match(/^["']/);
   const trailingQuoteMatch = token.length > 1 && /["']$/.test(token)
@@ -115,14 +115,14 @@ function getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths) {
     .replace(/^["']/, '')
     .replace(trailingQuoteMatch ? new RegExp(`[${trailingQuoteMatch}]$`) : '', '')
     .trim();
-  
+
   if (!term) {
     return [];
   }
-  
+
   const primarySuggestions = trie.getSuggestions(term, 10, role);
   const suggestionsSet = new Set(primarySuggestions);
-  
+
   // Add schema path suggestions for field names
   if (role === 'fieldName' && Array.isArray(schemaPaths) && schemaPaths.length > 0) {
     for (const schemaPath of schemaPaths) {
@@ -139,9 +139,9 @@ function getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths) {
       }
     }
   }
-  
+
   let suggestions = Array.from(suggestionsSet);
-  
+
   // Preserve quotes if present
   if (leadingQuoteMatch) {
     const leadingQuote = leadingQuoteMatch[0];
@@ -152,14 +152,14 @@ function getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths) {
       suggestion.endsWith(trailingQuoteMatch) ? suggestion : `${suggestion}${trailingQuoteMatch}`
     );
   }
-  
+
   return suggestions;
 }
 
 function applySuggestion(searchText, cursorPos, suggestion) {
   const before = searchText.slice(0, cursorPos);
   const after = searchText.slice(cursorPos);
-  
+
   // Check if we're in a value context
   const valueMatch = before.match(/:\s*(\{?\s*)([^\s,\}\]:]*)$/);
   if (valueMatch) {
@@ -167,30 +167,30 @@ function applySuggestion(searchText, cursorPos, suggestion) {
     const start = cursorPos - token.length;
     let replacement = suggestion;
     let cursorOffset = replacement.length;
-    
+
     // Add parentheses for function helpers and position cursor inside
     if (FUNCTION_HELPERS.has(suggestion)) {
       replacement = `${suggestion}()`;
       cursorOffset = suggestion.length + 1; // Position cursor between ()
     }
-    
+
     return {
       text: searchText.slice(0, start) + replacement + after,
       newCursorPos: start + cursorOffset
     };
   }
-  
+
   // Check if we're in a field name context
   const fieldMatch = before.match(/(?:\{|,)\s*([^:\s]*)$/);
   if (fieldMatch) {
     const token = fieldMatch[1];
     const start = cursorPos - token.length;
     let replacement = suggestion;
-    
+
     const leadingQuote = token.startsWith('"') || token.startsWith('\'') ? token[0] : '';
     const trailingQuote = token.length > 1 && (token.endsWith('"') || token.endsWith('\'')) ? token[token.length - 1] : '';
     const colonNeeded = !/^\s*:/.test(after);
-    
+
     // If suggestion already has quotes, use it as-is
     const suggestionHasQuotes = (suggestion.startsWith('"') || suggestion.startsWith('\'')) &&
                                 (suggestion.endsWith('"') || suggestion.endsWith('\''));
@@ -204,19 +204,19 @@ function applySuggestion(searchText, cursorPos, suggestion) {
         replacement = `${replacement}${trailingQuote}`;
       }
     }
-    
+
     // Only insert : if we know the user isn't entering in a nested path
     // If suggestion has full quotes or user typed both quotes, add colon
     if (colonNeeded && (suggestionHasQuotes || !leadingQuote || trailingQuote)) {
       replacement = `${replacement}:`;
     }
-    
+
     return {
       text: searchText.slice(0, start) + replacement + after,
       newCursorPos: start + replacement.length
     };
   }
-  
+
   return null;
 }
 
@@ -315,11 +315,6 @@ function insertDateInDateArgument(searchText, range, date, format) {
   };
 }
 
-/** @deprecated Use insertDateInDateArgument */
-function insertQuotedIsoInDateArgument(searchText, range, isoString) {
-  return insertDateInDateArgument(searchText, range, new Date(isoString));
-}
-
 module.exports = {
   buildAutocompleteTrie,
   getAutocompleteContext,
@@ -330,7 +325,6 @@ module.exports = {
   detectDateArgumentFormat,
   formatDateArgumentValue,
   insertDateInDateArgument,
-  insertQuotedIsoInDateArgument,
   QUERY_SELECTORS,
   VALUE_HELPERS,
   FUNCTION_HELPERS
