@@ -286,6 +286,34 @@ module.exports = app => app.component('document-details', {
 
       return this.virtualSearchMatchSet.has(virtual.name);
     },
+    getSearchMatchParts(text) {
+      const normalizedQuery = typeof this.searchQuery === 'string' ? this.searchQuery.trim() : '';
+      if (!normalizedQuery) {
+        return [{ text, matched: false }];
+      }
+
+      const lowerText = String(text).toLowerCase();
+      const lowerQuery = normalizedQuery.toLowerCase();
+      const parts = [];
+      let position = 0;
+      let matchIndex = lowerText.indexOf(lowerQuery, position);
+
+      while (matchIndex !== -1) {
+        if (matchIndex > position) {
+          parts.push({ text: text.slice(position, matchIndex), matched: false });
+        }
+        const matchEnd = matchIndex + normalizedQuery.length;
+        parts.push({ text: text.slice(matchIndex, matchEnd), matched: true });
+        position = matchEnd;
+        matchIndex = lowerText.indexOf(lowerQuery, position);
+      }
+
+      if (position < text.length) {
+        parts.push({ text: text.slice(position), matched: false });
+      }
+
+      return parts.length > 0 ? parts : [{ text, matched: false }];
+    },
     isVirtualFieldCollapsed(fieldName) {
       return this.collapsedVirtuals.has(fieldName);
     },

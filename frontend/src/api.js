@@ -9,6 +9,7 @@ const client = axios.create({
 console.log('API baseURL:', window.MONGOOSE_STUDIO_CONFIG.baseURL);
 
 window.apiClient = client;
+exports.fetch = fetch;
 client.interceptors.request.use(req => {
   const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
   if (accessToken) {
@@ -30,6 +31,85 @@ client.interceptors.response.use(
     throw err;
   }
 );
+
+async function* streamSSE(url, options = {}) {
+  const fetch = exports.fetch;
+  const response = await fetch(url, {
+    method: 'GET',
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Accept: 'text/event-stream'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+
+    let eventEnd;
+    while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
+      const eventStr = buffer.slice(0, eventEnd);
+      buffer = buffer.slice(eventEnd + 2);
+
+      const event = parseSSEEvent(eventStr);
+      if (event == null) {
+        continue;
+      }
+      if (event.type === 'error') {
+        const message = getSSEErrorMessage(event.data);
+        throw new Error(message);
+      }
+      yield event.data;
+    }
+  }
+}
+
+function parseSSEEvent(eventStr) {
+  const lines = eventStr.split('\n');
+  let type = 'message';
+  let data = '';
+  for (const line of lines) {
+    if (line.startsWith('event:')) {
+      type = line.slice(6).trim() || 'message';
+    } else if (line.startsWith('data:')) {
+      data += line.slice(5).trim();
+    }
+  }
+  if (!data) {
+    return null;
+  }
+
+  try {
+    return { type, data: JSON.parse(data) };
+  } catch (err) {
+    return { type, data };
+  }
+}
+
+function getSSEErrorMessage(data) {
+  if (typeof data === 'string') {
+    return data || 'Streaming request failed.';
+  }
+  if (typeof data?.message === 'string' && data.message.length > 0) {
+    return data.message;
+  }
+  if (typeof data?.error === 'string' && data.error.length > 0) {
+    return data.error;
+  }
+  return 'Streaming request failed.';
+}
 
 if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
   exports.getCapabilities = function getCapabilities() {
@@ -88,6 +168,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     addField(params) {
       return client.post('', { action: 'Model.addField', ...params }).then(res => res.data);
     },
+    analyzeSchema(params) {
+      return client.post('', { action: 'Model.analyzeSchema', ...params }).then(res => res.data);
+    },
     createChart(params) {
       return client.post('', { action: 'Model.createChart', ...params }).then(res => res.data);
     },
@@ -103,9 +186,13 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     executeDocumentScript(params) {
       return client.post('', { action: 'Model.executeDocumentScript', ...params }).then(res => res.data);
     },
+    validateDocument(params) {
+      return client.post('', { action: 'Model.validateDocument', ...params }).then(res => res.data);
+    },
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
+      const fetch = exports.fetch;
       return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '?' + new URLSearchParams({ ...params, action: 'Model.exportQueryResults' }).toString(), {
         method: 'GET',
         headers: {
@@ -260,50 +347,11 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/ChatThread/streamChatMessage?' + new URLSearchParams(params).toString();
 
-      const response = await fetch(url, {
-        method: 'GET',
+      yield* streamSSE(url, {
         headers: {
-          Authorization: `${accessToken}`,
-          Accept: 'text/event-stream'
+          Authorization: `${accessToken}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEnd;
-        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
-          const eventStr = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          // Parse SSE event
-          const lines = eventStr.split('\n');
-          let data = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              data += line.slice(5).trim();
-            }
-          }
-          if (data) {
-            try {
-              const res = JSON.parse(data);
-              yield res;
-            } catch (err) {
-              yield data;
-            }
-          }
-        }
-      }
     }
   };
   exports.ChatMessage = {
@@ -336,6 +384,7 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     exportQueryResults(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
 
+      const fetch = exports.fetch;
       return fetch(window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/exportQueryResults?' + new URLSearchParams(params).toString(), {
         method: 'GET',
         headers: {
@@ -373,50 +422,11 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/getDocumentsStream?' + new URLSearchParams(params).toString();
 
-      const response = await fetch(url, {
-        method: 'GET',
+      yield* streamSSE(url, {
         headers: {
-          Authorization: `${accessToken}`,
-          Accept: 'text/event-stream'
+          Authorization: `${accessToken}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEnd;
-        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
-          const eventStr = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          // Parse SSE event
-          const lines = eventStr.split('\n');
-          let data = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              data += line.slice(5).trim();
-            }
-          }
-          if (data) {
-            try {
-              yield JSON.parse(data);
-            } catch (err) {
-              // If not JSON, yield as string
-              yield data;
-            }
-          }
-        }
-      }
     },
     getEstimatedDocumentCounts: function getEstimatedDocumentCounts() {
       return client.post('/Model/getEstimatedDocumentCounts', {}).then(res => res.data);
@@ -425,54 +435,18 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/streamDocumentChanges?' + new URLSearchParams(params).toString();
 
-      const response = await fetch(url, {
-        method: 'GET',
+      yield* streamSSE(url, {
         headers: {
-          Authorization: `${accessToken}`,
-          Accept: 'text/event-stream'
+          Authorization: `${accessToken}`
         },
         signal: options.signal
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEnd;
-        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
-          const eventStr = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          // Parse SSE event
-          const lines = eventStr.split('\n');
-          let data = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              data += line.slice(5).trim();
-            }
-          }
-          if (data) {
-            try {
-              yield JSON.parse(data);
-            } catch (err) {
-              // If not JSON, yield as string
-              yield data;
-            }
-          }
-        }
-      }
     },
     getCollectionInfo: function getCollectionInfo(params) {
       return client.post('/Model/getCollectionInfo', params).then(res => res.data);
+    },
+    analyzeSchema: function analyzeSchema(params) {
+      return client.post('/Model/analyzeSchema', params).then(res => res.data);
     },
     getIndexes: function getIndexes(params) {
       return client.post('/Model/getIndexes', params).then(res => res.data);
@@ -486,54 +460,18 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     updateDocument: function updateDocument(params) {
       return client.post('/Model/updateDocument', params).then(res => res.data);
     },
+    validateDocument: function validateDocument(params) {
+      return client.post('/Model/validateDocument', params).then(res => res.data);
+    },
     streamChatMessage: async function* streamChatMessage(params) {
       const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
       const url = window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/streamChatMessage?' + new URLSearchParams(params).toString();
 
-      const response = await fetch(url, {
-        method: 'GET',
+      yield* streamSSE(url, {
         headers: {
-          Authorization: `${accessToken}`,
-          Accept: 'text/event-stream'
+          Authorization: `${accessToken}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let eventEnd;
-        while ((eventEnd = buffer.indexOf('\n\n')) !== -1) {
-          const eventStr = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          // Parse SSE event
-          const lines = eventStr.split('\n');
-          let data = '';
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              data += line.slice(5).trim();
-            }
-          }
-          if (data) {
-            try {
-              yield JSON.parse(data);
-            } catch (err) {
-              // If not JSON, yield as string
-              yield data;
-            }
-          }
-        }
-      }
     },
     updateDocuments: function updateDocument(params) {
       return client.post('/Model/updateDocuments', params).then(res => res.data);

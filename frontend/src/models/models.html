@@ -117,7 +117,7 @@
             @click="stagingSelect"
             type="button"
             :class="{
-              'bg-gray-700 ring-inset ring-2 ring-gray-300 hover:bg-gray-200 text-content-secondary': selectMultiple,
+              'bg-gray-700 ring-inset ring-2 ring-gray-300 text-white hover:bg-gray-600': selectMultiple,
               'bg-primary hover:bg-primary-hover text-primary-text': !selectMultiple
             }"
             class="rounded px-2 py-2 text-sm font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -177,6 +177,13 @@
                   Indexes
                 </button>
                 <button
+                  @click="openAnalyzeSchemaModal"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Analyze Schema
+                </button>
+                <button
                   @click="openCollectionInfo"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
@@ -184,30 +191,20 @@
                   Collection Info
                 </button>
                 <button
-                  @click="findOldestDocument"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
-                >
-                  Find oldest document
-                </button>
-                <button
-                  @click="openDropCollectionModal"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                >
-                  Drop Collection
-                </button>
-                <button
                   @click="toggleRowNumbers()"
+                  :disabled="outputType !== 'table'"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                  class="block w-full px-4 py-2 text-left text-sm"
+                  :class="outputType === 'table' ? 'text-content-secondary hover:bg-muted' : 'text-content-tertiary cursor-not-allowed opacity-50'"
                 >
                   {{ showRowNumbers ? 'Hide row numbers' : 'Show row numbers' }}
                 </button>
                 <button
                   @click="resetFilter()"
+                  :disabled="searchText.trim().length === 0"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                  class="block w-full px-4 py-2 text-left text-sm"
+                  :class="searchText.trim().length > 0 ? 'text-content-secondary hover:bg-muted' : 'text-content-tertiary cursor-not-allowed opacity-50'"
                 >
                   Reset Filter
                 </button>
@@ -235,6 +232,13 @@
                 >
                   Default Projection
                 </async-button>
+                <button
+                  @click="openDropCollectionModal"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                >
+                  Drop Collection
+                </button>
               </div>
             </div>
           </div>
@@ -411,8 +415,10 @@
                 v-for="(document, docIndex) in documents"
                 :key="document._id"
                 @click="handleDocumentClick(document, $event)"
-                class="border-b border-edge cursor-pointer transition-colors hover:bg-muted/60"
-                :class="{ 'bg-primary-subtle/50 hover:bg-primary-subtle/70': selectedDocuments.some(x => x._id.toString() === document._id.toString()) }"
+                class="border-b border-edge cursor-pointer transition-colors"
+                :class="selectedDocuments.some(x => x._id.toString() === document._id.toString())
+                  ? 'bg-blue-200'
+                  : 'hover:bg-muted'"
               >
                 <td v-if="showRowNumbers" class="px-3 py-2 border-r border-edge align-top text-content-tertiary whitespace-nowrap">
                   {{ docIndex + 1 }}
@@ -455,13 +461,13 @@
           No documents to show. Use Projection in the menu to choose columns.
         </p>
       </div>
-      <div v-else-if="outputType === 'json'" class="flex flex-col space-y-2 p-1 mt-1">
+      <div v-else-if="outputType === 'json'" class="flex min-w-0 flex-col space-y-2 p-1 mt-1">
         <div
           v-for="document in documents"
           :key="document._id"
           @click="handleDocumentContainerClick(document, $event)"
           :class="[
-            'group relative transition-colors rounded-md border border-slate-100',
+            'group relative min-w-0 max-w-full transition-colors rounded-md border border-slate-100',
             selectedDocuments.some(x => x._id.toString() === document._id.toString()) ? 'bg-blue-200' : 'hover:shadow-sm hover:border-slate-300 bg-surface'
           ]"
         >
@@ -547,6 +553,14 @@
           </div>
         </div>
       </div>
+    </template>
+  </modal>
+  <modal v-if="shouldShowAnalyzeSchemaModal" containerClass="md:!w-[70vw]">
+    <template v-slot:body>
+      <analyze-schema-modal
+        :current-model="currentModel"
+        @close="shouldShowAnalyzeSchemaModal = false"
+      ></analyze-schema-modal>
     </template>
   </modal>
   <modal v-if="shouldShowCollectionInfoModal">

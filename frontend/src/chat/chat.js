@@ -305,9 +305,9 @@ module.exports = {
 
     this.draftAgentMode = this.getAgentModePreference();
     this.chatThreadId = this.threadId;
-    const [{ chatThreads }, { capabilities }] = await Promise.all([
+    const [{ chatThreads }, capabilities] = await Promise.all([
       api.ChatThread.listChatThreads(),
-      api.getCapabilities()
+      api.getCapabilities().catch(() => this.capabilities)
     ]);
     this.chatThreads = chatThreads;
     this.capabilities = capabilities;

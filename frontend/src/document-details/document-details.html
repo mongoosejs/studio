@@ -55,6 +55,7 @@
         :editting="editting"
         :changes="changes"
         :highlight="true"
+        :searchQuery="searchQuery"
         :invalid="invalid"></document-property>
     </div>
 
@@ -67,7 +68,7 @@
     <!-- Virtual Field Header (Always Visible) -->
     <div
       @click="toggleVirtualField(path.name)"
-      class="p-3 bg-amber-100 hover:bg-amber-200 cursor-pointer flex items-center justify-between border-b border-edge transition-colors duration-200 ease-in-out"
+      class="p-3 bg-slate-100 hover:bg-muted cursor-pointer flex items-center justify-between border-b border-edge transition-colors duration-200 ease-in-out"
     >
       <div class="flex items-center">
         <svg
@@ -79,7 +80,12 @@
         >
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
-        <span class="font-medium text-content">{{path.name}}</span>
+        <span class="font-medium text-content">
+          <span
+            v-for="(part, index) in getSearchMatchParts(path.name)"
+            :key="index"
+            :class="{ 'font-bold': part.matched }">{{ part.text }}</span>
+        </span>
         <span v-if="path.isVirtual" class="ml-2 text-sm text-purple-600">(virtual - {{getVirtualFieldType(path)}})</span>
         <span v-else class="ml-2 text-sm text-blue-600">(user-added - {{getVirtualFieldType(path)}})</span>
       </div>
@@ -109,6 +115,7 @@
         :editting="editting"
         :changes="changes"
         :highlight="false"
+        :searchQuery="searchQuery"
         :invalid="invalid"></document-property>
     </div>
 
@@ -121,7 +128,7 @@
     <!-- Virtual Field Header (Always Visible) -->
     <div
       @click="toggleVirtualField(path.name)"
-      class="p-3 bg-page hover:bg-muted cursor-pointer flex items-center justify-between border-b border-edge transition-colors duration-200 ease-in-out"
+      class="p-3 bg-slate-100 hover:bg-muted cursor-pointer flex items-center justify-between border-b border-edge transition-colors duration-200 ease-in-out"
     >
       <div class="flex items-center">
         <svg

@@ -26,6 +26,8 @@ module.exports = app => app.component('document', {
     shouldShowConfirmModal: false,
     shouldShowDeleteModal: false,
     shouldShowCloneModal: false,
+    shouldShowValidationModal: false,
+    validationResult: null,
     previousQuery: null,
     lastUpdatedAt: null,
     isRefreshing: false,
@@ -350,6 +352,17 @@ module.exports = app => app.component('document', {
       this.scriptDrawerOpen = true;
       this.desktopMenuOpen = false;
       this.mobileMenuOpen = false;
+    },
+    async openValidationModal() {
+      this.desktopMenuOpen = false;
+      this.mobileMenuOpen = false;
+      this.shouldShowValidationModal = true;
+      this.validationResult = null;
+      const { result } = await api.Model.validateDocument({
+        model: this.model,
+        documentId: this.documentId
+      });
+      this.validationResult = result;
     },
     closeScriptDrawer() {
       this.scriptDrawerOpen = false;

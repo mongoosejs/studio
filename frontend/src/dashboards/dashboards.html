@@ -10,6 +10,23 @@
       </button>
     </div>
 
+    <div v-if="status !== 'loading'" class="mb-5">
+      <label for="dashboard-search" class="sr-only">Search dashboards</label>
+      <div class="relative max-w-lg">
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-content-tertiary">
+          <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+        </div>
+        <input
+          id="dashboard-search"
+          v-model="searchText"
+          type="search"
+          class="block w-full rounded-md border-0 bg-surface py-2 pl-9 pr-3 text-sm text-content shadow-sm ring-1 ring-inset ring-edge placeholder:text-content-tertiary focus:ring-2 focus:ring-inset focus:ring-primary"
+          placeholder="Search by title or description">
+      </div>
+    </div>
+
     <div v-if="status === 'loading'" class="text-center py-12">
       <svg
         class="inline w-8 h-8 animate-spin text-gray-400"
@@ -38,21 +55,52 @@
       </div>
     </div>
 
+    <div v-else-if="filteredDashboards.length === 0" class="text-center py-12">
+      <h3 class="text-sm font-semibold text-content">No matching dashboards</h3>
+      <p class="mt-1 text-sm text-content-tertiary">Try a different title or description.</p>
+    </div>
+
     <div v-else class="space-y-3">
       <div
-        v-for="dashboard in dashboards"
+        v-for="dashboard in filteredDashboards"
         :key="dashboard._id"
-        class="bg-surface rounded-lg border border-edge px-5 py-4 flex items-center justify-between hover:border-edge-strong transition-colors"
+        class="bg-surface rounded-lg border border-edge px-5 py-4 flex items-start justify-between hover:border-edge-strong transition-colors"
       >
         <div class="min-w-0 flex-1 mr-4">
           <router-link
             :to="'/dashboard/' + dashboard._id"
             class="text-sm font-semibold text-content hover:text-primary block truncate">
-            {{ dashboard.title }}
+            <span v-html="highlightTitle(dashboard.title)"></span>
           </router-link>
-          <p v-if="dashboard.description" class="mt-0.5 text-sm text-content-tertiary truncate">{{ dashboard.description }}</p>
+          <p
+            v-if="dashboard.description"
+            class="mt-0.5 text-sm text-content-tertiary truncate"
+            v-html="highlightDescription(dashboard.description)"></p>
+          <dl class="mt-3 grid grid-cols-1 gap-x-4 gap-y-1 text-xs text-content-tertiary sm:grid-cols-3">
+            <div>
+              <dt class="font-medium text-content-secondary">Created At</dt>
+              <dd>{{ formatDate(dashboard.createdAt) }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-content-secondary">Last Evaluated At</dt>
+              <dd>{{ formatDate(dashboard.lastEvaluatedAt) }}</dd>
+            </div>
+            <div v-show="dashboard.createdBy">
+              <dt class="font-medium text-content-secondary">Created By</dt>
+              <dd class="truncate">{{ dashboard.createdBy?.name }}</dd>
+            </div>
+          </dl>
         </div>
         <div class="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            @click="togglePin(dashboard)"
+            :title="dashboard.isPinned ? 'Unpin dashboard' : 'Pin dashboard'"
+            :aria-label="dashboard.isPinned ? 'Unpin dashboard' : 'Pin dashboard'"
+            class="rounded-md bg-surface px-2 py-1.5 text-content-tertiary ring-1 ring-inset ring-gray-300 hover:bg-page"
+            :class="dashboard.isPinned ? 'text-primary ring-primary/40' : ''">
+            <img :src="dashboard.isPinned ? 'images/pin-off.svg' : 'images/pin.svg'" class="w-4 h-4" alt="" />
+          </button>
           <router-link
             :to="'/dashboard/' + dashboard._id"
             class="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover">

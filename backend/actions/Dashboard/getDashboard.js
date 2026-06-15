@@ -51,6 +51,7 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
           return {};
         }
         return completeDashboardEvaluate(
+          Dashboard,
           DashboardResult,
           dashboardResult._id,
           null,
@@ -73,6 +74,7 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
           return {};
         }
         return completeDashboardEvaluate(
+          Dashboard,
           DashboardResult,
           dashboardResult._id,
           result,
@@ -97,13 +99,15 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
   }
 };
 
-async function completeDashboardEvaluate(DashboardResult, dashboardResultId, result, error, status) {
+async function completeDashboardEvaluate(Dashboard, DashboardResult, dashboardResultId, result, error, status) {
   const dashboardResult = await DashboardResult.findById(dashboardResultId).orFail();
-  dashboardResult.finishedEvaluatingAt = new Date();
+  const finishedEvaluatingAt = new Date();
+  dashboardResult.finishedEvaluatingAt = finishedEvaluatingAt;
   dashboardResult.result = result;
   dashboardResult.error = error;
   dashboardResult.status = status;
   await dashboardResult.save();
+  await Dashboard.updateOne({ _id: dashboardResult.dashboardId }, { $set: { lastEvaluatedAt: finishedEvaluatingAt } });
   return { dashboardResult };
 }
 
