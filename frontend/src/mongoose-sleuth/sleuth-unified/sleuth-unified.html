@@ -1,7 +1,7 @@
 <div
   class="relative flex flex-col w-full h-full min-h-0 bg-page"
   :class="{
-    'overflow-hidden h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)]': sleuthContext.isCaseReportDetailRoute,
+    'overflow-hidden h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)]': sleuthContext.isCaseReportDetailRoute,
     'flex flex-col min-h-0 h-full overflow-hidden': !sleuthContext.isCaseReportDetailRoute
   }"
 >
@@ -50,9 +50,9 @@
           <div class="shrink-0 border-b border-edge bg-gradient-to-b from-primary-subtle/40 to-surface px-5 py-4">
             <div class="flex flex-wrap items-center justify-between gap-4">
               <div class="min-w-0">
-                <h2 class="text-lg font-semibold text-content">Documents &amp; notes</h2>
+                <h2 class="text-lg font-semibold text-content">Evidence review</h2>
                 <p class="text-sm text-content-secondary mt-1">
-                  {{ sleuthContext.selectedDocuments.length }} document{{ sleuthContext.selectedDocuments.length === 1 ? '' : 's' }} · review data and write investigation notes
+                  Turn through documents one at a time · compare side-by-side when you need to
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2 shrink-0">
@@ -64,20 +64,16 @@
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-primary" viewBox="0 -960 960 960" fill="currentColor"><path d="M440-440H200v-80h240v-80h80v80h240v80H520v80h-80v-80Zm40 320q-75 0-140.5-28.5t-114-77q-48.5-48.5-77-114T120-440q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-800q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-440q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Z"/></svg>
                   Add documents
                 </button>
-                <span class="isolate inline-flex rounded-md shadow-sm">
-                  <button
-                    type="button"
-                    class="relative inline-flex rounded-l-md px-2.5 py-1.5 text-[11px] font-medium ring-1 ring-inset ring-edge hover:bg-muted"
-                    :class="investigationViewMode === 'list' ? 'bg-muted text-content' : 'bg-surface text-content-secondary'"
-                    @click="setInvestigationViewMode('list')"
-                  >List</button>
-                  <button
-                    type="button"
-                    class="relative -ml-px inline-flex rounded-r-md px-2.5 py-1.5 text-[11px] font-medium ring-1 ring-inset ring-edge hover:bg-muted"
-                    :class="investigationViewMode === 'compare' ? 'bg-muted text-content' : 'bg-surface text-content-secondary'"
-                    @click="openCompareView"
-                  >Compare<span v-if="compareDocumentKeys.length" class="ml-1 opacity-70">({{ compareDocumentKeys.length }})</span></button>
-                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary-subtle/50 px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  :disabled="sleuthContext.selectedDocuments.length === 0"
+                  @click="openCompareModal"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h6v14H4V5zm10 0h6v14h-6V5z"/></svg>
+                  Compare
+                  <span v-if="compareDocumentKeys.length" class="opacity-70">({{ compareDocumentKeys.length }})</span>
+                </button>
                 <span class="isolate inline-flex rounded-md shadow-sm">
                   <button
                     type="button"
@@ -169,18 +165,8 @@
             class="shrink-0 border-b border-edge bg-surface px-5 py-3"
           >
             <div class="flex items-center justify-between gap-2 mb-2.5">
-              <p class="text-xs font-semibold text-content-secondary">{{ investigationViewMode === 'compare' ? 'Document columns' : 'Timeline' }}</p>
-              <div class="flex items-center gap-2">
-                <p class="text-[10px] text-content-tertiary">{{ investigationViewMode === 'compare' ? 'Check to compare · drag to reorder' : 'Drag to reorder · click to jump' }}</p>
-                <button
-                  v-if="investigationViewMode === 'compare' && compareDocumentKeys.length"
-                  type="button"
-                  class="text-[10px] font-medium text-content-secondary hover:text-content underline"
-                  @click="clearCompareColumns"
-                >
-                  Clear columns
-                </button>
-              </div>
+              <p class="text-xs font-semibold text-content-secondary">Contents</p>
+              <p class="text-[10px] text-content-tertiary">Jump to a document · drag to reorder · ← → to turn pages</p>
             </div>
             <div class="flex items-stretch gap-2 overflow-x-auto pb-1 overscroll-x-contain">
               <div
@@ -196,22 +182,14 @@
                   'opacity-40 scale-[0.98]': isTimelineDragging(index),
                   'border-dashed border-primary bg-primary-subtle/20': isTimelineDropTarget(index)
                 }"
-                @click="scrollToInvestigationDocument(doc)"
-                @keydown.enter.prevent="scrollToInvestigationDocument(doc)"
+                @click="focusNotebookDocument(doc)"
+                @keydown.enter.prevent="focusNotebookDocument(doc)"
                 @dragstart.stop="onTimelineDragStart(index, $event)"
                 @dragover.prevent.stop="onTimelineDragOver(index, $event)"
                 @dragleave.stop="onTimelineDragLeave"
                 @drop.stop="onTimelineDrop(index, $event)"
                 @dragend="onTimelineDragEnd"
               >
-                <input
-                  v-if="investigationViewMode === 'compare'"
-                  type="checkbox"
-                  class="rounded border-edge-strong text-primary focus:ring-primary-subtle shrink-0 cursor-pointer"
-                  :checked="isCompareColumn(doc)"
-                  :aria-label="'Compare ' + sleuthContext.getTimelineShortLabel(doc)"
-                  @click.prevent.stop="toggleCompareColumn(doc, $event)"
-                />
                 <span
                   class="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold shrink-0"
                   :class="isTimelineChipHighlighted(doc) ? 'bg-primary text-primary-text' : 'bg-surface text-primary ring-1 ring-inset ring-edge'"
@@ -220,141 +198,33 @@
                   <div class="font-semibold text-content truncate">{{ sleuthContext.getTimelineShortLabel(doc) }}</div>
                   <div class="text-[10px] text-content-tertiary truncate">{{ doc.model }}</div>
                 </div>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-content-tertiary opacity-40 group-hover:opacity-70" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M9 5h2v2H9V5zm0 6h2v2H9v-2zm0 6h2v2H9v-2zm4-12h2v2h-2V5zm0 6h2v2h-2v-2zm0 6h2v2h-2v-2z"/>
-                </svg>
               </div>
             </div>
           </div>
 
-          <div
-            v-if="investigationViewMode === 'compare'"
-            class="flex-1 min-h-0 overflow-auto overscroll-contain p-5 bg-muted/20"
-          >
-            <div v-if="compareDocuments.length === 0" class="flex flex-col items-center justify-center gap-3 h-full py-16 text-center">
-              <p class="text-sm font-semibold text-content">No documents selected for compare</p>
-              <p class="text-xs text-content-secondary max-w-sm">Check documents in the column strip above.</p>
-            </div>
-            <div v-else class="flex items-stretch gap-4 min-w-min pb-1" :class="investigationDisplayType === 'json' ? 'min-h-[min(36rem,calc(100vh-14rem))]' : 'min-h-[min(32rem,calc(100vh-15rem))]'">
-              <div
-                v-for="(doc, colIndex) in compareDocuments"
-                :key="'compare-' + sleuthContext.getDocumentKey(doc)"
-                class="flex flex-col shrink-0 rounded-xl border border-edge bg-surface shadow-sm overflow-hidden"
-                :class="investigationDisplayType === 'json'
-                  ? 'min-w-[26rem] w-[min(40rem,48vw)] h-[min(36rem,calc(100vh-14rem))]'
-                  : 'min-w-[18rem] w-[min(26rem,38vw)] h-[min(32rem,calc(100vh-15rem))]'"
-              >
-                <div class="shrink-0 border-b border-edge bg-muted/40 px-3 py-2.5">
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="min-w-0">
-                      <p class="text-[10px] font-semibold uppercase tracking-wide text-primary">Column {{ colIndex + 1 }}</p>
-                      <p class="text-xs font-semibold text-content truncate mt-0.5">{{ sleuthContext.getInvestigationDocumentHeading(doc) }}</p>
-                    </div>
-                    <div class="flex shrink-0 items-center gap-1">
-                      <a
-                        :href="sleuthContext.documentHref(doc)"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="inline-flex items-center rounded-md border border-edge-strong bg-surface px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-muted"
-                      >Open</a>
-                      <button
-                        type="button"
-                        class="inline-flex items-center justify-center rounded-md border border-edge-strong bg-surface p-1 text-content-tertiary hover:bg-muted"
-                        aria-label="Remove from compare"
-                        @click="toggleCompareColumn(doc)"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
-                      </button>
-                    </div>
+          <div class="flex-1 min-h-0 flex flex-col bg-muted/20">
+            <template v-if="activeNotebookDocument">
+              <div class="sleuth-book-page flex flex-col flex-1 min-h-0 border-t border-edge">
+                <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-edge/80 bg-surface">
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">
+                      Document {{ activeNotebookIndex + 1 }} of {{ sleuthContext.selectedDocuments.length }}
+                    </p>
+                    <h3 class="text-sm font-semibold text-content truncate mt-0.5">{{ sleuthContext.getInvestigationDocumentHeading(activeNotebookDocument) }}</h3>
                   </div>
-                </div>
-                <div
-                  class="flex flex-1 min-h-0 flex-col divide-edge"
-                  :class="investigationDisplayType === 'json' ? '' : 'lg:flex-row lg:divide-x'"
-                >
-                  <div
-                    class="flex-1 min-h-0 overflow-auto p-3 bg-muted/20"
-                    :class="investigationDisplayType === 'json' ? 'sleuth-compare-json-scroll min-h-[18rem]' : 'min-h-[10rem] lg:min-h-0'"
-                  >
-                    <list-json
-                      v-if="investigationDisplayType === 'json'"
-                      :value="sleuthContext.filterInvestigationDocument(doc)"
-                      :references="sleuthContext.getInvestigationReferenceMap(doc)"
-                    />
-                    <div v-else class="flex flex-col">
-                      <div
-                        v-for="path in sleuthContext.getInvestigationTablePaths(doc)"
-                        :key="path.path"
-                        class="py-2 border-b border-edge first:pt-0 last:border-b-0 last:pb-0"
-                      >
-                        <div class="text-[10px] font-semibold tracking-wide text-content-tertiary font-mono break-all leading-snug mb-0.5" :title="path.path">{{ path.path }}</div>
-                        <div class="text-xs text-content min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed">
-                          <component
-                            :is="sleuthContext.getComponentForPath(path)"
-                            :value="sleuthContext.getValueForPath(doc, path.path)"
-                            :allude="sleuthContext.getReferenceModel(path)"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    class="shrink-0 flex flex-col gap-2 p-3 border-edge bg-surface min-h-[9rem]"
-                    :class="investigationDisplayType === 'json' ? 'border-t' : 'border-t lg:border-t-0 lg:w-56 xl:w-64 lg:min-h-0'"
-                  >
-                    <label class="text-[11px] font-semibold text-content-secondary">Notes</label>
-                    <textarea
-                      class="flex-1 min-h-[7rem] w-full rounded-lg border border-edge-strong bg-surface px-2.5 py-2 text-xs text-content resize-y focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle"
-                      :value="sleuthContext.getDocumentNote(doc)"
-                      @input="sleuthContext.setDocumentNote(doc, $event.target.value)"
-                      placeholder="Notes for this document…"
-                    />
-                    <async-button
+                  <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                    <button
                       type="button"
-                      class="self-end rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-text hover:bg-primary-hover disabled:opacity-50"
-                      :disabled="!sleuthContext.currentCaseReportId"
-                      @click="sleuthContext.saveDocumentNote(doc)"
+                      class="rounded-md border px-2 py-1 text-xs font-medium transition-colors"
+                      :class="isCompareColumn(activeNotebookDocument)
+                        ? 'border-primary/40 bg-primary-subtle/50 text-primary'
+                        : 'border-edge-strong bg-surface text-content-secondary hover:bg-muted'"
+                      @click="addActiveDocumentToCompare"
                     >
-                      Save note
-                    </async-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-else ref="investigationDocList" class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain p-5 space-y-4 bg-muted/20">
-              <div
-                v-for="doc in sleuthContext.selectedDocuments"
-                :key="sleuthContext.getDocumentKey(doc)"
-                :data-doc-key="sleuthContext.getDocumentKey(doc)"
-                class="rounded-xl border bg-surface text-sm overflow-hidden shadow-sm transition-shadow"
-                :class="sleuthContext.isInvestigationDocumentFocused(doc) ? 'border-primary ring-1 ring-primary/20 shadow-md' : 'border-edge'"
-              >
-                <div
-                  class="flex items-start justify-between gap-3 px-4 py-3 bg-muted/40 cursor-pointer hover:bg-muted/60 transition-colors"
-                  :class="sleuthContext.isInvestigationDocPreviewOpen(doc) ? 'border-b border-edge' : ''"
-                  role="button"
-                  tabindex="0"
-                  :aria-expanded="sleuthContext.isInvestigationDocPreviewOpen(doc) ? 'true' : 'false'"
-                  @click="sleuthContext.focusInvestigationDocument(doc); sleuthContext.toggleInvestigationDocPreview(doc)"
-                  @keydown.enter.prevent="sleuthContext.toggleInvestigationDocPreview(doc)"
-                  @keydown.space.prevent="sleuthContext.toggleInvestigationDocPreview(doc)"
-                >
-                  <div class="flex items-start gap-1.5 flex-1 min-w-0">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="w-4 h-4 shrink-0 text-content-tertiary transition-transform mt-0.5"
-                      :class="{ 'rotate-90': sleuthContext.isInvestigationDocPreviewOpen(doc) }"
-                      viewBox="0 -960 960 960"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    ><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>
-                    <div class="font-semibold text-content leading-snug min-w-0">{{ sleuthContext.getInvestigationDocumentHeading(doc) }}</div>
-                  </div>
-                  <div class="flex shrink-0 items-center gap-1" @click.stop>
+                      {{ isCompareColumn(activeNotebookDocument) ? 'Open compare' : 'Add to compare' }}
+                    </button>
                     <a
-                      :href="sleuthContext.documentHref(doc)"
+                      :href="sleuthContext.documentHref(activeNotebookDocument)"
                       target="_blank"
                       rel="noopener noreferrer"
                       class="inline-flex items-center rounded-md border border-edge-strong bg-surface px-2.5 py-1 text-xs font-medium text-primary hover:bg-muted"
@@ -363,63 +233,94 @@
                       type="button"
                       class="inline-flex items-center justify-center rounded-md border border-edge-strong bg-surface p-1 text-content-tertiary hover:bg-red-50 hover:text-red-700"
                       aria-label="Remove from case report"
-                      @click="sleuthContext.removeSelectedDocument(doc)"
+                      @click="sleuthContext.removeSelectedDocument(activeNotebookDocument)"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
                     </button>
                   </div>
                 </div>
-                <div v-show="sleuthContext.isInvestigationDocPreviewOpen(doc)" class="p-4">
-                  <div class="flex flex-col lg:flex-row lg:items-stretch gap-4 lg:gap-5 min-h-[min(22rem,42vh)]">
-                    <div class="flex-1 min-h-[14rem] lg:min-h-0 min-w-0 overflow-auto rounded-lg border border-edge bg-muted/30 p-3">
+                <div class="sleuth-book-page-body lg:divide-x divide-edge">
+                  <div class="flex-1 min-h-0 overflow-auto p-5">
                     <list-json
                       v-if="investigationDisplayType === 'json'"
-                      :value="sleuthContext.filterInvestigationDocument(doc)"
-                      :references="sleuthContext.getInvestigationReferenceMap(doc)"
+                      :value="sleuthContext.filterInvestigationDocument(activeNotebookDocument)"
+                      :references="sleuthContext.getInvestigationReferenceMap(activeNotebookDocument)"
                     />
-                    <div v-else class="flex flex-col">
+                    <div v-else class="flex flex-col max-w-3xl">
                       <div
-                        v-for="path in sleuthContext.getInvestigationTablePaths(doc)"
+                        v-for="path in sleuthContext.getInvestigationTablePaths(activeNotebookDocument)"
                         :key="path.path"
-                        class="py-2.5 border-b border-edge first:pt-0 last:border-b-0 last:pb-0"
+                        class="py-2.5 border-b border-edge/70 first:pt-0 last:border-b-0 last:pb-0"
                       >
                         <div class="text-[11px] font-semibold tracking-wide text-content-tertiary font-mono break-all leading-snug mb-1" :title="path.path">{{ path.path }}</div>
                         <div class="text-sm text-content min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed">
                           <component
                             :is="sleuthContext.getComponentForPath(path)"
-                            :value="sleuthContext.getValueForPath(doc, path.path)"
+                            :value="sleuthContext.getValueForPath(activeNotebookDocument, path.path)"
                             :allude="sleuthContext.getReferenceModel(path)"
                           />
                         </div>
                       </div>
                       <p
-                        v-if="sleuthContext.getInvestigationTablePaths(doc).length === 0"
+                        v-if="sleuthContext.getInvestigationTablePaths(activeNotebookDocument).length === 0"
                         class="text-sm text-content-tertiary text-center py-4"
                       >
                         No fields to display. Adjust projection in settings.
                       </p>
                     </div>
-                    </div>
-                    <div class="shrink-0 flex flex-col gap-2 pt-4 border-t border-edge lg:pt-0 lg:border-t-0 lg:border-l lg:pl-5 lg:w-72 xl:w-80 lg:shrink-0">
-                    <label class="text-xs font-semibold text-content-secondary">Notes</label>
+                  </div>
+                  <div class="sleuth-book-page-notes">
+                    <label class="text-xs font-semibold text-content-secondary shrink-0">Observations</label>
                     <textarea
-                      class="min-h-[6rem] lg:min-h-0 lg:flex-1 w-full rounded-lg border border-edge-strong bg-surface px-3 py-2.5 text-sm text-content resize-y focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle"
-                      :value="sleuthContext.getDocumentNote(doc)"
-                      @input="sleuthContext.setDocumentNote(doc, $event.target.value)"
-                      placeholder="Notes for this document…"
+                      class="w-full rounded-lg border border-edge-strong bg-surface px-3 py-2.5 text-sm text-content resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle"
+                      :value="sleuthContext.getDocumentNote(activeNotebookDocument)"
+                      @input="sleuthContext.setDocumentNote(activeNotebookDocument, $event.target.value)"
+                      placeholder="What stands out? Hypotheses, links to other docs, next checks…"
                     />
                     <async-button
                       type="button"
                       class="self-end rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-text hover:bg-primary-hover disabled:opacity-50"
                       :disabled="!sleuthContext.currentCaseReportId"
-                      @click="sleuthContext.saveDocumentNote(doc)"
+                      @click="sleuthContext.saveDocumentNote(activeNotebookDocument)"
                     >
                       Save note
                     </async-button>
-                    </div>
                   </div>
                 </div>
+                <footer class="shrink-0 flex items-center justify-between gap-3 border-t border-edge bg-muted/30 px-5 py-3">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-md border border-edge-strong bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                    :disabled="activeNotebookIndex <= 0"
+                    @click="goToAdjacentNotebookDocument(-1)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg>
+                    Previous
+                  </button>
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <button
+                      v-for="(doc, index) in sleuthContext.selectedDocuments"
+                      :key="'page-dot-' + sleuthContext.getDocumentKey(doc)"
+                      type="button"
+                      class="h-2 rounded-full transition-all shrink-0"
+                      :class="index === activeNotebookIndex ? 'w-5 bg-primary' : 'w-2 bg-edge-strong hover:bg-content-tertiary'"
+                      :title="sleuthContext.getTimelineShortLabel(doc)"
+                      :aria-label="'Go to document ' + (index + 1)"
+                      @click="focusNotebookDocument(doc)"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-md border border-edge-strong bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                    :disabled="activeNotebookIndex >= sleuthContext.selectedDocuments.length - 1"
+                    @click="goToAdjacentNotebookDocument(1)"
+                  >
+                    Next
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>
+                  </button>
+                </footer>
               </div>
+            </template>
             <div v-if="sleuthContext.selectedDocuments.length === 0" class="flex flex-col items-center justify-center gap-3 py-20 px-4 text-center">
               <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-subtle text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm160-240h320v-80H320v80Zm0-160h320v-80H320v80ZM160-240v-480 480Z"/></svg>
@@ -630,21 +531,13 @@
             <span v-if="sleuthContext.hasSourceFromModelsView"> · Select in the list and use <span class="font-medium text-gray-700">Add to Sleuth</span></span>
           </p>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <span class="isolate inline-flex rounded-md shadow-sm">
-            <button
-              type="button"
-              class="relative inline-flex rounded-l-md px-2 py-1.5 text-[11px] font-medium ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              :class="investigationViewMode === 'list' ? 'bg-gray-200 text-gray-900' : 'bg-white text-gray-600'"
-              @click="setInvestigationViewMode('list')"
-            >List</button>
-            <button
-              type="button"
-              class="relative -ml-px inline-flex rounded-r-md px-2 py-1.5 text-[11px] font-medium ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              :class="investigationViewMode === 'compare' ? 'bg-gray-200 text-gray-900' : 'bg-white text-gray-600'"
-              @click="openCompareView"
-            >Compare</button>
-          </span>
+        <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          <button
+            type="button"
+            class="rounded px-2 py-1.5 text-[11px] font-semibold text-primary ring-1 ring-inset ring-primary/30 bg-blue-50 hover:bg-blue-100 disabled:opacity-40"
+            :disabled="sleuthContext.selectedDocuments.length === 0"
+            @click="openCompareModal"
+          >Compare</button>
           <span class="isolate inline-flex rounded-md shadow-sm">
             <button
               type="button"
@@ -734,7 +627,7 @@
         v-if="sleuthContext.selectedDocuments.length > 0"
         class="shrink-0 mb-3 pb-3 border-b border-gray-200"
       >
-        <p class="text-[10px] font-semibold text-gray-500 mb-1.5">{{ investigationViewMode === 'compare' ? 'Document columns · check to compare' : 'Timeline · drag to reorder' }}</p>
+        <p class="text-[10px] font-semibold text-gray-500 mb-1.5">Contents</p>
         <div class="flex gap-1.5 overflow-x-auto pb-0.5">
           <div
             v-for="(doc, index) in sleuthContext.selectedDocuments"
@@ -749,181 +642,64 @@
               'opacity-40': isTimelineDragging(index),
               'border-dashed border-primary': isTimelineDropTarget(index)
             }"
-            @click="scrollToInvestigationDocument(doc)"
+            @click="focusNotebookDocument(doc)"
             @dragstart.stop="onTimelineDragStart(index, $event)"
             @dragover.prevent.stop="onTimelineDragOver(index, $event)"
             @dragleave.stop="onTimelineDragLeave"
             @drop.stop="onTimelineDrop(index, $event)"
             @dragend="onTimelineDragEnd"
           >
-            <input
-              v-if="investigationViewMode === 'compare'"
-              type="checkbox"
-              class="rounded border-gray-300 text-primary focus:ring-primary shrink-0 cursor-pointer"
-              :checked="isCompareColumn(doc)"
-              @click.prevent.stop="toggleCompareColumn(doc, $event)"
-            />
             <span class="font-bold text-primary">{{ index + 1 }}</span>
             <span class="truncate max-w-[5rem] text-gray-800">{{ sleuthContext.getTimelineShortLabel(doc) }}</span>
           </div>
         </div>
       </div>
 
-      <div
-        v-if="investigationViewMode === 'compare'"
-        class="flex-1 min-h-0 overflow-auto p-2"
-      >
-        <div v-if="compareDocuments.length === 0" class="text-xs text-gray-500 text-center py-8">
-          Check documents above to compare.
-        </div>
-        <div v-else class="flex gap-2 min-w-min pb-1" :class="investigationDisplayType === 'json' ? 'min-h-[16rem] h-[min(32rem,calc(100vh-12rem))]' : 'min-h-[14rem] h-[min(28rem,calc(100vh-12rem))]'">
-          <div
-            v-for="(doc, colIndex) in compareDocuments"
-            :key="'sb-compare-' + sleuthContext.getDocumentKey(doc)"
-            class="flex flex-col shrink-0 h-full rounded-lg border border-gray-200 bg-white overflow-hidden"
-            :class="investigationDisplayType === 'json' ? 'min-w-[15rem] w-64' : 'min-w-[12rem] w-52'"
-          >
-            <div class="shrink-0 border-b border-gray-100 bg-gray-50 px-2 py-1.5">
-              <p class="text-[9px] font-semibold uppercase text-primary">Col {{ colIndex + 1 }}</p>
-              <p class="text-[10px] font-medium text-gray-900 truncate">{{ sleuthContext.getTimelineShortLabel(doc) }}</p>
+      <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <template v-if="activeNotebookDocument">
+          <div class="sleuth-book-page flex flex-col flex-1 min-h-0 border border-gray-200 rounded-lg overflow-hidden">
+            <div class="shrink-0 px-2.5 py-2 border-b border-gray-200 bg-white flex items-center justify-between gap-2">
+              <p class="text-[10px] font-medium text-gray-700 truncate">
+                {{ activeNotebookIndex + 1 }} / {{ sleuthContext.selectedDocuments.length }} · {{ sleuthContext.getTimelineShortLabel(activeNotebookDocument) }}
+              </p>
             </div>
-            <div class="flex flex-1 min-h-0 flex-col">
-              <div
-                class="flex-1 overflow-auto p-2 bg-gray-50/80 text-xs"
-                :class="investigationDisplayType === 'json' ? 'sleuth-compare-json-scroll min-h-[10rem]' : 'min-h-[6rem]'"
-              >
-                <list-json
-                  v-if="investigationDisplayType === 'json'"
-                  :value="sleuthContext.filterInvestigationDocument(doc)"
-                  :references="sleuthContext.getInvestigationReferenceMap(doc)"
-                />
-                <div v-else class="flex flex-col">
-                  <div
-                    v-for="path in sleuthContext.getInvestigationTablePaths(doc)"
-                    :key="path.path"
-                    class="py-1 border-b border-gray-100 last:border-0"
-                  >
-                    <div class="text-[9px] font-semibold text-gray-500 font-mono truncate">{{ path.path }}</div>
-                    <div class="text-[10px] text-gray-900 break-words">
-                      <component
-                        :is="sleuthContext.getComponentForPath(path)"
-                        :value="sleuthContext.getValueForPath(doc, path.path)"
-                        :allude="sleuthContext.getReferenceModel(path)"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="shrink-0 border-t border-gray-100 p-2 flex flex-col gap-1 min-h-[6rem] bg-white">
-                <label class="text-[9px] font-semibold text-gray-500">Notes</label>
-                <textarea
-                  class="flex-1 min-h-[4rem] w-full rounded border border-gray-300 px-2 py-1 text-[10px] text-gray-900 resize-y focus:border-primary focus:outline-none"
-                  :value="sleuthContext.getDocumentNote(doc)"
-                  @input="sleuthContext.setDocumentNote(doc, $event.target.value)"
-                  placeholder="Notes…"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-else ref="sidebarDocList" class="flex-1 min-h-0 overflow-y-auto space-y-3">
-        <div
-          v-for="doc in sleuthContext.selectedDocuments"
-          :key="sleuthContext.getDocumentKey(doc)"
-          :data-doc-key="sleuthContext.getDocumentKey(doc)"
-          class="border rounded-lg bg-white text-xs overflow-hidden"
-          :class="sleuthContext.isInvestigationDocumentFocused(doc) ? 'border-primary ring-1 ring-primary/20' : 'border-gray-200'"
-        >
-          <div
-            class="flex items-start justify-between gap-2 px-2.5 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
-            :class="sleuthContext.isInvestigationDocPreviewOpen(doc) ? 'border-b border-gray-100' : ''"
-            role="button"
-            tabindex="0"
-            :aria-expanded="sleuthContext.isInvestigationDocPreviewOpen(doc) ? 'true' : 'false'"
-            @click="sleuthContext.focusInvestigationDocument(doc); sleuthContext.toggleInvestigationDocPreview(doc)"
-            @keydown.enter.prevent="sleuthContext.toggleInvestigationDocPreview(doc)"
-            @keydown.space.prevent="sleuthContext.toggleInvestigationDocPreview(doc)"
-          >
-            <div class="flex items-start gap-1.5 flex-1 min-w-0">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-3.5 h-3.5 shrink-0 text-gray-400 transition-transform mt-0.5"
-                :class="{ 'rotate-90': sleuthContext.isInvestigationDocPreviewOpen(doc) }"
-                viewBox="0 -960 960 960"
-                fill="currentColor"
-                aria-hidden="true"
-              ><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>
-              <div class="font-medium text-gray-900 leading-snug min-w-0">{{ sleuthContext.getInvestigationDocumentHeading(doc) }}</div>
-            </div>
-            <div class="flex shrink-0 items-center gap-1" @click.stop>
-              <a
-                :href="sleuthContext.documentHref(doc)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="rounded border border-gray-300 bg-white px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-gray-50"
-              >Open</a>
-              <button
-                type="button"
-                class="rounded border border-gray-300 bg-white p-1 text-gray-500 hover:bg-red-50 hover:text-red-700"
-                aria-label="Remove from case report"
-                @click="sleuthContext.removeSelectedDocument(doc)"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
-              </button>
-            </div>
-          </div>
-          <div v-show="sleuthContext.isInvestigationDocPreviewOpen(doc)" class="p-2.5">
-            <div class="flex flex-col gap-3 min-h-[18rem]">
-              <div class="flex-[2] min-h-[12rem] overflow-auto rounded-lg border border-gray-100 bg-gray-50 p-2.5">
+            <div class="flex-1 min-h-0 overflow-auto p-2 text-xs bg-surface">
               <list-json
                 v-if="investigationDisplayType === 'json'"
-                :value="sleuthContext.filterInvestigationDocument(doc)"
-                :references="sleuthContext.getInvestigationReferenceMap(doc)"
+                :value="sleuthContext.filterInvestigationDocument(activeNotebookDocument)"
+                :references="sleuthContext.getInvestigationReferenceMap(activeNotebookDocument)"
               />
               <div v-else class="flex flex-col">
-                <div
-                  v-for="path in sleuthContext.getInvestigationTablePaths(doc)"
-                  :key="path.path"
-                  class="py-2 border-b border-gray-100 first:pt-0 last:border-b-0 last:pb-0"
-                >
-                  <div class="text-[10px] font-semibold tracking-wide text-gray-500 font-mono break-all leading-snug mb-0.5" :title="path.path">{{ path.path }}</div>
-                  <div class="text-xs text-gray-900 min-w-0 break-words [overflow-wrap:anywhere] leading-snug">
-                    <component
-                      :is="sleuthContext.getComponentForPath(path)"
-                      :value="sleuthContext.getValueForPath(doc, path.path)"
-                      :allude="sleuthContext.getReferenceModel(path)"
-                    />
-                  </div>
+                <div v-for="path in sleuthContext.getInvestigationTablePaths(activeNotebookDocument)" :key="path.path" class="py-1 border-b border-gray-100 last:border-0">
+                  <div class="text-[9px] font-semibold text-gray-500 font-mono">{{ path.path }}</div>
+                  <component :is="sleuthContext.getComponentForPath(path)" :value="sleuthContext.getValueForPath(activeNotebookDocument, path.path)" :allude="sleuthContext.getReferenceModel(path)" />
                 </div>
-                <p
-                  v-if="sleuthContext.getInvestigationTablePaths(doc).length === 0"
-                  class="text-xs text-gray-500 text-center py-4"
-                >
-                  No fields to display. Adjust projection in settings.
-                </p>
-              </div>
-              </div>
-              <div class="shrink-0 flex flex-col gap-1.5 pt-2 border-t border-gray-100">
-              <textarea
-                class="min-h-[4rem] w-full rounded border border-gray-300 px-2 py-1.5 text-xs text-gray-900 resize-y focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                :value="sleuthContext.getDocumentNote(doc)"
-                @input="sleuthContext.setDocumentNote(doc, $event.target.value)"
-                placeholder="Notes for this document…"
-              />
-              <async-button
-                type="button"
-                class="self-end rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                :disabled="!sleuthContext.currentCaseReportId"
-                @click="sleuthContext.saveDocumentNote(doc)"
-              >
-                Save
-              </async-button>
               </div>
             </div>
+            <div class="shrink-0 border-t border-gray-200 p-2 bg-white">
+              <textarea
+                class="min-h-[3.5rem] w-full rounded border border-gray-300 px-2 py-1 text-[10px] text-gray-900 resize-none focus:border-primary focus:outline-none"
+                :value="sleuthContext.getDocumentNote(activeNotebookDocument)"
+                @input="sleuthContext.setDocumentNote(activeNotebookDocument, $event.target.value)"
+                placeholder="Observations…"
+              />
+            </div>
+            <footer class="shrink-0 flex items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 px-2 py-1.5">
+              <button type="button" class="text-[10px] px-2 py-0.5 border border-gray-300 rounded bg-white disabled:opacity-40" :disabled="activeNotebookIndex <= 0" @click="goToAdjacentNotebookDocument(-1)">Prev</button>
+              <div class="flex items-center gap-1">
+                <button
+                  v-for="(doc, index) in sleuthContext.selectedDocuments"
+                  :key="'sb-dot-' + sleuthContext.getDocumentKey(doc)"
+                  type="button"
+                  class="h-1.5 rounded-full transition-all"
+                  :class="index === activeNotebookIndex ? 'w-3 bg-primary' : 'w-1.5 bg-gray-300'"
+                  @click="focusNotebookDocument(doc)"
+                />
+              </div>
+              <button type="button" class="text-[10px] px-2 py-0.5 border border-gray-300 rounded bg-white disabled:opacity-40" :disabled="activeNotebookIndex >= sleuthContext.selectedDocuments.length - 1" @click="goToAdjacentNotebookDocument(1)">Next</button>
+            </footer>
           </div>
-        </div>
+        </template>
         <p v-if="sleuthContext.selectedDocuments.length === 0" class="text-xs text-gray-500 text-center py-8">
           <template v-if="sleuthContext.hasSourceFromModelsView">
             Select documents in the main list, then use <span class="font-medium">Add to Sleuth</span>.
@@ -935,6 +711,135 @@
       </div>
     </div>
   </template>
+
+  <modal
+    v-if="showCompareModal"
+    :flush-container="true"
+    containerClass="sleuth-compare-modal-container"
+    bodyClass="sleuth-compare-modal-body"
+  >
+    <template v-slot:body>
+      <header class="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-edge bg-surface px-4 py-3 sm:px-5">
+        <div class="min-w-0">
+          <h2 class="text-base font-bold text-content">Compare documents</h2>
+          <p class="text-xs text-content-secondary mt-0.5">Side-by-side workspace · pick columns below</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <span class="isolate inline-flex rounded-md shadow-sm">
+            <button
+              type="button"
+              class="relative inline-flex rounded-l-md px-2.5 py-1.5 text-[11px] font-medium ring-1 ring-inset ring-edge hover:bg-muted"
+              :class="investigationDisplayType === 'table' ? 'bg-muted text-content' : 'bg-surface text-content-secondary'"
+              @click="setInvestigationDisplayType('table')"
+            >Table</button>
+            <button
+              type="button"
+              class="relative -ml-px inline-flex rounded-r-md px-2.5 py-1.5 text-[11px] font-medium ring-1 ring-inset ring-edge hover:bg-muted"
+              :class="investigationDisplayType === 'json' ? 'bg-muted text-content' : 'bg-surface text-content-secondary'"
+              @click="setInvestigationDisplayType('json')"
+            >JSON</button>
+          </span>
+          <button
+            v-if="compareDocumentKeys.length"
+            type="button"
+            class="text-[11px] font-medium text-content-secondary hover:text-content underline"
+            @click="clearCompareColumns"
+          >Clear selection</button>
+          <button type="button" class="modal-exit" data-modal-close @click="closeCompareModal">Close</button>
+        </div>
+      </header>
+
+      <div class="shrink-0 border-b border-edge bg-muted/30 px-4 py-2.5 sm:px-5">
+        <p class="text-[10px] font-semibold uppercase tracking-wide text-content-tertiary mb-2">Columns</p>
+        <div class="flex flex-wrap gap-2">
+          <label
+            v-for="(doc, index) in sleuthContext.selectedDocuments"
+            :key="'cmp-pick-' + sleuthContext.getDocumentKey(doc)"
+            class="inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs cursor-pointer transition-colors"
+            :class="isCompareColumn(doc) ? 'border-primary bg-primary-subtle/40 text-content' : 'border-edge bg-surface text-content-secondary hover:bg-muted'"
+          >
+            <input
+              type="checkbox"
+              class="rounded border-edge-strong text-primary focus:ring-primary-subtle"
+              :checked="isCompareColumn(doc)"
+              @change="toggleCompareColumn(doc, $event)"
+            />
+            <span class="font-semibold text-primary">{{ index + 1 }}</span>
+            <span class="truncate max-w-[10rem]">{{ sleuthContext.getTimelineShortLabel(doc) }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="sleuth-compare-modal-columns bg-page">
+        <div v-if="compareDocuments.length === 0" class="flex flex-1 items-center justify-center text-sm text-content-secondary px-4">
+          Select at least one document above to compare.
+        </div>
+        <div v-else class="sleuth-compare-modal-scroll">
+          <div class="sleuth-compare-modal-scroll-inner">
+            <div
+              v-for="(doc, colIndex) in compareDocuments"
+              :key="'modal-compare-' + sleuthContext.getDocumentKey(doc)"
+              class="sleuth-compare-modal-column rounded-xl border border-edge bg-surface shadow-sm"
+              :class="investigationDisplayType === 'json'
+                ? 'w-[min(42rem,48vw)] min-w-[28rem]'
+                : 'w-[min(28rem,32vw)] min-w-[20rem]'"
+            >
+              <div class="shrink-0 border-b border-edge bg-muted/40 px-3 py-2.5">
+                <p class="text-[10px] font-semibold uppercase tracking-wide text-primary">Column {{ colIndex + 1 }}</p>
+                <p class="text-xs font-semibold text-content truncate mt-0.5">{{ sleuthContext.getInvestigationDocumentHeading(doc) }}</p>
+              </div>
+              <div class="sleuth-compare-modal-column-body lg:divide-x divide-edge">
+                <div
+                  class="flex-1 min-h-0 overflow-auto p-3 bg-muted/20"
+                  :class="investigationDisplayType === 'json' ? 'sleuth-compare-json-scroll' : ''"
+                >
+                  <list-json
+                    v-if="investigationDisplayType === 'json'"
+                    :value="sleuthContext.filterInvestigationDocument(doc)"
+                    :references="sleuthContext.getInvestigationReferenceMap(doc)"
+                  />
+                  <div v-else class="flex flex-col">
+                    <div
+                      v-for="path in sleuthContext.getInvestigationTablePaths(doc)"
+                      :key="path.path"
+                      class="py-2 border-b border-edge first:pt-0 last:border-b-0 last:pb-0"
+                    >
+                      <div class="text-[10px] font-semibold tracking-wide text-content-tertiary font-mono break-all leading-snug mb-0.5" :title="path.path">{{ path.path }}</div>
+                      <div class="text-xs text-content min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed">
+                        <component
+                          :is="sleuthContext.getComponentForPath(path)"
+                          :value="sleuthContext.getValueForPath(doc, path.path)"
+                          :allude="sleuthContext.getReferenceModel(path)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="sleuth-compare-modal-column-notes">
+                  <label class="text-[11px] font-semibold text-content-secondary shrink-0">Observations</label>
+                  <textarea
+                    class="w-full rounded-lg border border-edge-strong bg-surface px-2.5 py-2 text-xs text-content resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle"
+                    :value="sleuthContext.getDocumentNote(doc)"
+                    @input="sleuthContext.setDocumentNote(doc, $event.target.value)"
+                    placeholder="Compare notes…"
+                  />
+                  <async-button
+                    type="button"
+                    class="self-end shrink-0 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-text hover:bg-primary-hover disabled:opacity-50"
+                    :disabled="!sleuthContext.currentCaseReportId"
+                    @click="sleuthContext.saveDocumentNote(doc)"
+                  >
+                    Save note
+                  </async-button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </modal>
+
   <modal v-if="sleuthContext.shouldShowCaseReportModal">
     <template v-slot:body>
       <div class="modal-exit" @click="sleuthContext.shouldShowCaseReportModal = false">&times;</div>

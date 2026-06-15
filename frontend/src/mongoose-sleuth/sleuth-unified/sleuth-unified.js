@@ -16,8 +16,8 @@ module.exports = app => app.component('sleuth-unified', {
       },
       showInvestigationSettingsMenu: false,
       showAddDocumentsModal: false,
+      showCompareModal: false,
       investigationDisplayType: 'json',
-      investigationViewMode: 'list',
       compareDocumentKeys: [],
       timelineDragIndex: null,
       timelineDropIndex: null,
@@ -34,6 +34,29 @@ module.exports = app => app.component('sleuth-unified', {
         const key = this.sleuthContext.getDocumentKey(doc);
         return key && keySet.has(key);
       });
+    },
+    activeNotebookDocument() {
+      const docs = this.sleuthContext.selectedDocuments || [];
+      if (docs.length === 0) {
+        return null;
+      }
+      const key = this.sleuthContext.focusedInvestigationDocumentKey;
+      if (key) {
+        const found = docs.find(doc => this.sleuthContext.getDocumentKey(doc) === key);
+        if (found) {
+          return found;
+        }
+      }
+      return docs[0];
+    },
+    activeNotebookIndex() {
+      const doc = this.activeNotebookDocument;
+      if (!doc) {
+        return -1;
+      }
+      return this.sleuthContext.selectedDocuments.findIndex(
+        d => this.sleuthContext.getDocumentKey(d) === this.sleuthContext.getDocumentKey(doc)
+      );
     }
   },
   watch: {
@@ -48,17 +71,21 @@ module.exports = app => app.component('sleuth-unified', {
           docs.map(doc => this.sleuthContext.getDocumentKey(doc)).filter(Boolean)
         );
         this.compareDocumentKeys = this.compareDocumentKeys.filter(k => valid.has(k));
-        if (this.investigationViewMode === 'compare' && this.compareDocumentKeys.length === 0) {
-          this.investigationViewMode = 'list';
+        if (this.showCompareModal && this.compareDocumentKeys.length === 0) {
+          this.closeCompareModal();
         }
+        this.ensureNotebookFocus();
       }
     }
   },
   mounted() {
     document.addEventListener('click', this.onInvestigationSettingsOutsideClick, true);
+    document.addEventListener('keydown', this.onNotebookKeydown);
+    this.ensureNotebookFocus();
   },
   beforeDestroy() {
     document.removeEventListener('click', this.onInvestigationSettingsOutsideClick, true);
+    document.removeEventListener('keydown', this.onNotebookKeydown);
   },
   methods: {
     setInvestigationDisplayType(type) {
@@ -66,40 +93,47 @@ module.exports = app => app.component('sleuth-unified', {
         this.investigationDisplayType = type;
       }
     },
-    setInvestigationViewMode(mode) {
-      if (mode !== 'list' && mode !== 'compare') {
+    ensureNotebookFocus() {
+      const docs = this.sleuthContext.selectedDocuments || [];
+      if (docs.length === 0) {
         return;
       }
-      if (mode === 'list') {
-        this.compareDocumentKeys = [];
+      const key = this.sleuthContext.focusedInvestigationDocumentKey;
+      const valid = key && docs.some(doc => this.sleuthContext.getDocumentKey(doc) === key);
+      if (!valid) {
+        this.sleuthContext.focusInvestigationDocument(docs[0]);
       }
-      this.investigationViewMode = mode;
     },
-    openCompareView() {
+    openCompareModal() {
+      const docs = this.sleuthContext.selectedDocuments || [];
+      if (docs.length === 0) {
+        return;
+      }
       if (this.compareDocumentKeys.length === 0) {
-        const docs = this.sleuthContext.selectedDocuments || [];
         if (docs.length >= 2) {
           this.compareDocumentKeys = docs.slice(0, 2).map(doc => this.sleuthContext.getDocumentKey(doc)).filter(Boolean);
-        } else if (docs.length === 1) {
+        } else {
           const key = this.sleuthContext.getDocumentKey(docs[0]);
           if (key) {
             this.compareDocumentKeys = [key];
           }
         }
       }
-      if (this.compareDocumentKeys.length > 0) {
-        this.investigationViewMode = 'compare';
-      }
+      this.showCompareModal = true;
+    },
+    closeCompareModal() {
+      this.showCompareModal = false;
     },
     isCompareColumn(doc) {
       const key = this.sleuthContext.getDocumentKey(doc);
       return !!key && this.compareDocumentKeys.includes(key);
     },
     isTimelineChipHighlighted(doc) {
-      if (this.investigationViewMode === 'compare') {
-        return this.isCompareColumn(doc);
+      const active = this.activeNotebookDocument;
+      if (!active) {
+        return false;
       }
-      return this.sleuthContext.isInvestigationDocumentFocused(doc);
+      return this.sleuthContext.getDocumentKey(doc) === this.sleuthContext.getDocumentKey(active);
     },
     toggleCompareColumn(doc, event) {
       if (event && typeof event.preventDefault === 'function') {
@@ -115,8 +149,8 @@ module.exports = app => app.component('sleuth-unified', {
       const idx = this.compareDocumentKeys.indexOf(key);
       if (idx >= 0) {
         this.compareDocumentKeys.splice(idx, 1);
-        if (this.investigationViewMode === 'compare' && this.compareDocumentKeys.length === 0) {
-          this.investigationViewMode = 'list';
+        if (this.showCompareModal && this.compareDocumentKeys.length === 0) {
+          this.closeCompareModal();
         }
       } else {
         this.compareDocumentKeys.push(key);
@@ -124,9 +158,7 @@ module.exports = app => app.component('sleuth-unified', {
     },
     clearCompareColumns() {
       this.compareDocumentKeys = [];
-      if (this.investigationViewMode === 'compare') {
-        this.investigationViewMode = 'list';
-      }
+      this.closeCompareModal();
     },
     openAddDocumentsModal() {
       this.showAddDocumentsModal = true;
@@ -170,6 +202,58 @@ module.exports = app => app.component('sleuth-unified', {
     isCaseReportSectionOpen(section) {
       return !!this.caseReportSections[section];
     },
+    focusNotebookDocument(doc) {
+      if (this.timelineDidDrag) {
+        return;
+      }
+      this.sleuthContext.focusInvestigationDocument(doc);
+    },
+    goToAdjacentNotebookDocument(delta) {
+      const docs = this.sleuthContext.selectedDocuments || [];
+      if (docs.length === 0) {
+        return;
+      }
+      let idx = this.activeNotebookIndex;
+      if (idx < 0) {
+        idx = 0;
+      }
+      const next = docs[idx + delta];
+      if (next) {
+        this.sleuthContext.focusInvestigationDocument(next);
+      }
+    },
+    onNotebookKeydown(event) {
+      if (this.showCompareModal || this.showAddDocumentsModal || this.sleuthContext.shouldShowCaseReportModal) {
+        return;
+      }
+      const target = event.target;
+      if (target && typeof target.closest === 'function') {
+        if (target.closest('input, textarea, select, [contenteditable="true"]')) {
+          return;
+        }
+      }
+      if (event.key === 'ArrowLeft' || event.key === '[') {
+        event.preventDefault();
+        this.goToAdjacentNotebookDocument(-1);
+      } else if (event.key === 'ArrowRight' || event.key === ']') {
+        event.preventDefault();
+        this.goToAdjacentNotebookDocument(1);
+      }
+    },
+    addActiveDocumentToCompare() {
+      const doc = this.activeNotebookDocument;
+      if (!doc) {
+        return;
+      }
+      const key = this.sleuthContext.getDocumentKey(doc);
+      if (!key) {
+        return;
+      }
+      if (!this.compareDocumentKeys.includes(key)) {
+        this.compareDocumentKeys.push(key);
+      }
+      this.openCompareModal();
+    },
     onTimelineDragStart(index, event) {
       this.timelineDragIndex = index;
       this.timelineDidDrag = false;
@@ -211,25 +295,6 @@ module.exports = app => app.component('sleuth-unified', {
     },
     isTimelineDropTarget(index) {
       return this.timelineDropIndex === index && this.timelineDragIndex !== index;
-    },
-    scrollToInvestigationDocument(doc) {
-      if (this.timelineDidDrag) {
-        return;
-      }
-      this.sleuthContext.focusInvestigationDocument(doc);
-      if (this.investigationViewMode === 'list') {
-        this.$nextTick(() => {
-          const key = this.sleuthContext.getDocumentKey(doc);
-          const list = this.$refs.investigationDocList || this.$refs.sidebarDocList;
-          if (!list || !key) {
-            return;
-          }
-          const el = list.querySelector(`[data-doc-key="${key}"]`);
-          if (el && typeof el.scrollIntoView === 'function') {
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-        });
-      }
     }
   }
 });

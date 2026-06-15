@@ -153,3 +153,209 @@
   white-space: pre-wrap !important;
   word-break: break-word !important;
 }
+
+/* Full-page compare workspace */
+.modal-mask:has(.sleuth-compare-modal-container) {
+  display: flex !important;
+  align-items: stretch;
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  background-color: rgba(15, 15, 15, 0.55);
+}
+
+.modal-mask:has(.sleuth-compare-modal-container) .modal-wrapper {
+  display: flex !important;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  vertical-align: top;
+}
+
+.modal-container.sleuth-compare-modal-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  background: var(--color-page, #f9fafb);
+  box-shadow: none;
+}
+
+.modal-body.sleuth-compare-modal-body {
+  margin: 0 !important;
+  max-height: none !important;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.sleuth-compare-modal-columns {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.sleuth-compare-modal-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 1rem 1.25rem;
+}
+
+.sleuth-compare-modal-scroll-inner {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+  min-width: min-content;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.sleuth-compare-modal-column {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.sleuth-compare-modal-column-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .sleuth-compare-modal-column-body {
+    flex-direction: row;
+  }
+}
+
+.sleuth-compare-modal-column-notes {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  min-height: 0;
+  max-height: 10rem;
+  overflow: hidden;
+  box-sizing: border-box;
+  border-top: 1px solid var(--color-edge, #e5e7eb);
+  background: var(--color-surface, #fff);
+}
+
+@media (min-width: 1024px) {
+  .sleuth-compare-modal-column-notes {
+    width: 16rem;
+    max-height: none;
+    border-top: 0;
+  }
+}
+
+.sleuth-compare-modal-column-notes textarea {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sleuth-compare-modal-container .modal-exit {
+  position: static;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--color-edge-strong, #d1d5db);
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-content-secondary, #374151);
+  background: var(--color-surface, #fff);
+}
+
+.sleuth-compare-modal-container .modal-exit:hover {
+  background: var(--color-muted, #f3f4f6);
+}
+
+/* Single-document page — clean book spread */
+.sleuth-book-page {
+  background: var(--color-surface, #fff);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.sleuth-book-page-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .sleuth-book-page-body {
+    flex-direction: row;
+  }
+}
+
+.sleuth-book-page-notes {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  min-height: 0;
+  max-height: 11rem;
+  overflow: hidden;
+  box-sizing: border-box;
+  border-top: 1px solid var(--color-edge, #e5e7eb);
+}
+
+@media (min-width: 1024px) {
+  .sleuth-book-page-notes {
+    width: 20rem;
+    max-height: none;
+    border-top: 0;
+  }
+}
+
+@media (min-width: 1280px) {
+  .sleuth-book-page-notes {
+    width: 24rem;
+  }
+}
+
+.sleuth-book-page-notes textarea {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
