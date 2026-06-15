@@ -31,7 +31,6 @@ module.exports = app => app.component('document-search', {
       searchText: this.value || '',
       datePickerContext: null,
       datePickerLocalValue: '',
-      showDateCalendar: false,
       dateInsertFormat: 'timestamp' // 'timestamp' | 'quoted'
     };
   },
@@ -88,9 +87,6 @@ module.exports = app => app.component('document-search', {
       const cursorPos = input ? input.selectionStart : 0;
 
       const dateRange = getDatePickerInsertionRange(this.searchText, cursorPos);
-      if (!dateRange) {
-        this.showDateCalendar = false;
-      }
       this.datePickerContext = dateRange;
       if (dateRange) {
         const argSlice = this.searchText.slice(dateRange.innerStart, dateRange.innerEnd);
@@ -112,9 +108,6 @@ module.exports = app => app.component('document-search', {
         this.autocompleteSuggestions = [];
       }
     },
-    toggleDateCalendar() {
-      this.showDateCalendar = !this.showDateCalendar;
-    },
     applyDateFromPicker(localDateTime) {
       if (!localDateTime || !this.datePickerContext) {
         return;
@@ -134,7 +127,6 @@ module.exports = app => app.component('document-search', {
       );
       const input = this.$refs.searchInput;
       this.searchText = result.text;
-      this.showDateCalendar = false;
       this.autocompleteSuggestions = [];
       this.$nextTick(() => {
         if (input) {

@@ -8,9 +8,15 @@ const {
   buildCalendarDays,
   clampInt,
   isSameDay,
+  pad2,
   WEEKDAY_LABELS,
   MONTH_LABELS
 } = require('../_util/calendar');
+
+const WHEEL_PAD = 2;
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => i);
+const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) => i);
+const SECOND_OPTIONS = Array.from({ length: 60 }, (_, i) => i);
 
 function timePartsFromDate(date) {
   if (!date) {
@@ -60,7 +66,13 @@ module.exports = app => app.component('custom-date-picker', {
       minute: time.minute,
       second: time.second,
       millisecond: time.millisecond,
-      pendingValue: null
+      pendingValue: null,
+      wheelScrollLock: false,
+      timeApplyTimer: null,
+      hourOptions: HOUR_OPTIONS,
+      minuteOptions: MINUTE_OPTIONS,
+      secondOptions: SECOND_OPTIONS,
+      wheelPadCount: WHEEL_PAD
     };
   },
   watch: {
@@ -85,11 +97,54 @@ module.exports = app => app.component('custom-date-picker', {
     showTime() {
       return this.mode === 'datetime';
     },
-    timeInputClass() {
+    dayCellClass() {
+      if (this.mini) {
+        return 'h-6';
+      }
+      if (this.compact) {
+        return 'h-7';
+      }
+      return 'aspect-square';
+    },
+    wheelItemPx() {
+      if (this.mini) {
+        return 32;
+      }
+      if (this.compact) {
+        return 36;
+      }
+      return 40;
+    },
+    wheelListClass() {
       return [
-        'w-10 min-w-0 rounded border border-edge-strong bg-surface px-0.5 font-mono text-center outline-edge-strong focus:ring-1 focus:ring-primary-subtle',
-        this.mini ? 'h-6 text-[10px]' : 'h-8 text-sm'
+        'overflow-y-auto overscroll-y-contain snap-y snap-mandatory',
+        '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
       ];
+    },
+    wheelListStyle() {
+      return {
+        height: `${this.wheelItemPx * 5}px`
+      };
+    },
+    wheelItemClass() {
+      return [
+        'snap-center shrink-0 w-full flex items-center justify-center font-mono transition-colors',
+        this.mini ? 'h-8 text-sm' : (this.compact ? 'h-9 text-sm' : 'h-10 text-base')
+      ];
+    },
+    wheelHighlightClass() {
+      return this.mini ? 'h-8' : (this.compact ? 'h-9' : 'h-10');
+    },
+    wheelColumnClass() {
+      return this.mini ? 'w-11' : (this.compact ? 'w-12' : 'w-14');
+    }
+  },
+  mounted() {
+    this.$nextTick(() => this.scrollWheelsToValues());
+  },
+  beforeUnmount() {
+    if (this.timeApplyTimer) {
+      clearTimeout(this.timeApplyTimer);
     }
   },
   methods: {
@@ -105,6 +160,7 @@ module.exports = app => app.component('custom-date-picker', {
         this.second = time.second;
         this.millisecond = time.millisecond;
       }
+      this.$nextTick(() => this.scrollWheelsToValues());
     },
     clampedTimeParts() {
       return {
@@ -113,6 +169,89 @@ module.exports = app => app.component('custom-date-picker', {
         second: clampInt(this.second, 0, 59),
         millisecond: clampInt(this.millisecond, 0, 999)
       };
+    },
+    formatWheelValue(value) {
+      return pad2(value);
+    },
+    wheelItemClasses(value, selectedValue) {
+      return value === selectedValue
+        ? 'text-content-primary font-semibold'
+        : 'text-content-tertiary hover:text-content-secondary';
+    },
+    wheelIndexFromScroll(el, max) {
+      return clampInt(Math.round(el.scrollTop / this.wheelItemPx), 0, max);
+    },
+    scrollWheelTo(el, index) {
+      if (!el) {
+        return;
+      }
+      el.scrollTop = index * this.wheelItemPx;
+    },
+    scrollWheelsToValues() {
+      this.wheelScrollLock = true;
+      this.scrollWheelTo(this.$refs.hourWheel, this.hour);
+      this.scrollWheelTo(this.$refs.minuteWheel, this.minute);
+      this.scrollWheelTo(this.$refs.secondWheel, this.second);
+      requestAnimationFrame(() => {
+        this.wheelScrollLock = false;
+      });
+    },
+    scheduleTimeApply() {
+      if (this.timeApplyTimer) {
+        clearTimeout(this.timeApplyTimer);
+      }
+      this.timeApplyTimer = setTimeout(() => {
+        this.timeApplyTimer = null;
+        this.applyTimeToSelection();
+      }, 120);
+    },
+    onHourWheelScroll(event) {
+      if (this.wheelScrollLock) {
+        return;
+      }
+      const hour = this.wheelIndexFromScroll(event.target, 23);
+      if (hour === this.hour) {
+        return;
+      }
+      this.hour = hour;
+      this.scheduleTimeApply();
+    },
+    onMinuteWheelScroll(event) {
+      if (this.wheelScrollLock) {
+        return;
+      }
+      const minute = this.wheelIndexFromScroll(event.target, 59);
+      if (minute === this.minute) {
+        return;
+      }
+      this.minute = minute;
+      this.scheduleTimeApply();
+    },
+    onSecondWheelScroll(event) {
+      if (this.wheelScrollLock) {
+        return;
+      }
+      const second = this.wheelIndexFromScroll(event.target, 59);
+      if (second === this.second) {
+        return;
+      }
+      this.second = second;
+      this.scheduleTimeApply();
+    },
+    selectHour(hour) {
+      this.hour = hour;
+      this.scrollWheelTo(this.$refs.hourWheel, hour);
+      this.applyTimeToSelection();
+    },
+    selectMinute(minute) {
+      this.minute = minute;
+      this.scrollWheelTo(this.$refs.minuteWheel, minute);
+      this.applyTimeToSelection();
+    },
+    selectSecond(second) {
+      this.second = second;
+      this.scrollWheelTo(this.$refs.secondWheel, second);
+      this.applyTimeToSelection();
     },
     dayClasses(day) {
       const selected = this.selectedDate;

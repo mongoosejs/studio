@@ -30,8 +30,11 @@
     <div
       v-for="label in weekdayLabels"
       :key="label"
-      class="text-center text-content-tertiary font-medium"
-      :class="mini ? 'text-[9px] py-0' : (compact ? 'text-[10px] py-0.5' : 'text-xs py-0.5')"
+      class="flex items-center justify-center text-center text-content-tertiary font-medium min-w-0"
+      :class="[
+        dayCellClass,
+        mini ? 'text-[9px]' : (compact ? 'text-[10px]' : 'text-xs')
+      ]"
     >{{ mini ? label.charAt(0) : label }}</div>
   </div>
 
@@ -40,9 +43,10 @@
       v-for="day in calendarDays"
       :key="day.key"
       type="button"
-      class="min-w-0 flex items-center justify-center rounded transition-colors"
+      class="min-w-0 w-full flex items-center justify-center rounded transition-colors"
       :class="[
-        mini ? 'w-6 h-6 text-[10px]' : (compact ? 'w-7 h-7 text-xs' : 'aspect-square text-sm'),
+        dayCellClass,
+        mini ? 'text-[10px]' : (compact ? 'text-xs' : 'text-sm'),
         dayClasses(day)
       ]"
       :aria-label="day.label"
@@ -53,58 +57,112 @@
 
   <div
     v-if="showTime"
-    class="flex flex-wrap items-center gap-x-1 gap-y-0.5 border-t border-edge-strong"
+    class="border-t border-edge-strong"
     :class="mini ? 'mt-1 pt-1' : 'mt-3 pt-3'"
     @mousedown.stop
   >
-    <span class="text-content-secondary shrink-0 w-full" :class="mini ? 'text-[9px]' : 'text-xs'">Time</span>
-    <label class="flex items-center gap-0.5 text-content-secondary" :class="mini ? 'text-[9px]' : 'text-xs'">
-      <span>h</span>
-      <input
-        type="number"
-        min="0"
-        max="23"
-        :class="timeInputClass"
-        v-model.number="hour"
-        @input="applyTimeToSelection"
-      />
-    </label>
-    <span class="text-content-secondary">:</span>
-    <label class="flex items-center gap-0.5 text-content-secondary" :class="mini ? 'text-[9px]' : 'text-xs'">
-      <span>m</span>
-      <input
-        type="number"
-        min="0"
-        max="59"
-        :class="timeInputClass"
-        v-model.number="minute"
-        @input="applyTimeToSelection"
-      />
-    </label>
-    <span class="text-content-secondary">:</span>
-    <label class="flex items-center gap-0.5 text-content-secondary" :class="mini ? 'text-[9px]' : 'text-xs'">
-      <span>s</span>
-      <input
-        type="number"
-        min="0"
-        max="59"
-        :class="timeInputClass"
-        v-model.number="second"
-        @input="applyTimeToSelection"
-      />
-    </label>
-    <span class="text-content-secondary">.</span>
-    <label class="flex items-center gap-0.5 text-content-secondary" :class="mini ? 'text-[9px]' : 'text-xs'">
-      <span>ms</span>
-      <input
-        type="number"
-        min="0"
-        max="999"
-        :class="[timeInputClass, mini ? 'w-12' : 'w-14']"
-        v-model.number="millisecond"
-        @input="applyTimeToSelection"
-      />
-    </label>
+    <div
+      class="text-content-secondary mb-2"
+      :class="mini ? 'text-xs' : 'text-sm'"
+    >Time</div>
+    <div class="relative flex items-center justify-center">
+      <div
+        class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 border-y border-edge-strong bg-surface-hover/40"
+        :class="wheelHighlightClass"
+        aria-hidden="true"
+      ></div>
+      <div class="relative flex items-center justify-center gap-1">
+        <div
+          ref="hourWheel"
+          class="wheel-column"
+          :class="[wheelListClass, wheelColumnClass]"
+          :style="wheelListStyle"
+          @scroll="onHourWheelScroll"
+        >
+          <div
+            v-for="n in wheelPadCount"
+            :key="'hour-pad-top-' + n"
+            :class="wheelItemClass"
+            aria-hidden="true"
+          ></div>
+          <button
+            v-for="h in hourOptions"
+            :key="'hour-' + h"
+            type="button"
+            :class="[wheelItemClass, wheelItemClasses(h, hour)]"
+            :aria-label="'Hour ' + h"
+            :aria-selected="hour === h"
+            @click="selectHour(h)"
+          >{{ formatWheelValue(h) }}</button>
+          <div
+            v-for="n in wheelPadCount"
+            :key="'hour-pad-bottom-' + n"
+            :class="wheelItemClass"
+            aria-hidden="true"
+          ></div>
+        </div>
+        <span class="text-content-secondary font-medium" :class="mini ? 'text-sm' : 'text-base'">:</span>
+        <div
+          ref="minuteWheel"
+          class="wheel-column"
+          :class="[wheelListClass, wheelColumnClass]"
+          :style="wheelListStyle"
+          @scroll="onMinuteWheelScroll"
+        >
+          <div
+            v-for="n in wheelPadCount"
+            :key="'minute-pad-top-' + n"
+            :class="wheelItemClass"
+            aria-hidden="true"
+          ></div>
+          <button
+            v-for="m in minuteOptions"
+            :key="'minute-' + m"
+            type="button"
+            :class="[wheelItemClass, wheelItemClasses(m, minute)]"
+            :aria-label="'Minute ' + m"
+            :aria-selected="minute === m"
+            @click="selectMinute(m)"
+          >{{ formatWheelValue(m) }}</button>
+          <div
+            v-for="n in wheelPadCount"
+            :key="'minute-pad-bottom-' + n"
+            :class="wheelItemClass"
+            aria-hidden="true"
+          ></div>
+        </div>
+        <span class="text-content-secondary font-medium" :class="mini ? 'text-sm' : 'text-base'">:</span>
+        <div
+          ref="secondWheel"
+          class="wheel-column"
+          :class="[wheelListClass, wheelColumnClass]"
+          :style="wheelListStyle"
+          @scroll="onSecondWheelScroll"
+        >
+          <div
+            v-for="n in wheelPadCount"
+            :key="'second-pad-top-' + n"
+            :class="wheelItemClass"
+            aria-hidden="true"
+          ></div>
+          <button
+            v-for="s in secondOptions"
+            :key="'second-' + s"
+            type="button"
+            :class="[wheelItemClass, wheelItemClasses(s, second)]"
+            :aria-label="'Second ' + s"
+            :aria-selected="second === s"
+            @click="selectSecond(s)"
+          >{{ formatWheelValue(s) }}</button>
+          <div
+            v-for="n in wheelPadCount"
+            :key="'second-pad-bottom-' + n"
+            :class="wheelItemClass"
+            aria-hidden="true"
+          ></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div
