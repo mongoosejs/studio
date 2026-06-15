@@ -293,9 +293,9 @@ module.exports = app => app.component('custom-date-picker', {
       const isToday = isSameDay(day.date, this.today);
       return {
         'text-content-tertiary': !day.inMonth,
-        'bg-teal-600 text-white hover:bg-teal-700': isSelected,
+        'bg-merlot-700 text-white hover:bg-merlot-800': isSelected,
         'hover:bg-surface-hover': day.inMonth && !isSelected,
-        'ring-1 ring-teal-600 ring-inset': isToday && !isSelected && day.inMonth,
+        'ring-1 ring-merlot-700 ring-inset': isToday && !isSelected && day.inMonth,
         'font-medium': day.inMonth
       };
     },

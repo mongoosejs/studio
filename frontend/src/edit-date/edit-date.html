@@ -3,6 +3,8 @@
     v-if="dateSelection == 'picker'"
     :value="value"
     mode="datetime"
+    :horizontal="true"
+    class="max-w-[420px]"
     @input="$emit('input', $event)"
   />
   <input

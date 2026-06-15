@@ -236,7 +236,8 @@
               id="fieldValue"
               mode="date"
               :value="fieldData.value"
-              :class="{ 'border-red-500': fieldErrors.value }"
+              :class="{ 'border-red-500': fieldErrors.value, 'max-w-[400px]': true }"
+              :horizontal="true"
               @input="fieldData.value = $event"
             />
 

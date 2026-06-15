@@ -169,19 +169,13 @@
   </div>
 
   <div
-    class="flex justify-end gap-2"
+    class="flex justify-end items-center gap-2"
     :class="mini ? 'mt-1' : 'mt-2'"
   >
     <button
-      v-if="!mini && !horizontal"
-      type="button"
-      class="text-xs text-teal-700 hover:text-teal-900 font-medium px-2 py-1 rounded hover:bg-surface-hover"
-      @click="goToToday"
-    >Today</button>
-    <button
       v-if="!immediate"
       type="button"
-      class="text-xs font-medium text-white bg-teal-600 hover:bg-teal-700 px-2 py-1 rounded"
+      class="text-xs font-medium text-white bg-merlot-700 hover:bg-merlot-800 px-2 py-1 rounded"
       :class="mini ? 'py-0.5 px-1.5' : ''"
       @click="commit"
     >Apply</button>
