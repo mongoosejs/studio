@@ -119,3 +119,37 @@
   background: #f9fafb;
   font-weight: 600;
 }
+
+/* Compare mode: give JSON tree room to breathe in narrow columns */
+.sleuth-compare-json-scroll {
+  overflow: auto;
+}
+
+.sleuth-compare-json-scroll .tooltip {
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
+}
+
+.sleuth-compare-json-scroll .font-mono.text-sm {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.sleuth-compare-json-scroll .flex.items-baseline.whitespace-pre {
+  flex-wrap: wrap;
+  white-space: pre-wrap;
+  word-break: break-word;
+  width: 100%;
+  min-width: 0;
+}
+
+.sleuth-compare-json-scroll span[style*="textOverflow"],
+.sleuth-compare-json-scroll span[style*="text-overflow"] {
+  display: inline !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}

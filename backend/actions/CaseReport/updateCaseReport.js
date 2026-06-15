@@ -17,9 +17,6 @@ const UpdateCaseReportParams = new Archetype({
   summary: {
     $type: 'string'
   },
-  status: {
-    $type: 'string'
-  },
   roles: {
     $type: ['string']
   },
@@ -36,7 +33,7 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
     delete copy.documents;
     return copy;
   })();
-  const { caseReportId: rawCaseReportId, documents, summary, status, roles, skipAISummary } = new UpdateCaseReportParams(paramsForCompile);
+  const { caseReportId: rawCaseReportId, documents, summary, roles, skipAISummary } = new UpdateCaseReportParams(paramsForCompile);
   const CaseReport = db.model('__Studio_CaseReport');
 
   await authorize('CaseReport.updateCaseReport', roles);
@@ -73,18 +70,9 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
     updateData.documents = docs;
   }
   let aiSummary = null;
-  
-  // If status is explicitly provided, use it
-  if (status !== undefined) {
-    updateData.status = status;
-  }
-  
+
   if (summary !== undefined) {
     updateData.summary = summary;
-    // If summary is provided and status wasn't explicitly set, set to resolved
-    if (status === undefined) {
-      updateData.status = 'resolved';
-    }
 
     // Generate AI summary if summary is provided (unless deferred to generateCaseReportAISummary)
     if (summary && summary.trim().length > 0 && !skipAISummary) {

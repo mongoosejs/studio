@@ -194,7 +194,7 @@ app.component('app-component', {
     </div>
     <div v-else-if="!hasAPIKey || user">
       <navbar :user="user" :roles="roles" />
-      <div class="view">
+      <div class="view bg-page min-h-[calc(100vh-55px)]">
         <router-view :key="$route.fullPath" :user="user" :roles="roles" :hasAPIKey="hasAPIKey" />
       </div>
     </div>

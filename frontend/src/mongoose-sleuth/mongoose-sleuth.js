@@ -216,7 +216,6 @@ const embeddedModelsSleuthState = {
   documentNotes: {},
   currentCaseReportId: null,
   currentCaseReportName: '',
-  currentCaseReportStatus: 'created',
   summary: '',
   aiSummary: '',
   identifierPathByModel: {},
@@ -232,7 +231,6 @@ function persistEmbeddedModelsSleuthState(vm) {
   s.documentNotes = { ...vm.documentNotes };
   s.currentCaseReportId = vm.currentCaseReportId;
   s.currentCaseReportName = vm.currentCaseReportName;
-  s.currentCaseReportStatus = typeof vm.currentCaseReportStatus === 'string' ? vm.currentCaseReportStatus : 'created';
   s.summary = typeof vm.summary === 'string' ? vm.summary : '';
   s.aiSummary = typeof vm.aiSummary === 'string' ? vm.aiSummary : '';
   s.identifierPathByModel = vm.identifierPathByModel && typeof vm.identifierPathByModel === 'object'
@@ -269,7 +267,6 @@ function hydrateEmbeddedModelsSleuthState(vm) {
   vm.documentNotes = { ...s.documentNotes };
   vm.currentCaseReportId = s.currentCaseReportId;
   vm.currentCaseReportName = s.currentCaseReportName || '';
-  vm.currentCaseReportStatus = typeof s.currentCaseReportStatus === 'string' ? s.currentCaseReportStatus : 'created';
   vm.summary = s.summary || '';
   vm.aiSummary = s.aiSummary || '';
   vm.identifierPathByModel = s.identifierPathByModel && typeof s.identifierPathByModel === 'object'
@@ -327,8 +324,6 @@ module.exports = app => app.component('mongoose-sleuth', {
     loadingCaseReport: false,
     caseReports: [],
     currentCaseReportName: '',
-    currentCaseReportStatus: 'created',
-    updatingCaseReportStatus: false,
     // Mongoose schema paths keyed by model name (from getDocument / document stream)
     schemaPathsByModel: {},
     // Step 2: per-model Mongoose path (e.g. "email", "profile.name") used as human label
@@ -336,13 +331,15 @@ module.exports = app => app.component('mongoose-sleuth', {
     // Step 2: per-model projection string for document previews
     projectionTextByModel: {},
     // Step 2: getDocumentKey -> show embedded JSON preview
-    investigationDocPreviewExpanded: {}
+    investigationDocPreviewExpanded: {},
+    // Case report timeline: highlighted document card
+    focusedInvestigationDocumentKey: null
   }),
   created() {
     this.loadOutputPreference();
   },
   beforeDestroy() {
-    const container = this.$refs.unified?.$refs?.documentsList?.querySelector('.documents-container');
+    const container = this.getBrowseScrollContainer();
     if (container) {
       container.removeEventListener('scroll', this.onScroll, true);
     }
@@ -435,6 +432,12 @@ module.exports = app => app.component('mongoose-sleuth', {
           }
         }
         this.investigationDocPreviewExpanded = nextPeek;
+        if (
+          this.focusedInvestigationDocumentKey &&
+          !validKeys.has(this.focusedInvestigationDocumentKey)
+        ) {
+          this.focusedInvestigationDocumentKey = null;
+        }
       }
     }
   },
@@ -509,7 +512,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       if (!Array.isArray(this.caseReports)) {
         return [];
       }
-      return this.caseReports.filter(cr => cr && cr.status && cr.status !== 'resolved' && cr.status !== 'archived');
+      return this.caseReports.filter(cr => cr);
     },
     investigationModelNames() {
       const set = new Set();
@@ -538,11 +541,21 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
     },
     attachScrollListener() {
-      const container = this.$refs.unified?.$refs?.documentsList?.querySelector('.documents-container');
+      const container = this.getBrowseScrollContainer();
       if (container) {
         container.removeEventListener('scroll', this.onScroll, true);
         container.addEventListener('scroll', this.onScroll, true);
       }
+    },
+    getBrowseScrollContainer() {
+      const listRef = this.$refs.unified?.$refs?.documentsList;
+      if (!listRef) {
+        return null;
+      }
+      if (listRef.classList && listRef.classList.contains('documents-container')) {
+        return listRef;
+      }
+      return listRef.querySelector('.documents-container');
     },
     async persistCaseReportDocuments(options = {}) {
       if (!this.currentCaseReportId) {
@@ -581,7 +594,11 @@ module.exports = app => app.component('mongoose-sleuth', {
         if (note && note.trim()) {
           base.notes = note.trim();
         }
-        if (doc.highlightedFields && doc.highlightedFields.length > 0) {
+        const model = doc.model != null ? String(doc.model) : '';
+        const projectionPaths = model ? this.getProjectionFilteredPathsForModel(model) : null;
+        if (projectionPaths && projectionPaths.length > 0) {
+          base.highlightedFields = projectionPaths;
+        } else if (doc.highlightedFields && doc.highlightedFields.length > 0) {
           base.highlightedFields = doc.highlightedFields;
         }
         return base;
@@ -740,6 +757,12 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
       return idStr || 'Document';
     },
+    getBrowseDocumentLabel(doc) {
+      if (!doc || !this.currentModel) {
+        return this.getDocumentLabel(doc);
+      }
+      return this.getDocumentLabel({ ...doc, model: this.currentModel });
+    },
     formatFieldValueForLabel(val) {
       if (val == null) {
         return '';
@@ -880,12 +903,57 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
       return this.normalizeProjectionPathsForModel(model, text);
     },
+    getEffectiveProjectionPathsForDocument(doc) {
+      if (!doc) {
+        return null;
+      }
+      const model = doc.model != null ? String(doc.model) : '';
+      const fromProjection = model ? this.getProjectionFilteredPathsForModel(model) : null;
+      if (fromProjection && fromProjection.length > 0) {
+        return fromProjection;
+      }
+      if (
+        this.hasSourceFromModelsView &&
+        model &&
+        model === this.displayModel &&
+        Array.isArray(this.sourceFilteredPaths) &&
+        this.sourceFilteredPaths.length > 0
+      ) {
+        return this.sourceFilteredPaths.map(p => p.path).filter(Boolean);
+      }
+      if (Array.isArray(doc.highlightedFields) && doc.highlightedFields.length > 0) {
+        return doc.highlightedFields.slice();
+      }
+      return null;
+    },
+    seedProjectionTextFromHighlightedFields(docs) {
+      if (!Array.isArray(docs) || docs.length === 0) {
+        return;
+      }
+      const next = { ...this.projectionTextByModel };
+      const byModel = {};
+      for (const doc of docs) {
+        if (!doc || !doc.model) {
+          continue;
+        }
+        const model = String(doc.model);
+        if (next[model] || byModel[model]) {
+          continue;
+        }
+        if (Array.isArray(doc.highlightedFields) && doc.highlightedFields.length > 0) {
+          byModel[model] = doc.highlightedFields.join(' ');
+        }
+      }
+      for (const [model, text] of Object.entries(byModel)) {
+        next[model] = text;
+      }
+      this.projectionTextByModel = next;
+    },
     filterInvestigationDocument(doc) {
       if (!doc) {
         return doc;
       }
-      const model = doc.model != null ? String(doc.model) : '';
-      const filteredPaths = this.getProjectionFilteredPathsForModel(model);
+      const filteredPaths = this.getEffectiveProjectionPathsForDocument(doc);
       if (!filteredPaths || filteredPaths.length === 0) {
         return doc;
       }
@@ -905,6 +973,42 @@ module.exports = app => app.component('mongoose-sleuth', {
         });
       }
       return filteredDoc;
+    },
+    getInvestigationTablePaths(doc) {
+      if (!doc) {
+        return [];
+      }
+      const model = doc.model != null ? String(doc.model) : '';
+      if (
+        this.hasSourceFromModelsView &&
+        model &&
+        model === this.displayModel &&
+        Array.isArray(this.sourceFilteredPaths) &&
+        this.sourceFilteredPaths.length > 0
+      ) {
+        return this.sourceFilteredPaths;
+      }
+      let schemaPaths = this.getSchemaPathsArrayForModel(model);
+      if (!schemaPaths || schemaPaths.length === 0) {
+        schemaPaths = this.inferSchemaPathsFromDocument(doc);
+      }
+      const pathStrings = this.getEffectiveProjectionPathsForDocument(doc);
+      if (!pathStrings || pathStrings.length === 0) {
+        return schemaPaths;
+      }
+      const byPath = new Map(schemaPaths.map(p => [p.path, p]));
+      return pathStrings
+        .map(path => byPath.get(path) || { path, instance: 'Mixed' })
+        .filter(p => p && p.path);
+    },
+    getInvestigationReferenceMap(doc) {
+      const map = {};
+      for (const path of this.getInvestigationTablePaths(doc)) {
+        if (path?.ref) {
+          map[path.path] = path.ref;
+        }
+      }
+      return map;
     },
     getIdentifierFieldOptions(model) {
       if (!model) {
@@ -939,6 +1043,43 @@ module.exports = app => app.component('mongoose-sleuth', {
       }
       return out;
     },
+    getTimelineShortLabel(doc) {
+      if (!doc) {
+        return 'Document';
+      }
+      const label = this.getInvestigationDocumentLabel(doc);
+      if (label) {
+        return label.length > 28 ? `${label.slice(0, 28)}…` : label;
+      }
+      const idStr = this.formatDocumentId(doc._id);
+      return idStr && idStr.length > 12 ? `${idStr.slice(0, 12)}…` : (idStr || 'Document');
+    },
+    reorderSelectedDocuments(fromIndex, toIndex) {
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) {
+        return;
+      }
+      const docs = this.selectedDocuments.slice();
+      if (fromIndex >= docs.length || toIndex >= docs.length) {
+        return;
+      }
+      const [item] = docs.splice(fromIndex, 1);
+      docs.splice(toIndex, 0, item);
+      this.selectedDocuments = docs;
+    },
+    focusInvestigationDocument(doc) {
+      const key = this.getDocumentKey(doc);
+      if (!key) {
+        return;
+      }
+      this.focusedInvestigationDocumentKey = key;
+      const next = { ...this.investigationDocPreviewExpanded };
+      delete next[key];
+      this.investigationDocPreviewExpanded = next;
+    },
+    isInvestigationDocumentFocused(doc) {
+      const key = this.getDocumentKey(doc);
+      return !!key && this.focusedInvestigationDocumentKey === key;
+    },
     documentHref(doc) {
       if (!doc || doc._id == null || !doc.model) {
         return '#';
@@ -953,16 +1094,23 @@ module.exports = app => app.component('mongoose-sleuth', {
         return;
       }
       const next = { ...this.investigationDocPreviewExpanded };
-      if (next[key]) {
-        delete next[key];
+      const isOpen = !Object.prototype.hasOwnProperty.call(next, key) || !!next[key];
+      if (isOpen) {
+        next[key] = false;
       } else {
-        next[key] = true;
+        delete next[key];
       }
       this.investigationDocPreviewExpanded = next;
     },
     isInvestigationDocPreviewOpen(doc) {
       const key = this.getDocumentKey(doc);
-      return !!(key && this.investigationDocPreviewExpanded[key]);
+      if (!key) {
+        return true;
+      }
+      if (!Object.prototype.hasOwnProperty.call(this.investigationDocPreviewExpanded, key)) {
+        return true;
+      }
+      return !!this.investigationDocPreviewExpanded[key];
     },
     getDocumentPreview(doc) {
       if (!doc || typeof doc !== 'object') {
@@ -1214,7 +1362,6 @@ module.exports = app => app.component('mongoose-sleuth', {
         if (typeof caseReport.name === 'string') {
           this.currentCaseReportName = caseReport.name;
         }
-        this.currentCaseReportStatus = typeof caseReport.status === 'string' ? caseReport.status : 'created';
         this.summary = typeof caseReport.summary === 'string' ? caseReport.summary : '';
         this.aiSummary = typeof caseReport.AISummary === 'string' ? caseReport.AISummary : '';
 
@@ -1272,6 +1419,7 @@ module.exports = app => app.component('mongoose-sleuth', {
         }
 
         this.selectedDocuments = loadedDocs.length > 0 ? loadedDocs : [];
+        this.seedProjectionTextFromHighlightedFields(loadedDocs);
 
         if (!this.hasSourceFromModelsView && loadedDocs.length > 0) {
           const modelFromReport = loadedDocs.find(d => d && d.model)?.model;
@@ -1321,7 +1469,7 @@ module.exports = app => app.component('mongoose-sleuth', {
       if (this.status === 'loading' || this.loadedAllDocs || !this.currentModel) {
         return;
       }
-      const container = this.$refs.unified?.$refs?.documentsList?.querySelector('.documents-container');
+      const container = this.getBrowseScrollContainer();
       if (container && container.scrollHeight - container.clientHeight - 100 < container.scrollTop) {
         this.status = 'loading';
         await this.loadMoreDocuments();
@@ -1353,7 +1501,25 @@ module.exports = app => app.component('mongoose-sleuth', {
       return mpath.get(path, doc);
     },
     isDocumentSelected(document) {
-      return this.selectedDocuments.some(x => x._id.toString() === document._id.toString() && x.model === this.currentModel);
+      if (!document || document._id == null || !this.currentModel) {
+        return false;
+      }
+      return this.selectedDocuments.some(x =>
+        x._id.toString() === document._id.toString() && x.model === this.currentModel
+      );
+    },
+    async addDocumentFromBrowse(document) {
+      if (!document || document._id == null || !this.currentModel) {
+        return;
+      }
+      if (this.isDocumentSelected(document)) {
+        return;
+      }
+      const documentWithModel = { ...document, model: this.currentModel };
+      this.selectedDocuments.push(documentWithModel);
+      if (this.currentCaseReportId) {
+        await this.persistCaseReportDocuments({ toastMessage: 'Document added to case report' });
+      }
     },
     async handleDocumentSelection(document, event) {
       const documentWithModel = { ...document, model: this.currentModel };
@@ -1410,48 +1576,12 @@ module.exports = app => app.component('mongoose-sleuth', {
           this.currentCaseReportId = caseReport._id != null ? String(caseReport._id) : caseReport._id;
         }
         this.currentCaseReportName = trimmedName;
-        if (caseReport && typeof caseReport.status === 'string') {
-          this.currentCaseReportStatus = caseReport.status;
-        }
         this.shouldShowCaseReportModal = false;
         this.caseReportName = '';
         this.$toast.success('Case report created!');
       } catch (error) {
         console.error('Error saving case report', error);
         this.$toast.error(error?.message || 'Error saving case report');
-      }
-    },
-    async updateCaseReportStatus(nextStatus) {
-      if (!this.currentCaseReportId) {
-        return;
-      }
-      const allowed = new Set(['created', 'in_progress', 'cancelled', 'resolved', 'archived']);
-      if (!allowed.has(nextStatus)) {
-        return;
-      }
-      this.updatingCaseReportStatus = true;
-      try {
-        const { caseReport } = await api.CaseReport.updateCaseReport({
-          caseReportId: this.currentCaseReportId,
-          status: nextStatus
-        });
-        if (caseReport && typeof caseReport.status === 'string') {
-          this.currentCaseReportStatus = caseReport.status;
-        } else {
-          this.currentCaseReportStatus = nextStatus;
-        }
-        try {
-          const { caseReports } = await api.CaseReport.getCaseReports();
-          this.caseReports = Array.isArray(caseReports) ? caseReports : [];
-        } catch (listErr) {
-          console.error('Error refreshing case reports list', listErr);
-        }
-        this.$toast.success('Case report status updated');
-      } catch (err) {
-        console.error('Error updating case report status', err);
-        this.$toast.error(err?.message || 'Error updating status');
-      } finally {
-        this.updatingCaseReportStatus = false;
       }
     },
     async saveInvestigationProgress() {

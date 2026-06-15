@@ -1,111 +1,86 @@
 'use strict';
 
 const api = require('../api');
+const appendCSS = require('../appendCSS');
 const template = require('./case-reports.html');
+
+appendCSS(require('./case-reports.css'));
 
 module.exports = app => app.component('case-reports', {
   template: template,
   data: () => ({
     status: 'loading',
-    caseReports: [],
-    showConfirmModal: false,
-    confirmAction: null,
-    confirmCaseReportId: null,
-    confirmMessage: '',
-    confirmButtonText: '',
-    confirmButtonClass: ''
+    caseReports: []
   }),
+  computed: {
+    totalDocuments() {
+      return this.caseReports.reduce((sum, report) => sum + this.getDocumentCount(report), 0);
+    },
+    reportsWithSummary() {
+      return this.caseReports.filter(report => this.hasSummary(report)).length;
+    }
+  },
   methods: {
     formatDate(date) {
       if (!date) return 'N/A';
       try {
         const d = new Date(date);
         if (isNaN(d.getTime())) return 'N/A';
-        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+        return d.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        });
       } catch (e) {
         return 'N/A';
       }
     },
-    formatStatus(status) {
-      if (!status) return 'Unknown';
-      const statusMap = {
-        created: 'Created',
-        in_progress: 'In Progress',
-        cancelled: 'Cancelled',
-        resolved: 'Resolved',
-        archived: 'Archived'
-      };
-      return statusMap[status] || status;
-    },
-    getStatusClass(status) {
-      if (!status) return 'bg-gray-100 text-gray-800';
-      const classMap = {
-        created: 'bg-blue-100 text-blue-800',
-        in_progress: 'bg-yellow-100 text-yellow-800',
-        cancelled: 'bg-red-100 text-red-800',
-        resolved: 'bg-green-100 text-green-800',
-        archived: 'bg-gray-100 text-gray-800'
-      };
-      return classMap[status] || 'bg-gray-100 text-gray-800';
-    },
-    openCancelConfirm(caseReportId) {
-      this.confirmCaseReportId = caseReportId;
-      this.confirmAction = 'cancel';
-      this.confirmMessage = 'Are you sure you want to cancel this case report?';
-      this.confirmButtonText = 'Cancel Case Report';
-      this.confirmButtonClass = 'bg-red-600 hover:bg-red-500 focus-visible:outline-red-600';
-      this.showConfirmModal = true;
-    },
-    openArchiveConfirm(caseReportId) {
-      this.confirmCaseReportId = caseReportId;
-      this.confirmAction = 'archive';
-      this.confirmMessage = 'Are you sure you want to archive this case report?';
-      this.confirmButtonText = 'Archive Case Report';
-      this.confirmButtonClass = 'bg-gray-600 hover:bg-gray-500 focus-visible:outline-gray-600';
-      this.showConfirmModal = true;
-    },
-    closeConfirmModal() {
-      this.showConfirmModal = false;
-      this.confirmCaseReportId = null;
-      this.confirmAction = null;
-      this.confirmMessage = '';
-      this.confirmButtonText = '';
-      this.confirmButtonClass = '';
-    },
-    async executeConfirmAction() {
-      if (!this.confirmCaseReportId || !this.confirmAction) {
-        return;
-      }
-
+    formatRelativeDate(date) {
+      if (!date) return '';
       try {
-        let status;
-        let successMessage;
-        
-        if (this.confirmAction === 'cancel') {
-          status = 'cancelled';
-          successMessage = 'Case report cancelled';
-        } else if (this.confirmAction === 'archive') {
-          status = 'archived';
-          successMessage = 'Case report archived';
-        } else {
-          return;
-        }
-
-        await api.CaseReport.updateCaseReport({
-          caseReportId: this.confirmCaseReportId,
-          status
-        });
-        
-        this.$toast.success(successMessage);
-        this.closeConfirmModal();
-        
-        // Reload case reports
-        const { caseReports } = await api.CaseReport.getCaseReports();
-        this.caseReports = caseReports;
-      } catch (error) {
-        console.error(`Error ${this.confirmAction}ing case report`, error);
-        this.$toast.error(error?.message || `Error ${this.confirmAction}ing case report`);
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return '';
+        const diffMs = Date.now() - d.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return this.formatDate(date);
+      } catch (e) {
+        return '';
       }
+    },
+    getDocumentCount(caseReport) {
+      return Array.isArray(caseReport && caseReport.documents) ? caseReport.documents.length : 0;
+    },
+    getNotesCount(caseReport) {
+      if (!Array.isArray(caseReport && caseReport.documents)) {
+        return 0;
+      }
+      return caseReport.documents.filter(entry =>
+        entry && typeof entry.notes === 'string' && entry.notes.trim().length > 0
+      ).length;
+    },
+    hasSummary(caseReport) {
+      return typeof caseReport.summary === 'string' && caseReport.summary.trim().length > 0;
+    },
+    hasAiSummary(caseReport) {
+      return typeof caseReport.AISummary === 'string' && caseReport.AISummary.trim().length > 0;
+    },
+    getReportPreview(caseReport) {
+      if (this.hasSummary(caseReport)) {
+        const text = caseReport.summary.trim();
+        return text.length > 160 ? `${text.slice(0, 157)}…` : text;
+      }
+      if (this.hasAiSummary(caseReport)) {
+        return 'AI-enhanced summary available';
+      }
+      return '';
     }
   },
   async mounted() {

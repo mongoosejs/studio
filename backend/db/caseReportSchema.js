@@ -7,12 +7,6 @@ const caseReportSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  status: {
-    type: String,
-    $required: true,
-    default: 'created',
-    enum: ['created', 'in_progress', 'cancelled', 'resolved', 'archived']
-  },
   documents: [{
     documentId: {
       type: String, // for cases where its not an objectId but is used like one
