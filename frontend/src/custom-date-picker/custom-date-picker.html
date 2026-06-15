@@ -1,165 +1,168 @@
 <div
   class="custom-date-picker"
-  :class="[
-    mini ? 'p-0.5 text-[10px]' : (compact ? 'p-2 text-xs' : 'p-3 text-sm'),
-    mini ? '' : 'bg-surface border border-edge-strong rounded-md shadow-sm'
-  ]"
+  :class="rootClasses"
 >
-  <div class="flex items-center justify-between gap-1 mb-1" :class="mini ? 'mb-0.5' : 'mb-2'">
-    <button
-      type="button"
-      class="shrink-0 flex items-center justify-center rounded border border-edge-strong hover:bg-surface-hover text-content-secondary"
-      :class="mini ? 'w-5 h-5 text-[10px]' : 'w-7 h-7'"
-      aria-label="Previous month"
-      @click="prevMonth"
-    >‹</button>
-    <span
-      class="font-medium text-content-primary truncate"
-      :class="mini ? 'text-[10px]' : ''"
-    >{{ monthLabel }}</span>
-    <button
-      type="button"
-      class="shrink-0 flex items-center justify-center rounded border border-edge-strong hover:bg-surface-hover text-content-secondary"
-      :class="mini ? 'w-5 h-5 text-[10px]' : 'w-7 h-7'"
-      aria-label="Next month"
-      @click="nextMonth"
-    >›</button>
-  </div>
+  <div :class="horizontal ? 'flex gap-3 items-start' : ''">
+    <div :class="horizontal ? 'shrink-0' : ''">
+      <div class="flex items-center justify-between gap-1 mb-1" :class="mini ? 'mb-0.5' : 'mb-2'">
+        <button
+          type="button"
+          class="shrink-0 flex items-center justify-center rounded border border-edge-strong hover:bg-surface-hover text-content-secondary"
+          :class="mini ? 'w-5 h-5 text-[10px]' : 'w-7 h-7'"
+          aria-label="Previous month"
+          @click="prevMonth"
+        >‹</button>
+        <span
+          class="font-medium text-content-primary truncate"
+          :class="mini ? 'text-[10px]' : ''"
+        >{{ monthLabel }}</span>
+        <button
+          type="button"
+          class="shrink-0 flex items-center justify-center rounded border border-edge-strong hover:bg-surface-hover text-content-secondary"
+          :class="mini ? 'w-5 h-5 text-[10px]' : 'w-7 h-7'"
+          aria-label="Next month"
+          @click="nextMonth"
+        >›</button>
+      </div>
 
-  <div class="grid grid-cols-7 gap-px mb-0.5">
+      <div class="grid grid-cols-7 gap-px mb-0.5">
+        <div
+          v-for="label in weekdayLabels"
+          :key="label"
+          class="flex items-center justify-center text-center text-content-tertiary font-medium min-w-0"
+          :class="[
+            dayCellClass,
+            mini ? 'text-[9px]' : (compact ? 'text-[10px]' : 'text-xs')
+          ]"
+        >{{ mini ? label.charAt(0) : label }}</div>
+      </div>
+
+      <div class="grid grid-cols-7 gap-px">
+        <button
+          v-for="day in calendarDays"
+          :key="day.key"
+          type="button"
+          class="min-w-0 w-full flex items-center justify-center rounded transition-colors"
+          :class="[
+            dayCellClass,
+            mini ? 'text-[10px]' : (compact ? 'text-xs' : 'text-sm'),
+            dayClasses(day)
+          ]"
+          :aria-label="day.label"
+          :aria-pressed="isSelectedDay(day)"
+          @click="selectDay(day)"
+        >{{ day.label }}</button>
+      </div>
+    </div>
+
     <div
-      v-for="label in weekdayLabels"
-      :key="label"
-      class="flex items-center justify-center text-center text-content-tertiary font-medium min-w-0"
-      :class="[
-        dayCellClass,
-        mini ? 'text-[9px]' : (compact ? 'text-[10px]' : 'text-xs')
-      ]"
-    >{{ mini ? label.charAt(0) : label }}</div>
-  </div>
-
-  <div class="grid grid-cols-7 gap-px">
-    <button
-      v-for="day in calendarDays"
-      :key="day.key"
-      type="button"
-      class="min-w-0 w-full flex items-center justify-center rounded transition-colors"
-      :class="[
-        dayCellClass,
-        mini ? 'text-[10px]' : (compact ? 'text-xs' : 'text-sm'),
-        dayClasses(day)
-      ]"
-      :aria-label="day.label"
-      :aria-pressed="isSelectedDay(day)"
-      @click="selectDay(day)"
-    >{{ day.label }}</button>
-  </div>
-
-  <div
-    v-if="showTime"
-    class="border-t border-edge-strong"
-    :class="mini ? 'mt-1 pt-1' : 'mt-3 pt-3'"
-    @mousedown.stop
-  >
-    <div
-      class="text-content-secondary mb-2"
-      :class="mini ? 'text-xs' : 'text-sm'"
-    >Time</div>
-    <div class="relative flex items-center justify-center">
+      v-if="showTime"
+      :class="timeSectionClasses"
+      @mousedown.stop
+    >
       <div
-        class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 border-y border-edge-strong bg-surface-hover/40"
-        :class="wheelHighlightClass"
-        aria-hidden="true"
-      ></div>
-      <div class="relative flex items-center justify-center gap-1">
+        class="text-content-secondary"
+        :class="[
+          horizontal ? 'mb-1 text-xs' : 'mb-2',
+          mini ? 'text-xs' : (horizontal ? '' : 'text-sm')
+        ]"
+      >Time</div>
+      <div class="relative flex items-center justify-center">
         <div
-          ref="hourWheel"
-          class="wheel-column"
-          :class="[wheelListClass, wheelColumnClass]"
-          :style="wheelListStyle"
-          @scroll="onHourWheelScroll"
-        >
+          class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 border-y border-edge-strong bg-surface-hover/40"
+          :class="wheelHighlightClass"
+          aria-hidden="true"
+        ></div>
+        <div class="relative flex items-center justify-center gap-1">
           <div
-            v-for="n in wheelPadCount"
-            :key="'hour-pad-top-' + n"
-            :class="wheelItemClass"
-            aria-hidden="true"
-          ></div>
-          <button
-            v-for="h in hourOptions"
-            :key="'hour-' + h"
-            type="button"
-            :class="[wheelItemClass, wheelItemClasses(h, hour)]"
-            :aria-label="'Hour ' + h"
-            :aria-selected="hour === h"
-            @click="selectHour(h)"
-          >{{ formatWheelValue(h) }}</button>
+            ref="hourWheel"
+            class="wheel-column"
+            :class="[wheelListClass, wheelColumnClass]"
+            :style="wheelListStyle"
+            @scroll="onHourWheelScroll"
+          >
+            <div
+              v-for="n in wheelPadCount"
+              :key="'hour-pad-top-' + n"
+              :class="wheelItemClass"
+              aria-hidden="true"
+            ></div>
+            <button
+              v-for="h in hourOptions"
+              :key="'hour-' + h"
+              type="button"
+              :class="[wheelItemClass, wheelItemClasses(h, hour)]"
+              :aria-label="'Hour ' + h"
+              :aria-selected="hour === h"
+              @click="selectHour(h)"
+            >{{ formatWheelValue(h) }}</button>
+            <div
+              v-for="n in wheelPadCount"
+              :key="'hour-pad-bottom-' + n"
+              :class="wheelItemClass"
+              aria-hidden="true"
+            ></div>
+          </div>
+          <span class="text-content-secondary font-medium" :class="mini ? 'text-sm' : 'text-base'">:</span>
           <div
-            v-for="n in wheelPadCount"
-            :key="'hour-pad-bottom-' + n"
-            :class="wheelItemClass"
-            aria-hidden="true"
-          ></div>
-        </div>
-        <span class="text-content-secondary font-medium" :class="mini ? 'text-sm' : 'text-base'">:</span>
-        <div
-          ref="minuteWheel"
-          class="wheel-column"
-          :class="[wheelListClass, wheelColumnClass]"
-          :style="wheelListStyle"
-          @scroll="onMinuteWheelScroll"
-        >
+            ref="minuteWheel"
+            class="wheel-column"
+            :class="[wheelListClass, wheelColumnClass]"
+            :style="wheelListStyle"
+            @scroll="onMinuteWheelScroll"
+          >
+            <div
+              v-for="n in wheelPadCount"
+              :key="'minute-pad-top-' + n"
+              :class="wheelItemClass"
+              aria-hidden="true"
+            ></div>
+            <button
+              v-for="m in minuteOptions"
+              :key="'minute-' + m"
+              type="button"
+              :class="[wheelItemClass, wheelItemClasses(m, minute)]"
+              :aria-label="'Minute ' + m"
+              :aria-selected="minute === m"
+              @click="selectMinute(m)"
+            >{{ formatWheelValue(m) }}</button>
+            <div
+              v-for="n in wheelPadCount"
+              :key="'minute-pad-bottom-' + n"
+              :class="wheelItemClass"
+              aria-hidden="true"
+            ></div>
+          </div>
+          <span class="text-content-secondary font-medium" :class="mini ? 'text-sm' : 'text-base'">:</span>
           <div
-            v-for="n in wheelPadCount"
-            :key="'minute-pad-top-' + n"
-            :class="wheelItemClass"
-            aria-hidden="true"
-          ></div>
-          <button
-            v-for="m in minuteOptions"
-            :key="'minute-' + m"
-            type="button"
-            :class="[wheelItemClass, wheelItemClasses(m, minute)]"
-            :aria-label="'Minute ' + m"
-            :aria-selected="minute === m"
-            @click="selectMinute(m)"
-          >{{ formatWheelValue(m) }}</button>
-          <div
-            v-for="n in wheelPadCount"
-            :key="'minute-pad-bottom-' + n"
-            :class="wheelItemClass"
-            aria-hidden="true"
-          ></div>
-        </div>
-        <span class="text-content-secondary font-medium" :class="mini ? 'text-sm' : 'text-base'">:</span>
-        <div
-          ref="secondWheel"
-          class="wheel-column"
-          :class="[wheelListClass, wheelColumnClass]"
-          :style="wheelListStyle"
-          @scroll="onSecondWheelScroll"
-        >
-          <div
-            v-for="n in wheelPadCount"
-            :key="'second-pad-top-' + n"
-            :class="wheelItemClass"
-            aria-hidden="true"
-          ></div>
-          <button
-            v-for="s in secondOptions"
-            :key="'second-' + s"
-            type="button"
-            :class="[wheelItemClass, wheelItemClasses(s, second)]"
-            :aria-label="'Second ' + s"
-            :aria-selected="second === s"
-            @click="selectSecond(s)"
-          >{{ formatWheelValue(s) }}</button>
-          <div
-            v-for="n in wheelPadCount"
-            :key="'second-pad-bottom-' + n"
-            :class="wheelItemClass"
-            aria-hidden="true"
-          ></div>
+            ref="secondWheel"
+            class="wheel-column"
+            :class="[wheelListClass, wheelColumnClass]"
+            :style="wheelListStyle"
+            @scroll="onSecondWheelScroll"
+          >
+            <div
+              v-for="n in wheelPadCount"
+              :key="'second-pad-top-' + n"
+              :class="wheelItemClass"
+              aria-hidden="true"
+            ></div>
+            <button
+              v-for="s in secondOptions"
+              :key="'second-' + s"
+              type="button"
+              :class="[wheelItemClass, wheelItemClasses(s, second)]"
+              :aria-label="'Second ' + s"
+              :aria-selected="second === s"
+              @click="selectSecond(s)"
+            >{{ formatWheelValue(s) }}</button>
+            <div
+              v-for="n in wheelPadCount"
+              :key="'second-pad-bottom-' + n"
+              :class="wheelItemClass"
+              aria-hidden="true"
+            ></div>
+          </div>
         </div>
       </div>
     </div>
@@ -170,7 +173,7 @@
     :class="mini ? 'mt-1' : 'mt-2'"
   >
     <button
-      v-if="!mini"
+      v-if="!mini && !horizontal"
       type="button"
       class="text-xs text-teal-700 hover:text-teal-900 font-medium px-2 py-1 rounded hover:bg-surface-hover"
       @click="goToToday"

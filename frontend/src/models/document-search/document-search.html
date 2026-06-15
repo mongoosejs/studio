@@ -11,44 +11,53 @@
     @keydown="handleKeyDown"
   />
   <div
-    v-if="datePickerContext || autocompleteSuggestions.length"
+    v-if="autocompleteSuggestions.length"
     ref="autocompleteDropdown"
     class="absolute z-[9999] bg-surface border border-edge-strong rounded mt-1 w-full shadow"
   >
-    <div
-      v-if="datePickerContext"
-      class="px-1 py-1 border-b border-edge-strong"
-      @mousedown.stop
-    >
-      <div class="flex flex-wrap items-center gap-2 px-1 pb-1">
-        <span class="text-content-secondary text-xs">Date</span>
-        <select
-          v-model="dateInsertFormat"
-          class="text-xs border border-edge rounded-md bg-surface px-2 py-1"
-          @mousedown.stop
-        >
-          <option value="timestamp">Milliseconds</option>
-          <option value="quoted">Date string</option>
-        </select>
-      </div>
+    <ul class="max-h-40 overflow-y-auto">
+      <li
+        v-for="(suggestion, index) in autocompleteSuggestions"
+        :key="suggestion"
+        class="px-2 py-1 cursor-pointer"
+        :class="{ 'bg-primary-subtle': index === autocompleteIndex }"
+        @mousedown.prevent="applySuggestion(index)"
+      >
+        {{ suggestion }}
+      </li>
+    </ul>
+  </div>
+</form>
+
+<Teleport to="body">
+  <div
+    v-if="datePickerContext"
+    class="fixed bottom-4 right-4 z-[10000] w-[400px] max-w-[calc(100vw-2rem)] bg-surface border border-edge-strong rounded-lg shadow-xl"
+    role="dialog"
+    aria-label="Date picker"
+    @mousedown.stop
+  >
+    <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-edge-strong">
+      <span class="text-sm font-medium text-content-primary">Insert date into filter</span>
+      <select
+        v-model="dateInsertFormat"
+        class="text-xs border border-edge rounded-md bg-surface px-2 py-1 shrink-0"
+        @mousedown.stop
+      >
+        <option value="timestamp">Milliseconds</option>
+        <option value="quoted">Date string</option>
+      </select>
+    </div>
+    <div class="p-2">
       <custom-date-picker
         compact
+        horizontal
+        embedded
         :immediate="false"
         mode="datetime"
         :value="datePickerLocalValue"
         @commit="applyDateFromPicker"
       />
     </div>
-    <ul v-if="autocompleteSuggestions.length" class="max-h-40 overflow-y-auto">
-    <li
-      v-for="(suggestion, index) in autocompleteSuggestions"
-      :key="suggestion"
-      class="px-2 py-1 cursor-pointer"
-      :class="{ 'bg-primary-subtle': index === autocompleteIndex }"
-      @mousedown.prevent="applySuggestion(index)"
-    >
-      {{ suggestion }}
-    </li>
-  </ul>
   </div>
-</form>
+</Teleport>

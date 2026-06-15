@@ -51,6 +51,14 @@ module.exports = app => app.component('custom-date-picker', {
     immediate: {
       type: Boolean,
       default: true
+    },
+    horizontal: {
+      type: Boolean,
+      default: false
+    },
+    embedded: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['input', 'commit'],
@@ -71,16 +79,42 @@ module.exports = app => app.component('custom-date-picker', {
       timeApplyTimer: null,
       hourOptions: HOUR_OPTIONS,
       minuteOptions: MINUTE_OPTIONS,
-      secondOptions: SECOND_OPTIONS,
-      wheelPadCount: WHEEL_PAD
+      secondOptions: SECOND_OPTIONS
     };
   },
   watch: {
     value() {
       this.syncFromValue();
+    },
+    horizontal() {
+      this.$nextTick(() => this.scrollWheelsToValues());
     }
   },
   computed: {
+    rootClasses() {
+      const sizeClass = this.mini
+        ? 'p-0.5 text-[10px]'
+        : (this.compact ? 'p-2 text-xs' : 'p-3 text-sm');
+      const chromeClass = this.embedded
+        ? ''
+        : (this.mini ? '' : 'bg-surface border border-edge-strong rounded-md shadow-sm');
+      return [sizeClass, chromeClass];
+    },
+    timeSectionClasses() {
+      if (this.horizontal) {
+        return 'flex-1 min-w-0 border-l border-edge-strong pl-2';
+      }
+      return [
+        'border-t border-edge-strong',
+        this.mini ? 'mt-1 pt-1' : 'mt-3 pt-3'
+      ];
+    },
+    wheelPadCount() {
+      return this.horizontal ? 1 : WHEEL_PAD;
+    },
+    wheelVisibleRows() {
+      return this.horizontal ? 3 : 5;
+    },
     weekdayLabels() {
       return WEEKDAY_LABELS;
     },
@@ -123,7 +157,7 @@ module.exports = app => app.component('custom-date-picker', {
     },
     wheelListStyle() {
       return {
-        height: `${this.wheelItemPx * 5}px`
+        height: `${this.wheelItemPx * this.wheelVisibleRows}px`
       };
     },
     wheelItemClass() {
