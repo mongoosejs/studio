@@ -61,7 +61,6 @@ const STAGE_OPERATORS = [
   '$count',
   '$facet'
 ];
-const STAGE_PREVIEW_LIMIT = 3;
 const RESULT_PAGE_SIZE = 20;
 
 function createDefaultStage() {
@@ -69,11 +68,18 @@ function createDefaultStage() {
     id: Math.random().toString(36).slice(2),
     operator: '$match',
     bodyText: '{}',
-    previewDocs: [],
-    previewError: '',
-    previewLoading: false,
-    previewExpanded: false,
-    previewLoaded: false,
+    expanded: true,
+    showBodyError: false,
+    frozenBodyError: null
+  };
+}
+
+function cloneStageFrom(source) {
+  return {
+    id: Math.random().toString(36).slice(2),
+    operator: source.operator,
+    bodyText: source.bodyText,
+    expanded: true,
     showBodyError: false,
     frozenBodyError: null
   };
@@ -90,13 +96,17 @@ module.exports = app => app.component('aggregation-builder', {
     stageOperators: STAGE_OPERATORS,
     isRunning: false,
     errorMessage: '',
+    hasRunResult: false,
+    resultsPanelVisible: false,
     results: [],
     visibleResultsCount: RESULT_PAGE_SIZE,
     resultsRenderKey: 0,
     activeRunId: 0,
     editingStageId: null,
     pipelineErrorsRevealed: false,
-    pipelineErrorsPanelOpen: false
+    pipelineErrorsPanelOpen: false,
+    dragStageIndex: null,
+    dropStageIndex: null
   }),
   computed: {
     hasPipelineErrors() {
@@ -117,9 +127,6 @@ module.exports = app => app.component('aggregation-builder', {
         }
       }
       return errors;
-    },
-    pipelineSignature() {
-      return this.stages.map(stage => `${stage.operator}::${stage.bodyText || ''}`).join('||');
     },
     visibleResults() {
       return this.results.slice(0, this.visibleResultsCount);
@@ -143,6 +150,9 @@ module.exports = app => app.component('aggregation-builder', {
   },
   methods: {
     addStage() {
+      for (const stage of this.stages) {
+        stage.expanded = false;
+      }
       this.stages.push(createDefaultStage());
       this.$nextTick(() => {
         const rows = this.$refs.workflowStageRows;
@@ -165,6 +175,78 @@ module.exports = app => app.component('aggregation-builder', {
         return;
       }
       this.stages.splice(index, 1);
+    },
+    duplicateStage(index) {
+      if (index < 0 || index >= this.stages.length) {
+        return;
+      }
+      for (const stage of this.stages) {
+        stage.expanded = false;
+      }
+      const duplicate = cloneStageFrom(this.stages[index]);
+      this.stages.splice(index + 1, 0, duplicate);
+      this.$nextTick(() => {
+        const rows = this.$refs.workflowStageRows;
+        const el = Array.isArray(rows) ? rows[index + 1] : rows;
+        if (el && typeof el.scrollIntoView === 'function') {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    },
+    moveStage(fromIndex, toIndex) {
+      if (fromIndex < 0 || toIndex < 0 || fromIndex >= this.stages.length || toIndex >= this.stages.length) {
+        return;
+      }
+      if (fromIndex === toIndex) {
+        return;
+      }
+      const [moved] = this.stages.splice(fromIndex, 1);
+      this.stages.splice(toIndex, 0, moved);
+    },
+    moveStageUp(index) {
+      if (index > 0) {
+        this.moveStage(index, index - 1);
+      }
+    },
+    moveStageDown(index) {
+      if (index < this.stages.length - 1) {
+        this.moveStage(index, index + 1);
+      }
+    },
+    onStageDragStart(index, event) {
+      this.dragStageIndex = index;
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(index));
+      }
+    },
+    onStageDragOver(index, event) {
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+      this.dropStageIndex = index;
+    },
+    onStageDragEnd() {
+      this.dragStageIndex = null;
+      this.dropStageIndex = null;
+    },
+    onStageDrop(index, event) {
+      event.preventDefault();
+      const fromIndex = this.dragStageIndex;
+      this.onStageDragEnd();
+      if (fromIndex == null || fromIndex === index) {
+        return;
+      }
+      const [moved] = this.stages.splice(fromIndex, 1);
+      let insertIndex = index;
+      if (fromIndex < index) {
+        insertIndex -= 1;
+      }
+      this.stages.splice(insertIndex, 0, moved);
+    },
+    toggleStageExpanded(stage) {
+      stage.expanded = !stage.expanded;
     },
     getStageError(stage) {
       const text = typeof stage.bodyText === 'string' ? stage.bodyText.trim() : '';
@@ -197,7 +279,10 @@ module.exports = app => app.component('aggregation-builder', {
     onStageBodyFocus(stage) {
       this.editingStageId = stage.id;
     },
-    onStageBodyBlur(stage) {
+    onStageBodyBlur(stage, event) {
+      if (event?.currentTarget?.contains(event.relatedTarget)) {
+        return;
+      }
       this.editingStageId = null;
       stage.showBodyError = true;
       this.syncStageFrozenError(stage);
@@ -208,6 +293,9 @@ module.exports = app => app.component('aggregation-builder', {
       for (const stage of this.stages) {
         stage.showBodyError = true;
         this.syncStageFrozenError(stage);
+        if (stage.frozenBodyError) {
+          stage.expanded = true;
+        }
       }
       if (this.hasVisibleErrors) {
         this.pipelineErrorsPanelOpen = true;
@@ -249,90 +337,52 @@ module.exports = app => app.component('aggregation-builder', {
         return `/* Could not serialize pipeline for preview: ${err.message} */\n${JSON.stringify(slice, null, 2)}`;
       }
     },
-    formatDoc(doc) {
-      return JSON.stringify(doc, null, 2);
-    },
     loadMoreResults() {
       this.visibleResultsCount = Math.min(this.visibleResultsCount + RESULT_PAGE_SIZE, this.results.length);
     },
-    toggleStagePreview(stage) {
-      stage.previewExpanded = !stage.previewExpanded;
-    },
-    pipelineThroughIndexHasErrors(index) {
-      for (let i = 0; i <= index; i++) {
-        if (this.getStageError(this.stages[i]) != null) {
-          return true;
+    scrollToResults() {
+      this.$nextTick(() => {
+        const el = this.$refs.resultsSection;
+        if (el && typeof el.scrollIntoView === 'function') {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-      }
-      return false;
+      });
     },
-    runStagePreview(index) {
-      this.editingStageId = null;
-      if (index < 0 || index >= this.stages.length || !this.selectedModel) {
+    copyResults() {
+      if (!this.results.length) {
         return;
       }
-      if (this.pipelineThroughIndexHasErrors(index)) {
-        this.revealAllPipelineErrors();
-        return;
-      }
-      const stage = this.stages[index];
-      stage.previewExpanded = true;
-      this.loadSingleStagePreview(index);
-    },
-    async loadSingleStagePreview(index) {
-      if (index < 0 || index >= this.stages.length) {
-        return;
-      }
-      const stage = this.stages[index];
-      if (!this.selectedModel) {
-        return;
-      }
-      const token = (stage._previewRequestId = (stage._previewRequestId || 0) + 1);
-      stage.previewLoading = true;
-      stage.previewError = '';
-      try {
-        const partialPipeline = this.buildPipeline().slice(0, index + 1);
-        const wirePipeline = serializePipelineForWire(partialPipeline);
-        const { docs } = await api.Model.aggregate({
-          model: this.selectedModel,
-          pipeline: wirePipeline,
-          limit: STAGE_PREVIEW_LIMIT,
-          roles: this.roles
-        });
-        if (token !== stage._previewRequestId) {
-          return;
+      const text = JSON.stringify(EJSON.serialize(this.results), null, 2);
+      const onSuccess = () => this.$toast.success('Results copied to clipboard');
+      const fallbackCopy = () => {
+        try {
+          const el = document.createElement('textarea');
+          el.value = text;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          onSuccess();
+        } catch {
+          this.$toast.error('Copy failed');
         }
-        stage.previewDocs = docs || [];
-        stage.previewLoaded = true;
-      } catch (err) {
-        if (token !== stage._previewRequestId) {
-          return;
-        }
-        stage.previewError = err?.response?.data?.message || err.message || 'Could not preview this stage';
-        stage.previewDocs = [];
-        stage.previewLoaded = true;
-      } finally {
-        if (token === stage._previewRequestId) {
-          stage.previewLoading = false;
-        }
-      }
-    },
-    invalidateStagePreviews() {
-      for (const stage of this.stages) {
-        stage._previewRequestId = (stage._previewRequestId || 0) + 1;
-        stage.previewDocs = [];
-        stage.previewError = '';
-        stage.previewLoading = false;
-        stage.previewLoaded = false;
+      };
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(fallbackCopy);
+      } else {
+        fallbackCopy();
       }
     },
     async runAggregation() {
       this.editingStageId = null;
       this.errorMessage = '';
+      this.hasRunResult = false;
+      this.resultsPanelVisible = true;
       const pipeline = this.buildPipeline();
       if (this.hasPipelineErrors) {
         this.revealAllPipelineErrors();
         this.errorMessage = 'Fix invalid stage syntax before running.';
+        this.scrollToResults();
         return;
       }
       if (!this.selectedModel) {
@@ -340,12 +390,14 @@ module.exports = app => app.component('aggregation-builder', {
       }
       const runId = ++this.activeRunId;
       this.isRunning = true;
+      this.scrollToResults();
       try {
         let wirePipeline;
         try {
           wirePipeline = serializePipelineForWire(pipeline);
         } catch (err) {
           this.errorMessage = `Could not serialize pipeline: ${err.message}`;
+          this.scrollToResults();
           return;
         }
         const { docs } = await api.Model.aggregate({
@@ -360,25 +412,22 @@ module.exports = app => app.component('aggregation-builder', {
         this.results = docs || [];
         this.visibleResultsCount = RESULT_PAGE_SIZE;
         this.resultsRenderKey += 1;
+        this.hasRunResult = true;
         this.clearRevealedPipelineErrors();
+        this.scrollToResults();
       } catch (err) {
         if (runId !== this.activeRunId) {
           return;
         }
         this.errorMessage = err?.response?.data?.message || err.message || 'Aggregation failed';
+        this.hasRunResult = true;
+        this.pipelineErrorsPanelOpen = true;
+        this.scrollToResults();
       } finally {
         if (runId === this.activeRunId) {
           this.isRunning = false;
         }
       }
-    }
-  },
-  watch: {
-    pipelineSignature() {
-      this.invalidateStagePreviews();
-    },
-    selectedModel() {
-      this.invalidateStagePreviews();
     }
   }
 });
