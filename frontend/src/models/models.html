@@ -177,6 +177,13 @@
                   Indexes
                 </button>
                 <button
+                  @click="openAnalyzeSchemaModal"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  Analyze Schema
+                </button>
+                <button
                   @click="openCollectionInfo"
                   type="button"
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
@@ -184,30 +191,20 @@
                   Collection Info
                 </button>
                 <button
-                  @click="findOldestDocument"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
-                >
-                  Find oldest document
-                </button>
-                <button
-                  @click="openDropCollectionModal"
-                  type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
-                >
-                  Drop Collection
-                </button>
-                <button
                   @click="toggleRowNumbers()"
+                  :disabled="outputType !== 'table'"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                  class="block w-full px-4 py-2 text-left text-sm"
+                  :class="outputType === 'table' ? 'text-content-secondary hover:bg-muted' : 'text-content-tertiary cursor-not-allowed opacity-50'"
                 >
                   {{ showRowNumbers ? 'Hide row numbers' : 'Show row numbers' }}
                 </button>
                 <button
                   @click="resetFilter()"
+                  :disabled="searchText.trim().length === 0"
                   type="button"
-                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                  class="block w-full px-4 py-2 text-left text-sm"
+                  :class="searchText.trim().length > 0 ? 'text-content-secondary hover:bg-muted' : 'text-content-tertiary cursor-not-allowed opacity-50'"
                 >
                   Reset Filter
                 </button>
@@ -235,6 +232,13 @@
                 >
                   Default Projection
                 </async-button>
+                <button
+                  @click="openDropCollectionModal"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                >
+                  Drop Collection
+                </button>
               </div>
             </div>
           </div>
@@ -549,6 +553,14 @@
           </div>
         </div>
       </div>
+    </template>
+  </modal>
+  <modal v-if="shouldShowAnalyzeSchemaModal" containerClass="md:!w-[70vw]">
+    <template v-slot:body>
+      <analyze-schema-modal
+        :current-model="currentModel"
+        @close="shouldShowAnalyzeSchemaModal = false"
+      ></analyze-schema-modal>
     </template>
   </modal>
   <modal v-if="shouldShowCollectionInfoModal">

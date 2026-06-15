@@ -15,7 +15,9 @@ module.exports = ({ studioConnection }) => async function getDashboards(params) 
 
   await authorize('Dashboard.getDashboards', roles);
 
-  const dashboards = await Dashboard.find();
+  const dashboards = await Dashboard
+    .find()
+    .sort({ isPinned: -1, createdAt: -1, _id: -1 });
 
   return { dashboards };
 };
