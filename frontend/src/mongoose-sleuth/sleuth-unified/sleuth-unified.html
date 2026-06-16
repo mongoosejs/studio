@@ -1,7 +1,8 @@
 <div
   class="relative flex flex-col w-full h-full min-h-0 bg-page"
   :class="{
-    'overflow-hidden h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)]': sleuthContext.isCaseReportDetailRoute,
+    'overflow-hidden h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)]': sleuthContext.isCaseReportDetailRoute && !bookmarkActive,
+    'min-h-[calc(100dvh-3.5rem)] h-auto max-h-none overflow-y-auto': sleuthContext.isCaseReportDetailRoute && bookmarkActive,
     'flex flex-col min-h-0 h-full overflow-hidden': !sleuthContext.isCaseReportDetailRoute
   }"
 >
@@ -25,7 +26,10 @@
 
   <!-- ── Case report detail page ───────────────────────────────────────── -->
   <template v-if="sleuthContext.isCaseReportDetailRoute">
-    <div class="flex flex-col flex-1 min-h-0 overflow-hidden gap-4 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-4">
+    <div
+      class="flex flex-col gap-4 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-4"
+      :class="bookmarkActive ? '' : 'flex-1 min-h-0 overflow-hidden'"
+    >
       <!-- Page header -->
       <div class="flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div class="min-w-0 flex items-center gap-3">
@@ -44,15 +48,21 @@
       </div>
 
       <!-- Main workspace -->
-      <div class="flex flex-col flex-1 min-h-0 overflow-hidden gap-4">
+      <div
+        class="flex flex-col gap-4"
+        :class="bookmarkActive ? '' : 'flex-1 min-h-0 overflow-hidden'"
+      >
         <!-- Documents & notes (primary focus) -->
-        <section class="flex flex-col flex-1 min-h-0 rounded-xl border border-edge border-l-[3px] border-l-primary bg-surface shadow-sm overflow-hidden">
+        <section
+          class="flex flex-col rounded-xl border border-edge border-l-[3px] border-l-primary bg-surface shadow-sm overflow-hidden"
+          :class="bookmarkActive ? 'shrink-0 h-[calc(100dvh-13rem)] min-h-[calc(100dvh-13rem)]' : 'flex-1 min-h-0'"
+        >
           <div class="shrink-0 border-b border-edge bg-gradient-to-b from-primary-subtle/40 to-surface px-5 py-4">
             <div class="flex flex-wrap items-center justify-between gap-4">
               <div class="min-w-0">
                 <h2 class="text-lg font-semibold text-content">Evidence review</h2>
                 <p class="text-sm text-content-secondary mt-1">
-                  Turn through documents one at a time · compare side-by-side when you need to
+                  Turn through documents one at a time · bookmark one reference to keep visible below
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2 shrink-0">
@@ -166,7 +176,7 @@
           >
             <div class="flex items-center justify-between gap-2 mb-2.5">
               <p class="text-xs font-semibold text-content-secondary">Contents</p>
-              <p class="text-[10px] text-content-tertiary">Jump to a document · drag to reorder · ← → to turn pages</p>
+              <p class="text-[10px] text-content-tertiary">Jump to a document · drag to reorder · ← → to turn pages<span v-if="bookmarkActive"> · bookmark pinned</span></p>
             </div>
             <div class="flex items-stretch gap-2 overflow-x-auto pb-1 overscroll-x-contain">
               <div
@@ -178,7 +188,8 @@
                 class="group flex shrink-0 items-center gap-2.5 rounded-lg border px-3 py-2.5 text-xs cursor-grab active:cursor-grabbing transition-all select-none"
                 :class="{
                   'border-primary bg-primary-subtle/40 ring-1 ring-primary/25 shadow-sm': isTimelineChipHighlighted(doc),
-                  'border-edge bg-muted/30 hover:bg-muted/50 hover:border-edge-strong': !isTimelineChipHighlighted(doc),
+                  'border-amber-400/70 bg-amber-50/80 ring-1 ring-amber-400/30': isTimelineChipBookmarked(doc),
+                  'border-edge bg-muted/30 hover:bg-muted/50 hover:border-edge-strong': !isTimelineChipHighlighted(doc) && !isTimelineChipBookmarked(doc),
                   'opacity-40 scale-[0.98]': isTimelineDragging(index),
                   'border-dashed border-primary bg-primary-subtle/20': isTimelineDropTarget(index)
                 }"
@@ -192,8 +203,15 @@
               >
                 <span
                   class="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold shrink-0"
-                  :class="isTimelineChipHighlighted(doc) ? 'bg-primary text-primary-text' : 'bg-surface text-primary ring-1 ring-inset ring-edge'"
-                >{{ index + 1 }}</span>
+                  :class="isTimelineChipBookmarked(doc)
+                    ? 'bg-amber-500 text-white'
+                    : isTimelineChipHighlighted(doc)
+                      ? 'bg-primary text-primary-text'
+                      : 'bg-surface text-primary ring-1 ring-inset ring-edge'"
+                >
+                  <svg v-if="isTimelineChipBookmarked(doc)" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Z"/></svg>
+                  <template v-else>{{ index + 1 }}</template>
+                </span>
                 <div class="min-w-0 max-w-[9rem]">
                   <div class="font-semibold text-content truncate">{{ sleuthContext.getTimelineShortLabel(doc) }}</div>
                   <div class="text-[10px] text-content-tertiary truncate">{{ doc.model }}</div>
@@ -203,28 +221,37 @@
           </div>
 
           <div class="flex-1 min-h-0 flex flex-col bg-muted/20">
-            <template v-if="activeNotebookDocument">
+            <template v-if="displayNotebookDocument">
               <div class="sleuth-book-page flex flex-col flex-1 min-h-0 border-t border-edge">
                 <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-edge/80 bg-surface">
                   <div class="min-w-0">
                     <p class="text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">
-                      Document {{ activeNotebookIndex + 1 }} of {{ sleuthContext.selectedDocuments.length }}
+                      Document {{ displayNotebookIndex + 1 }} of {{ browseDocuments.length }}
                     </p>
-                    <h3 class="text-sm font-semibold text-content truncate mt-0.5">{{ sleuthContext.getInvestigationDocumentHeading(activeNotebookDocument) }}</h3>
+                    <h3 class="text-sm font-semibold text-content truncate mt-0.5">{{ sleuthContext.getInvestigationDocumentHeading(displayNotebookDocument) }}</h3>
                   </div>
                   <div class="flex flex-wrap items-center gap-1.5 shrink-0">
                     <button
+                      v-if="!bookmarkActive"
+                      type="button"
+                      class="inline-flex items-center gap-1 rounded-md border border-edge-strong bg-surface px-2 py-1 text-xs font-medium text-content-secondary hover:bg-muted transition-colors"
+                      @click="toggleBookmark(displayNotebookDocument)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Z"/></svg>
+                      Bookmark
+                    </button>
+                    <button
                       type="button"
                       class="rounded-md border px-2 py-1 text-xs font-medium transition-colors"
-                      :class="isCompareColumn(activeNotebookDocument)
+                      :class="isCompareColumn(displayNotebookDocument)
                         ? 'border-primary/40 bg-primary-subtle/50 text-primary'
                         : 'border-edge-strong bg-surface text-content-secondary hover:bg-muted'"
                       @click="addActiveDocumentToCompare"
                     >
-                      {{ isCompareColumn(activeNotebookDocument) ? 'Open compare' : 'Add to compare' }}
+                      {{ isCompareColumn(displayNotebookDocument) ? 'Open compare' : 'Add to compare' }}
                     </button>
                     <a
-                      :href="sleuthContext.documentHref(activeNotebookDocument)"
+                      :href="sleuthContext.documentHref(displayNotebookDocument)"
                       target="_blank"
                       rel="noopener noreferrer"
                       class="inline-flex items-center rounded-md border border-edge-strong bg-surface px-2.5 py-1 text-xs font-medium text-primary hover:bg-muted"
@@ -233,7 +260,7 @@
                       type="button"
                       class="inline-flex items-center justify-center rounded-md border border-edge-strong bg-surface p-1 text-content-tertiary hover:bg-red-50 hover:text-red-700"
                       aria-label="Remove from case report"
-                      @click="sleuthContext.removeSelectedDocument(activeNotebookDocument)"
+                      @click="sleuthContext.removeSelectedDocument(displayNotebookDocument)"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
                     </button>
@@ -243,12 +270,12 @@
                   <div class="flex-1 min-h-0 overflow-auto p-5">
                     <list-json
                       v-if="investigationDisplayType === 'json'"
-                      :value="sleuthContext.filterInvestigationDocument(activeNotebookDocument)"
-                      :references="sleuthContext.getInvestigationReferenceMap(activeNotebookDocument)"
+                      :value="sleuthContext.filterInvestigationDocument(displayNotebookDocument)"
+                      :references="sleuthContext.getInvestigationReferenceMap(displayNotebookDocument)"
                     />
                     <div v-else class="flex flex-col max-w-3xl">
                       <div
-                        v-for="path in sleuthContext.getInvestigationTablePaths(activeNotebookDocument)"
+                        v-for="path in sleuthContext.getInvestigationTablePaths(displayNotebookDocument)"
                         :key="path.path"
                         class="py-2.5 border-b border-edge/70 first:pt-0 last:border-b-0 last:pb-0"
                       >
@@ -256,13 +283,13 @@
                         <div class="text-sm text-content min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed">
                           <component
                             :is="sleuthContext.getComponentForPath(path)"
-                            :value="sleuthContext.getValueForPath(activeNotebookDocument, path.path)"
+                            :value="sleuthContext.getValueForPath(displayNotebookDocument, path.path)"
                             :allude="sleuthContext.getReferenceModel(path)"
                           />
                         </div>
                       </div>
                       <p
-                        v-if="sleuthContext.getInvestigationTablePaths(activeNotebookDocument).length === 0"
+                        v-if="sleuthContext.getInvestigationTablePaths(displayNotebookDocument).length === 0"
                         class="text-sm text-content-tertiary text-center py-4"
                       >
                         No fields to display. Adjust projection in settings.
@@ -273,15 +300,15 @@
                     <label class="text-xs font-semibold text-content-secondary shrink-0">Observations</label>
                     <textarea
                       class="w-full rounded-lg border border-edge-strong bg-surface px-3 py-2.5 text-sm text-content resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle"
-                      :value="sleuthContext.getDocumentNote(activeNotebookDocument)"
-                      @input="sleuthContext.setDocumentNote(activeNotebookDocument, $event.target.value)"
+                      :value="sleuthContext.getDocumentNote(displayNotebookDocument)"
+                      @input="sleuthContext.setDocumentNote(displayNotebookDocument, $event.target.value)"
                       placeholder="What stands out? Hypotheses, links to other docs, next checks…"
                     />
                     <async-button
                       type="button"
                       class="self-end rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-text hover:bg-primary-hover disabled:opacity-50"
                       :disabled="!sleuthContext.currentCaseReportId"
-                      @click="sleuthContext.saveDocumentNote(activeNotebookDocument)"
+                      @click="sleuthContext.saveDocumentNote(displayNotebookDocument)"
                     >
                       Save note
                     </async-button>
@@ -291,7 +318,7 @@
                   <button
                     type="button"
                     class="inline-flex items-center gap-1 rounded-md border border-edge-strong bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                    :disabled="activeNotebookIndex <= 0"
+                    :disabled="displayNotebookIndex <= 0"
                     @click="goToAdjacentNotebookDocument(-1)"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg>
@@ -299,11 +326,11 @@
                   </button>
                   <div class="flex items-center gap-1.5 min-w-0">
                     <button
-                      v-for="(doc, index) in sleuthContext.selectedDocuments"
+                      v-for="(doc, index) in browseDocuments"
                       :key="'page-dot-' + sleuthContext.getDocumentKey(doc)"
                       type="button"
                       class="h-2 rounded-full transition-all shrink-0"
-                      :class="index === activeNotebookIndex ? 'w-5 bg-primary' : 'w-2 bg-edge-strong hover:bg-content-tertiary'"
+                      :class="index === displayNotebookIndex ? 'w-5 bg-primary' : 'w-2 bg-edge-strong hover:bg-content-tertiary'"
                       :title="sleuthContext.getTimelineShortLabel(doc)"
                       :aria-label="'Go to document ' + (index + 1)"
                       @click="focusNotebookDocument(doc)"
@@ -312,7 +339,7 @@
                   <button
                     type="button"
                     class="inline-flex items-center gap-1 rounded-md border border-edge-strong bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                    :disabled="activeNotebookIndex >= sleuthContext.selectedDocuments.length - 1"
+                    :disabled="displayNotebookIndex >= browseDocuments.length - 1"
                     @click="goToAdjacentNotebookDocument(1)"
                   >
                     Next
@@ -321,6 +348,13 @@
                 </footer>
               </div>
             </template>
+            <div
+              v-else-if="bookmarkActive"
+              class="flex flex-col flex-1 items-center justify-center gap-2 border-t border-edge px-5 py-12 text-center"
+            >
+              <p class="text-sm font-semibold text-content">All documents bookmarked</p>
+              <p class="text-xs text-content-secondary max-w-sm">Add another document to browse, or unpin the bookmark below.</p>
+            </div>
             <div v-if="sleuthContext.selectedDocuments.length === 0" class="flex flex-col items-center justify-center gap-3 py-20 px-4 text-center">
               <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-subtle text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm160-240h320v-80H320v80Zm0-160h320v-80H320v80ZM160-240v-480 480Z"/></svg>
@@ -337,6 +371,94 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="M440-440H200v-80h240v-80h80v80h240v80H520v80h-80v-80Zm40 320q-75 0-140.5-28.5t-114-77q-48.5-48.5-77-114T120-440q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-800q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-440q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Z"/></svg>
                 Add documents
               </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bookmarked reference (pinned below evidence review) -->
+        <section
+          v-if="bookmarkedDocument"
+          class="flex flex-col shrink-0 overflow-hidden rounded-xl border border-edge border-l-[3px] border-l-amber-500 bg-surface shadow-sm"
+        >
+          <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-amber-200/80 bg-gradient-to-b from-amber-50/80 to-surface">
+            <div class="min-w-0">
+              <h2 class="text-sm font-semibold text-content flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600 shrink-0" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Z"/></svg>
+                Bookmarked reference
+              </h2>
+              <p class="text-xs text-content-secondary mt-0.5 truncate">{{ sleuthContext.getInvestigationDocumentHeading(bookmarkedDocument) }}</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-amber-300/70 bg-surface px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50"
+                @click="clearBookmark"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                Unpin
+              </button>
+              <a
+                :href="sleuthContext.documentHref(bookmarkedDocument)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center rounded-md border border-edge-strong bg-surface px-2.5 py-1 text-xs font-medium text-primary hover:bg-muted"
+              >Open</a>
+              <button
+                type="button"
+                class="inline-flex items-center justify-center rounded-md border border-edge-strong bg-surface p-1 text-content-tertiary hover:bg-red-50 hover:text-red-700"
+                aria-label="Remove from case report"
+                @click="sleuthContext.removeSelectedDocument(bookmarkedDocument)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="sleuth-book-page-body flex-1 min-h-0 max-h-72 overflow-hidden lg:divide-x divide-edge">
+            <div class="flex-1 min-h-0 overflow-auto p-5">
+              <list-json
+                v-if="investigationDisplayType === 'json'"
+                :value="sleuthContext.filterInvestigationDocument(bookmarkedDocument)"
+                :references="sleuthContext.getInvestigationReferenceMap(bookmarkedDocument)"
+              />
+              <div v-else class="flex flex-col max-w-3xl">
+                <div
+                  v-for="path in sleuthContext.getInvestigationTablePaths(bookmarkedDocument)"
+                  :key="'bm-' + path.path"
+                  class="py-2.5 border-b border-edge/70 first:pt-0 last:border-b-0 last:pb-0"
+                >
+                  <div class="text-[11px] font-semibold tracking-wide text-content-tertiary font-mono break-all leading-snug mb-1" :title="path.path">{{ path.path }}</div>
+                  <div class="text-sm text-content min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed">
+                    <component
+                      :is="sleuthContext.getComponentForPath(path)"
+                      :value="sleuthContext.getValueForPath(bookmarkedDocument, path.path)"
+                      :allude="sleuthContext.getReferenceModel(path)"
+                    />
+                  </div>
+                </div>
+                <p
+                  v-if="sleuthContext.getInvestigationTablePaths(bookmarkedDocument).length === 0"
+                  class="text-sm text-content-tertiary text-center py-4"
+                >
+                  No fields to display. Adjust projection in settings.
+                </p>
+              </div>
+            </div>
+            <div class="sleuth-book-page-notes !max-h-72">
+              <label class="text-xs font-semibold text-content-secondary shrink-0">Observations</label>
+              <textarea
+                class="w-full rounded-lg border border-edge-strong bg-surface px-3 py-2.5 text-sm text-content resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-subtle"
+                :value="sleuthContext.getDocumentNote(bookmarkedDocument)"
+                @input="sleuthContext.setDocumentNote(bookmarkedDocument, $event.target.value)"
+                placeholder="What stands out? Hypotheses, links to other docs, next checks…"
+              />
+              <async-button
+                type="button"
+                class="self-end rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-text hover:bg-primary-hover disabled:opacity-50"
+                :disabled="!sleuthContext.currentCaseReportId"
+                @click="sleuthContext.saveDocumentNote(bookmarkedDocument)"
+              >
+                Save note
+              </async-button>
             </div>
           </div>
         </section>

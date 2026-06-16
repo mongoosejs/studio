@@ -21,7 +21,8 @@ module.exports = app => app.component('sleuth-unified', {
       compareDocumentKeys: [],
       timelineDragIndex: null,
       timelineDropIndex: null,
-      timelineDidDrag: false
+      timelineDidDrag: false,
+      bookmarkedDocumentKey: null
     };
   },
   computed: {
@@ -57,6 +58,44 @@ module.exports = app => app.component('sleuth-unified', {
       return this.sleuthContext.selectedDocuments.findIndex(
         d => this.sleuthContext.getDocumentKey(d) === this.sleuthContext.getDocumentKey(doc)
       );
+    },
+    bookmarkedDocument() {
+      const key = this.bookmarkedDocumentKey;
+      if (!key) {
+        return null;
+      }
+      const docs = this.sleuthContext.selectedDocuments || [];
+      return docs.find(doc => this.sleuthContext.getDocumentKey(doc) === key) || null;
+    },
+    bookmarkActive() {
+      return !!this.bookmarkedDocument;
+    },
+    browseDocuments() {
+      const docs = this.sleuthContext.selectedDocuments || [];
+      if (!this.bookmarkActive) {
+        return docs;
+      }
+      const bookmarkKey = this.bookmarkedDocumentKey;
+      return docs.filter(doc => this.sleuthContext.getDocumentKey(doc) !== bookmarkKey);
+    },
+    displayNotebookDocument() {
+      if (!this.bookmarkActive) {
+        return this.activeNotebookDocument;
+      }
+      const active = this.activeNotebookDocument;
+      if (active && !this.isBookmarked(active)) {
+        return active;
+      }
+      return this.browseDocuments[0] || null;
+    },
+    displayNotebookIndex() {
+      const doc = this.displayNotebookDocument;
+      if (!doc) {
+        return -1;
+      }
+      return this.browseDocuments.findIndex(
+        d => this.sleuthContext.getDocumentKey(d) === this.sleuthContext.getDocumentKey(doc)
+      );
     }
   },
   watch: {
@@ -71,6 +110,9 @@ module.exports = app => app.component('sleuth-unified', {
           docs.map(doc => this.sleuthContext.getDocumentKey(doc)).filter(Boolean)
         );
         this.compareDocumentKeys = this.compareDocumentKeys.filter(k => valid.has(k));
+        if (this.bookmarkedDocumentKey && !valid.has(this.bookmarkedDocumentKey)) {
+          this.bookmarkedDocumentKey = null;
+        }
         if (this.showCompareModal && this.compareDocumentKeys.length === 0) {
           this.closeCompareModal();
         }
@@ -129,11 +171,17 @@ module.exports = app => app.component('sleuth-unified', {
       return !!key && this.compareDocumentKeys.includes(key);
     },
     isTimelineChipHighlighted(doc) {
-      const active = this.activeNotebookDocument;
+      if (this.bookmarkActive && this.isBookmarked(doc)) {
+        return false;
+      }
+      const active = this.displayNotebookDocument;
       if (!active) {
         return false;
       }
       return this.sleuthContext.getDocumentKey(doc) === this.sleuthContext.getDocumentKey(active);
+    },
+    isTimelineChipBookmarked(doc) {
+      return this.bookmarkActive && this.isBookmarked(doc);
     },
     toggleCompareColumn(doc, event) {
       if (event && typeof event.preventDefault === 'function') {
@@ -206,14 +254,17 @@ module.exports = app => app.component('sleuth-unified', {
       if (this.timelineDidDrag) {
         return;
       }
+      if (this.bookmarkActive && this.isBookmarked(doc)) {
+        return;
+      }
       this.sleuthContext.focusInvestigationDocument(doc);
     },
     goToAdjacentNotebookDocument(delta) {
-      const docs = this.sleuthContext.selectedDocuments || [];
+      const docs = this.browseDocuments;
       if (docs.length === 0) {
         return;
       }
-      let idx = this.activeNotebookIndex;
+      let idx = this.displayNotebookIndex;
       if (idx < 0) {
         idx = 0;
       }
@@ -221,6 +272,35 @@ module.exports = app => app.component('sleuth-unified', {
       if (next) {
         this.sleuthContext.focusInvestigationDocument(next);
       }
+    },
+    isBookmarked(doc) {
+      const key = this.sleuthContext.getDocumentKey(doc);
+      return !!key && this.bookmarkedDocumentKey === key;
+    },
+    toggleBookmark(doc) {
+      const key = this.sleuthContext.getDocumentKey(doc);
+      if (!key) {
+        return;
+      }
+      if (this.bookmarkedDocumentKey === key) {
+        this.bookmarkedDocumentKey = null;
+        return;
+      }
+      if (this.bookmarkedDocumentKey) {
+        return;
+      }
+      this.bookmarkedDocumentKey = key;
+      if (this.sleuthContext.focusedInvestigationDocumentKey === key) {
+        const others = (this.sleuthContext.selectedDocuments || []).filter(
+          d => this.sleuthContext.getDocumentKey(d) !== key
+        );
+        if (others.length > 0) {
+          this.sleuthContext.focusInvestigationDocument(others[0]);
+        }
+      }
+    },
+    clearBookmark() {
+      this.bookmarkedDocumentKey = null;
     },
     onNotebookKeydown(event) {
       if (this.showCompareModal || this.showAddDocumentsModal || this.sleuthContext.shouldShowCaseReportModal) {
@@ -241,7 +321,7 @@ module.exports = app => app.component('sleuth-unified', {
       }
     },
     addActiveDocumentToCompare() {
-      const doc = this.activeNotebookDocument;
+      const doc = this.displayNotebookDocument;
       if (!doc) {
         return;
       }
