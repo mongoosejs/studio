@@ -278,16 +278,28 @@ module.exports = app => app.component('models', {
         this.error = 'No models found and Mongoose is not connected. Check our documentation for more information.';
       }
     } else {
-      this._refreshSidebar = setInterval(async () => {
+      this._refreshSidebar = setInterval(async() => {
         try {
           const { models, modelSchemaPaths, readyState } = await api.Model.listModels();
           this.models = models;
           this.allSchemaPaths = modelSchemaPaths;
           await this.loadModelCounts();
+          if (this.currentModel) {
+            const schemaPaths = this.allSchemaPaths?.[this.currentModel] ?? {};
+            this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+              if (k1 === '_id' && k2 !== '_id') {
+                return -1;
+              }
+              if (k1 !== '_id' && k2 === '_id') {
+                return 1;
+              }
+              return 0;
+            }).map(key => schemaPaths[key]);
+          }
         } catch (e) {
           console.error(e);
         }
-      }, 20000)
+      }, 20000);
     }
 
     await this.initSearchFromUrl();
@@ -315,7 +327,6 @@ module.exports = app => app.component('models', {
         this.currentModel = newModel;
         if (this.currentModel != null) {
           this.$refs.documentSearch?.focusInput();
-          console.log('Model switch', this.allSchemaPaths);
           const schemaPaths = this.allSchemaPaths?.[newModel] ?? {};
           this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
             if (k1 === '_id' && k2 !== '_id') {
@@ -327,7 +338,6 @@ module.exports = app => app.component('models', {
             return 0;
           }).map(key => schemaPaths[key]);
           this.initSearchFromUrl();
-          console.log('Done model switch')
         }
       }
     },
