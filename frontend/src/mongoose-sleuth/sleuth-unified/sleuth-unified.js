@@ -14,6 +14,7 @@ module.exports = app => app.component('sleuth-unified', {
       caseReportSections: {
         summary: false
       },
+      showCaseNotesPopup: false,
       showInvestigationSettingsMenu: false,
       showAddDocumentsModal: false,
       showCompareModal: false,
@@ -122,11 +123,13 @@ module.exports = app => app.component('sleuth-unified', {
   },
   mounted() {
     document.addEventListener('click', this.onInvestigationSettingsOutsideClick, true);
+    document.addEventListener('click', this.onCaseNotesOutsideClick, true);
     document.addEventListener('keydown', this.onNotebookKeydown);
     this.ensureNotebookFocus();
   },
   beforeDestroy() {
     document.removeEventListener('click', this.onInvestigationSettingsOutsideClick, true);
+    document.removeEventListener('click', this.onCaseNotesOutsideClick, true);
     document.removeEventListener('keydown', this.onNotebookKeydown);
   },
   methods: {
@@ -242,10 +245,34 @@ module.exports = app => app.component('sleuth-unified', {
       const s = this.sleuthContext && this.sleuthContext.aiSummary;
       return typeof s === 'string' && s.trim().length > 0;
     },
+    hasCaseReportNotes() {
+      const n = this.sleuthContext && this.sleuthContext.notes;
+      return typeof n === 'string' && n.trim().length > 0;
+    },
     toggleCaseReportSection(section) {
       if (typeof section === 'string' && Object.prototype.hasOwnProperty.call(this.caseReportSections, section)) {
         this.caseReportSections[section] = !this.caseReportSections[section];
       }
+    },
+    toggleCaseNotesPopup() {
+      this.showCaseNotesPopup = !this.showCaseNotesPopup;
+    },
+    closeCaseNotesPopup() {
+      this.showCaseNotesPopup = false;
+    },
+    onCaseNotesOutsideClick(event) {
+      if (!this.showCaseNotesPopup || !this.sleuthContext.isCaseReportDetailRoute) {
+        return;
+      }
+      const fab = this.$refs.caseNotesFab;
+      const popup = this.$refs.caseNotesPopup;
+      if (fab && fab.contains(event.target)) {
+        return;
+      }
+      if (popup && popup.contains(event.target)) {
+        return;
+      }
+      this.closeCaseNotesPopup();
     },
     isCaseReportSectionOpen(section) {
       return !!this.caseReportSections[section];

@@ -217,6 +217,7 @@ const embeddedModelsSleuthState = {
   currentCaseReportId: null,
   currentCaseReportName: '',
   summary: '',
+  notes: '',
   aiSummary: '',
   identifierPathByModel: {},
   projectionTextByModel: {}
@@ -232,6 +233,7 @@ function persistEmbeddedModelsSleuthState(vm) {
   s.currentCaseReportId = vm.currentCaseReportId;
   s.currentCaseReportName = vm.currentCaseReportName;
   s.summary = typeof vm.summary === 'string' ? vm.summary : '';
+  s.notes = typeof vm.notes === 'string' ? vm.notes : '';
   s.aiSummary = typeof vm.aiSummary === 'string' ? vm.aiSummary : '';
   s.identifierPathByModel = vm.identifierPathByModel && typeof vm.identifierPathByModel === 'object'
     ? { ...vm.identifierPathByModel }
@@ -268,6 +270,7 @@ function hydrateEmbeddedModelsSleuthState(vm) {
   vm.currentCaseReportId = s.currentCaseReportId;
   vm.currentCaseReportName = s.currentCaseReportName || '';
   vm.summary = s.summary || '';
+  vm.notes = s.notes || '';
   vm.aiSummary = s.aiSummary || '';
   vm.identifierPathByModel = s.identifierPathByModel && typeof s.identifierPathByModel === 'object'
     ? { ...s.identifierPathByModel }
@@ -317,6 +320,7 @@ module.exports = app => app.component('mongoose-sleuth', {
     currentCaseReportId: null,
     documentNotes: {},
     summary: '',
+    notes: '',
     aiSummary: '',
     savingSummary: false,
     /** Prevents overlapping deferred AI runs when route updates fire more than once. */
@@ -1363,6 +1367,7 @@ module.exports = app => app.component('mongoose-sleuth', {
           this.currentCaseReportName = caseReport.name;
         }
         this.summary = typeof caseReport.summary === 'string' ? caseReport.summary : '';
+        this.notes = typeof caseReport.notes === 'string' ? caseReport.notes : '';
         this.aiSummary = typeof caseReport.AISummary === 'string' ? caseReport.AISummary : '';
 
         if (!Array.isArray(caseReport.documents)) {
@@ -1619,6 +1624,23 @@ module.exports = app => app.component('mongoose-sleuth', {
       } catch (err) {
         console.error('Error saving note', err);
         this.$toast.error(err?.message || 'Error saving note');
+        throw err;
+      }
+    },
+    async saveCaseReportNotes() {
+      if (!this.currentCaseReportId) {
+        this.$toast.warning('Create or open a case report before saving notes.');
+        return;
+      }
+      try {
+        await api.CaseReport.updateCaseReport({
+          caseReportId: this.currentCaseReportId,
+          notes: this.notes || ''
+        });
+        this.$toast.success('Case notes saved');
+      } catch (err) {
+        console.error('Error saving case notes', err);
+        this.$toast.error(err?.message || 'Error saving case notes');
         throw err;
       }
     },

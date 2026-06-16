@@ -24,6 +24,9 @@ const caseReportSchema = new mongoose.Schema({
   summary: {
     type: String
   },
+  notes: {
+    type: String
+  },
   AISummary: {
     type: String
   }

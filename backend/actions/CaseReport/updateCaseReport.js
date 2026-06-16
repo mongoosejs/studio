@@ -17,6 +17,9 @@ const UpdateCaseReportParams = new Archetype({
   summary: {
     $type: 'string'
   },
+  notes: {
+    $type: 'string'
+  },
   roles: {
     $type: ['string']
   },
@@ -33,7 +36,7 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
     delete copy.documents;
     return copy;
   })();
-  const { caseReportId: rawCaseReportId, documents, summary, roles, skipAISummary } = new UpdateCaseReportParams(paramsForCompile);
+  const { caseReportId: rawCaseReportId, documents, summary, notes, roles, skipAISummary } = new UpdateCaseReportParams(paramsForCompile);
   const CaseReport = db.model('__Studio_CaseReport');
 
   await authorize('CaseReport.updateCaseReport', roles);
@@ -114,6 +117,10 @@ module.exports = ({ db, options }) => async function updateCaseReport(params) {
         // Continue without AI summary if generation fails
       }
     }
+  }
+
+  if (notes !== undefined) {
+    updateData.notes = notes;
   }
 
   const caseReport = await CaseReport.findByIdAndUpdate(
