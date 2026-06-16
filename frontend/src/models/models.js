@@ -146,6 +146,7 @@ module.exports = app => app.component('models', {
     currentModel: null,
     modelDocumentCounts: {},
     documents: [],
+    allSchemaPaths: null,
     schemaPaths: [],
     filteredPaths: [],
     selectedPaths: [],
@@ -263,8 +264,9 @@ module.exports = app => app.component('models', {
     this.query = Object.assign({}, this.$route.query);
     // Keep UI mode in sync with the URL on remounts.
     this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
-    const { models, readyState } = await api.Model.listModels();
+    const { models, modelSchemaPaths, readyState } = await api.Model.listModels();
     this.models = models;
+    this.allSchemaPaths = modelSchemaPaths;
     await this.loadModelCounts();
     if (this.currentModel == null && this.models.length > 0) {
       this.currentModel = this.models[0];
@@ -275,6 +277,17 @@ module.exports = app => app.component('models', {
       if (readyState === 0) {
         this.error = 'No models found and Mongoose is not connected. Check our documentation for more information.';
       }
+    } else {
+      this._refreshSidebar = setInterval(async () => {
+        try {
+          const { models, modelSchemaPaths, readyState } = await api.Model.listModels();
+          this.models = models;
+          this.allSchemaPaths = modelSchemaPaths;
+          await this.loadModelCounts();
+        } catch (e) {
+          console.error(e);
+        }
+      }, 20000)
     }
 
     await this.initSearchFromUrl();
@@ -285,26 +298,36 @@ module.exports = app => app.component('models', {
     this.$nextTick(() => {
       const focusIntent = takeModelsRemountFocusIntent();
       if (focusIntent === 'documentSearch') {
-        const ds = this.$refs.documentSearch;
-        if (ds && typeof ds.focusInput === 'function') {
-          ds.focusInput();
-        }
+        this.$refs.documentSearch?.focusInput();
         return;
       }
       if (focusIntent === 'projection' && this.isProjectionMenuSelected) {
-        const projectionSearch = this.$refs.projectionSearch;
-        if (projectionSearch && typeof projectionSearch.focusInput === 'function') {
-          projectionSearch.focusInput();
-        }
+        this.$refs.projectionSearch?.focusInput();
       }
     });
+  },
+  unmounted() {
+    clearInterval(this._refreshSidebar);
   },
   watch: {
     model(newModel) {
       if (newModel !== this.currentModel) {
         this.currentModel = newModel;
         if (this.currentModel != null) {
+          this.$refs.documentSearch?.focusInput();
+          console.log('Model switch', this.allSchemaPaths);
+          const schemaPaths = this.allSchemaPaths?.[newModel] ?? {};
+          this.schemaPaths = Object.keys(schemaPaths).sort((k1, k2) => {
+            if (k1 === '_id' && k2 !== '_id') {
+              return -1;
+            }
+            if (k1 !== '_id' && k2 === '_id') {
+              return 1;
+            }
+            return 0;
+          }).map(key => schemaPaths[key]);
           this.initSearchFromUrl();
+          console.log('Done model switch')
         }
       }
     },
@@ -1043,7 +1066,6 @@ module.exports = app => app.component('models', {
 
         // Clear previous data
         this.documents = [];
-        this.schemaPaths = [];
         this.numDocuments = null;
         this.loadedAllDocs = false;
         this.lastSelectedIndex = null;
