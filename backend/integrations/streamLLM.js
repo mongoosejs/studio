@@ -30,7 +30,7 @@ module.exports = async function* streamLLM(messages, system, options) {
     providers.push({
       name: 'Gemini',
       provider: createGoogleGenerativeAI({ apiKey: options.googleGeminiAPIKey }),
-      model: options?.model ?? 'gemini-2.5-flash'
+      model: options?.model ?? 'gemini-3.1-pro-preview'
     });
   }
 
