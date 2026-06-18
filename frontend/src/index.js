@@ -1,9 +1,5 @@
 'use strict';
 
-if (typeof process === 'undefined') {
-  global.process = { env: {} }; // To make `util` package work
-}
-
 const { version } = require('../../package.json');
 console.log(`Mongoose Studio Version ${version}`);
 
