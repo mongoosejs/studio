@@ -5,6 +5,7 @@ const {
   buildAutocompleteTrie,
   getAutocompleteSuggestions,
   applySuggestion,
+  insertClosingBrace,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
   insertDateInDateArgument
@@ -139,6 +140,21 @@ module.exports = app => app.component('document-search', {
       });
     },
     handleKeyDown(ev) {
+      if (ev.key === '{') {
+        ev.preventDefault();
+        const input = this.$refs.searchInput;
+        const selectionStart = input ? input.selectionStart : this.searchText.length;
+        const selectionEnd = input ? input.selectionEnd : selectionStart;
+        const result = insertClosingBrace(this.searchText, selectionStart, selectionEnd);
+        this.searchText = result.text;
+        this.$nextTick(() => {
+          if (input) {
+            input.setSelectionRange(result.newCursorPos, result.newCursorPos);
+          }
+          this.updateAutocomplete();
+        });
+        return;
+      }
       if (this.autocompleteSuggestions.length === 0) {
         return;
       }

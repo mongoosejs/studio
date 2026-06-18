@@ -220,6 +220,16 @@ function applySuggestion(searchText, cursorPos, suggestion) {
   return null;
 }
 
+function insertClosingBrace(searchText, selectionStart, selectionEnd) {
+  const start = typeof selectionStart === 'number' ? selectionStart : searchText.length;
+  const end = typeof selectionEnd === 'number' ? selectionEnd : start;
+  const selectedText = searchText.slice(start, end);
+  return {
+    text: searchText.slice(0, start) + `{${selectedText}}` + searchText.slice(end),
+    newCursorPos: start + 1 + selectedText.length
+  };
+}
+
 /**
  * When the cursor is inside a Date(…) or new Date(…) argument, returns the
  * slice indices of that argument so a picker can replace it with a quoted ISO string.
@@ -301,6 +311,7 @@ module.exports = {
   getAutocompleteContext,
   getAutocompleteSuggestions,
   applySuggestion,
+  insertClosingBrace,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
   formatDateArgumentValue,
