@@ -6,6 +6,7 @@ const {
   getAutocompleteContext,
   getAutocompleteSuggestions,
   applySuggestion,
+  insertClosingBrace,
   getDatePickerInsertionRange,
   dateArgumentSliceToDatetimeLocal,
   insertDateInDateArgument,
@@ -279,6 +280,30 @@ describe('document-search-autocomplete', function() {
       const result = applySuggestion(searchText, cursorPos, '"name"');
 
       assert.strictEqual(result.text, '{ "name":');
+    });
+  });
+
+  describe('insertClosingBrace()', function() {
+    it('inserts a closing brace and places the cursor between braces', function() {
+      const result = insertClosingBrace('', 0, 0);
+
+      assert.strictEqual(result.text, '{}');
+      assert.strictEqual(result.newCursorPos, 1);
+    });
+
+    it('inserts braces at the cursor without replacing surrounding text', function() {
+      const searchText = '{ name: ';
+      const result = insertClosingBrace(searchText, searchText.length, searchText.length);
+
+      assert.strictEqual(result.text, '{ name: {}');
+      assert.strictEqual(result.newCursorPos, '{ name: {'.length);
+    });
+
+    it('wraps selected text and places the cursor after the selection', function() {
+      const result = insertClosingBrace('name', 0, 'name'.length);
+
+      assert.strictEqual(result.text, '{name}');
+      assert.strictEqual(result.newCursorPos, '{name'.length);
     });
   });
 

@@ -51,7 +51,7 @@ module.exports = async function* streamLLM(messages, system, options) {
       system,
       messages,
       tools: options?.tools,
-      stopWhen: options?.tools ? stepCountIs(10) : undefined,
+      stopWhen: options?.tools ? stepCountIs(50) : undefined,
       onError(err) {
         error = err.error;
       }
