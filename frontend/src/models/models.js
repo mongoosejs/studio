@@ -780,6 +780,8 @@ module.exports = app => app.component('models', {
         this.query.sortKey = sortKey;
         this.query.sortDirection = sortDirection;
         delete this.query.sort;
+      } else {
+        this.sortBy = {};
       }
       if (this.currentModel != null) {
         await this.getDocuments();
@@ -795,6 +797,8 @@ module.exports = app => app.component('models', {
           this.selectedPaths = [...this.filteredPaths];
           this.syncProjectionInputFromQueryOrPaths();
         }
+      } else {
+        this.selectedPaths = [];
       }
       this.status = 'loaded';
 
