@@ -11,7 +11,7 @@ const ListModelsParams = new Archetype({
   }
 }).compile('ListModelsParams');
 
-module.exports = ({ db }) => async function listModels(params) {
+module.exports = ({ db, studioConnection }) => async function listModels(params) {
   const { roles } = new ListModelsParams(params);
   await authorize('Model.listModels', roles);
 
@@ -49,9 +49,19 @@ module.exports = ({ db }) => async function listModels(params) {
     removeSpecifiedPaths(schemaPaths, '.$*');
   }
 
+  const ModelSkill = studioConnection.models['__Studio_ModelSkill'];
+  const modelSkills = {};
+  if (ModelSkill != null) {
+    const skillDocs = await ModelSkill.find({ modelName: { $in: models } }).lean();
+    for (const doc of skillDocs) {
+      modelSkills[doc.modelName] = doc.skills;
+    }
+  }
+
   return {
     models,
     modelSchemaPaths,
+    modelSkills,
     readyState
   };
 };
