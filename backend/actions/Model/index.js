@@ -10,6 +10,7 @@ exports.dropCollection = require('./dropCollection');
 exports.dropIndex = require('./dropIndex');
 exports.executeDocumentScript = require('./executeDocumentScript');
 exports.exportQueryResults = require('./exportQueryResults');
+exports.formatSearchFilter = require('./formatSearchFilter');
 exports.getDocument = require('./getDocument');
 exports.getDocuments = require('./getDocuments');
 exports.getDocumentsStream = require('./getDocumentsStream');

@@ -109,6 +109,19 @@
             @search="search"
           >
           </document-search>
+          <button
+            type="button"
+            @click="openMongoShellFilterModal()"
+            :disabled="searchText.trim().length === 0"
+            title="View MongoDB shell syntax"
+            aria-label="View MongoDB shell syntax"
+            class="shrink-0 rounded-md p-1.5"
+            :class="searchText.trim().length > 0 ? 'text-content-secondary hover:text-content hover:bg-muted' : 'text-content-tertiary cursor-not-allowed opacity-50'"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1M8 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M8 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m0 0h2a2 2 0 0 1 2 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
             <span v-else-if="typeof numDocuments === 'number'">{{documents.length}}/{{numDocuments === 1 ? numDocuments + ' document' : numDocuments + ' documents'}}</span>
@@ -517,6 +530,42 @@
       </div>
     </div>
   </div>
+  <modal v-if="shouldShowMongoShellFilterModal">
+    <template v-slot:body>
+      <div class="modal-exit" @click="closeMongoShellFilterModal">&times;</div>
+      <div class="text-xl font-bold mb-2">MongoDB Shell Syntax</div>
+      <div class="space-y-4">
+        <div>
+          <div class="text-sm font-semibold text-content-secondary mb-2">Original filter</div>
+          <pre class="rounded bg-muted p-3 text-sm font-mono overflow-x-auto whitespace-pre-wrap">{{ searchText }}</pre>
+        </div>
+        <div>
+          <div class="text-sm font-semibold text-content-secondary mb-2">Shell command</div>
+          <div v-if="mongoShellFilterLoading" class="text-content-secondary">Formatting filter...</div>
+          <div v-else-if="mongoShellFilterError" class="text-red-600">{{ mongoShellFilterError }}</div>
+          <pre v-else class="rounded bg-muted p-3 text-sm font-mono overflow-x-auto whitespace-pre-wrap">{{ mongoShellFilterCommand }}</pre>
+        </div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          @click="copyOriginalFilterQuery()"
+          class="rounded bg-surface px-3 py-2 text-sm font-semibold text-content-secondary shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-page focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Copy original filter
+        </button>
+        <button
+          type="button"
+          @click="copyMongoShellFilterCommand()"
+          :disabled="mongoShellFilterLoading || !!mongoShellFilterError || !mongoShellFilterCommand"
+          class="rounded px-3 py-2 text-sm font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          :class="mongoShellFilterLoading || mongoShellFilterError || !mongoShellFilterCommand ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary text-primary-text hover:bg-primary-hover'"
+        >
+          Copy shell command
+        </button>
+      </div>
+    </template>
+  </modal>
   <modal v-if="shouldShowExportModal">
     <template v-slot:body>
       <div class="modal-exit" @click="shouldShowExportModal = false">&times;</div>
