@@ -23,6 +23,7 @@ const actionsToRequiredRoles = {
   'Model.dropIndex': ['owner', 'admin'],
   'Model.executeDocumentScript': ['owner', 'admin', 'member'],
   'Model.exportQueryResults': ['owner', 'admin', 'member', 'readonly'],
+  'Model.formatSearchFilter': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocument': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocuments': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocumentsStream': ['owner', 'admin', 'member', 'readonly'],
