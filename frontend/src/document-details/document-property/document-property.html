@@ -94,6 +94,7 @@
         v-if="isDatePath"
         :viewMode="dateViewMode"
         :path="path"
+        :editting="editting"
         @update:viewMode="dateViewMode = $event"
       ></date-view-mode-picker>
       <objectid-view-mode-picker
@@ -129,7 +130,7 @@
     <div v-if="editting && path.instance === 'Date'" class="mb-3 flex gap-1.5">
       <div
         @click="dateType = 'picker'"
-        :class="dateType === 'picker' ? 'bg-teal-600' : ''"
+        :class="dateType === 'picker' ? 'bg-merlot-700' : ''"
         class="self-stretch px-2 py-1 rounded-sm justify-center items-center gap-1.5 flex cursor-pointer">
         <div
           :class="dateType === 'picker' ? 'text-white' : ''"
@@ -139,7 +140,7 @@
       </div>
       <div
         @click="dateType = 'iso'"
-        :class="dateType === 'iso' ? 'bg-teal-600' : ''"
+        :class="dateType === 'iso' ? 'bg-merlot-700' : ''"
         class="self-stretch px-2 py-1 rounded-sm justify-center items-center gap-1.5 flex cursor-pointer">
         <div
           :class="dateType === 'iso' ? 'text-white' : ''"

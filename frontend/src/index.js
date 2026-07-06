@@ -1,9 +1,5 @@
 'use strict';
 
-if (typeof process === 'undefined') {
-  global.process = { env: {} }; // To make `util` package work
-}
-
 const { version } = require('../../package.json');
 console.log(`Mongoose Studio Version ${version}`);
 
@@ -195,7 +191,7 @@ app.component('app-component', {
     <div v-else-if="!hasAPIKey || user">
       <navbar :user="user" :roles="roles" />
       <div class="view">
-        <router-view :key="$route.fullPath" :user="user" :roles="roles" :hasAPIKey="hasAPIKey" />
+        <router-view :key="$route.meta.preserveStateKey || $route.fullPath" :user="user" :roles="roles" :hasAPIKey="hasAPIKey" />
       </div>
     </div>
   </div>

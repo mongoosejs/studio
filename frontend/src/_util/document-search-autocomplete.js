@@ -1,5 +1,7 @@
 'use strict';
 
+const { dateToDatetimeLocal } = require('./calendar');
+
 const { Trie } = require('../models/trie');
 
 const QUERY_SELECTORS = [
@@ -49,7 +51,7 @@ function buildAutocompleteTrie(schemaPaths) {
   trie.bulkInsert(QUERY_SELECTORS, 5, 'operator');
   trie.bulkInsert(QUERY_SELECTORS, 5, 'fieldName');
   trie.bulkInsert(VALUE_HELPERS, 5, 'value');
-  
+
   if (Array.isArray(schemaPaths) && schemaPaths.length > 0) {
     const paths = schemaPaths
       .map(path => path?.path)
@@ -61,13 +63,13 @@ function buildAutocompleteTrie(schemaPaths) {
     }
     trie.bulkInsert(paths, 10, 'fieldName');
   }
-  
+
   return trie;
 }
 
 function getAutocompleteContext(searchText, cursorPos) {
   const before = searchText.slice(0, cursorPos);
-  
+
   // Check if we're in a field name context (after { or ,)
   // This takes precedence over value context to handle cases like { _id: { $gt
   const fieldMatch = before.match(/(?:\{|,)\s*([^:\s]*)$/);
@@ -79,7 +81,7 @@ function getAutocompleteContext(searchText, cursorPos) {
       startPos: cursorPos - token.length
     };
   }
-  
+
   // Check if we're in a value context (after a colon)
   // Match the last colon followed by optional whitespace and capture everything after
   const valueMatch = before.match(/:\s*(\{?\s*)([^\s,\}\]:]*)$/);
@@ -91,19 +93,19 @@ function getAutocompleteContext(searchText, cursorPos) {
       startPos: cursorPos - token.length
     };
   }
-  
+
   return null;
 }
 
 function getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths) {
   const context = getAutocompleteContext(searchText, cursorPos);
-  
+
   if (!context) {
     return [];
   }
-  
+
   const { token, role } = context;
-  
+
   // Extract the actual term without quotes
   const leadingQuoteMatch = token.match(/^["']/);
   const trailingQuoteMatch = token.length > 1 && /["']$/.test(token)
@@ -113,14 +115,14 @@ function getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths) {
     .replace(/^["']/, '')
     .replace(trailingQuoteMatch ? new RegExp(`[${trailingQuoteMatch}]$`) : '', '')
     .trim();
-  
+
   if (!term) {
     return [];
   }
-  
+
   const primarySuggestions = trie.getSuggestions(term, 10, role);
   const suggestionsSet = new Set(primarySuggestions);
-  
+
   // Add schema path suggestions for field names
   if (role === 'fieldName' && Array.isArray(schemaPaths) && schemaPaths.length > 0) {
     for (const schemaPath of schemaPaths) {
@@ -137,9 +139,9 @@ function getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths) {
       }
     }
   }
-  
+
   let suggestions = Array.from(suggestionsSet);
-  
+
   // Preserve quotes if present
   if (leadingQuoteMatch) {
     const leadingQuote = leadingQuoteMatch[0];
@@ -150,14 +152,14 @@ function getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths) {
       suggestion.endsWith(trailingQuoteMatch) ? suggestion : `${suggestion}${trailingQuoteMatch}`
     );
   }
-  
+
   return suggestions;
 }
 
 function applySuggestion(searchText, cursorPos, suggestion) {
   const before = searchText.slice(0, cursorPos);
   const after = searchText.slice(cursorPos);
-  
+
   // Check if we're in a value context
   const valueMatch = before.match(/:\s*(\{?\s*)([^\s,\}\]:]*)$/);
   if (valueMatch) {
@@ -165,30 +167,30 @@ function applySuggestion(searchText, cursorPos, suggestion) {
     const start = cursorPos - token.length;
     let replacement = suggestion;
     let cursorOffset = replacement.length;
-    
+
     // Add parentheses for function helpers and position cursor inside
     if (FUNCTION_HELPERS.has(suggestion)) {
       replacement = `${suggestion}()`;
       cursorOffset = suggestion.length + 1; // Position cursor between ()
     }
-    
+
     return {
       text: searchText.slice(0, start) + replacement + after,
       newCursorPos: start + cursorOffset
     };
   }
-  
+
   // Check if we're in a field name context
   const fieldMatch = before.match(/(?:\{|,)\s*([^:\s]*)$/);
   if (fieldMatch) {
     const token = fieldMatch[1];
     const start = cursorPos - token.length;
     let replacement = suggestion;
-    
+
     const leadingQuote = token.startsWith('"') || token.startsWith('\'') ? token[0] : '';
     const trailingQuote = token.length > 1 && (token.endsWith('"') || token.endsWith('\'')) ? token[token.length - 1] : '';
     const colonNeeded = !/^\s*:/.test(after);
-    
+
     // If suggestion already has quotes, use it as-is
     const suggestionHasQuotes = (suggestion.startsWith('"') || suggestion.startsWith('\'')) &&
                                 (suggestion.endsWith('"') || suggestion.endsWith('\''));
@@ -202,20 +204,106 @@ function applySuggestion(searchText, cursorPos, suggestion) {
         replacement = `${replacement}${trailingQuote}`;
       }
     }
-    
+
     // Only insert : if we know the user isn't entering in a nested path
     // If suggestion has full quotes or user typed both quotes, add colon
     if (colonNeeded && (suggestionHasQuotes || !leadingQuote || trailingQuote)) {
       replacement = `${replacement}:`;
     }
-    
+
     return {
       text: searchText.slice(0, start) + replacement + after,
       newCursorPos: start + replacement.length
     };
   }
-  
+
   return null;
+}
+
+function insertClosingBrace(searchText, selectionStart, selectionEnd) {
+  const start = typeof selectionStart === 'number' ? selectionStart : searchText.length;
+  const end = typeof selectionEnd === 'number' ? selectionEnd : start;
+  const selectedText = searchText.slice(start, end);
+  return {
+    text: searchText.slice(0, start) + `{${selectedText}}` + searchText.slice(end),
+    newCursorPos: start + 1 + selectedText.length
+  };
+}
+
+/**
+ * When the cursor is inside a Date(…) or new Date(…) argument, returns the
+ * slice indices of that argument so a picker can replace it with a quoted ISO string.
+ */
+function getDatePickerInsertionRange(searchText, cursorPos) {
+  const before = searchText.slice(0, cursorPos);
+  const re = /((?:new\s+)?Date\s*\(\s*)([^)]*)$/i;
+  const m = before.match(re);
+  if (!m) {
+    return null;
+  }
+  const innerStart = m.index + m[1].length;
+  const after = searchText.slice(cursorPos);
+  let closeIdx = -1;
+  let parenDepth = 0;
+  for (let k = 0; k < after.length; k++) {
+    const ch = after[k];
+    if (ch === '(') {
+      parenDepth++;
+    } else if (ch === ')') {
+      if (parenDepth === 0) {
+        closeIdx = cursorPos + k;
+        break;
+      }
+      parenDepth--;
+    }
+  }
+  const innerEnd = closeIdx >= 0 ? closeIdx : cursorPos;
+  const needsClosingParen = closeIdx < 0;
+  return { innerStart, innerEnd, needsClosingParen };
+}
+
+function dateArgumentSliceToDatetimeLocal(slice) {
+  const t = slice.trim();
+  if (!t) {
+    return '';
+  }
+  const unquoted = (t.startsWith('"') && t.endsWith('"')) || (t.startsWith('\'') && t.endsWith('\''))
+    ? t.slice(1, -1)
+    : t;
+  const d = new Date(unquoted);
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
+  return dateToDatetimeLocal(d);
+}
+
+/**
+ * @param {Date} date
+ * @param {'quoted'|'timestamp'} format
+ */
+function formatDateArgumentValue(date, format) {
+  if (format === 'quoted') {
+    return JSON.stringify(date.toISOString());
+  }
+  return String(date.getTime());
+}
+
+/**
+ * Inserts a Date argument value as timestamp or quoted ISO string.
+ * @param {string} searchText
+ * @param {{ innerStart: number, innerEnd: number, needsClosingParen?: boolean }} range
+ * @param {Date} date
+ * @param {'quoted'|'timestamp'} [format] - when omitted, inferred from the existing argument
+ */
+function insertDateInDateArgument(searchText, range, date, format) {
+  const slice = searchText.slice(range.innerStart, range.innerEnd);
+  const insertion = formatDateArgumentValue(date, format);
+  const { innerStart, innerEnd } = range;
+  const closing = range.needsClosingParen === true ? ')' : '';
+  return {
+    text: searchText.slice(0, innerStart) + insertion + closing + searchText.slice(innerEnd),
+    newCursorPos: innerStart + insertion.length + closing.length
+  };
 }
 
 module.exports = {
@@ -223,6 +311,11 @@ module.exports = {
   getAutocompleteContext,
   getAutocompleteSuggestions,
   applySuggestion,
+  insertClosingBrace,
+  getDatePickerInsertionRange,
+  dateArgumentSliceToDatetimeLocal,
+  formatDateArgumentValue,
+  insertDateInDateArgument,
   QUERY_SELECTORS,
   VALUE_HELPERS,
   FUNCTION_HELPERS
