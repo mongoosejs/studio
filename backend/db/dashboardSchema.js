@@ -20,10 +20,10 @@ const dashboardSchema = new mongoose.Schema({
   createdById: {
     type: mongoose.Schema.Types.ObjectId
   },
-  createdBy: {
-    name: String,
-    email: String
-  },
+  createdBy: new mongoose.Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true }
+  }, { _id: false }),
   lastEvaluatedAt: {
     type: Date
   }
