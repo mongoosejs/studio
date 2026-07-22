@@ -1,6 +1,6 @@
 {
   "name": "@mongoosejs/studio",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "description": "AI-Powered Data Workspace for MongoDB: Turn your MongoDB data into dashboards, maps, and interactive workflows - powered by your Mongoose models and AI.",
   "homepage": "https://mongoosestudio.app/",
   "repository": {
