@@ -243,9 +243,10 @@ module.exports = {
     },
     getAgentModePreference() {
       if (typeof window === 'undefined') {
-        return false;
+        return true;
       }
-      return window.localStorage?.getItem(AGENT_MODE_STORAGE_KEY) === 'true';
+      const preference = window.localStorage?.getItem(AGENT_MODE_STORAGE_KEY);
+      return preference == null ? true : preference === 'true';
     },
     persistAgentModePreference(agentMode) {
       if (typeof window !== 'undefined') {
