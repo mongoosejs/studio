@@ -2,6 +2,7 @@
 
 const api = require('../../api');
 const marked = require('marked').marked;
+const xss = require('xss');
 const template = require('./chat-message.html');
 
 module.exports = app => app.component('chat-message', {
@@ -52,7 +53,10 @@ module.exports = app => app.component('chat-message', {
   },
   methods: {
     marked(text) {
-      return marked(text);
+      if (text == null || text === '') {
+        return '';
+      }
+      return xss(marked(text));
     },
     formatToolInput(input) {
       if (!input) return '';
