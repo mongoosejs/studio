@@ -3,11 +3,16 @@
 module.exports = class ModelContainer {
   constructor(connectionsWithNames) {
     this.models = {};
-    for (const { connection, name } of connectionsWithNames) {
-      for (const model of connection.models) {
-        model.$connectionName = name;
+    let count = 0;
+    for (const connectionWithName of connectionsWithNames) {
+      ++count;
+      if (!connectionWithName.name) {
+        connectionWithName.name = 'Connection ' + count;
       }
-      this.models = { ...this.models, ...connection.models };
+      for (const model of Object.values(connectionWithName.connection.models)) {
+        model.$connectionName = connectionWithName.name;
+      }
+      this.models = { ...this.models, ...connectionWithName.connection.models };
     }
   }
 }

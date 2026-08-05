@@ -18,7 +18,7 @@ module.exports = function backend(db, studioConnection, options) {
 
   let isMultiConnection = false;
   if (Array.isArray(db)) {
-    studioConnection = db[0];
+    studioConnection = db[0].connection;
     db = new ModelContainer(db);
     isMultiConnection = true;
   } else {
