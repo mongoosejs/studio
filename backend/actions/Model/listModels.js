@@ -20,8 +20,10 @@ module.exports = ({ db }) => async function listModels(params) {
   const models = Object.keys(db.models).filter(key => !key.startsWith('__Studio_')).sort();
 
   const modelSchemaPaths = {};
+  const modelConnectionNames = [];
   for (const modelName of models) {
     const Model = db.models[modelName];
+    modelConnectionNames.push(Model.$connectionName);
     const schemaPaths = {};
     modelSchemaPaths[modelName] = schemaPaths;
     for (const path of Object.keys(Model.schema.paths)) {
@@ -51,6 +53,7 @@ module.exports = ({ db }) => async function listModels(params) {
 
   return {
     models,
+    modelConnectionNames,
     modelSchemaPaths,
     readyState
   };

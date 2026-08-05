@@ -1,5 +1,6 @@
 'use strict';
 
+const ModelContainer = require('../modelContainer');
 const MongooseStudioChartColors = require('../constants/mongooseStudioChartColors');
 const mongoose = require('mongoose');
 const vm = require('vm');
@@ -7,6 +8,10 @@ const { createScriptDb } = require('./createScriptDb');
 
 module.exports = function createSandbox({ db }) {
   const logs = [];
+
+  if (db instanceof ModelContainer) {
+    throw new Error('Cannot create sandbox for ModelContainer');
+  }
 
   // db must be a connection, not a Mongoose instance
   if (db.connection && db.connections) {

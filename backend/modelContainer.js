@@ -1,9 +1,12 @@
 'use strict';
 
 module.exports = class ModelContainer {
-  constructor(connections) {
+  constructor(connectionsWithNames) {
     this.models = {};
-    for (const connection of connections) {
+    for (const { connection, name } of connectionsWithNames) {
+      for (const model of connection.models) {
+        model.$connectionName = name;
+      }
       this.models = { ...this.models, ...connection.models };
     }
   }
