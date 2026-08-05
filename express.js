@@ -13,6 +13,7 @@ const jsonParser = express.json();
 
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
+  options = options || {};
   const hasBindIpOption = Object.prototype.hasOwnProperty.call(options, 'bindIp');
   const bindIp = normalizeBindIPOption(options.bindIp);
 
