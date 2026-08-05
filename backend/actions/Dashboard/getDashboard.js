@@ -59,7 +59,7 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
           'failed'
         );
       });
-      return { dashboard, dashboardResult, error: { message: error.message } };
+      return { dashboard, dashboardResult, error: { message: error.message, stack: error.stack } };
     } finally {
       try {
         await sandbox.close();

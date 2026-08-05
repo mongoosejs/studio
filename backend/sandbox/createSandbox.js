@@ -17,7 +17,7 @@ module.exports = function createSandbox({ db }, useRawDB) {
   const scriptDb = useRawDB ? db : createScriptDb(db);
 
   const sandbox = {
-    db: scriptDb.db,
+    db: useRawDB ? db : scriptDb.db,
     mongoose,
     console: {},
     ObjectId: mongoose.Types.ObjectId,
@@ -31,7 +31,7 @@ module.exports = function createSandbox({ db }, useRawDB) {
 
   return {
     context: vm.createContext(sandbox),
-    db: scriptDb.db,
+    db: sandbox.db,
     getLogs() {
       return logs.join('\n');
     },
@@ -56,7 +56,7 @@ module.exports = function createSandbox({ db }, useRawDB) {
         wrappedScript
       });
     },
-    close: scriptDb.close
+    close: useRawDB ? (() => { }) : scriptDb.close
   };
 };
 
