@@ -6,22 +6,15 @@ const mongoose = require('mongoose');
 const vm = require('vm');
 const { createScriptDb } = require('./createScriptDb');
 
-module.exports = function createSandbox({ db }) {
+module.exports = function createSandbox({ db }, useRawDB) {
   const logs = [];
-
-  if (db instanceof ModelContainer) {
-    throw new Error('Cannot create sandbox for ModelContainer');
-  }
 
   // db must be a connection, not a Mongoose instance
   if (db.connection && db.connections) {
     db = db.connection;
   }
 
-  const scriptDb = createScriptDb(db);
-  if (!scriptDb.db.Types) {
-    scriptDb.db.Types = mongoose.Types;
-  }
+  const scriptDb = useRawDB ? db : createScriptDb(db);
 
   const sandbox = {
     db: scriptDb.db,
@@ -50,6 +43,10 @@ module.exports = function createSandbox({ db }) {
 
       if (!dryRun) {
         return await vm.runInContext(wrappedScript, this.context);
+      }
+
+      if (db instanceof ModelContainer) {
+        throw new Error('Cannot dry run when using multiple connections');
       }
 
       return await runDryRunScript({

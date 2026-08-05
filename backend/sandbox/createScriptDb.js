@@ -1,5 +1,7 @@
 'use strict';
 
+const ModelContainer = require('../modelContainer');
+
 const wrappedCollections = new WeakSet();
 
 const collectionMethodOptionsIndex = new Map([
@@ -28,6 +30,9 @@ const collectionMethodOptionsIndex = new Map([
 ]);
 
 function createScriptDb(db) {
+  if (db instanceof ModelContainer) {
+    throw new Error('Cannot create script db for ModelContainer');
+  }
   const sourceConnection = db;
 
   const scriptConnection = sourceConnection.useDb(sourceConnection.name, { useCache: false });
