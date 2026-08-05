@@ -15,4 +15,8 @@ module.exports = class ModelContainer {
       this.models = { ...this.models, ...connectionWithName.connection.models };
     }
   }
-}
+
+  model(modelName) {
+    return this.models[modelName];
+  }
+};

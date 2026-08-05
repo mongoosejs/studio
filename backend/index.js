@@ -21,7 +21,7 @@ module.exports = function backend(db, studioConnection, options) {
     studioConnection = db[0].connection;
     db = new ModelContainer(db);
     isMultiConnection = true;
-  } else {
+  } else if (studioConnection == null) {
     studioConnection = db;
   }
 
