@@ -109,19 +109,6 @@
             @search="search"
           >
           </document-search>
-          <button
-            type="button"
-            @click="openMongoShellFilterModal()"
-            :disabled="searchText.trim().length === 0"
-            title="View MongoDB shell syntax"
-            aria-label="View MongoDB shell syntax"
-            class="shrink-0 rounded-md p-1.5"
-            :class="searchText.trim().length > 0 ? 'text-content-secondary hover:text-content hover:bg-muted' : 'text-content-tertiary cursor-not-allowed opacity-50'"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1M8 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M8 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m0 0h2a2 2 0 0 1 2 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-            </svg>
-          </button>
           <div>
             <span v-if="numDocuments == null">Loading ...</span>
             <span v-else-if="typeof numDocuments === 'number'">{{documents.length}}/{{numDocuments === 1 ? numDocuments + ' document' : numDocuments + ' documents'}}</span>
@@ -202,6 +189,13 @@
                   class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
                 >
                   Collection Info
+                </button>
+                <button
+                  @click="openMongoShellFilterModal()"
+                  type="button"
+                  class="block w-full px-4 py-2 text-left text-sm text-content-secondary hover:bg-muted"
+                >
+                  View MongoDB shell syntax
                 </button>
                 <button
                   @click="toggleRowNumbers()"
