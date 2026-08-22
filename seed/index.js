@@ -20,6 +20,10 @@ async function run() {
     {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
+      location: {
+        type: 'Point',
+        coordinates: [-0.1276, 51.5072]
+      },
       role: 'admin',
       plan: 'enterprise',
       status: 'active',
@@ -36,6 +40,10 @@ async function run() {
     {
       name: 'Grace Hopper',
       email: 'grace@example.com',
+      location: {
+        type: 'Point',
+        coordinates: [-74.006, 40.7128]
+      },
       role: 'analyst',
       plan: 'pro',
       status: 'active',
@@ -52,6 +60,10 @@ async function run() {
     {
       name: 'Linus Torvalds',
       email: 'linus@example.com',
+      location: {
+        type: 'Point',
+        coordinates: [24.9384, 60.1699]
+      },
       role: 'editor',
       plan: 'starter',
       status: 'invited',
@@ -68,6 +80,10 @@ async function run() {
     {
       name: 'Margaret Hamilton',
       email: 'margaret@example.com',
+      location: {
+        type: 'Point',
+        coordinates: [-71.1097, 42.3736]
+      },
       role: 'viewer',
       plan: 'pro',
       status: 'inactive',

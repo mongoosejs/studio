@@ -150,20 +150,6 @@ module.exports = app => app.component('document-property', {
     }
   },
   watch: {
-    isGeoJsonGeometry(newValue) {
-      if (!newValue) {
-        this.detailViewMode = 'text';
-      } else if (this.editting) {
-        // Default to map view when editing GeoJSON
-        this.detailViewMode = 'map';
-      }
-    },
-    editting(newValue) {
-      // When entering edit mode for GeoJSON, default to map view
-      if (newValue && this.isGeoJsonGeometry) {
-        this.detailViewMode = 'map';
-      }
-    },
     canUseArrayTableView(can) {
       if (!can && this.arrayDetailViewMode === 'table') {
         this.arrayDetailViewMode = 'list';
@@ -250,6 +236,9 @@ module.exports = app => app.component('document-property', {
       return 'detail-default';
     },
     getEditComponentForPath(path) {
+      if (this.isGeoJsonGeometry) {
+        return this.detailViewMode === 'map' ? 'detail-default' : 'edit-subdocument';
+      }
       if (path.instance === 'String') {
         return 'edit-string';
       }
@@ -275,6 +264,10 @@ module.exports = app => app.component('document-property', {
     },
     getEditComponentProps(path) {
       const props = {};
+      if (this.isGeoJsonGeometry) {
+        props.viewMode = this.detailViewMode;
+        props.onChange = this.handleInputChange;
+      }
       if (path.instance === 'String') {
         if (path.enum?.length > 0) {
           props.enumValues = path.enum;

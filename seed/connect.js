@@ -10,6 +10,10 @@ module.exports = async function connect() {
   mongoose.model('User', new mongoose.Schema({
     name: String,
     email: String,
+    location: new mongoose.Schema({
+      type: { type: String },
+      coordinates: [Number]
+    }),
     role: String,
     plan: String,
     status: String,
