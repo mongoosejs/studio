@@ -237,7 +237,7 @@ module.exports = app => app.component('document-property', {
     },
     getEditComponentForPath(path) {
       if (this.isGeoJsonGeometry) {
-        return this.detailViewMode === 'map' ? 'detail-default' : 'edit-subdocument';
+        return this.detailViewMode === 'map' ? 'edit-geojson' : 'edit-subdocument';
       }
       if (path.instance === 'String') {
         return 'edit-string';
@@ -266,7 +266,6 @@ module.exports = app => app.component('document-property', {
       const props = {};
       if (this.isGeoJsonGeometry) {
         props.viewMode = this.detailViewMode;
-        props.onChange = this.handleInputChange;
       }
       if (path.instance === 'String') {
         if (path.enum?.length > 0) {
