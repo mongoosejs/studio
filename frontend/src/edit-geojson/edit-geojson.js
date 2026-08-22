@@ -96,7 +96,7 @@ module.exports = app => app.component('edit-geojson', {
       return this.isGeoJsonGeometry && this.value.type === 'MultiPolygon';
     },
     isEditable() {
-      return (this.isGeoJsonPoint || this.isGeoJsonPolygon) && true;
+      return (this.isGeoJsonPoint || this.isGeoJsonPolygon);
     },
     canUndo() {
       // Can undo if there are any changes from the original geometry
@@ -1102,4 +1102,3 @@ module.exports = app => app.component('edit-geojson', {
     }
   }
 });
-
