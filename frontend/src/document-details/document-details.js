@@ -9,20 +9,12 @@ appendCSS(require('./document-details.css'));
 
 module.exports = app => app.component('document-details', {
   template,
-  props: ['document', 'schemaPaths', 'virtualPaths', 'editting', 'changes', 'invalid', 'viewMode', 'model'],
+  props: ['document', 'schemaPaths', 'virtualPaths', 'editting', 'changes', 'invalid', 'viewMode'],
   data() {
     return {
       searchQuery: '',
       selectedType: '',
-      collapsedVirtuals: new Set(),
-      showAddFieldModal: false,
-      fieldData: {
-        name: '',
-        type: '',
-        value: ''
-      },
-      fieldErrors: {},
-      isSubmittingField: false
+      collapsedVirtuals: new Set()
     };
   },
   mounted() {
@@ -91,20 +83,6 @@ module.exports = app => app.component('document-details', {
       });
 
       return Array.from(types).sort();
-    },
-    allFieldTypes() {
-      const schemaTypes = this.availableTypes;
-      const commonTypes = ['String', 'Number', 'Boolean', 'Date', 'Array', 'Object'];
-
-      // Combine schema types with common types, avoiding duplicates
-      const allTypes = new Set([...schemaTypes, ...commonTypes]);
-      return Array.from(allTypes).sort();
-    },
-    shouldUseAce() {
-      return ['Array', 'Object', 'Embedded'].includes(this.fieldData.type);
-    },
-    shouldUseDatePicker() {
-      return this.fieldData.type === 'Date';
     },
     typeFilteredSchemaPaths() {
       let paths = this.schemaPaths || [];
@@ -316,120 +294,6 @@ module.exports = app => app.component('document-details', {
     },
     isVirtualFieldCollapsed(fieldName) {
       return this.collapsedVirtuals.has(fieldName);
-    },
-    openAddFieldModal() {
-      this.showAddFieldModal = true;
-    },
-    closeAddFieldModal() {
-      this.showAddFieldModal = false;
-      this.resetFieldForm();
-    },
-    async addNewField(fieldData) {
-      // Emit event to parent component to handle the field addition
-      this.$emit('add-field', fieldData);
-      this.closeAddFieldModal();
-    },
-    validateFieldForm() {
-      this.fieldErrors = {};
-
-      // Validate field name
-      const trimmedName = this.fieldData.name.trim();
-      if (!trimmedName) {
-        this.fieldErrors.name = 'Field name is required';
-      } else {
-        const transformedName = this.getTransformedFieldName();
-        if (!transformedName) {
-          this.fieldErrors.name = 'Field name contains only invalid characters';
-        } else if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(transformedName)) {
-          this.fieldErrors.name = 'Field name must start with a letter, underscore, or $ and contain only letters, numbers, underscores, and $';
-        }
-      }
-
-      // Validate field type
-      if (!this.fieldData.type) {
-        this.fieldErrors.type = 'Field type is required';
-      }
-
-      // Validate field value if provided
-      if (this.fieldData.value && this.fieldData.value.trim()) {
-        if (['Object', 'Array'].includes(this.fieldData.type)) {
-          try {
-            JSON.parse(this.fieldData.value);
-          } catch (e) {
-            this.fieldErrors.value = 'Invalid JSON format for object/array type';
-          }
-        } else if (this.fieldData.type === 'Number') {
-          if (isNaN(Number(this.fieldData.value))) {
-            this.fieldErrors.value = 'Invalid number format';
-          }
-        } else if (this.fieldData.type === 'Boolean') {
-          const lowerValue = this.fieldData.value.toLowerCase();
-          if (!['true', 'false', '1', '0', 'yes', 'no'].includes(lowerValue)) {
-            this.fieldErrors.value = 'Invalid boolean value (use true/false, 1/0, yes/no)';
-          }
-        } else if (this.fieldData.type === 'Date') {
-          // Date picker provides YYYY-MM-DD format, validate it
-          const dateValue = new Date(this.fieldData.value);
-          if (isNaN(dateValue.getTime())) {
-            this.fieldErrors.value = 'Invalid date format';
-          }
-        }
-      }
-
-      return Object.keys(this.fieldErrors).length === 0;
-    },
-    parseFieldValue(value, type) {
-      if (!value || !value.trim()) {
-        return null;
-      }
-
-      switch (type) {
-        case 'Number':
-          return Number(value);
-        case 'Boolean':
-          const lowerValue = value.toLowerCase();
-          return ['true', '1', 'yes'].includes(lowerValue);
-        case 'Date':
-          // For date picker, value is already in YYYY-MM-DD format
-          return new Date(value);
-        case 'Object':
-        case 'Array':
-          return JSON.parse(value);
-        default:
-          return value;
-      }
-    },
-    async handleAddFieldSubmit() {
-      if (!this.validateFieldForm()) {
-        return;
-      }
-
-      this.isSubmittingField = true;
-
-      try {
-        const fieldData = {
-          name: this.fieldData.name,
-          type: this.fieldData.type,
-          value: this.parseFieldValue(this.fieldData.value, this.fieldData.type)
-        };
-
-        this.$emit('add-field', fieldData);
-        this.closeAddFieldModal();
-      } catch (error) {
-        console.error('Error adding field:', error);
-        this.fieldErrors.value = 'Error processing field value';
-      } finally {
-        this.isSubmittingField = false;
-      }
-    },
-    resetFieldForm() {
-      this.fieldData = {
-        name: '',
-        type: '',
-        value: ''
-      };
-      this.fieldErrors = {};
-      this.isSubmittingField = false;
     },
     getVirtualFieldType(virtual) {
       const value = virtual.value;

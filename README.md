@@ -1,14 +1,14 @@
 # Mongoose Studio
 
-A sleek, powerful MongoDB UI with built-in dashboarding and auth, seamlessly integrated with your Express, Vercel, or Netlify app.
+An AI-Powered Data Workspace for MongoDB: Turn your MongoDB data into dashboards, maps, and interactive workflows - powered by your Mongoose models.
 
 ![NPM Version](https://img.shields.io/npm/v/@mongoosejs/studio)
 
 ## Getting Started
 
 Mongoose Studio is meant to run as a [sidecar](https://learn.microsoft.com/en-us/azure/architecture/patterns/sidecar) to your Node.js application, using the same Mongoose connection config.
-If your app runs on `acme.app`, Studio will be on `acme.app/studio` or whichever path you prefer.
-For local dev, if your app runs on `localhost:3000`, Studio will be on `localhost:3000/studio`.
+If your app runs on `acme.app`, Mongoose Studio will be on `acme.app/studio` or whichever path you prefer.
+For local dev, if your app runs on `localhost:3000`, Mongoose Studio will be on `localhost:3000/studio`.
 
 By default, Mongoose Studio does **not** provide any authentication or authorization.
 You can use Mongoose Studio for free for local development, but we recommend [Mongoose Studio Pro](https://studio.mongoosejs.io/#pricing) for when you want to go into production.
@@ -83,6 +83,38 @@ const handler = studio(
 );
 
 export default handler;
+```
+
+### Nest.js
+
+Add `MongooseStudioModule` to your app module as follows.
+Use `getConnectionToken()` so Mongoose Studio uses the same connection that `MongooseModule.forRoot()` creates.
+
+```typescript
+import { Module } from '@nestjs/common';
+import { MongooseModule, getConnectionToken } from '@nestjs/mongoose';
+import { MongooseStudioModule } from '@mongoosejs/studio/nest';
+
+@Module({
+  imports: [
+    MongooseModule.forRoot(process.env.MONGODB_URI),
+    MongooseStudioModule.forRoot({
+      connectionToken: getConnectionToken(),
+      apiKey: process.env.MONGOOSE_STUDIO_API_KEY // optional
+    })
+  ]
+})
+export class AppModule {}
+```
+
+With this setup, Mongoose Studio is available at `/studio`.
+If you mount Mongoose Studio on a different path, update the `path` option as follows.
+
+```typescript
+MongooseStudioModule.forRoot({
+  path: '/__studio', // Serve on `/__studio` rather than `/studio`
+  connectionToken: getConnectionToken()
+})
 ```
 
 ### Netlify

@@ -25,12 +25,12 @@ const chatMessageSchema = new mongoose.Schema({
     input: mongoose.Schema.Types.Mixed,
     status: String
   }],
-  executionResult: {
+  executionResult: new mongoose.Schema({
     output: mongoose.Schema.Types.Mixed,
     logs: String,
     error: String,
     dryRun: Boolean
-  }
+  }, { _id: false })
 }, { timestamps: true });
 
 module.exports = chatMessageSchema;

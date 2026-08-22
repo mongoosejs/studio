@@ -6,6 +6,7 @@ const path = require('path');
 const webpack = require('webpack');
 const { defaultMothershipURL } = require('../constants');
 const webpackConfig = require('./webpack.config');
+const util = require('util');
 
 module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
   const mothershipUrl = options?._mothershipUrl || defaultMothershipURL;
@@ -22,7 +23,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
       .then(response => {
         if (response.status < 200 || response.status >= 400) {
           return response.json().then(data => {
-            throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
+            throw new Error(`Mongoose Studio API Key Error ${response.status}: ${util.inspect(data)}`);
           });
         }
         return response;

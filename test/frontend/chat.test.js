@@ -237,6 +237,15 @@ describe('chat component', function() {
     assert.ok(setItem.calledOnceWithExactly('_mongooseStudioAgentMode', 'true'));
   });
 
+  it('defaults to agent mode when no preference has been saved', function() {
+    assert.strictEqual(chat.methods.getAgentModePreference(), true);
+  });
+
+  it('respects a saved agent mode preference', function() {
+    window.localStorage.getItem = () => 'false';
+    assert.strictEqual(chat.methods.getAgentModePreference(), false);
+  });
+
   it('turns agent mode on for a thread when the sticky preference is on', async function() {
     const toggledThread = { _id: '1'.repeat(24), agentMode: true };
     const toggleStub = sinon.stub(api.ChatThread, 'toggleAgentMode').resolves({ chatThread: toggledThread });

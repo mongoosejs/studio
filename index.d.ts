@@ -3,10 +3,10 @@ declare module '@mongoosejs/studio' {
   import { Connection, Mongoose } from 'mongoose';
 
   const express: (
-    path: string,
+    path?: string,
     connOrMongoose?: Connection | Mongoose,
     options?: { apiKey?: string; bindIp?: string | string[] | null }
-  ) => RequestHandler;
+  ) => Promise<RequestHandler>;
 
   const studio: {
     express: typeof express;

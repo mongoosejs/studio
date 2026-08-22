@@ -33,7 +33,8 @@ module.exports = {
       name: 'model',
       component: 'models',
       meta: {
-        authorized: false
+        authorized: false,
+        preserveStateKey: 'model'
       }
     },
     {

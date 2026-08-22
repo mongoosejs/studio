@@ -273,9 +273,120 @@
         :changes="changes"
         :invalid="invalid"
         :viewMode="viewMode"
-        :model="model"
-        @add-field="addField"
         @view-mode-change="updateViewMode"></document-details>
+      <modal v-if="showAddFieldModal">
+        <template v-slot:body>
+          <div class="modal-exit" @click="closeAddFieldModal">&times;</div>
+          <div class="add-field-modal">
+            <div class="mb-6">
+              <h2 class="text-xl font-semibold text-content mb-2">Add New Field</h2>
+              <p class="text-sm text-gray-600">Create a new field for this document</p>
+            </div>
+
+            <form @submit.prevent="handleAddFieldSubmit" class="space-y-4">
+              <div>
+                <label for="fieldName" class="block text-sm font-medium text-content-secondary mb-1">
+                  Field Name *
+                </label>
+                <input
+                  id="fieldName"
+                  v-model="fieldData.name"
+                  type="text"
+                  required
+                  placeholder="Enter field name..."
+                  class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  :class="{ 'border-red-500': fieldErrors.name }"
+                />
+                <p v-if="fieldErrors.name" class="mt-1 text-sm text-red-600">{{fieldErrors.name}}</p>
+                <p v-if="fieldData.name && getTransformedFieldName() !== fieldData.name.trim()" class="mt-1 text-sm text-blue-600">
+                  Field name will be: <code class="bg-blue-50 px-1 py-0.5 rounded text-xs">{{getTransformedFieldName()}}</code>
+                </p>
+              </div>
+
+              <div>
+                <label for="fieldType" class="block text-sm font-medium text-content-secondary mb-1">
+                  Field Type *
+                </label>
+                <select
+                  id="fieldType"
+                  v-model="fieldData.type"
+                  required
+                  class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  :class="{ 'border-red-500': fieldErrors.type }"
+                >
+                  <option value="">Select field type...</option>
+                  <option v-for="type in allFieldTypes" :key="type" :value="type">
+                    {{type}}
+                  </option>
+                </select>
+                <p v-if="fieldErrors.type" class="mt-1 text-sm text-red-600">{{fieldErrors.type}}</p>
+              </div>
+
+              <div>
+                <label for="fieldValue" class="block text-sm font-medium text-content-secondary mb-1">
+                  Initial Value
+                </label>
+
+                <custom-date-picker
+                  v-if="shouldUseDatePicker"
+                  id="fieldValue"
+                  mode="date"
+                  :value="fieldData.value"
+                  :class="{ 'border-red-500': fieldErrors.value, 'max-w-[400px]': true }"
+                  :horizontal="true"
+                  @input="fieldData.value = $event"
+                />
+
+                <input
+                  v-else-if="!shouldUseAce"
+                  v-model="fieldData.value"
+                  type="text"
+                  id="fieldValue"
+                  placeholder="Enter initial value (optional)..."
+                  class="w-full px-3 py-2 border border-edge-strong rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  :class="{ 'border-red-500': fieldErrors.value }"
+                />
+
+                <ace-editor
+                  v-else
+                  id="fieldValue"
+                  v-model="fieldData.value"
+                  mode="json"
+                  :line-numbers="true"
+                  :min-lines="3"
+                  class="add-field-ace-editor w-full min-h-[100px]"
+                  :class="{ 'border-red-500': fieldErrors.value }"
+                />
+
+                <p v-if="fieldErrors.value" class="mt-1 text-sm text-red-600">{{fieldErrors.value}}</p>
+                <p class="mt-1 text-xs text-content-tertiary">
+                  <span v-if="shouldUseDatePicker">Select a date or leave empty for null/undefined values.</span>
+                  <span v-else-if="shouldUseAce">Leave empty for null/undefined values. Use valid JSON format.</span>
+                  <span v-else>Leave empty for null/undefined values.</span>
+                </p>
+              </div>
+
+              <div class="flex justify-end gap-3 pt-4 border-t border-edge">
+                <button
+                  type="button"
+                  @click="closeAddFieldModal"
+                  class="px-4 py-2 text-sm font-medium text-content-secondary bg-surface border border-edge-strong rounded-md hover:bg-page focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  :disabled="isSubmittingField"
+                  class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span v-if="isSubmittingField">Adding...</span>
+                  <span v-else>Add Field</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </template>
+      </modal>
       <modal v-if="shouldShowConfirmModal">
         <template v-slot:body>
           <div class="modal-exit" @click="shouldShowConfirmModal = false;">&times;</div>

@@ -64,6 +64,7 @@ module.exports = function next(conn, options) {
       params.roles = roles;
       params.userId = user._id;
       params.initiatedById = user._id;
+      params.initiatedBy = user;
     }
 
     if (typeof actionName !== 'string') {

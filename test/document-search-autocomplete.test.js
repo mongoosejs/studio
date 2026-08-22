@@ -5,7 +5,12 @@ const {
   buildAutocompleteTrie,
   getAutocompleteContext,
   getAutocompleteSuggestions,
-  applySuggestion
+  applySuggestion,
+  insertClosingBrace,
+  getDatePickerInsertionRange,
+  dateArgumentSliceToDatetimeLocal,
+  insertDateInDateArgument,
+  FUNCTION_HELPERS
 } = require('../frontend/src/_util/document-search-autocomplete');
 
 describe('document-search-autocomplete', function() {
@@ -14,7 +19,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: ';
       const cursorPos = searchText.length;
       const context = getAutocompleteContext(searchText, cursorPos);
-      
+
       assert.ok(context);
       assert.strictEqual(context.role, 'value');
       assert.strictEqual(context.token, '');
@@ -24,7 +29,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: obj';
       const cursorPos = searchText.length;
       const context = getAutocompleteContext(searchText, cursorPos);
-      
+
       assert.ok(context);
       assert.strictEqual(context.role, 'value');
       assert.strictEqual(context.token, 'obj');
@@ -34,7 +39,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ na';
       const cursorPos = searchText.length;
       const context = getAutocompleteContext(searchText, cursorPos);
-      
+
       assert.ok(context);
       assert.strictEqual(context.role, 'fieldName');
       assert.strictEqual(context.token, 'na');
@@ -44,7 +49,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ name: "test", ag';
       const cursorPos = searchText.length;
       const context = getAutocompleteContext(searchText, cursorPos);
-      
+
       assert.ok(context);
       assert.strictEqual(context.role, 'fieldName');
       assert.strictEqual(context.token, 'ag');
@@ -54,7 +59,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ name: "test" }';
       const cursorPos = searchText.length;
       const context = getAutocompleteContext(searchText, cursorPos);
-      
+
       assert.strictEqual(context, null);
     });
 
@@ -62,7 +67,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: { $gte: ';
       const cursorPos = searchText.length;
       const context = getAutocompleteContext(searchText, cursorPos);
-      
+
       assert.ok(context);
       assert.strictEqual(context.role, 'value');
       assert.strictEqual(context.token, '');
@@ -72,7 +77,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: { ';
       const cursorPos = searchText.length;
       const context = getAutocompleteContext(searchText, cursorPos);
-      
+
       assert.ok(context);
       assert.strictEqual(context.role, 'fieldName');
       assert.strictEqual(context.token, '');
@@ -82,7 +87,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: { $g';
       const cursorPos = searchText.length;
       const context = getAutocompleteContext(searchText, cursorPos);
-      
+
       assert.ok(context);
       assert.strictEqual(context.role, 'fieldName');
       assert.strictEqual(context.token, '$g');
@@ -95,7 +100,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: obj';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, []);
-      
+
       assert.ok(suggestions.includes('objectIdRange'));
       // ObjectId won't match 'obj' prefix since it starts with capital 'O'
       assert.ok(!suggestions.includes('ObjectId'));
@@ -106,7 +111,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: ';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, []);
-      
+
       // Should return empty because term is empty
       assert.strictEqual(suggestions.length, 0);
     });
@@ -116,7 +121,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: O';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, []);
-      
+
       assert.ok(suggestions.includes('ObjectId'));
     });
 
@@ -125,7 +130,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ createdAt: D';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, []);
-      
+
       assert.ok(suggestions.includes('Date'));
     });
 
@@ -134,7 +139,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ value: M';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, []);
-      
+
       assert.ok(suggestions.includes('Math'));
     });
 
@@ -148,7 +153,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ na';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths);
-      
+
       assert.ok(suggestions.includes('name'));
     });
 
@@ -157,7 +162,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ obj';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, []);
-      
+
       assert.ok(!suggestions.includes('objectIdRange'));
       assert.ok(!suggestions.includes('ObjectId'));
     });
@@ -171,7 +176,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: na';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, schemaPaths);
-      
+
       assert.ok(!suggestions.includes('name'));
     });
 
@@ -180,7 +185,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: { $g';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, []);
-      
+
       assert.ok(suggestions.includes('$gt'));
       assert.ok(suggestions.includes('$gte'));
     });
@@ -190,7 +195,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: { $';
       const cursorPos = searchText.length;
       const suggestions = getAutocompleteSuggestions(trie, searchText, cursorPos, []);
-      
+
       assert.ok(suggestions.includes('$eq'));
       assert.ok(suggestions.includes('$gt'));
       assert.ok(suggestions.includes('$gte'));
@@ -202,7 +207,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: obj';
       const cursorPos = searchText.length;
       const result = applySuggestion(searchText, cursorPos, 'objectIdRange');
-      
+
       assert.strictEqual(result.text, '{ _id: objectIdRange()');
       assert.strictEqual(result.newCursorPos, '{ _id: objectIdRange('.length);
     });
@@ -211,7 +216,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: O';
       const cursorPos = searchText.length;
       const result = applySuggestion(searchText, cursorPos, 'ObjectId');
-      
+
       assert.strictEqual(result.text, '{ _id: ObjectId()');
       assert.strictEqual(result.newCursorPos, '{ _id: ObjectId('.length);
     });
@@ -220,7 +225,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ createdAt: D';
       const cursorPos = searchText.length;
       const result = applySuggestion(searchText, cursorPos, 'Date');
-      
+
       assert.strictEqual(result.text, '{ createdAt: Date()');
       assert.strictEqual(result.newCursorPos, '{ createdAt: Date('.length);
     });
@@ -229,7 +234,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ value: M';
       const cursorPos = searchText.length;
       const result = applySuggestion(searchText, cursorPos, 'Math');
-      
+
       assert.strictEqual(result.text, '{ value: Math');
       assert.strictEqual(result.newCursorPos, '{ value: Math'.length);
     });
@@ -256,7 +261,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ na';
       const cursorPos = searchText.length;
       const result = applySuggestion(searchText, cursorPos, 'name');
-      
+
       assert.strictEqual(result.text, '{ name:');
       assert.strictEqual(result.newCursorPos, '{ name:'.length);
     });
@@ -265,7 +270,7 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ _id: obj }';
       const cursorPos = '{ _id: obj'.length;
       const result = applySuggestion(searchText, cursorPos, 'objectIdRange');
-      
+
       assert.strictEqual(result.text, '{ _id: objectIdRange() }');
     });
 
@@ -273,8 +278,158 @@ describe('document-search-autocomplete', function() {
       const searchText = '{ "na';
       const cursorPos = searchText.length;
       const result = applySuggestion(searchText, cursorPos, '"name"');
-      
+
       assert.strictEqual(result.text, '{ "name":');
+    });
+  });
+
+  describe('insertClosingBrace()', function() {
+    it('inserts a closing brace and places the cursor between braces', function() {
+      const result = insertClosingBrace('', 0, 0);
+
+      assert.strictEqual(result.text, '{}');
+      assert.strictEqual(result.newCursorPos, 1);
+    });
+
+    it('inserts braces at the cursor without replacing surrounding text', function() {
+      const searchText = '{ name: ';
+      const result = insertClosingBrace(searchText, searchText.length, searchText.length);
+
+      assert.strictEqual(result.text, '{ name: {}');
+      assert.strictEqual(result.newCursorPos, '{ name: {'.length);
+    });
+
+    it('wraps selected text and places the cursor after the selection', function() {
+      const result = insertClosingBrace('name', 0, 'name'.length);
+
+      assert.strictEqual(result.text, '{name}');
+      assert.strictEqual(result.newCursorPos, '{name'.length);
+    });
+  });
+
+  describe('getDatePickerInsertionRange()', function() {
+    it('returns null when the cursor is not inside Date(...)', function() {
+      assert.strictEqual(getDatePickerInsertionRange('{ x: 1 }', 5), null);
+      assert.strictEqual(getDatePickerInsertionRange('{ d: 1 }', '{ d: '.length), null);
+    });
+
+    it('detects new Date( at end of before', function() {
+      const searchText = '{ x: new Date(';
+      const cursorPos = searchText.length;
+      const range = getDatePickerInsertionRange(searchText, cursorPos);
+
+      assert.ok(range);
+      assert.strictEqual(searchText.slice(0, range.innerStart).endsWith('new Date('), true);
+      assert.strictEqual(range.needsClosingParen, true);
+      assert.strictEqual(range.innerEnd, cursorPos);
+    });
+
+    it('sets needsClosingParen false when ) is present after the cursor', function() {
+      const searchText = '{ createdAt: Date() }';
+      const cursorPos = '{ createdAt: Date('.length;
+      const range = getDatePickerInsertionRange(searchText, cursorPos);
+
+      assert.ok(range);
+      assert.strictEqual(range.needsClosingParen, false);
+      assert.strictEqual(searchText.slice(range.innerStart, range.innerEnd), '');
+      assert.strictEqual(searchText[range.innerEnd], ')');
+    });
+
+    it('sets needsClosingParen true when no ) appears after the cursor', function() {
+      const searchText = '{ createdAt: Date( }';
+      const cursorPos = '{ createdAt: Date('.length;
+      const range = getDatePickerInsertionRange(searchText, cursorPos);
+
+      assert.ok(range);
+      assert.strictEqual(range.needsClosingParen, true);
+      assert.strictEqual(range.innerEnd, cursorPos);
+    });
+
+    it('finds inner slice when cursor is before the closing quote of a literal', function() {
+      const searchText = '{ createdAt: Date("2020-01-01") }';
+      const cursorPos = '{ createdAt: Date("2020-01-01'.length;
+      const range = getDatePickerInsertionRange(searchText, cursorPos);
+
+      assert.ok(range);
+      assert.strictEqual(searchText.slice(range.innerStart, range.innerEnd), '"2020-01-01"');
+      assert.strictEqual(range.needsClosingParen, false);
+    });
+  });
+
+  describe('dateArgumentSliceToDatetimeLocal()', function() {
+    it('returns empty string for blank or invalid input', function() {
+      assert.strictEqual(dateArgumentSliceToDatetimeLocal(''), '');
+      assert.strictEqual(dateArgumentSliceToDatetimeLocal('   '), '');
+      assert.strictEqual(dateArgumentSliceToDatetimeLocal('not-a-date'), '');
+    });
+
+    it('returns YYYY-MM-DDTHH:mm:ss.SSS for a parseable slice', function() {
+      const result = dateArgumentSliceToDatetimeLocal('2020-06-15T14:30');
+      assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$/.test(result));
+      assert.strictEqual(result.slice(0, 10), '2020-06-15');
+    });
+
+    it('strips surrounding quotes before parsing', function() {
+      const result = dateArgumentSliceToDatetimeLocal('"2021-12-25T08:00:00.000Z"');
+      assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$/.test(result));
+    });
+  });
+
+  describe('insertDateInDateArgument()', function() {
+    it('inserts unquoted timestamp for empty or unquoted arguments', function() {
+      const searchText = '{ d: Date(OLD) }';
+      const innerStart = '{ d: Date('.length;
+      const innerEnd = innerStart + 3;
+      const range = { innerStart, innerEnd, needsClosingParen: false };
+      const date = new Date('2022-03-04T12:00:00.000Z');
+
+      const result = insertDateInDateArgument(searchText, range, date);
+
+      assert.strictEqual(result.text, '{ d: Date(' + date.getTime() + ') }');
+      assert.strictEqual(result.newCursorPos, innerStart + String(date.getTime()).length);
+    });
+
+    it('appends ) when needsClosingParen is true', function() {
+      const searchText = '{ d: Date( }';
+      const innerStart = '{ d: Date('.length;
+      const range = { innerStart, innerEnd: innerStart, needsClosingParen: true };
+      const date = new Date('2023-01-02T00:00:00.000Z');
+
+      const result = insertDateInDateArgument(searchText, range, date);
+
+      assert.ok(result.text.includes('{ d: Date(' + date.getTime() + ')'));
+      assert.strictEqual(result.newCursorPos, innerStart + String(date.getTime()).length + 1);
+    });
+
+    it('does not append extra ) when needsClosingParen is false', function() {
+      const searchText = '{ d: Date(x) }';
+      const innerStart = '{ d: Date('.length;
+      const range = { innerStart, innerEnd: innerStart + 1, needsClosingParen: false };
+      const result = insertDateInDateArgument(searchText, range, new Date('2000-01-01T00:00:00.000Z'));
+
+      assert.strictEqual(result.text.indexOf('))'), -1);
+      assert.ok(result.text.endsWith(') }'));
+    });
+
+    it('uses explicit format when provided, overriding detection', function() {
+      const searchText = '{ d: Date("OLD") }';
+      const innerStart = '{ d: Date('.length;
+      const innerEnd = innerStart + 5;
+      const range = { innerStart, innerEnd, needsClosingParen: false };
+      const date = new Date('2022-03-04T12:00:00.000Z');
+
+      const result = insertDateInDateArgument(searchText, range, date, 'timestamp');
+
+      assert.strictEqual(result.text, '{ d: Date(' + date.getTime() + ') }');
+    });
+  });
+
+  describe('FUNCTION_HELPERS', function() {
+    it('includes Date ObjectId and objectIdRange', function() {
+      assert.ok(FUNCTION_HELPERS.has('Date'));
+      assert.ok(FUNCTION_HELPERS.has('ObjectId'));
+      assert.ok(FUNCTION_HELPERS.has('objectIdRange'));
+      assert.ok(!FUNCTION_HELPERS.has('Math'));
     });
   });
 });

@@ -27,7 +27,15 @@ module.exports = app => app.component('document', {
     shouldShowDeleteModal: false,
     shouldShowCloneModal: false,
     shouldShowValidationModal: false,
+    showAddFieldModal: false,
     validationResult: null,
+    fieldData: {
+      name: '',
+      type: '',
+      value: ''
+    },
+    fieldErrors: {},
+    isSubmittingField: false,
     previousQuery: null,
     lastUpdatedAt: null,
     isRefreshing: false,
@@ -88,6 +96,33 @@ module.exports = app => app.component('document', {
         shortcuts.push({ command: 'Ctrl + S', description: 'Save document' });
       }
       return shortcuts;
+    },
+    allFieldTypes() {
+      const types = new Set(['String', 'Number', 'Boolean', 'Date', 'Array', 'Object']);
+
+      (this.schemaPaths || []).forEach(path => {
+        if (path.instance) {
+          types.add(path.instance);
+        }
+      });
+
+      Object.keys(this.document || {}).forEach(key => {
+        if ((this.schemaPaths || []).some(path => path.path === key)) {
+          return;
+        }
+        const fieldType = this.getFieldType(this.document[key]);
+        if (fieldType && fieldType !== 'unknown' && fieldType !== 'null') {
+          types.add(fieldType);
+        }
+      });
+
+      return Array.from(types).sort();
+    },
+    shouldUseAce() {
+      return ['Array', 'Object', 'Embedded'].includes(this.fieldData.type);
+    },
+    shouldUseDatePicker() {
+      return this.fieldData.type === 'Date';
     },
     isLambda() {
       return !!window?.MONGOOSE_STUDIO_CONFIG?.isLambda;
@@ -285,16 +320,143 @@ module.exports = app => app.component('document', {
     showClonedDocument(doc) {
       this.$router.push({ path: `/model/${this.model}/document/${doc._id}` });
     },
-    async addField(fieldData) {
-      const { doc } = await api.Model.addField({
-        model: this.model,
-        _id: this.document._id,
-        fieldName: fieldData.name,
-        fieldValue: fieldData.value
-      });
-      this.document = doc;
+    addField() {
+      this.showAddFieldModal = true;
+    },
+    closeAddFieldModal() {
+      this.showAddFieldModal = false;
+      this.resetFieldForm();
+    },
+    resetFieldForm() {
+      this.fieldData = {
+        name: '',
+        type: '',
+        value: ''
+      };
+      this.fieldErrors = {};
+      this.isSubmittingField = false;
+    },
+    getTransformedFieldName() {
+      const trimmedName = this.fieldData.name.trim();
+      return trimmedName
+        .replace(/[^a-zA-Z0-9_$]/g, '_')
+        .replace(/^[^a-zA-Z_$]+/, '');
+    },
+    validateFieldForm() {
+      this.fieldErrors = {};
 
-      this.$toast.success(`Field added! Field "${fieldData.name}" has been added to the document`);
+      const trimmedName = this.fieldData.name.trim();
+      if (!trimmedName) {
+        this.fieldErrors.name = 'Field name is required';
+      } else {
+        const transformedName = this.getTransformedFieldName();
+        if (!transformedName) {
+          this.fieldErrors.name = 'Field name contains only invalid characters';
+        } else if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(transformedName)) {
+          this.fieldErrors.name = 'Field name must start with a letter, underscore, or $ and contain only letters, numbers, underscores, and $';
+        }
+      }
+
+      if (!this.fieldData.type) {
+        this.fieldErrors.type = 'Field type is required';
+      }
+
+      if (this.fieldData.value && this.fieldData.value.trim()) {
+        if (['Object', 'Array'].includes(this.fieldData.type)) {
+          try {
+            JSON.parse(this.fieldData.value);
+          } catch (err) {
+            this.fieldErrors.value = 'Invalid JSON format for object/array type';
+          }
+        } else if (this.fieldData.type === 'Number') {
+          if (isNaN(Number(this.fieldData.value))) {
+            this.fieldErrors.value = 'Invalid number format';
+          }
+        } else if (this.fieldData.type === 'Boolean') {
+          const lowerValue = this.fieldData.value.toLowerCase();
+          if (!['true', 'false', '1', '0', 'yes', 'no'].includes(lowerValue)) {
+            this.fieldErrors.value = 'Invalid boolean value (use true/false, 1/0, yes/no)';
+          }
+        } else if (this.fieldData.type === 'Date') {
+          const dateValue = new Date(this.fieldData.value);
+          if (isNaN(dateValue.getTime())) {
+            this.fieldErrors.value = 'Invalid date format';
+          }
+        }
+      }
+
+      return Object.keys(this.fieldErrors).length === 0;
+    },
+    parseFieldValue(value, type) {
+      if (!value || !value.trim()) {
+        return null;
+      }
+
+      switch (type) {
+        case 'Number':
+          return Number(value);
+        case 'Boolean':
+          return ['true', '1', 'yes'].includes(value.toLowerCase());
+        case 'Date':
+          return new Date(value);
+        case 'Object':
+        case 'Array':
+          return JSON.parse(value);
+        default:
+          return value;
+      }
+    },
+    async handleAddFieldSubmit() {
+      if (!this.validateFieldForm()) {
+        return;
+      }
+
+      this.isSubmittingField = true;
+
+      try {
+        const fieldName = this.getTransformedFieldName();
+        const fieldValue = this.parseFieldValue(this.fieldData.value, this.fieldData.type);
+
+        const { doc } = await api.Model.addField({
+          model: this.model,
+          _id: this.document._id,
+          fieldName,
+          fieldValue
+        });
+        this.document = doc;
+        this.closeAddFieldModal();
+
+        this.$toast.success(`Field added! Field "${fieldName}" has been added to the document`);
+      } catch (error) {
+        console.error('Error adding field:', error);
+        this.fieldErrors.value = 'Error adding field';
+      } finally {
+        this.isSubmittingField = false;
+      }
+    },
+    getFieldType(value) {
+      if (value === null || value === undefined) {
+        return 'null';
+      }
+      if (Array.isArray(value)) {
+        return 'Array';
+      }
+      if (value instanceof Date) {
+        return 'Date';
+      }
+      if (typeof value === 'object') {
+        return 'Object';
+      }
+      if (typeof value === 'number') {
+        return 'Number';
+      }
+      if (typeof value === 'boolean') {
+        return 'Boolean';
+      }
+      if (typeof value === 'string') {
+        return 'String';
+      }
+      return 'unknown';
     },
     updateViewMode(mode) {
       this.viewMode = mode;

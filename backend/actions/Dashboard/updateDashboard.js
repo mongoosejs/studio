@@ -9,8 +9,7 @@ const UpdateDashboardParams = new Archetype({
     $required: true
   },
   code: {
-    $type: 'string',
-    $required: true
+    $type: 'string'
   },
   title: {
     $type: 'string'
@@ -18,19 +17,26 @@ const UpdateDashboardParams = new Archetype({
   description: {
     $type: 'string'
   },
+  isPinned: {
+    $type: 'boolean'
+  },
   roles: {
     $type: ['string']
   }
 }).compile('UpdateDashboardParams');
 
 module.exports = ({ studioConnection }) => async function updateDashboard(params) {
-  const { dashboardId, code, title, description, roles, evaluate } = new UpdateDashboardParams(params);
+  const { dashboardId, code, title, description, isPinned, roles, evaluate } = new UpdateDashboardParams(params);
 
   const Dashboard = studioConnection.models['__Studio_Dashboard'];
 
   await authorize('Dashboard.updateDashboard', roles);
 
-  const updateObj = { code };
+  const updateObj = {};
+
+  if (code != null) {
+    updateObj.code = code;
+  }
 
   if (title != null) {
     updateObj.title = title;
@@ -40,8 +46,15 @@ module.exports = ({ studioConnection }) => async function updateDashboard(params
     updateObj.description = description;
   }
 
-  const doc = await Dashboard.
-    findByIdAndUpdate(dashboardId, updateObj, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true });
+  if (isPinned != null) {
+    updateObj.isPinned = isPinned;
+  }
+
+  const doc = await Dashboard.findByIdAndUpdate(
+    dashboardId,
+    updateObj,
+    { sanitizeFilter: true, returnDocument: 'after' }
+  );
 
   return { doc };
 };
