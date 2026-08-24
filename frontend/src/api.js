@@ -275,6 +275,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocuments: function updateDocuments(params) {
       return client.post('', { action: 'Model.updateDocuments', ...params }).then(res => res.data);
+    },
+    updateModelSkill: function updateModelSkill(params) {
+      return client.post('', { action: 'Model.updateModelSkill', ...params }).then(res => res.data);
     }
   };
   exports.Task = {
@@ -475,6 +478,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     updateDocuments: function updateDocument(params) {
       return client.post('/Model/updateDocuments', params).then(res => res.data);
+    },
+    updateModelSkill: function updateModelSkill(params) {
+      return client.post('/Model/updateModelSkill', params).then(res => res.data);
     }
   };
   exports.Task = {

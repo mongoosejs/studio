@@ -7,6 +7,8 @@ const callLLM = require('../../integrations/callLLM');
 const runChatAgent = require('../../chatAgent/runChatAgent');
 const streamLLM = require('../../integrations/streamLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
+const getModelSkillsMap = require('../../helpers/getModelSkillsMap');
+const formatModelSkillsPrompt = require('../../helpers/formatModelSkillsPrompt');
 const mongoose = require('mongoose');
 
 const CreateChatMessageParams = new Archetype({
@@ -102,15 +104,17 @@ module.exports = ({ db, studioConnection, options }) => async function* streamCh
     script: null,
     executionResult: null
   });
+  const modelSkills = await getModelSkillsMap(studioConnection);
   let textStream;
   try {
     if (chatThread.agentMode) {
-      textStream = runChatAgent({ db, llmMessages, currentDateTime, options });
+      textStream = runChatAgent({ db, llmMessages, currentDateTime, options, modelSkills });
     } else {
       const system = [
         systemPrompt,
         currentDateTime ? `Current date: ${currentDateTime}` : null,
-        getModelDescriptions(db),
+        formatModelSkillsPrompt(modelSkills),
+        getModelDescriptions(db, modelSkills),
         options?.context
       ].filter(Boolean).join('\n\n');
       textStream = streamLLM(llmMessages, system, options);
@@ -201,5 +205,5 @@ const systemPrompt = `
 
   -----------
 
-  Here is a description of the user's models. Assume these are the only models available in the system unless explicitly instructed otherwise by the user.
+  Here is a description of the user's models, including any model-specific skills defined by the user. Assume these are the only models available in the system unless explicitly instructed otherwise by the user. Follow model-specific skills exactly when they apply.
   `.trim();

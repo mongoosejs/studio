@@ -32,7 +32,8 @@ const actionsToRequiredRoles = {
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
   'Model.streamDocumentChanges': ['owner', 'admin', 'member', 'readonly'],
   'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly'],
-  'Model.updateDocuments': ['owner', 'admin', 'member']
+  'Model.updateDocuments': ['owner', 'admin', 'member'],
+  'Model.updateModelSkill': ['owner', 'admin', 'member']
 };
 
 module.exports = function authorize(action, roles) {
