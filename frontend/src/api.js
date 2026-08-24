@@ -217,6 +217,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
           window.URL.revokeObjectURL(blobURL);
         });
     },
+    formatSearchFilter(params) {
+      return client.post('', { action: 'Model.formatSearchFilter', ...params }).then(res => res.data);
+    },
     getDocument: function getDocument(params) {
       return client.post('', { action: 'Model.getDocument', ...params }).then(res => res.data);
     },
@@ -408,6 +411,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
           document.body.removeChild(anchor);
           window.URL.revokeObjectURL(blobURL);
         });
+    },
+    formatSearchFilter(params) {
+      return client.post('/Model/formatSearchFilter', params).then(res => res.data);
     },
     getDocument: function getDocument(params) {
       return client.post('/Model/getDocument', params).then(res => res.data);
