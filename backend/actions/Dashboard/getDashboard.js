@@ -39,7 +39,7 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
   const dashboard = await Dashboard.findOne({ _id: dashboardId });
   if (evaluate) {
     let result = null;
-    const sandbox = createSandbox({ db });
+    const sandbox = createSandbox({ db }, true);
     const startExec = startDashboardEvaluate(DashboardResult, dashboardId, $workspaceId, userId);
     startExec.catch(() => {}); // Avoid unhandled promise rejections - we will handle this error later.
     try {
@@ -59,7 +59,7 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
           'failed'
         );
       });
-      return { dashboard, dashboardResult, error: { message: error.message } };
+      return { dashboard, dashboardResult, error: { message: error.message, stack: error.stack } };
     } finally {
       try {
         await sandbox.close();

@@ -21,6 +21,18 @@ const RECENTLY_VIEWED_MODELS_KEY = 'studio:recently-viewed-models';
 const MAX_RECENT_MODELS = 4;
 const FOCUS_AFTER_MODELS_REMOUNT_KEY = '__studioModelsFocusAfterRemount';
 
+// Low saturation palette with contrasting hues for color coding connections.
+const CONNECTION_COLOR_PALETTE = [
+  'hsl(210, 40%, 62%)', // muted blue
+  'hsl(25, 45%, 62%)', // muted orange
+  'hsl(145, 32%, 55%)', // muted green
+  'hsl(335, 38%, 66%)', // muted pink
+  'hsl(270, 32%, 66%)', // muted purple
+  'hsl(180, 32%, 50%)', // muted teal
+  'hsl(50, 42%, 55%)', // muted gold
+  'hsl(0, 42%, 64%)' // muted red
+];
+
 function setModelsRemountFocusIntent(target) {
   if (typeof window === 'undefined') {
     return;
@@ -143,6 +155,9 @@ module.exports = app => app.component('models', {
   props: ['model', 'user', 'roles'],
   data: () => ({
     models: [],
+    modelConnectionNames: [],
+    selectedConnection: null,
+    showConnectionDropdown: false,
     currentModel: null,
     modelDocumentCounts: {},
     documents: [],
@@ -209,6 +224,7 @@ module.exports = app => app.component('models', {
     window.removeEventListener('popstate', this.onPopState, true);
     document.removeEventListener('click', this.onOutsideActionsMenuClick, true);
     document.removeEventListener('click', this.onOutsideAddFieldDropdownClick, true);
+    document.removeEventListener('click', this.onOutsideConnectionDropdownClick, true);
     document.documentElement.removeEventListener('studio-theme-changed', this.onStudioThemeChanged);
     document.removeEventListener('keydown', this.onCtrlP, true);
     this.destroyMap();
@@ -250,8 +266,18 @@ module.exports = app => app.component('models', {
         this.addFieldFilterText = '';
       }
     };
+    this.onOutsideConnectionDropdownClick = event => {
+      if (!this.showConnectionDropdown) {
+        return;
+      }
+      const container = this.$refs.connectionDropdownContainer;
+      if (container && !container.contains(event.target)) {
+        this.showConnectionDropdown = false;
+      }
+    };
     document.addEventListener('click', this.onOutsideActionsMenuClick, true);
     document.addEventListener('click', this.onOutsideAddFieldDropdownClick, true);
+    document.addEventListener('click', this.onOutsideConnectionDropdownClick, true);
     this.onStudioThemeChanged = () => this.updateMapTileLayer();
     document.documentElement.addEventListener('studio-theme-changed', this.onStudioThemeChanged);
     this.onCtrlP = (event) => {
@@ -264,8 +290,9 @@ module.exports = app => app.component('models', {
     this.query = Object.assign({}, this.$route.query);
     // Keep UI mode in sync with the URL on remounts.
     this.isProjectionMenuSelected = this.$route?.query?.[PROJECTION_MODE_QUERY_KEY] === '1';
-    const { models, modelSchemaPaths, readyState } = await api.Model.listModels();
+    const { models, modelConnectionNames, modelSchemaPaths, readyState } = await api.Model.listModels();
     this.models = models;
+    this.modelConnectionNames = modelConnectionNames ?? [];
     this.allSchemaPaths = modelSchemaPaths;
     await this.loadModelCounts();
     if (this.currentModel == null && this.models.length > 0) {
@@ -280,8 +307,9 @@ module.exports = app => app.component('models', {
     } else {
       this._refreshSidebar = setInterval(async() => {
         try {
-          const { models, modelSchemaPaths, readyState } = await api.Model.listModels();
+          const { models, modelConnectionNames, modelSchemaPaths } = await api.Model.listModels();
           this.models = models;
+          this.modelConnectionNames = modelConnectionNames ?? [];
           this.allSchemaPaths = modelSchemaPaths;
           await this.loadModelCounts();
           if (this.currentModel) {
@@ -381,12 +409,35 @@ module.exports = app => app.component('models', {
       }
       return map;
     },
-    filteredModels() {
-      if (!this.modelSearch.trim()) {
+    modelConnections() {
+      const map = {};
+      for (let i = 0; i < this.models.length; i++) {
+        map[this.models[i]] = this.modelConnectionNames?.[i] ?? null;
+      }
+      return map;
+    },
+    connectionNames() {
+      return [...new Set((this.modelConnectionNames ?? []).filter(name => name != null))];
+    },
+    connectionColors() {
+      const colors = {};
+      this.connectionNames.forEach((name, i) => {
+        colors[name] = CONNECTION_COLOR_PALETTE[i % CONNECTION_COLOR_PALETTE.length];
+      });
+      return colors;
+    },
+    connectionFilteredModels() {
+      if (this.selectedConnection == null) {
         return this.models;
       }
+      return this.models.filter(m => this.modelConnections[m] === this.selectedConnection);
+    },
+    filteredModels() {
+      if (!this.modelSearch.trim()) {
+        return this.connectionFilteredModels;
+      }
       const search = this.modelSearch.trim().toLowerCase();
-      return this.models.filter(m => m.toLowerCase().includes(search));
+      return this.connectionFilteredModels.filter(m => m.toLowerCase().includes(search));
     },
     filteredRecentModels() {
       const recent = this.recentlyViewedModels.filter(m => this.models.includes(m));
@@ -461,6 +512,14 @@ module.exports = app => app.component('models', {
     }
   },
   methods: {
+    getConnectionColor(model) {
+      const connectionName = this.modelConnections[model];
+      return connectionName == null ? null : this.connectionColors[connectionName];
+    },
+    selectConnection(name) {
+      this.selectedConnection = name;
+      this.showConnectionDropdown = false;
+    },
     highlightMatch(model) {
       const search = this.modelSearch.trim();
       if (!search) {

@@ -1,11 +1,12 @@
 'use strict';
 
+const ModelContainer = require('../modelContainer');
 const MongooseStudioChartColors = require('../constants/mongooseStudioChartColors');
 const mongoose = require('mongoose');
 const vm = require('vm');
 const { createScriptDb } = require('./createScriptDb');
 
-module.exports = function createSandbox({ db }) {
+module.exports = function createSandbox({ db }, useRawDB) {
   const logs = [];
 
   // db must be a connection, not a Mongoose instance
@@ -13,13 +14,10 @@ module.exports = function createSandbox({ db }) {
     db = db.connection;
   }
 
-  const scriptDb = createScriptDb(db);
-  if (!scriptDb.db.Types) {
-    scriptDb.db.Types = mongoose.Types;
-  }
+  const scriptDb = useRawDB ? db : createScriptDb(db);
 
   const sandbox = {
-    db: scriptDb.db,
+    db: useRawDB ? db : scriptDb.db,
     mongoose,
     console: {},
     ObjectId: mongoose.Types.ObjectId,
@@ -33,7 +31,7 @@ module.exports = function createSandbox({ db }) {
 
   return {
     context: vm.createContext(sandbox),
-    db: scriptDb.db,
+    db: sandbox.db,
     getLogs() {
       return logs.join('\n');
     },
@@ -47,6 +45,10 @@ module.exports = function createSandbox({ db }) {
         return await vm.runInContext(wrappedScript, this.context);
       }
 
+      if (db instanceof ModelContainer) {
+        throw new Error('Cannot dry run when using multiple connections');
+      }
+
       return await runDryRunScript({
         db: this.db,
         context: this.context,
@@ -54,7 +56,7 @@ module.exports = function createSandbox({ db }) {
         wrappedScript
       });
     },
-    close: scriptDb.close
+    close: useRawDB ? (() => { }) : scriptDb.close
   };
 };
 

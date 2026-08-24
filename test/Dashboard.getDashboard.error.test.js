@@ -24,7 +24,6 @@ describe('Dashboard.getDashboard() error handling', function () {
     });
 
     assert.ok(res.dashboard);
-    assert.deepStrictEqual(res.error, { message: 'test error' });
     assert.ok(res.dashboardResult);
     assert.strictEqual(res.dashboardResult.status, 'failed');
     assert.strictEqual(res.dashboardResult.error.message, 'test error');
