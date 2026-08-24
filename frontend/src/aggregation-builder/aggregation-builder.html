@@ -1,0 +1,301 @@
+<div class="aggregation-builder min-h-[calc(100dvh-55px)] bg-page">
+  <header class="sticky top-0 z-20 border-b border-edge bg-page/95 backdrop-blur-sm">
+    <div class="mx-auto flex max-w-5xl flex-wrap items-end gap-x-5 gap-y-3 px-4 py-3 md:px-6">
+      <div class="min-w-[10rem] flex-1 sm:max-w-xs">
+        <label for="aggregation-builder-model" class="mb-1 block text-xs font-medium text-content-secondary">Model</label>
+        <select
+          id="aggregation-builder-model"
+          v-model="selectedModel"
+          class="box-border h-10 w-full rounded-lg border border-edge bg-surface px-3 text-sm text-content focus:border-edge-strong focus:outline-none focus:ring-2 focus:ring-gray-300/50">
+          <option v-for="modelName in models" :key="modelName" :value="modelName">{{modelName}}</option>
+        </select>
+      </div>
+      <div class="w-24 shrink-0">
+        <label for="aggregation-builder-limit" class="mb-1 block text-xs font-medium text-content-secondary">Limit</label>
+        <input
+          id="aggregation-builder-limit"
+          v-model.number="resultLimit"
+          type="number"
+          min="1"
+          max="200"
+          class="box-border h-10 w-full rounded-lg border border-edge bg-surface px-3 text-sm tabular-nums text-content focus:border-edge-strong focus:outline-none focus:ring-2 focus:ring-gray-300/50" />
+      </div>
+      <div class="hidden h-8 w-px shrink-0 bg-edge sm:block" aria-hidden="true"></div>
+      <div class="flex w-full shrink-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+        <span class="text-xs text-content-tertiary">{{ stages.length }} {{ stages.length === 1 ? 'stage' : 'stages' }}</span>
+        <button
+          type="button"
+          @click="addStage"
+          class="h-10 rounded-lg border border-edge bg-surface px-4 text-sm font-medium text-content-secondary transition-colors hover:bg-muted">
+          Add Stage
+        </button>
+        <button
+          type="button"
+          @click="runAggregation"
+          :disabled="isRunning || !selectedModel"
+          class="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-text transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-500 disabled:opacity-90">
+          <svg v-if="isRunning" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          {{ isRunning ? 'Running...' : 'Run Now' }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-5xl px-4 py-8 md:px-6 md:py-10">
+    <h1 class="mb-8 text-lg font-semibold text-content md:mb-10">Aggregation Builder</h1>
+
+    <div class="flex flex-col">
+      <template v-for="(stage, index) in stages">
+        <section
+          :key="stage.id + '-workflow-row'"
+          ref="workflowStageRows"
+          class="overflow-hidden rounded-lg border border-edge bg-page"
+          :class="{
+            'opacity-50': dragStageIndex === index,
+            'ring-2 ring-primary/40': dropStageIndex === index && dragStageIndex !== null && dragStageIndex !== index
+          }"
+          @dragover.prevent="onStageDragOver(index, $event)"
+          @drop.prevent="onStageDrop(index, $event)">
+          <header
+            class="flex flex-wrap items-center justify-between gap-3 bg-surface/50 px-4 py-3 sm:px-5"
+            :class="stage.expanded ? 'border-b border-edge' : ''">
+            <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                draggable="true"
+                class="cursor-grab touch-none rounded p-1 text-content-tertiary hover:bg-muted hover:text-content-secondary active:cursor-grabbing"
+                aria-label="Drag to reorder stage"
+                title="Drag to reorder"
+                @click.stop
+                @dragstart="onStageDragStart(index, $event)"
+                @dragend="onStageDragEnd">
+                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M7 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM7 10a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM7 16a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM13 10a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM13 16a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left sm:gap-3"
+                :aria-expanded="stage.expanded"
+                :aria-controls="'stage-panel-' + stage.id"
+                @click="toggleStageExpanded(stage)">
+                <svg
+                  :class="stage.expanded ? 'rotate-90' : 'rotate-0'"
+                  class="h-4 w-4 shrink-0 text-content-tertiary transition-transform duration-200"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <h2 class="truncate text-sm font-semibold text-content">
+                  Stage {{ index + 1 }}
+                  <span class="font-mono font-normal text-content-secondary">· {{ stage.operator }}</span>
+                </h2>
+              </button>
+            </div>
+            <div class="flex shrink-0 flex-wrap items-center gap-1">
+              <button
+                v-if="index > 0"
+                type="button"
+                @click.stop="moveStageUp(index)"
+                class="rounded-md p-1.5 text-content-tertiary hover:bg-muted hover:text-content-secondary"
+                aria-label="Move stage up"
+                title="Move up">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                </svg>
+              </button>
+              <button
+                v-if="index < stages.length - 1"
+                type="button"
+                @click.stop="moveStageDown(index)"
+                class="rounded-md p-1.5 text-content-tertiary hover:bg-muted hover:text-content-secondary"
+                aria-label="Move stage down"
+                title="Move down">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                @click.stop="duplicateStage(index)"
+                class="rounded-md px-2.5 py-1.5 text-xs font-medium text-content-tertiary hover:bg-muted hover:text-content-secondary"
+                title="Duplicate stage">
+                Duplicate
+              </button>
+              <button
+                type="button"
+                @click.stop="removeStage(index)"
+                class="rounded-md px-2.5 py-1.5 text-xs font-medium text-content-tertiary hover:bg-muted hover:text-red-700"
+                title="Remove stage">
+                Remove
+              </button>
+            </div>
+          </header>
+
+          <div
+            v-show="stage.expanded"
+            :id="'stage-panel-' + stage.id"
+            class="space-y-6 p-5 md:p-6">
+            <div class="space-y-3">
+              <div class="flex flex-wrap items-center gap-3">
+                <label class="text-xs font-medium text-content-secondary">Operator</label>
+                <select
+                  v-model="stage.operator"
+                  class="rounded-md border border-edge bg-surface px-3 py-1.5 text-sm text-content focus:border-edge-strong focus:outline-none">
+                  <option v-for="operator in stageOperators" :key="operator" :value="operator">{{ operator }}</option>
+                </select>
+              </div>
+              <div
+                @focusin="onStageBodyFocus(stage)"
+                @focusout="onStageBodyBlur(stage, $event)">
+                <ace-editor
+                  v-model="stage.bodyText"
+                  mode="javascript"
+                  :line-numbers="true"
+                  class="min-h-[12rem] h-[14rem] w-full"
+                />
+              </div>
+              <p v-if="index === 0" class="text-xs text-content-tertiary">
+                JSON or JavaScript-style objects — supports
+                <span class="font-mono text-content-secondary">ObjectId()</span>,
+                <span class="font-mono text-content-secondary">new Date()</span>,
+                <span class="font-mono text-content-secondary">RegExp</span>, etc.
+              </p>
+              <p v-if="getVisibleStageError(stage)" class="text-xs text-red-600">{{ getVisibleStageError(stage) }}</p>
+            </div>
+
+            <div class="space-y-2">
+              <h3 class="text-xs font-medium text-content-secondary">
+                Pipeline JSON (EJSON) · through stage {{ index + 1 }}
+              </h3>
+              <pre
+                class="max-h-56 overflow-auto rounded-md border border-edge bg-surface p-4 font-mono text-xs text-content md:max-h-64 [&_code]:text-inherit"><code>{{ pipelinePreviewThrough(index) }}</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <div
+          v-if="index < stages.length - 1"
+          :key="stage.id + '-connector'"
+          class="flex justify-center py-2"
+          aria-hidden="true">
+          <svg class="h-5 w-5 text-content-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </template>
+
+      <section
+        v-if="resultsPanelVisible"
+        ref="resultsSection"
+        class="mt-8 overflow-hidden rounded-lg border border-edge bg-page md:mt-10">
+        <header class="flex flex-wrap items-center justify-between gap-3 border-b border-edge px-5 py-3">
+          <h2 class="text-sm font-semibold text-content">Results</h2>
+          <div class="flex flex-wrap items-center gap-2">
+            <span v-if="isRunning" class="text-xs text-content-tertiary">Running…</span>
+            <span v-else-if="hasRunResult" class="text-xs text-content-tertiary">
+              {{ results.length }} document{{ results.length === 1 ? '' : 's' }}
+            </span>
+            <button
+              v-if="results.length > 0 && !isRunning"
+              type="button"
+              @click="copyResults"
+              class="rounded-md border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-muted">
+              Copy
+            </button>
+          </div>
+        </header>
+
+        <div class="p-5 md:p-6">
+          <p v-if="results.length === 0 && isRunning && !errorMessage" class="py-6 text-center text-sm text-content-tertiary">Fetching results…</p>
+          <div v-else-if="hasRunResult && results.length === 0 && !isRunning && !errorMessage" class="rounded-md border border-dashed border-edge px-5 py-6">
+            <h3 class="text-sm font-semibold text-content">No documents matched</h3>
+            <p class="mt-1 text-sm text-content-tertiary">
+              The pipeline ran on <span class="font-medium text-content-secondary">{{ selectedModel }}</span> but returned no documents.
+            </p>
+            <ul class="mt-4 list-disc space-y-1.5 pl-5 text-sm text-content-tertiary">
+              <li>Loosen <span class="font-mono text-xs">$match</span> filters or remove restrictive stages</li>
+              <li>Confirm the model has data and field names are correct</li>
+              <li>Check <span class="font-mono text-xs">$limit</span> or <span class="font-mono text-xs">$skip</span> aren't excluding everything</li>
+            </ul>
+          </div>
+          <p v-else-if="errorMessage && results.length === 0 && !isRunning" class="text-sm text-content-tertiary">
+            Aggregation failed. Open
+            <button type="button" @click="togglePipelineErrorsPanel" class="font-medium text-red-700 underline hover:text-red-900">Errors</button>
+            for details.
+          </p>
+          <div v-else-if="results.length > 0" class="space-y-4">
+            <div
+              class="max-h-[32rem] overflow-y-auto overscroll-y-contain rounded-md border border-edge bg-surface p-3 [-webkit-overflow-scrolling:touch]"
+              :class="{ 'pointer-events-none opacity-60': isRunning }">
+              <list-json
+                :key="resultsRenderKey"
+                :value="visibleResults"
+                :expanded-fields="visibleResultsExpandedFields"
+              />
+            </div>
+            <p v-if="hasMoreResults" class="text-xs text-content-tertiary">
+              Showing {{ visibleResults.length }} of {{ results.length }} document(s).
+            </p>
+            <button
+              v-if="hasMoreResults"
+              type="button"
+              @click="loadMoreResults"
+              class="rounded-md border border-edge bg-surface px-4 py-2 text-xs font-medium text-content-secondary hover:bg-muted">
+              Load {{ nextLoadMoreCount }} more
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div
+    v-if="hasVisibleErrors"
+    class="pointer-events-none fixed bottom-6 right-6 z-30 flex flex-col items-end gap-2">
+    <div
+      v-if="pipelineErrorsPanelOpen"
+      role="dialog"
+      aria-labelledby="aggregation-pipeline-errors-title"
+      class="pointer-events-auto flex max-h-[min(50vh,22rem)] w-[min(100vw-2rem,22rem)] flex-col overflow-hidden rounded-lg border border-red-200 bg-page shadow-lg">
+      <div class="flex shrink-0 items-center justify-between gap-2 border-b border-red-200 bg-red-50 px-3 py-2">
+        <h3 id="aggregation-pipeline-errors-title" class="text-sm font-semibold text-red-900">Pipeline errors</h3>
+        <button
+          type="button"
+          @click="closePipelineErrorsPanel"
+          class="rounded-md px-2 py-1 text-xs font-semibold text-red-800 hover:bg-red-100"
+          aria-label="Close errors">
+          Close
+        </button>
+      </div>
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-3 [-webkit-overflow-scrolling:touch]">
+        <p v-if="errorMessage" class="mb-3 text-sm leading-snug text-red-800">{{ errorMessage }}</p>
+        <ul v-if="visiblePipelineStageErrors.length" class="list-none space-y-2.5 text-sm text-red-800">
+          <li
+            v-for="(item, errIdx) in visiblePipelineStageErrors"
+            :key="'pipeline-err-' + errIdx"
+            class="rounded-md border border-red-100 bg-red-50/80 px-2.5 py-2">
+            <span class="font-semibold">Stage {{ item.stageNumber }}</span>
+            <p class="mt-0.5 font-mono text-xs leading-snug">{{ item.message }}</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <button
+      type="button"
+      @click="togglePipelineErrorsPanel"
+      class="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-900 shadow-md transition-colors hover:bg-red-100"
+      :aria-expanded="pipelineErrorsPanelOpen"
+      aria-controls="aggregation-pipeline-errors-title">
+      <span>Errors</span>
+      <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
+        {{ visibleErrorCount }}
+      </span>
+    </button>
+  </div>
+</div>
