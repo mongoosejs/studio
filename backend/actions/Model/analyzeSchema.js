@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const { Buffer } = require('buffer');
+const omitNullish = require('../../helpers/omitNullish');
 const validateDocumentWithTimeout = require('../../helpers/validateDocumentWithTimeout');
 
 const SAMPLE_SIZE = 1000;
@@ -18,7 +19,7 @@ const AnalyzeSchemaParams = new Archetype({
   }
 }).compile('AnalyzeSchemaParams');
 
-module.exports = ({ db }) => async function analyzeSchema(params) {
+module.exports = ({ db, options }) => async function analyzeSchema(params) {
   const { model, roles } = new AnalyzeSchemaParams(params);
 
   await authorize('Model.analyzeSchema', roles);
@@ -28,10 +29,11 @@ module.exports = ({ db }) => async function analyzeSchema(params) {
     throw new Error(`Model ${model} not found`);
   }
 
-  const documentCount = await Model.collection.countDocuments();
+  const operationOptions = omitNullish({ maxTimeMS: options?.maxTimeMS });
+  const documentCount = await Model.collection.countDocuments({}, operationOptions);
   const rawDocs = documentCount > SAMPLE_SIZE ?
-    await Model.collection.aggregate([{ $sample: { size: SAMPLE_SIZE } }]).toArray() :
-    await Model.collection.find({}).toArray();
+    await Model.collection.aggregate([{ $sample: { size: SAMPLE_SIZE } }], operationOptions).toArray() :
+    await Model.collection.find({}, operationOptions).toArray();
 
   const paths = getSchemaPaths(Model.schema);
   const pathTypeCounts = {};

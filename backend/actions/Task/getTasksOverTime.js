@@ -1,6 +1,7 @@
 'use strict';
 
 const Archetype = require('archetype');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetTasksOverTimeParams = new Archetype({
   start: { $type: Date },
@@ -10,7 +11,7 @@ const GetTasksOverTimeParams = new Archetype({
 
 const TRACKED_STATUSES = ['succeeded', 'failed', 'cancelled'];
 
-module.exports = ({ db }) => async function getTasksOverTime(params) {
+module.exports = ({ db, options }) => async function getTasksOverTime(params) {
   params = new GetTasksOverTimeParams(params);
   const { Task } = db.models;
   const { start, end, bucketSizeMs } = params;
@@ -54,7 +55,7 @@ module.exports = ({ db }) => async function getTasksOverTime(params) {
     { $sort: { _id: 1 } }
   ];
 
-  const results = await Task.aggregate(pipeline);
+  const results = await Task.aggregate(pipeline).option(omitNullish({ maxTimeMS: options?.maxTimeMS }));
 
   return results.map(r => {
     const bucket = { timestamp: r._id, succeeded: 0, failed: 0, cancelled: 0 };

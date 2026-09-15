@@ -39,6 +39,8 @@ opts.model = 'gpt-4o-mini';
 opts.openAIAPIKey = process.env.OPENAI_API_KEY;
 opts.anthropicAPIKey = process.env.ANTHROPIC_API_KEY;
 opts.googleGeminiAPIKey = process.env.GOOGLE_GEMINI_API_KEY;
+// Apply a maximum execution time to MongoDB operations, including scripts
+opts.maxTimeMS = 10000;
 
 // Mount Mongoose Studio on '/studio'
 app.use('/studio', await studio('/studio/api', mongoose, opts));

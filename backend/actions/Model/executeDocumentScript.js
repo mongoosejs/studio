@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const mongoose = require('mongoose');
+const omitNullish = require('../../helpers/omitNullish');
 const util = require('util');
 const vm = require('vm');
 
@@ -24,7 +25,7 @@ const ExecuteDocumentScriptParams = new Archetype({
   }
 }).compile('ExecuteDocumentScriptParams');
 
-module.exports = ({ db }) => async function executeDocumentScript(params) {
+module.exports = ({ db, options }) => async function executeDocumentScript(params) {
   const { model, documentId, script, roles } = new ExecuteDocumentScriptParams(params);
 
   await authorize('Model.executeDocumentScript', roles);
@@ -34,7 +35,9 @@ module.exports = ({ db }) => async function executeDocumentScript(params) {
     throw new Error(`Model ${model} not found`);
   }
 
-  const doc = await Model.findById(documentId).setOptions({ sanitizeFilter: true }).orFail();
+  const doc = await Model.findById(documentId).
+    setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
+    orFail();
 
   const logs = [];
   if (!db.Types) {

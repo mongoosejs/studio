@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const mongoose = require('mongoose');
+const omitNullish = require('../../helpers/omitNullish');
 
 const ListChatThreadsParams = new Archetype({
   initiatedById: {
@@ -13,7 +14,7 @@ const ListChatThreadsParams = new Archetype({
   }
 }).compile('ListChatThreadsParams');
 
-module.exports = ({ db, studioConnection }) => async function listChatThreads(params) {
+module.exports = ({ db, studioConnection, options }) => async function listChatThreads(params) {
   // Validate the params object
   const { initiatedById, roles } = new ListChatThreadsParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
@@ -24,6 +25,7 @@ module.exports = ({ db, studioConnection }) => async function listChatThreads(pa
 
   // Get all chat threads
   const chatThreads = await ChatThread.find(query)
+    .setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }))
     .sort({ updatedAt: -1 }); // Sort by most recently updated
 
   return {

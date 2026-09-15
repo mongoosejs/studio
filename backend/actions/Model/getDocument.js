@@ -4,6 +4,7 @@ const Archetype = require('archetype');
 const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const authorize = require('../../authorize');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetDocumentParams = new Archetype({
   model: {
@@ -19,7 +20,7 @@ const GetDocumentParams = new Archetype({
   }
 }).compile('GetDocumentParams');
 
-module.exports = ({ db }) => async function getDocument(params) {
+module.exports = ({ db, options }) => async function getDocument(params) {
   const { model, documentId, roles } = new GetDocumentParams(params);
 
   await authorize('Model.getDocument', roles);
@@ -31,7 +32,7 @@ module.exports = ({ db }) => async function getDocument(params) {
 
   const doc = await Model.
     findById(documentId).
-    setOptions({ sanitizeFilter: true }).
+    setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
     orFail();
   const schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {

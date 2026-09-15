@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const omitNullish = require('../../helpers/omitNullish');
 
 const UpdateDashboardParams = new Archetype({
   dashboardId: {
@@ -25,7 +26,7 @@ const UpdateDashboardParams = new Archetype({
   }
 }).compile('UpdateDashboardParams');
 
-module.exports = ({ studioConnection }) => async function updateDashboard(params) {
+module.exports = ({ studioConnection, options }) => async function updateDashboard(params) {
   const { dashboardId, code, title, description, isPinned, roles, evaluate } = new UpdateDashboardParams(params);
 
   const Dashboard = studioConnection.models['__Studio_Dashboard'];
@@ -54,7 +55,7 @@ module.exports = ({ studioConnection }) => async function updateDashboard(params
     dashboardId,
     updateObj,
     { sanitizeFilter: true, returnDocument: 'after' }
-  );
+  ).setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
 
   return { doc };
 };

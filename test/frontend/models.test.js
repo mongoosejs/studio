@@ -3,6 +3,7 @@
 const assert = require('assert');
 
 require('./setup');
+const api = require('../../frontend/src/api');
 const modelsComponent = require('../../frontend/src/models/models');
 
 describe('models projection input', function() {
@@ -95,3 +96,68 @@ describe('models projection input', function() {
     assert.strictEqual(state.queryUpdated, true);
   });
 });
+
+describe('models document loading errors', function() {
+  let originalGetDocumentsStream;
+
+  beforeEach(function() {
+    originalGetDocumentsStream = api.Model.getDocumentsStream;
+  });
+
+  afterEach(function() {
+    api.Model.getDocumentsStream = originalGetDocumentsStream;
+  });
+
+  it('keeps loaded documents and stores the last loading error', async function() {
+    api.Model.getDocumentsStream = async function*() {
+      yield { document: { _id: '1', name: 'test' } };
+      throw new Error('Document query timed out');
+    };
+    const componentDef = modelsComponent({ component: (_name, def) => def });
+    const state = createDocumentLoadingState();
+
+    await componentDef.methods.getDocuments.call(state);
+
+    assert.deepStrictEqual(state.documents, [{ _id: '1', name: 'test' }]);
+    assert.strictEqual(state.documentsError, 'Document query timed out');
+    assert.strictEqual(state.status, 'loaded');
+  });
+
+  it('stores count errors without treating document loading as failed', async function() {
+    api.Model.getDocumentsStream = async function*() {
+      yield { numDocsError: 'Count query timed out' };
+      yield { document: { _id: '1', name: 'test' } };
+    };
+    const componentDef = modelsComponent({ component: (_name, def) => def });
+    const state = createDocumentLoadingState();
+
+    await componentDef.methods.getDocuments.call(state);
+
+    assert.deepStrictEqual(state.documents, [{ _id: '1', name: 'test' }]);
+    assert.strictEqual(state.numDocumentsError, 'Count query timed out');
+    assert.strictEqual(state.documentsError, null);
+  });
+});
+
+function createDocumentLoadingState() {
+  return {
+    currentModel: 'Test',
+    documents: [],
+    numDocuments: null,
+    numDocumentsError: null,
+    documentsError: null,
+    loadedAllDocs: false,
+    loadingMore: false,
+    status: 'loaded',
+    suppressScrollCheck: false,
+    trackRecentModel() {},
+    buildDocumentFetchParams() {
+      return { model: this.currentModel };
+    },
+    restoreScrollPosition() {},
+    checkIfScrolledToBottom() {},
+    $nextTick(callback) {
+      callback();
+    }
+  };
+}

@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const { stringify } = require('csv-stringify/sync');
 const authorize = require('../../authorize');
 const evaluateFilter = require('../../helpers/evaluateFilter');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetDocumentsParams = new Archetype({
   model: {
@@ -29,7 +30,7 @@ const GetDocumentsParams = new Archetype({
   }
 }).compile('GetDocumentsParams');
 
-module.exports = ({ db }) => async function exportQueryResults(params, req, res) {
+module.exports = ({ db, options }) => async function exportQueryResults(params, req, res) {
   params = new GetDocumentsParams(params);
   const { model, propertiesToInclude, roles, searchText } = params;
 
@@ -45,6 +46,7 @@ module.exports = ({ db }) => async function exportQueryResults(params, req, res)
 
   const docs = await Model.
     find(filter).
+    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
     sort({ _id: -1 });
 
   const rows = [propertiesToInclude];

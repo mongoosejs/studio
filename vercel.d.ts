@@ -8,6 +8,8 @@ declare module '@mongoosejs/studio/vercel' {
     studioConnection?: Connection;
     /** Watch the connection for changes and stream them to the Studio frontend. */
     changeStream?: boolean;
+    /** Maximum execution time in milliseconds for MongoDB operations. */
+    maxTimeMS?: number;
     /** Chat model name, e.g. 'gpt-4o-mini' */
     model?: string;
     openAIAPIKey?: string;

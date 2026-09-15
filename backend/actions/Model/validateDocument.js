@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const omitNullish = require('../../helpers/omitNullish');
 const validateDocumentWithTimeout = require('../../helpers/validateDocumentWithTimeout');
 
 const ValidateDocumentParams = new Archetype({
@@ -18,7 +19,7 @@ const ValidateDocumentParams = new Archetype({
   }
 }).compile('ValidateDocumentParams');
 
-module.exports = ({ db }) => async function validateDocument(params) {
+module.exports = ({ db, options }) => async function validateDocument(params) {
   const { model, documentId, roles } = new ValidateDocumentParams(params);
 
   await authorize('Model.validateDocument', roles);
@@ -28,7 +29,9 @@ module.exports = ({ db }) => async function validateDocument(params) {
     throw new Error(`Model ${model} not found`);
   }
 
-  const doc = await Model.findById(documentId).setOptions({ sanitizeFilter: true }).orFail();
+  const doc = await Model.findById(documentId).
+    setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
+    orFail();
   return {
     result: await validateDocumentWithTimeout(doc)
   };

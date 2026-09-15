@@ -3,6 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const mongoose = require('mongoose');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetChatThreadParams = new Archetype({
   chatThreadId: {
@@ -19,14 +20,15 @@ const GetChatThreadParams = new Archetype({
   }
 }).compile('GetChatThreadParams');
 
-module.exports = ({ db, studioConnection }) => async function getChatThread(params) {
+module.exports = ({ db, studioConnection, options }) => async function getChatThread(params) {
   const { chatThreadId, initiatedById, roles, $workspaceId } = new GetChatThreadParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
   await authorize('ChatThread.getChatThread', roles);
 
-  const chatThread = await ChatThread.findById(chatThreadId);
+  const operationOptions = omitNullish({ maxTimeMS: options?.maxTimeMS });
+  const chatThread = await ChatThread.findById(chatThreadId).setOptions(operationOptions);
 
   if (!chatThread) {
     throw new Error('Chat thread not found');
@@ -39,6 +41,7 @@ module.exports = ({ db, studioConnection }) => async function getChatThread(para
   }
 
   const chatMessages = await ChatMessage.find({ chatThreadId })
+    .setOptions(operationOptions)
     .sort({ createdAt: -1 });
 
   return {

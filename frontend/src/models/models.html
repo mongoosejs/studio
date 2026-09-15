@@ -110,7 +110,18 @@
           >
           </document-search>
           <div>
-            <span v-if="numDocuments == null">Loading ...</span>
+            <tooltip
+              v-if="numDocumentsError"
+              :text="'Error counting documents: ' + numDocumentsError"
+            >
+              <span
+                class="inline-flex rounded-md bg-red-50 px-2 py-2 text-sm text-red-700 ring-1 ring-inset ring-red-200"
+                role="alert"
+              >
+                Count Error
+              </span>
+            </tooltip>
+            <span v-else-if="numDocuments == null">Loading...</span>
             <span v-else-if="typeof numDocuments === 'number'">{{documents.length}}/{{numDocuments === 1 ? numDocuments + ' document' : numDocuments + ' documents'}}</span>
           </div>
           <button
@@ -453,11 +464,16 @@
             </tbody>
           </table>
         </div>
-        <div v-if="outputType === 'table' && (loadingMore || (status === 'loading' && documents.length > 0))" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary border-t border-edge bg-surface">
-          <img src="images/loader.gif" alt="" class="h-5 w-5">
-          <span>Loading documents…</span>
+        <div
+          v-if="outputType === 'table' && (documentsError || loadingMore || (status === 'loading' && documents.length > 0))"
+          class="flex items-center justify-center gap-2 py-3 text-sm border-t"
+          :class="documentsError ? 'border-red-200 bg-red-50 text-red-700' : 'border-edge bg-surface text-content-tertiary'"
+          :role="documentsError ? 'alert' : null"
+        >
+          <img v-if="!documentsError" src="images/loader.gif" alt="" class="h-5 w-5">
+          <span>{{documentsError || 'Loading documents…'}}</span>
         </div>
-        <p v-if="outputType === 'table' && documents.length === 0 && status === 'loaded'" class="mt-2 text-sm text-content-tertiary px-1">
+        <p v-if="outputType === 'table' && documents.length === 0 && status === 'loaded' && !documentsError" class="mt-2 text-sm text-content-tertiary px-1">
           No documents to show. Use Projection in the menu to choose columns.
         </p>
       </div>
@@ -483,9 +499,14 @@
           <list-json :value="filterDocument(document)" :references="referenceMap">
           </list-json>
         </div>
-        <div v-if="outputType === 'json' && (loadingMore || (status === 'loading' && documents.length > 0))" class="flex items-center justify-center gap-2 py-3 text-sm text-content-tertiary">
-          <img src="images/loader.gif" alt="" class="h-5 w-5">
-          <span>Loading documents…</span>
+        <div
+          v-if="outputType === 'json' && (documentsError || loadingMore || (status === 'loading' && documents.length > 0))"
+          class="flex items-center justify-center gap-2 py-3 text-sm"
+          :class="documentsError ? 'rounded-md border border-red-200 bg-red-50 text-red-700' : 'text-content-tertiary'"
+          :role="documentsError ? 'alert' : null"
+        >
+          <img v-if="!documentsError" src="images/loader.gif" alt="" class="h-5 w-5">
+          <span>{{documentsError || 'Loading documents…'}}</span>
         </div>
       </div>
       <div v-else-if="outputType === 'map'" class="flex flex-col h-full">

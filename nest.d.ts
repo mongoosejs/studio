@@ -9,6 +9,7 @@ declare module '@mongoosejs/studio/nest' {
     connectionToken?: string | symbol | Function;
     apiKey?: string;
     bindIp?: string | string[] | null;
+    maxTimeMS?: number;
     [key: string]: any;
   }
 

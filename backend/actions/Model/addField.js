@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const omitNullish = require('../../helpers/omitNullish');
 
 const AddFieldParams = new Archetype({
   model: {
@@ -25,7 +26,7 @@ const AddFieldParams = new Archetype({
   }
 }).compile('AddFieldParams');
 
-module.exports = ({ db }) => async function addField(params) {
+module.exports = ({ db, options }) => async function addField(params) {
   const { model, _id, fieldName, fieldValue, roles } = new AddFieldParams(params);
 
   await authorize('Model.updateDocument', roles);
@@ -48,7 +49,7 @@ module.exports = ({ db }) => async function addField(params) {
       runValidators: false,
       strict: false
     }
-  );
+  ).setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
 
   return { doc };
 };

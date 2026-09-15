@@ -151,6 +151,8 @@ module.exports = app => app.component('models', {
     filteredPaths: [],
     selectedPaths: [],
     numDocuments: null,
+    numDocumentsError: null,
+    documentsError: null,
     mongoDBIndexes: [],
     schemaIndexes: [],
     status: 'loading',
@@ -864,11 +866,20 @@ module.exports = app => app.component('models', {
       try {
         const skip = this.documents.length;
         const params = this.buildDocumentFetchParams({ skip });
-        const { docs } = await api.Model.getDocuments(params);
+        const { docs, numDocs, numDocsError } = await api.Model.getDocuments(params);
+        if (numDocsError) {
+          this.numDocumentsError = numDocsError;
+        } else if (numDocs !== undefined) {
+          this.numDocuments = numDocs;
+          this.numDocumentsError = null;
+        }
         if (docs.length < limit) {
           this.loadedAllDocs = true;
         }
         this.documents.push(...docs);
+        this.documentsError = null;
+      } catch (err) {
+        this.documentsError = err?.message;
       } finally {
         this.loadingMore = false;
         this.status = 'loaded';
@@ -1081,6 +1092,8 @@ module.exports = app => app.component('models', {
         // Clear previous data
         this.documents = [];
         this.numDocuments = null;
+        this.numDocumentsError = null;
+        this.documentsError = null;
         this.loadedAllDocs = false;
         this.lastSelectedIndex = null;
 
@@ -1130,6 +1143,10 @@ module.exports = app => app.component('models', {
           }
           if (event.numDocs !== undefined) {
             this.numDocuments = event.numDocs;
+            this.numDocumentsError = null;
+          }
+          if (event.numDocsError) {
+            this.numDocumentsError = event.numDocsError;
           }
           if (event.document) {
             this.documents.push(event.document);
@@ -1143,6 +1160,9 @@ module.exports = app => app.component('models', {
         if (docsCount < limit) {
           this.loadedAllDocs = true;
         }
+        this.documentsError = null;
+      } catch (err) {
+        this.documentsError = err?.message;
       } finally {
         this.status = 'loaded';
       }
@@ -1169,7 +1189,11 @@ module.exports = app => app.component('models', {
         for await (const event of api.Model.getDocumentsStream(params)) {
           if (event.numDocs !== undefined && !numDocsReceived) {
             this.numDocuments = event.numDocs;
+            this.numDocumentsError = null;
             numDocsReceived = true;
+          }
+          if (event.numDocsError) {
+            this.numDocumentsError = event.numDocsError;
           }
           if (event.document) {
             this.documents.push(event.document);
@@ -1183,6 +1207,9 @@ module.exports = app => app.component('models', {
         if (docsCount < limit) {
           this.loadedAllDocs = true;
         }
+        this.documentsError = null;
+      } catch (err) {
+        this.documentsError = err?.message;
       } finally {
         this.loadingMore = false;
         this.status = 'loaded';
