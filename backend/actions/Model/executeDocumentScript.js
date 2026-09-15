@@ -2,10 +2,8 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const mongoose = require('mongoose');
+const createSandbox = require('../../sandbox/createSandbox');
 const omitNullish = require('../../helpers/omitNullish');
-const util = require('util');
-const vm = require('vm');
 
 const ExecuteDocumentScriptParams = new Archetype({
   model: {
@@ -30,35 +28,30 @@ module.exports = ({ db, options }) => async function executeDocumentScript(param
 
   await authorize('Model.executeDocumentScript', roles);
 
-  const Model = db.models[model];
-  if (Model == null) {
+  if (db.models[model] == null) {
     throw new Error(`Model ${model} not found`);
   }
 
-  const doc = await Model.findById(documentId).
-    setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
-    orFail();
+  const sandbox = createSandbox({ db, maxTimeMS: options?.maxTimeMS });
 
-  const logs = [];
-  if (!db.Types) {
-    db.Types = mongoose.Types;
+  try {
+    const Model = sandbox.db.models[model];
+    const doc = await Model.findById(documentId).
+      setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
+      orFail();
+    sandbox.context.doc = doc;
+
+    const result = await sandbox.runScript({ script });
+
+    return {
+      result,
+      logs: sandbox.getLogs()
+    };
+  } finally {
+    try {
+      await sandbox.close();
+    } catch (_) {
+      // Ignore sandbox cleanup errors so they do not mask the primary result.
+    }
   }
-  const sandbox = { db, mongoose, doc, console: {}, ObjectId: mongoose.Types.ObjectId };
-
-  sandbox.console.log = function() {
-    const args = Array.from(arguments);
-    logs.push(args.map(arg => typeof arg === 'object' ? util.inspect(arg) : arg).join(' '));
-  };
-
-  const context = vm.createContext(sandbox);
-  const result = await vm.runInContext(wrappedScript(script), context);
-
-  return {
-    result,
-    logs: logs.join('\n')
-  };
 };
-
-const wrappedScript = script => `(async () => {
-  ${script}
-})()`;

@@ -840,7 +840,8 @@ module.exports = app => app.component('models', {
       return filteredDoc;
     },
     async checkIfScrolledToBottom() {
-      if (this.status === 'loading' || this.loadedAllDocs) {
+      // Stop infinite scroll if the last load failed, otherwise we would retry the same failing request forever.
+      if (this.status === 'loading' || this.loadedAllDocs || this.documentsError) {
         return;
       }
       // Infinite scroll only applies to table/json views.
