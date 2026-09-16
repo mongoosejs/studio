@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetEstimatedDocumentCountsParams = new Archetype({
   roles: {
@@ -9,7 +10,7 @@ const GetEstimatedDocumentCountsParams = new Archetype({
   }
 }).compile('GetEstimatedDocumentCountsParams');
 
-module.exports = ({ db }) => async function getEstimatedDocumentCounts(params) {
+module.exports = ({ db, options }) => async function getEstimatedDocumentCounts(params) {
   const { roles } = new GetEstimatedDocumentCountsParams(params);
   await authorize('Model.getEstimatedDocumentCounts', roles);
 
@@ -20,7 +21,9 @@ module.exports = ({ db }) => async function getEstimatedDocumentCounts(params) {
   const results = await Promise.allSettled(
     modelNames.map(name => {
       const Model = db.models[name];
-      return Model.estimatedDocumentCount().exec();
+      return Model.estimatedDocumentCount().
+        setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+        exec();
     })
   );
 

@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const escape = require('regexp.escape');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetTasksParams = new Archetype({
   start: { $type: Date },
@@ -55,7 +56,7 @@ const TASK_PROJECT_STAGE = {
   parameters: '$payload'
 };
 
-module.exports = ({ db }) => async function getTasks(params) {
+module.exports = ({ db, options }) => async function getTasks(params) {
   params = new GetTasksParams(params);
   if (typeof params.status === 'string') params.status = params.status.trim();
   if (typeof params.name === 'string') params.name = params.name.trim();
@@ -96,7 +97,7 @@ module.exports = ({ db }) => async function getTasks(params) {
     }
   ];
 
-  const [result] = await Task.aggregate(pipeline);
+  const [result] = await Task.aggregate(pipeline).option(omitNullish({ maxTimeMS: options?.maxTimeMS }));
   const tasks = result.tasks || [];
   const numDocs = (result.count && result.count[0] && result.count[0].total) || 0;
   const statusCounts = result.statusCounts?.[0] ?? {};

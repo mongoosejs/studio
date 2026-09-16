@@ -1,0 +1,28 @@
+<span
+  ref="trigger"
+  class="inline-flex outline-none focus-visible:rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+  tabindex="0"
+  :aria-describedby="isOpen ? tooltipId : null"
+  @mouseenter="show"
+  @mouseleave="hideUnlessPinned"
+  @focusin="show"
+  @focusout="handleFocusOut"
+  @click="toggle"
+  @keydown.esc.stop="hide"
+>
+  <slot></slot>
+  <span
+    v-show="isOpen"
+    ref="tooltip"
+    :id="tooltipId"
+    class="pointer-events-none fixed z-[1000] w-max max-w-[min(20rem,calc(100vw-1rem))] whitespace-normal rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-normal leading-4 text-white shadow-lg"
+    :style="tooltipStyle"
+    role="tooltip"
+  >
+    {{ text }}
+    <span
+      class="absolute left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-gray-900"
+      :class="placement === 'bottom' ? '-top-1' : '-bottom-1'"
+    ></span>
+  </span>
+</span>

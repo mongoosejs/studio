@@ -4,6 +4,7 @@ const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const createSandbox = require('../../sandbox/createSandbox');
 const mongoose = require('mongoose');
+const omitNullish = require('../../helpers/omitNullish');
 const { defaultMothershipURL } = require('../../../constants');
 
 const GetDashboardParams = new Archetype({
@@ -36,10 +37,11 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
 
   await authorize('Dashboard.getDashboard', roles);
 
-  const dashboard = await Dashboard.findOne({ _id: dashboardId });
+  const dashboard = await Dashboard.findOne({ _id: dashboardId }).
+    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
   if (evaluate) {
     let result = null;
-    const sandbox = createSandbox({ db });
+    const sandbox = createSandbox({ db, maxTimeMS: options?.maxTimeMS });
     const startExec = startDashboardEvaluate(DashboardResult, dashboardId, $workspaceId, userId);
     startExec.catch(() => {}); // Avoid unhandled promise rejections - we will handle this error later.
     try {
@@ -56,7 +58,8 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
           dashboardResult._id,
           null,
           { message: error.message },
-          'failed'
+          'failed',
+          options
         );
       });
       return { dashboard, dashboardResult, error: { message: error.message } };
@@ -79,7 +82,8 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
           dashboardResult._id,
           result,
           undefined,
-          'completed'
+          'completed',
+          options
         );
       });
 
@@ -93,21 +97,25 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
       dashboardId,
       $workspaceId,
       authorization,
-      mothershipUrl
+      mothershipUrl,
+      options
     );
     return { dashboard, dashboardResults };
   }
 };
 
-async function completeDashboardEvaluate(Dashboard, DashboardResult, dashboardResultId, result, error, status) {
-  const dashboardResult = await DashboardResult.findById(dashboardResultId).orFail();
+async function completeDashboardEvaluate(Dashboard, DashboardResult, dashboardResultId, result, error, status, options) {
+  const dashboardResult = await DashboardResult.findById(dashboardResultId).
+    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    orFail();
   const finishedEvaluatingAt = new Date();
   dashboardResult.finishedEvaluatingAt = finishedEvaluatingAt;
   dashboardResult.result = result;
   dashboardResult.error = error;
   dashboardResult.status = status;
   await dashboardResult.save();
-  await Dashboard.updateOne({ _id: dashboardResult.dashboardId }, { $set: { lastEvaluatedAt: finishedEvaluatingAt } });
+  await Dashboard.updateOne({ _id: dashboardResult.dashboardId }, { $set: { lastEvaluatedAt: finishedEvaluatingAt } }).
+    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
   return { dashboardResult };
 }
 
@@ -123,14 +131,17 @@ async function startDashboardEvaluate(DashboardResult, dashboardId, workspaceId,
   return { dashboardResult };
 }
 
-async function getDashboardResults(DashboardResult, dashboardId, workspaceId, authorization, mothershipUrl) {
+async function getDashboardResults(DashboardResult, dashboardId, workspaceId, authorization, mothershipUrl, options) {
   const filter = { dashboardId };
   if (workspaceId != null) {
     filter.workspaceId = workspaceId;
   }
 
   const [localResultsRes, remoteResultsRes] = await Promise.allSettled([
-    DashboardResult.find(filter).sort({ _id: -1 }).limit(10),
+    DashboardResult.find(filter).
+      sort({ _id: -1 }).
+      limit(10).
+      setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })),
     getMothershipDashboardResults(dashboardId, workspaceId, authorization, mothershipUrl)
   ]);
 

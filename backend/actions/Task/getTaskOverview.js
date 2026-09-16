@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const escape = require('regexp.escape');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetTaskOverviewParams = new Archetype({
   start: { $type: Date },
@@ -34,7 +35,7 @@ function buildMatch(params) {
   return match;
 }
 
-module.exports = ({ db }) => async function getTaskOverview(params) {
+module.exports = ({ db, options }) => async function getTaskOverview(params) {
   params = new GetTaskOverviewParams(params);
   if (typeof params.status === 'string') params.status = params.status.trim();
   if (typeof params.name === 'string') params.name = params.name.trim();
@@ -93,7 +94,7 @@ module.exports = ({ db }) => async function getTaskOverview(params) {
     }
   ];
 
-  const [result] = await Task.aggregate(pipeline);
+  const [result] = await Task.aggregate(pipeline).option(omitNullish({ maxTimeMS: options?.maxTimeMS }));
 
   return {
     statusCounts: result.statusCounts?.[0] ?? {},

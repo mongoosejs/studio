@@ -8,6 +8,7 @@ const runChatAgent = require('../../chatAgent/runChatAgent');
 const streamLLM = require('../../integrations/streamLLM');
 const getModelDescriptions = require('../../helpers/getModelDescriptions');
 const mongoose = require('mongoose');
+const omitNullish = require('../../helpers/omitNullish');
 
 const CreateChatMessageParams = new Archetype({
   chatThreadId: {
@@ -36,7 +37,8 @@ module.exports = ({ db, studioConnection, options }) => async function* streamCh
   await authorize('ChatThread.createChatMessage', roles);
 
   // Check that the user owns the thread
-  const chatThread = await ChatThread.findOne({ _id: chatThreadId });
+  const operationOptions = omitNullish({ maxTimeMS: options?.maxTimeMS });
+  const chatThread = await ChatThread.findOne({ _id: chatThreadId }).setOptions(operationOptions);
   if (!chatThread) {
     throw new Error('Chat thread not found');
   }
@@ -44,7 +46,7 @@ module.exports = ({ db, studioConnection, options }) => async function* streamCh
     throw new Error('Not authorized');
   }
 
-  const messages = await ChatMessage.find({ chatThreadId }).sort({ createdAt: 1 });
+  const messages = await ChatMessage.find({ chatThreadId }).setOptions(operationOptions).sort({ createdAt: 1 });
   const llmMessages = messages.map(m => ({
     role: m.role,
     content: [{

@@ -7,6 +7,7 @@ const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const getSuggestedProjection = require('../../helpers/getSuggestedProjection');
 const parseProjectionParam = require('../../helpers/parseProjectionParam');
 const authorize = require('../../authorize');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetDocumentsParams = new Archetype({
   model: {
@@ -40,7 +41,7 @@ const GetDocumentsParams = new Archetype({
   }
 }).compile('GetDocumentsParams');
 
-module.exports = ({ db }) => async function* getDocumentsStream(params) {
+module.exports = ({ db, options }) => async function* getDocumentsStream(params) {
   params = new GetDocumentsParams(params);
   const { roles } = params;
   await authorize('Model.getDocumentsStream', roles);
@@ -75,6 +76,7 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   if (projection != null) {
     query = query.select(projection);
   }
+  query.setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
 
   const schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
@@ -106,32 +108,36 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
   yield { schemaPaths, suggestedFields };
 
   // Start counting documents in parallel with streaming documents
-  const numDocsPromise = (parsedFilter == null)
-    ? Model.estimatedDocumentCount().exec()
-    : Model.countDocuments(filter).exec();
-
-  const cursor = await query.cursor();
+  const countQuery = (parsedFilter == null)
+    ? Model.estimatedDocumentCount()
+    : Model.countDocuments(filter);
+  const numDocsPromise = countQuery.
+    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    exec();
 
   let numDocsYielded = false;
   let numDocumentsPromiseResolved = false;
   let numDocumentsValue;
   let numDocumentsError;
 
-  try {
-    // Start listening for numDocsPromise resolution
-    numDocsPromise.then(num => {
-      numDocumentsPromiseResolved = true;
-      numDocumentsValue = num;
-    }).catch(err => {
-      numDocumentsPromiseResolved = true;
-      numDocumentsError = err;
-    });
+  // Attach both handlers immediately so a fast count failure cannot become
+  // an unhandled rejection while the document cursor is still opening.
+  numDocsPromise.then(num => {
+    numDocumentsPromiseResolved = true;
+    numDocumentsValue = num;
+  }).catch(err => {
+    numDocumentsPromiseResolved = true;
+    numDocumentsError = err;
+  });
 
+  const cursor = await query.cursor();
+
+  try {
     for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
       // If numDocsPromise has resolved and not yet yielded, yield it first
       if (numDocumentsPromiseResolved && !numDocsYielded) {
         if (numDocumentsError) {
-          yield { error: numDocumentsError };
+          yield { numDocsError: numDocumentsError.message };
         } else {
           yield { numDocs: numDocumentsValue };
         }
@@ -142,8 +148,12 @@ module.exports = ({ db }) => async function* getDocumentsStream(params) {
 
     // If numDocsPromise hasn't resolved yet, wait for it and yield
     if (!numDocsYielded) {
-      const numDocuments = await numDocsPromise;
-      yield { numDocs: numDocuments };
+      try {
+        const numDocuments = await numDocsPromise;
+        yield { numDocs: numDocuments };
+      } catch (err) {
+        yield { numDocsError: err.message };
+      }
     }
   } finally {
     await cursor.close();

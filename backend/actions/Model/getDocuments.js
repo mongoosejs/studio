@@ -7,6 +7,7 @@ const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const getSuggestedProjection = require('../../helpers/getSuggestedProjection');
 const parseProjectionParam = require('../../helpers/parseProjectionParam');
 const authorize = require('../../authorize');
+const omitNullish = require('../../helpers/omitNullish');
 
 const GetDocumentsParams = new Archetype({
   model: {
@@ -40,7 +41,7 @@ const GetDocumentsParams = new Archetype({
   }
 }).compile('GetDocumentsParams');
 
-module.exports = ({ db }) => async function getDocuments(params) {
+module.exports = ({ db, options }) => async function getDocuments(params) {
   params = new GetDocumentsParams(params);
   const { roles } = params;
   await authorize('Model.getDocuments', roles);
@@ -75,6 +76,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
   if (projection != null) {
     query = query.select(projection);
   }
+  query.setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
   const cursor = await query.cursor();
   const docs = [];
   for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
@@ -106,9 +108,16 @@ module.exports = ({ db }) => async function getDocuments(params) {
   }
   removeSpecifiedPaths(schemaPaths, '.$*');
 
-  const numDocuments = parsedFilter == null ?
-    await Model.estimatedDocumentCount() :
-    await Model.countDocuments(filter);
+  const countQuery = parsedFilter == null ?
+    Model.estimatedDocumentCount() :
+    Model.countDocuments(filter);
+  let numDocuments = null;
+  let numDocsError = null;
+  try {
+    numDocuments = await countQuery.setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+  } catch (err) {
+    numDocsError = err?.message;
+  }
 
   const suggestedFields = getSuggestedProjection(Model);
 
@@ -116,6 +125,7 @@ module.exports = ({ db }) => async function getDocuments(params) {
     docs: docs.map(doc => doc.toJSON({ virtuals: false, getters: false, transform: false })),
     schemaPaths,
     suggestedFields,
-    numDocs: numDocuments
+    numDocs: numDocuments,
+    numDocsError
   };
 };

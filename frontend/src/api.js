@@ -229,7 +229,11 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getDocumentsStream: async function* getDocumentsStream(params) {
       const data = await client.post('', { action: 'Model.getDocuments', ...params }).then(res => res.data);
       yield { schemaPaths: data.schemaPaths, suggestedFields: data.suggestedFields };
-      yield { numDocs: data.numDocs };
+      if (data.numDocsError) {
+        yield { numDocsError: data.numDocsError };
+      } else {
+        yield { numDocs: data.numDocs };
+      }
       for (const doc of data.docs) {
         yield { document: doc };
       }

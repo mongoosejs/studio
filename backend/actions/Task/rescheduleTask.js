@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const mongoose = require('mongoose');
+const omitNullish = require('../../helpers/omitNullish');
 
 const RescheduleTaskParams = new Archetype({
   taskId: {
@@ -14,12 +15,14 @@ const RescheduleTaskParams = new Archetype({
   }
 }).compile('RescheduleTaskParams');
 
-module.exports = ({ db }) => async function rescheduleTask(params) {
+module.exports = ({ db, options }) => async function rescheduleTask(params) {
   params = new RescheduleTaskParams(params);
   const { taskId, scheduledAt } = params;
   const { Task } = db.models;
 
-  const task = await Task.findOne({ _id: taskId }).orFail();
+  const task = await Task.findOne({ _id: taskId }).
+    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    orFail();
 
   if (scheduledAt < Date.now()) {
     throw new Error('Cannot reschedule a task for the past');

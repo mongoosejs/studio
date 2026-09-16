@@ -30,7 +30,8 @@ async function run() {
       _mothershipUrl: 'http://localhost:7777/.netlify/functions',
       // apiKey: 'TACO',
       openAIAPIKey: process.env.OPENAI_API_KEY,
-      googleGeminiAPIKey: process.env.GEMINI_API_KEY
+      googleGeminiAPIKey: process.env.GEMINI_API_KEY,
+      maxTimeMS: 1000
     })
   );
 

@@ -4,6 +4,7 @@ const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const createSandbox = require('../../sandbox/createSandbox');
 const mongoose = require('mongoose');
+const omitNullish = require('../../helpers/omitNullish');
 
 const ExecuteScriptParams = new Archetype({
   initiatedById: {
@@ -24,24 +25,25 @@ const ExecuteScriptParams = new Archetype({
   }
 }).compile('ExecuteScriptParams');
 
-module.exports = ({ db, studioConnection }) => async function executeScript(params) {
+module.exports = ({ db, studioConnection, options }) => async function executeScript(params) {
   const { initiatedById, chatMessageId, script, dryRun, roles } = new ExecuteScriptParams(params);
   const ChatThread = studioConnection.model('__Studio_ChatThread');
   const ChatMessage = studioConnection.model('__Studio_ChatMessage');
 
   await authorize('ChatMessage.executeScript', roles);
 
-  const chatMessage = await ChatMessage.findById(chatMessageId);
+  const operationOptions = omitNullish({ maxTimeMS: options?.maxTimeMS });
+  const chatMessage = await ChatMessage.findById(chatMessageId).setOptions(operationOptions);
   if (!chatMessage) {
     throw new Error('Chat message not found');
   }
-  const chatThread = await ChatThread.findById(chatMessage.chatThreadId).orFail();
+  const chatThread = await ChatThread.findById(chatMessage.chatThreadId).setOptions(operationOptions).orFail();
 
   if (initiatedById && chatThread.userId?.toString() !== initiatedById.toString()) {
     throw new Error('Unauthorized');
   }
 
-  const sandbox = createSandbox({ db });
+  const sandbox = createSandbox({ db, maxTimeMS: options?.maxTimeMS });
 
   let output;
   let error;
@@ -74,7 +76,7 @@ module.exports = ({ db, studioConnection }) => async function executeScript(para
           dryRun: !!dryRun
         }
       }
-    );
+    ).setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
 
     throw new Error(`Script execution failed: ${error}`);
   } finally {

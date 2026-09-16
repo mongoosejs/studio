@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
+const omitNullish = require('../../helpers/omitNullish');
 
 const DeleteDocumentsParams = new Archetype({
   model: {
@@ -17,7 +18,7 @@ const DeleteDocumentsParams = new Archetype({
   }
 }).compile('DeleteDocumentsParams');
 
-module.exports = ({ db }) => async function DeleteDocuments(params) {
+module.exports = ({ db, options }) => async function DeleteDocuments(params) {
   const { model, documentIds, roles } = new DeleteDocumentsParams(params);
 
   const Model = db.models[model];
@@ -30,6 +31,7 @@ module.exports = ({ db }) => async function DeleteDocuments(params) {
 
   await Model.
     deleteMany({ _id: { $in: documentIds } }).
+    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
     orFail();
 
   return { };

@@ -16,10 +16,10 @@ module.exports = function backend(db, studioConnection, options) {
   }
 
   studioConnection = studioConnection ?? db;
-  const Dashboard = studioConnection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
-  const DashboardResult = studioConnection.model('__Studio_DashboardResult', dashboardResultSchema, 'studio__dashboardResults');
-  const ChatMessage = studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
-  const ChatThread = studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
+  studioConnection.model('__Studio_Dashboard', dashboardSchema, 'studio__dashboards');
+  studioConnection.model('__Studio_DashboardResult', dashboardResultSchema, 'studio__dashboardResults');
+  studioConnection.model('__Studio_ChatMessage', chatMessageSchema, 'studio__chatMessages');
+  studioConnection.model('__Studio_ChatThread', chatThreadSchema, 'studio__chatThreads');
 
   let changeStream = null;
   if (options?.changeStream) {

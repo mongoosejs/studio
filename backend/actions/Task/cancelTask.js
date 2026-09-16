@@ -2,6 +2,7 @@
 
 const Archetype = require('archetype');
 const mongoose = require('mongoose');
+const omitNullish = require('../../helpers/omitNullish');
 
 const CancelTaskParams = new Archetype({
   taskId: {
@@ -10,12 +11,14 @@ const CancelTaskParams = new Archetype({
   }
 }).compile('CancelTaskParams');
 
-module.exports = ({ db }) => async function cancelTask(params) {
+module.exports = ({ db, options }) => async function cancelTask(params) {
   params = new CancelTaskParams(params);
   const { taskId } = params;
   const { Task } = db.models;
 
-  const task = await Task.findOne({ _id: taskId }).orFail();
+  const task = await Task.findOne({ _id: taskId }).
+    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    orFail();
 
   const cancelledTask = await Task.cancelTask({ _id: taskId });
   return {
