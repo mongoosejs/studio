@@ -82,6 +82,9 @@ module.exports = app => app.component('navbar', {
     chatView() {
       return ['chat index', 'chat'].includes(this.$route.name);
     },
+    aggregationBuilderView() {
+      return this.$route.name === 'aggregationBuilder';
+    },
     taskView() {
       return ['tasks', 'taskByName', 'taskSingle'].includes(this.$route.name);
     },
