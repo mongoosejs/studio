@@ -63,3 +63,6 @@ module.exports = ({ db, options }) => async function updateDocument(params) {
     setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
   return { doc };
 };
+
+module.exports.paramsType = UpdateDocumentsParams;
+module.exports.tags = [];

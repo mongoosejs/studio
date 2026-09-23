@@ -122,3 +122,6 @@ module.exports = ({ db, changeStream }) => async function* streamDocumentChanges
     }
   }
 };
+
+module.exports.paramsType = StreamDocumentChangesParams;
+module.exports.tags = ['readOnly'];

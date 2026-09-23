@@ -23,3 +23,6 @@ module.exports = ({ studioConnection, options }) => async function getDashboards
 
   return { dashboards };
 };
+
+module.exports.paramsType = GetDashboardParams;
+module.exports.tags = ['readOnly'];

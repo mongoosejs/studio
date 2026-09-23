@@ -129,3 +129,6 @@ module.exports = ({ db, options }) => async function getDocuments(params) {
     numDocsError
   };
 };
+
+module.exports.paramsType = GetDocumentsParams;
+module.exports.tags = ['readOnly'];

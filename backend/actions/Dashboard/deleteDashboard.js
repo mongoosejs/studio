@@ -28,3 +28,6 @@ module.exports = ({ studioConnection, options }) => async function deleteDashboa
     setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
   return { result };
 };
+
+module.exports.paramsType = DeleteDashboardParams;
+module.exports.tags = ['destructive'];

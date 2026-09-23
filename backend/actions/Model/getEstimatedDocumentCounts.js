@@ -39,3 +39,6 @@ module.exports = ({ db, options }) => async function getEstimatedDocumentCounts(
 
   return { counts };
 };
+
+module.exports.paramsType = GetEstimatedDocumentCountsParams;
+module.exports.tags = ['readOnly'];

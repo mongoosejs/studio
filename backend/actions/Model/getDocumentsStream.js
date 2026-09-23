@@ -159,3 +159,6 @@ module.exports = ({ db, options }) => async function* getDocumentsStream(params)
     await cursor.close();
   }
 };
+
+module.exports.paramsType = GetDocumentsParams;
+module.exports.tags = ['readOnly'];

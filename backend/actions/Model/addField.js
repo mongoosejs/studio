@@ -53,3 +53,6 @@ module.exports = ({ db, options }) => async function addField(params) {
 
   return { doc };
 };
+
+module.exports.paramsType = AddFieldParams;
+module.exports.tags = [];

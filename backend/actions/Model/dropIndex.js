@@ -34,3 +34,6 @@ module.exports = ({ db }) => async function getIndexes(params) {
     mongoDBIndexes
   };
 };
+
+module.exports.paramsType = DropIndexParams;
+module.exports.tags = ['destructive'];

@@ -202,3 +202,6 @@ function getType(value) {
   }
   return typeof value;
 }
+
+module.exports.paramsType = AnalyzeSchemaParams;
+module.exports.tags = ['readOnly'];

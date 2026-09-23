@@ -212,3 +212,6 @@ function addDocumentSchemaPaths(result) {
   }
   result.$document.schemaPaths = schemaPaths;
 }
+
+module.exports.paramsType = GetDashboardParams;
+module.exports.tags = ['readOnly'];

@@ -36,3 +36,6 @@ module.exports = ({ db, options }) => async function DeleteDocument(params) {
 
   return { doc };
 };
+
+module.exports.paramsType = DeleteDocumentParams;
+module.exports.tags = ['destructive'];

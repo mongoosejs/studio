@@ -36,3 +36,6 @@ module.exports = ({ db, options }) => async function validateDocument(params) {
     result: await validateDocumentWithTimeout(doc)
   };
 };
+
+module.exports.paramsType = ValidateDocumentParams;
+module.exports.tags = ['readOnly'];

@@ -3,6 +3,7 @@
 const Backend = require('./backend');
 const express = require('express');
 const frontend = require('./frontend');
+const mcp = require('./backend/mcp');
 const isBindIPConnection = require('./backend/helpers/isBindIPConnection');
 const isLocalhostConnection = require('./backend/helpers/isLocalhostConnection');
 const normalizeBindIPOption = require('./backend/helpers/normalizeBindIPOption');
@@ -54,49 +55,56 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   const backend = Backend(conn, options.studioConnection, options);
   delete backend.services;
 
+  function authorizeRequest(req, res, next) {
+    if (!workspace) {
+      next();
+      return;
+    }
+    const authorizationHeader = req.headers.authorization;
+    if (!authorizationHeader) {
+      res.setHeader('WWW-Authenticate', 'Bearer');
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+    const authorization = authorizationHeader.replace(/^Bearer\s+/i, '');
+    const params = {
+      method: 'POST',
+      body: JSON.stringify({ workspaceId: workspace._id }),
+      headers: {
+        'Authorization': authorization,
+        'Content-Type': 'application/json'
+      }
+    };
+    fetch(`${mothershipUrl}/me`, params)
+      .then(response => {
+        if (response.status < 200 || response.status >= 400) {
+          return response.json().then(data => {
+            throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
+          });
+        }
+        return response;
+      })
+      .then(res => res.json())
+      .then(({ user, roles }) => {
+        if (!user || !roles) {
+          return res.status(403).json({ message: 'Not authorized' });
+        }
+        req._internals = req._internals || {};
+        req._internals.authorization = authorization;
+        req._internals.initiatedById = user._id;
+        req._internals.roles = roles;
+        req._internals.$workspaceId = workspace._id;
+        req._internals.initiatedBy = user;
+
+        next();
+      })
+      .catch(err => {
+        return res.status(500).json({ message: err.message });
+      });
+  }
+
   router.use(
     '/api',
-    function authorize(req, res, next) {
-      if (!workspace) {
-        next();
-        return;
-      }
-      const authorization = req.headers.authorization;
-      const params = {
-        method: 'POST',
-        body: JSON.stringify({ workspaceId: workspace._id }),
-        headers: {
-          'Authorization': authorization,
-          'Content-Type': 'application/json'
-        }
-      };
-      fetch(`${mothershipUrl}/me`, params)
-        .then(response => {
-          if (response.status < 200 || response.status >= 400) {
-            return response.json().then(data => {
-              throw new Error(`Mongoose Studio API Key Error ${response.status}: ${require('util').inspect(data)}`);
-            });
-          }
-          return response;
-        })
-        .then(res => res.json())
-        .then(({ user, roles }) => {
-          if (!user || !roles) {
-            return res.status(403).json({ message: 'Not authorized' });
-          }
-          req._internals = req._internals || {};
-          req._internals.authorization = authorization;
-          req._internals.initiatedById = user._id;
-          req._internals.roles = roles;
-          req._internals.$workspaceId = workspace._id;
-          req._internals.initiatedBy = user;
-
-          next();
-        })
-        .catch(err => {
-          return res.status(500).json({ message: err.message });
-        });
-    },
+    authorizeRequest,
     function parseJson(req, res, next) {
       if (req.body !== undefined || req.readable === false) {
         return next();
@@ -105,6 +113,8 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
     },
     objectRouter(backend, toRoute)
   );
+
+  router.use('/mcp', authorizeRequest, jsonParser, mcp(backend));
 
   const { config } = await frontend(apiUrl, false, options, workspace);
   config.enableTaskVisualizer = options.enableTaskVisualizer;

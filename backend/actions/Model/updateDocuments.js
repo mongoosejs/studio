@@ -66,3 +66,6 @@ module.exports = ({ db, options }) => async function updateDocuments(params) {
 
   return { result };
 };
+
+module.exports.paramsType = UpdateDocumentsParams;
+module.exports.tags = [];

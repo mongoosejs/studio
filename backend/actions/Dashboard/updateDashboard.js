@@ -59,3 +59,6 @@ module.exports = ({ studioConnection, options }) => async function updateDashboa
 
   return { doc };
 };
+
+module.exports.paramsType = UpdateDashboardParams;
+module.exports.tags = [];

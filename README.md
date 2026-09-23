@@ -55,6 +55,8 @@ app.use('/studio', await studio('/studio/api', mongoose, {
 }));
 ```
 
+The Express integration also exposes a Streamable HTTP MCP endpoint at `/studio/mcp`. It provides every Dashboard and Model action as an MCP tool. With a Pro API key, pass the logged-in Studio access token in the `Authorization` header (either directly or as a bearer token); tools receive that user's roles and permissions. Without workspace authentication, the MCP endpoint uses the same localhost and `bindIp` restrictions as the rest of Studio.
+
 ### Next.js
 
 First, add `withMongooseStudio` to your `next.config.js` file:

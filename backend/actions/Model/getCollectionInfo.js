@@ -49,3 +49,6 @@ module.exports = ({ db, options }) => async function getCollectionInfo(params) {
     }
   };
 };
+
+module.exports.paramsType = GetCollectionInfoParams;
+module.exports.tags = ['readOnly'];

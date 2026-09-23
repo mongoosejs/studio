@@ -50,3 +50,6 @@ module.exports = ({ db, options }) => async function getDocument(params) {
 
   return { doc: doc.toJSON({ virtuals: true, getters: false, transform: false }), schemaPaths, virtualPaths };
 };
+
+module.exports.paramsType = GetDocumentParams;
+module.exports.tags = ['readOnly'];

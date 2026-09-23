@@ -32,3 +32,6 @@ module.exports = ({ db }) => async function CreateDocument(params) {
 
   return { doc };
 };
+
+module.exports.paramsType = CreateDocumentParams;
+module.exports.tags = [];

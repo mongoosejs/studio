@@ -68,3 +68,6 @@ module.exports = ({ db, options }) => async function exportQueryResults(params, 
   res.setHeader('Content-Disposition', `attachment; filename="${model.toLowerCase()}-export.csv"`);
   return csv;
 };
+
+module.exports.paramsType = GetDocumentsParams;
+module.exports.tags = ['readOnly'];

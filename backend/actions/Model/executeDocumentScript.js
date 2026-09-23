@@ -55,3 +55,6 @@ module.exports = ({ db, options }) => async function executeDocumentScript(param
     }
   }
 };
+
+module.exports.paramsType = ExecuteDocumentScriptParams;
+module.exports.tags = [];
