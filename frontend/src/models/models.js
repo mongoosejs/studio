@@ -176,6 +176,10 @@ module.exports = app => app.component('models', {
     dropCollectionConfirmName: '',
     shouldShowUpdateMultipleModal: false,
     shouldShowDeleteMultipleModal: false,
+    shouldShowMongoShellFilterModal: false,
+    mongoShellFilterCommand: '',
+    mongoShellFilterError: null,
+    mongoShellFilterLoading: false,
     shouldExport: {},
     sortBy: {},
     query: {},
@@ -1561,6 +1565,46 @@ module.exports = app => app.component('models', {
       } else {
         this.fallbackCopyText(text);
       }
+    },
+    async openMongoShellFilterModal() {
+      if (typeof this.searchText !== 'string' || this.searchText.trim().length === 0) {
+        return;
+      }
+
+      this.shouldShowMongoShellFilterModal = true;
+      this.mongoShellFilterCommand = '';
+      this.mongoShellFilterError = null;
+      this.mongoShellFilterLoading = true;
+
+      try {
+        const { command } = await api.Model.formatSearchFilter({
+          model: this.currentModel,
+          searchText: this.searchText
+        });
+        this.mongoShellFilterCommand = command;
+      } catch (err) {
+        this.mongoShellFilterError = err.message || 'Failed to format filter';
+      } finally {
+        this.mongoShellFilterLoading = false;
+      }
+    },
+    closeMongoShellFilterModal() {
+      this.shouldShowMongoShellFilterModal = false;
+      this.mongoShellFilterCommand = '';
+      this.mongoShellFilterError = null;
+      this.mongoShellFilterLoading = false;
+    },
+    copyMongoShellFilterCommand() {
+      if (!this.mongoShellFilterCommand) {
+        return;
+      }
+      this.copyCellValue(this.mongoShellFilterCommand);
+    },
+    copyOriginalFilterQuery() {
+      if (typeof this.searchText !== 'string' || this.searchText.trim().length === 0) {
+        return;
+      }
+      this.copyCellValue(this.searchText);
     },
     fallbackCopyText(text) {
       try {
