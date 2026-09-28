@@ -208,3 +208,49 @@ describe('MCP OAuth protected resource', function() {
     });
   });
 });
+
+describe('MCP disabled', function() {
+  let server;
+  let baseUrl;
+
+  before(async function() {
+    const app = express();
+    // No API key, so this also covers the localhost mode where the MCP endpoint
+    // would otherwise be served without OAuth.
+    app.use('/studio', await studio('/studio/api', connection, {
+      changeStream: false,
+      mcp: false
+    }));
+    await new Promise(resolve => {
+      server = app.listen(0, '127.0.0.1', resolve);
+    });
+    baseUrl = `http://127.0.0.1:${server.address().port}`;
+  });
+
+  after(async function() {
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  it('does not serve the MCP endpoint', async function() {
+    const res = await fetch(`${baseUrl}/studio/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' })
+    });
+
+    assert.strictEqual(res.status, 404);
+  });
+
+  it('does not publish protected resource metadata', async function() {
+    const res = await fetch(`${baseUrl}/studio/.well-known/oauth-protected-resource`);
+
+    assert.strictEqual(res.status, 404);
+  });
+
+  it('still serves the Studio API', async function() {
+    const res = await fetch(`${baseUrl}/studio/api/status`, { method: 'POST' });
+
+    assert.notStrictEqual(res.status, 404);
+  });
+});

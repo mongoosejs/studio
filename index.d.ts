@@ -9,6 +9,8 @@ declare module '@mongoosejs/studio' {
       apiKey?: string;
       bindIp?: string | string[] | null;
       maxTimeMS?: number;
+      /** Serve the MCP endpoint at `<mount>/mcp`. Defaults to true. */
+      mcp?: boolean;
       readPreference?: 'primary' | 'secondaryPreferred' | 'secondary';
       /** Public base URL Studio is mounted on, used as the MCP OAuth resource identifier. */
       publicUrl?: string;

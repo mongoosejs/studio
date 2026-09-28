@@ -119,7 +119,8 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   // issued by the mothership. Studio is the protected resource: it publishes the
   // metadata that points clients at the authorization server, and resolves each
   // token to its current grant before handling the request.
-  const mcpResource = workspace ?
+  const mcpEnabled = options.mcp !== false;
+  const mcpResource = mcpEnabled && workspace ?
     mcpOAuthResource({
       mothershipUrl,
       apiKey: options.apiKey,
@@ -141,11 +142,16 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
       catch(next);
   }
 
-  // Browser based MCP clients discover and connect cross-origin, so both the
-  // metadata and the MCP endpoint itself need CORS, including a preflight.
-  router.use('/.well-known/oauth-protected-resource', mcpOAuthResource.cors);
-  router.get('/.well-known/oauth-protected-resource', serveProtectedResourceMetadata);
-  router.get('/.well-known/oauth-protected-resource/mcp', serveProtectedResourceMetadata);
+  if (mcpEnabled) {
+    // Browser based MCP clients discover and connect cross-origin, so both the
+    // metadata and the MCP endpoint itself need CORS, including a preflight.
+    router.use('/.well-known/oauth-protected-resource', mcpOAuthResource.cors);
+    router.get('/.well-known/oauth-protected-resource', serveProtectedResourceMetadata);
+    router.get('/.well-known/oauth-protected-resource/mcp', serveProtectedResourceMetadata);
+  }
+  if (mcpEnabled) {
+    router.use('/mcp', mcpOAuthResource.cors, authorizeMCPRequest, jsonParser, mcp(backend));
+  }
 
   function authorizeMCPRequest(req, res, next) {
     if (!mcpResource) {
@@ -186,8 +192,6 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
         return res.status(500).json({ message: err.message });
       });
   }
-
-  router.use('/mcp', mcpOAuthResource.cors, authorizeMCPRequest, jsonParser, mcp(backend));
 
   const { config } = await frontend(apiUrl, false, options, workspace);
   config.enableTaskVisualizer = options.enableTaskVisualizer;

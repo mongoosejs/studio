@@ -10,6 +10,7 @@ declare module '@mongoosejs/studio/nest' {
     apiKey?: string;
     bindIp?: string | string[] | null;
     maxTimeMS?: number;
+    mcp?: boolean;
     readPreference?: 'primary' | 'secondaryPreferred' | 'secondary';
     publicUrl?: string;
     authorizationServerUrl?: string;
