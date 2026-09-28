@@ -1,8 +1,10 @@
 # Repository guidance
 
-The Mongoose connection passed to Studio is owned by the host application.
+The project's name is Mongoose Studio. Do not refer to the project as "Studio" - the repository is named "studio" to maintain parity between the npm package name `@mongoosejs/studio` and the GitHub repository `mongoosejs/studio`.
+
+The Mongoose connection passed to Mongoose Studio is owned by the host application.
 Do not change connection-level settings, options, configuration, models, middleware, plugins, collection objects, or methods on the application connection to implement Studio behavior.
-Apply Studio-specific behavior to individual operations whenever possible.
+Apply Mongoose-Studio-specific behavior to individual operations whenever possible.
 When isolation requires a derived connection, copy any Mongoose state that `useDb()` shares with its source before changing the derived connection.
 Sandbox wrappers must remain confined to sandbox-owned models and collections.
 

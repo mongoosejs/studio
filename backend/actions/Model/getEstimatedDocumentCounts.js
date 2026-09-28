@@ -2,11 +2,18 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const readOperationOptions = require('../../helpers/readOperationOptions');
 
 const GetEstimatedDocumentCountsParams = new Archetype({
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
+  },
+  readPreference: {
+    $type: 'string',
+    $enum: ['secondary', 'secondaryPreferred', 'primary']
   }
 }).compile('GetEstimatedDocumentCountsParams');
 
@@ -22,7 +29,7 @@ module.exports = ({ db, options }) => async function getEstimatedDocumentCounts(
     modelNames.map(name => {
       const Model = db.models[name];
       return Model.estimatedDocumentCount().
-        setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+        setOptions(readOperationOptions(options, params)).
         exec();
     })
   );

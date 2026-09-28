@@ -4,9 +4,22 @@ const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
 
 const archetypeToZodSchema = require('./util/archetypeToZodSchema');
+const authorize = require('./authorize');
 const packageJson = require('../package.json');
 
-const reservedParams = new Set(['$workspaceId', 'authorization', 'initiatedBy', 'initiatedById', 'roles', 'userId']);
+// Params that only trusted middleware may set. `maxTimeMS` and `readPreference`
+// are the limits from the caller's authorization, so an MCP client must not be
+// able to name them.
+const reservedParams = new Set([
+  '$workspaceId',
+  'authorization',
+  'initiatedBy',
+  'initiatedById',
+  'maxTimeMS',
+  'readPreference',
+  'roles',
+  'userId'
+]);
 
 const nodeEnv = process.env.NODE_ENV;
 
@@ -53,6 +66,9 @@ function createServer(backend, requestContext, req) {
   for (const namespace of ['Dashboard', 'Model']) {
     for (const [action, actionFn] of Object.entries(backend[namespace])) {
       const actionName = `${namespace}.${action}`;
+      if (!isAuthorized(actionName, requestContext.roles)) {
+        continue;
+      }
       const tags = actionFn.tags || [];
       const inputSchema = archetypeToZodSchema(actionFn.paramsType);
       const internalParams = Object.fromEntries(
@@ -103,6 +119,17 @@ function createServer(backend, requestContext, req) {
   }
 
   return server;
+}
+
+// Only advertise the tools this request is actually allowed to call, so a
+// read-only user or a read-only OAuth grant does not see write tools at all.
+function isAuthorized(actionName, roles) {
+  try {
+    authorize(actionName, roles);
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 function stringifyResult(result) {

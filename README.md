@@ -41,6 +41,7 @@ opts.anthropicAPIKey = process.env.ANTHROPIC_API_KEY;
 opts.googleGeminiAPIKey = process.env.GOOGLE_GEMINI_API_KEY;
 // Apply a maximum execution time to all read operations, including reads in scripts.
 // MongoDB does not support maxTimeMS for inserts and index operations.
+// This is also a ceiling: a request may ask for a lower limit, never a higher one.
 opts.maxTimeMS = 10000;
 
 // Mount Mongoose Studio on '/studio'
@@ -55,7 +56,32 @@ app.use('/studio', await studio('/studio/api', mongoose, {
 }));
 ```
 
-The Express integration also exposes a Streamable HTTP MCP endpoint at `/studio/mcp`. It provides every Dashboard and Model action as an MCP tool. With a Pro API key, pass the logged-in Studio access token in the `Authorization` header (either directly or as a bearer token); tools receive that user's roles and permissions. Without workspace authentication, the MCP endpoint uses the same localhost and `bindIp` restrictions as the rest of Studio.
+The Express integration also exposes a Streamable HTTP MCP endpoint at `/studio/mcp`.
+It provides every Dashboard and Model action the caller is authorized to use as an MCP tool.
+With a Pro API key, pass the logged-in Studio access token in the `Authorization` header (either directly or as a bearer token); tools receive that user's roles and permissions.
+Without workspace authentication, the MCP endpoint uses the same localhost and `bindIp` restrictions as the rest of Studio.
+
+#### Connecting ChatGPT or Claude with OAuth
+
+With a Pro API key, `/studio/mcp` is also an OAuth 2.1 protected resource, so MCP clients such as ChatGPT and Claude can connect to it directly.
+Point the client at your `/studio/mcp` URL and it will discover the Mongoose Studio authorization server, walk the user through signing in and approving access, and receive a short-lived access token.
+Users review and revoke these connections from their Mongoose Studio account page, and the access an AI client gets can never exceed the access the user who approved it already has.
+
+Studio advertises itself to MCP clients using its externally reachable URL.
+Set `publicUrl` when Studio sits behind a proxy that does not send `X-Forwarded-Proto` and `X-Forwarded-Host`:
+
+```javascript
+opts.publicUrl = 'https://app.example.com/studio';
+```
+
+Studio finds the authorization server through the mothership it is already configured to use, so this needs no configuration against the hosted mothership.
+When running your own mothership on a URL that differs from the one Studio calls it on, for example behind a tunnel during development, name its issuer explicitly:
+
+```javascript
+opts.authorizationServerUrl = 'https://mothership.example.com';
+```
+
+See `docs/mcp-oauth.md` for how the flow and the delegated access policy work.
 
 ### Next.js
 

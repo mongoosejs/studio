@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const DeleteDashboardParams = new Archetype({
   dashboardId: {
@@ -11,6 +11,9 @@ const DeleteDashboardParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
   }
 }).compile('DeleteDashboardParams');
 
@@ -22,10 +25,10 @@ module.exports = ({ studioConnection, options }) => async function deleteDashboa
   await authorize('Dashboard.deleteDashboard', roles);
 
   const result = await Dashboard.deleteOne({ _id: dashboardId }).
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    setOptions(operationOptions(options, params)).
     orFail();
   await DashboardResult.deleteMany({ dashboardId }).
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+    setOptions(operationOptions(options, params));
   return { result };
 };
 

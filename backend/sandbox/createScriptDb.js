@@ -4,6 +4,19 @@ const omitNullish = require('../helpers/omitNullish');
 
 const wrappedCollections = new WeakSet();
 
+// Read preference only applies to reads, so it is injected for these methods
+// only. Applying it to a write would be meaningless at best and rejected by the
+// driver at worst.
+const readMethods = new Set([
+  'aggregate',
+  'countDocuments',
+  'distinct',
+  'estimatedDocumentCount',
+  'find',
+  'findOne',
+  'listIndexes'
+]);
+
 const collectionMethodOptionsIndex = new Map([
   ['aggregate', 1],
   ['bulkWrite', 1],
@@ -48,10 +61,13 @@ function createScriptDb(db, options = {}) {
   }
 
   let dryRunSession = null;
-  const getSession = () => dryRunSession;
-  const getMaxTimeMS = () => options.maxTimeMS;
-  cloneModels(sourceConnection, scriptConnection, getSession, getMaxTimeMS);
-  wrapCollectionAccessors(scriptConnection, getSession, getMaxTimeMS);
+  const getOperationOptions = () => ({
+    session: dryRunSession,
+    maxTimeMS: options.maxTimeMS,
+    readPreference: options.readPreference
+  });
+  cloneModels(sourceConnection, scriptConnection, getOperationOptions);
+  wrapCollectionAccessors(scriptConnection, getOperationOptions);
 
   const originalDebug = sourceConnection.options?.debug;
   scriptConnection.set('debug', function() {
@@ -79,14 +95,14 @@ function createScriptDb(db, options = {}) {
   };
 }
 
-function cloneModels(sourceConnection, scriptConnection, getSession, getMaxTimeMS) {
+function cloneModels(sourceConnection, scriptConnection, getOperationOptions) {
   for (const Model of Object.values(sourceConnection.models ?? {})) {
     if (Model?.schema == null || typeof scriptConnection.model !== 'function') {
       continue;
     }
 
     const ClonedModel = scriptConnection.model(Model.modelName, Model.schema, getCollectionName(Model));
-    wrapModelCollections(ClonedModel, getSession, getMaxTimeMS);
+    wrapModelCollections(ClonedModel, getOperationOptions);
   }
 }
 
@@ -94,13 +110,13 @@ function getCollectionName(Model) {
   return Model.collection?.collectionName ?? Model.collection?.name ?? Model.$__collection?.collectionName;
 }
 
-function wrapModelCollections(Model, getSession, getMaxTimeMS) {
+function wrapModelCollections(Model, getOperationOptions) {
   const collection = Model?.collection ?? Model?.$__collection;
   if (collection == null) {
     return;
   }
 
-  const wrappedCollection = wrapCollection(collection, getSession, getMaxTimeMS);
+  const wrappedCollection = wrapCollection(collection, getOperationOptions);
   Model.collection = wrappedCollection;
   Model.$__collection = wrappedCollection;
 
@@ -119,7 +135,7 @@ function setModelCollectionSymbols(target, collection) {
   }
 }
 
-function wrapCollectionAccessors(scriptConnection, getSession, getMaxTimeMS) {
+function wrapCollectionAccessors(scriptConnection, getOperationOptions) {
   const wrappedCollectionCache = new WeakMap();
 
   const nativeDb = scriptConnection.db;
@@ -136,19 +152,19 @@ function wrapCollectionAccessors(scriptConnection, getSession, getMaxTimeMS) {
           collection.collection = originalDbCollection.call(nativeDb, collection.name);
         }
       }
-      return getOrCreateWrappedCollection(wrappedCollectionCache, collection, getSession, getMaxTimeMS);
+      return getOrCreateWrappedCollection(wrappedCollectionCache, collection, getOperationOptions);
     };
   }
 
   if (originalDbCollection != null) {
     nativeDb.collection = function() {
       const collection = originalDbCollection.apply(this, arguments);
-      return getOrCreateWrappedCollection(wrappedCollectionCache, collection, getSession, getMaxTimeMS);
+      return getOrCreateWrappedCollection(wrappedCollectionCache, collection, getOperationOptions);
     };
   }
 }
 
-function getOrCreateWrappedCollection(cache, collection, getSession, getMaxTimeMS) {
+function getOrCreateWrappedCollection(cache, collection, getOperationOptions) {
   if (collection == null || (typeof collection !== 'object' && typeof collection !== 'function')) {
     return collection;
   }
@@ -158,12 +174,12 @@ function getOrCreateWrappedCollection(cache, collection, getSession, getMaxTimeM
   if (cache.has(collection)) {
     return cache.get(collection);
   }
-  const wrapped = wrapCollection(collection, getSession, getMaxTimeMS);
+  const wrapped = wrapCollection(collection, getOperationOptions);
   cache.set(collection, wrapped);
   return wrapped;
 }
 
-function wrapCollection(collection, getSession, getMaxTimeMS) {
+function wrapCollection(collection, getOperationOptions) {
   if (wrappedCollections.has(collection)) {
     return collection;
   }
@@ -176,20 +192,20 @@ function wrapCollection(collection, getSession, getMaxTimeMS) {
     }
 
     wrapped[methodName] = function() {
-      const args = addOperationOptions(
-        Array.from(arguments),
-        optionsIndex,
-        getSession(),
-        getMaxTimeMS()
-      );
+      const { session, maxTimeMS, readPreference } = getOperationOptions();
+      const args = addOperationOptions(Array.from(arguments), optionsIndex, {
+        session,
+        maxTimeMS,
+        readPreference: readMethods.has(methodName) ? readPreference : null
+      });
       return method.apply(collection, args);
     };
   }
   return wrapped;
 }
 
-function addOperationOptions(args, optionsIndex, session, maxTimeMS) {
-  if (session == null && maxTimeMS == null) {
+function addOperationOptions(args, optionsIndex, { session, maxTimeMS, readPreference }) {
+  if (session == null && maxTimeMS == null && readPreference == null) {
     return args;
   }
 
@@ -203,7 +219,7 @@ function addOperationOptions(args, optionsIndex, session, maxTimeMS) {
     if (session != null) {
       throw new Error('Cannot run dry run on script where options arg is a non-object');
     }
-    throw new Error('Cannot apply maxTimeMS to script where options arg is a non-object');
+    throw new Error('Cannot apply Studio operation options to script where options arg is a non-object');
   }
 
   if (session != null && options?.session != null) {
@@ -213,6 +229,7 @@ function addOperationOptions(args, optionsIndex, session, maxTimeMS) {
   args[optionsIndex] = omitNullish({
     ...(options ?? {}),
     maxTimeMS: maxTimeMS ?? options?.maxTimeMS,
+    readPreference: readPreference ?? options?.readPreference,
     session: session ?? options?.session
   });
   return args;

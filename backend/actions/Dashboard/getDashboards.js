@@ -2,11 +2,14 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const GetDashboardParams = new Archetype({
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
   }
 }).compile('GetDashboardParams');
 
@@ -18,7 +21,7 @@ module.exports = ({ studioConnection, options }) => async function getDashboards
 
   const dashboards = await Dashboard
     .find()
-    .setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }))
+    .setOptions(operationOptions(options, params))
     .sort({ isPinned: -1, createdAt: -1, _id: -1 });
 
   return { dashboards };

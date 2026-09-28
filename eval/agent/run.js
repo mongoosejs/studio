@@ -161,7 +161,7 @@ async function executeFinalCode(conn, trace) {
   if (!trace.finalCode) {
     return;
   }
-  const sandbox = createSandbox({ db: conn });
+  const sandbox = createSandbox(conn, {});
   try {
     trace.output = await sandbox.runScript({ script: trace.finalCode });
     trace.logs = sandbox.getLogs();

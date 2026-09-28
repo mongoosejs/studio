@@ -7,7 +7,7 @@ const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const getSuggestedProjection = require('../../helpers/getSuggestedProjection');
 const parseProjectionParam = require('../../helpers/parseProjectionParam');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const readOperationOptions = require('../../helpers/readOperationOptions');
 
 const GetDocumentsParams = new Archetype({
   model: {
@@ -38,6 +38,13 @@ const GetDocumentsParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
+  },
+  readPreference: {
+    $type: 'string',
+    $enum: ['secondary', 'secondaryPreferred', 'primary']
   }
 }).compile('GetDocumentsParams');
 
@@ -76,7 +83,7 @@ module.exports = ({ db, options }) => async function* getDocumentsStream(params)
   if (projection != null) {
     query = query.select(projection);
   }
-  query.setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+  query.setOptions(readOperationOptions(options, params));
 
   const schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
@@ -112,7 +119,7 @@ module.exports = ({ db, options }) => async function* getDocumentsStream(params)
     ? Model.estimatedDocumentCount()
     : Model.countDocuments(filter);
   const numDocsPromise = countQuery.
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    setOptions(readOperationOptions(options, params)).
     exec();
 
   let numDocsYielded = false;

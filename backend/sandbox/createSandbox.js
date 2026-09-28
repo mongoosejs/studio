@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const vm = require('vm');
 const { createScriptDb } = require('./createScriptDb');
 
-module.exports = function createSandbox({ db, maxTimeMS }) {
+module.exports = function createSandbox(db, { maxTimeMS, readPreference }) {
   const logs = [];
 
   // db must be a connection, not a Mongoose instance
@@ -13,7 +13,7 @@ module.exports = function createSandbox({ db, maxTimeMS }) {
     db = db.connection;
   }
 
-  const scriptDb = createScriptDb(db, { maxTimeMS });
+  const scriptDb = createScriptDb(db, { maxTimeMS, readPreference });
   if (!scriptDb.db.Types) {
     scriptDb.db.Types = mongoose.Types;
   }

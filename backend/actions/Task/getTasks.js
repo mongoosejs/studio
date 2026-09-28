@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const escape = require('regexp.escape');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const GetTasksParams = new Archetype({
   start: { $type: Date },
@@ -10,7 +10,10 @@ const GetTasksParams = new Archetype({
   status: { $type: 'string' },
   name: { $type: 'string' },
   skip: { $type: 'number', $default: 0 },
-  limit: { $type: 'number', $default: 100 }
+  limit: { $type: 'number', $default: 100 },
+  maxTimeMS: {
+    $type: 'number'
+  }
 }).compile('GetTasksParams');
 
 const ALL_STATUSES = ['pending', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown'];
@@ -97,7 +100,7 @@ module.exports = ({ db, options }) => async function getTasks(params) {
     }
   ];
 
-  const [result] = await Task.aggregate(pipeline).option(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+  const [result] = await Task.aggregate(pipeline).option(operationOptions(options, params));
   const tasks = result.tasks || [];
   const numDocs = (result.count && result.count[0] && result.count[0].total) || 0;
   const statusCounts = result.statusCounts?.[0] ?? {};

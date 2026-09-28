@@ -4,6 +4,7 @@ const Backend = require('./backend');
 const express = require('express');
 const frontend = require('./frontend');
 const mcp = require('./backend/mcp');
+const mcpOAuthResource = require('./backend/mcpOAuthResource');
 const isBindIPConnection = require('./backend/helpers/isBindIPConnection');
 const isLocalhostConnection = require('./backend/helpers/isLocalhostConnection');
 const normalizeBindIPOption = require('./backend/helpers/normalizeBindIPOption');
@@ -114,7 +115,79 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
     objectRouter(backend, toRoute)
   );
 
-  router.use('/mcp', authorizeRequest, jsonParser, mcp(backend));
+  // MCP clients (ChatGPT, Claude, ...) authenticate with OAuth access tokens
+  // issued by the mothership. Studio is the protected resource: it publishes the
+  // metadata that points clients at the authorization server, and resolves each
+  // token to its current grant before handling the request.
+  const mcpResource = workspace ?
+    mcpOAuthResource({
+      mothershipUrl,
+      apiKey: options.apiKey,
+      publicUrl: options.publicUrl,
+      authorizationServerUrl: options.authorizationServerUrl,
+      oauthUrl: options._mcpOAuthUrl
+    }) :
+    null;
+
+  function serveProtectedResourceMetadata(req, res, next) {
+    if (!mcpResource) {
+      return res.status(404).json({ message: 'Mongoose Studio MCP OAuth requires an API key' });
+    }
+    mcpResource.metadataFor(req).
+      then(metadata => {
+        res.setHeader('Cache-Control', 'no-store');
+        res.json(metadata);
+      }).
+      catch(next);
+  }
+
+  // Browser based MCP clients discover and connect cross-origin, so both the
+  // metadata and the MCP endpoint itself need CORS, including a preflight.
+  router.use('/.well-known/oauth-protected-resource', mcpOAuthResource.cors);
+  router.get('/.well-known/oauth-protected-resource', serveProtectedResourceMetadata);
+  router.get('/.well-known/oauth-protected-resource/mcp', serveProtectedResourceMetadata);
+
+  function authorizeMCPRequest(req, res, next) {
+    if (!mcpResource) {
+      return authorizeRequest(req, res, next);
+    }
+    const token = `${req.headers.authorization || ''}`.replace(/^Bearer\s+/i, '').trim();
+    if (!token) {
+      res.setHeader('WWW-Authenticate', mcpResource.challenge(req));
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+    if (!mcpResource.isMCPAccessToken(token)) {
+      // A Studio session token, for example the Studio UI talking to its own
+      // MCP endpoint. Fall back to the regular Studio authorization path.
+      return authorizeRequest(req, res, next);
+    }
+
+    mcpResource.introspect(req, token).
+      then(({ user, permissions }) => {
+        req._internals = req._internals || {};
+        req._internals.authorization = token;
+        req._internals.initiatedById = user._id;
+        req._internals.roles = permissions.roles;
+        req._internals.$workspaceId = workspace._id;
+        req._internals.initiatedBy = user;
+        // The limits from the grant, applied to every operation this request
+        // runs. `maxTimeMS` is still capped by the host application's own
+        // `maxTimeMS` option, and a read preference can only be narrowed.
+        req._internals.maxTimeMS = permissions.maxTimeMS;
+        req._internals.readPreference = permissions.readPreference;
+
+        next();
+      }).
+      catch(err => {
+        if (err.status === 401) {
+          res.setHeader('WWW-Authenticate', mcpResource.challenge(req, { error: 'invalid_token', description: err.message }));
+          return res.status(401).json({ message: err.message });
+        }
+        return res.status(500).json({ message: err.message });
+      });
+  }
+
+  router.use('/mcp', mcpOAuthResource.cors, authorizeMCPRequest, jsonParser, mcp(backend));
 
   const { config } = await frontend(apiUrl, false, options, workspace);
   config.enableTaskVisualizer = options.enableTaskVisualizer;
