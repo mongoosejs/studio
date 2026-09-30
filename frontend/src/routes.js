@@ -70,6 +70,14 @@ module.exports = {
       }
     },
     {
+      path: '/mcp',
+      name: 'mcp',
+      component: 'mcp',
+      meta: {
+        authorized: true
+      }
+    },
+    {
       path: '/tasks',
       name: 'tasks',
       component: 'tasks',

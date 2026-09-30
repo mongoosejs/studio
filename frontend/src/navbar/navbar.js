@@ -103,6 +103,9 @@ module.exports = app => app.component('navbar', {
     hasTaskVisualizer() {
       return !!window.MONGOOSE_STUDIO_CONFIG.enableTaskVisualizer;
     },
+    mcpEnabled() {
+      return window.MONGOOSE_STUDIO_CONFIG.mcp !== false;
+    },
     recentPagesList() {
       return this.localRecentPages;
     },

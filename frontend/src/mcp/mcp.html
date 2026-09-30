@@ -1,0 +1,55 @@
+<div class="mx-auto max-w-5xl py-6 px-2">
+  <h1 class="text-xl font-bold text-content">MCP</h1>
+  <p class="mt-2 text-sm text-content-secondary">
+    Connect an MCP client such as Claude or ChatGPT to this Mongoose Studio workspace.
+  </p>
+
+  <div class="mt-6 rounded-lg border border-edge bg-surface p-4">
+    <label for="mcp-url" class="block text-sm font-medium text-content">MCP URL</label>
+    <div class="mt-2 flex gap-2">
+      <input
+        id="mcp-url"
+        type="text"
+        readonly
+        :value="mcpUrl"
+        class="min-w-0 flex-1 rounded-md bg-muted px-3 py-2 font-mono text-sm text-content outline outline-1 -outline-offset-1 outline-edge-strong"
+      />
+      <async-button
+        type="button"
+        @click="copyMCPUrl"
+        class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover">
+        Copy
+      </async-button>
+    </div>
+  </div>
+
+  <div class="mt-8 grid gap-6 text-sm text-content-secondary">
+    <section>
+      <h2 class="text-base font-semibold text-content">Authentication and network access</h2>
+      <p class="mt-2">
+        Without a Mongoose Studio API key, the MCP endpoint uses the deployment's
+        <code class="rounded bg-muted px-1 py-0.5">bindIp</code> restrictions. By default, this means an MCP client can only connect from localhost.
+      </p>
+      <p class="mt-2">
+        With an API key, MCP clients such as Claude and ChatGPT connect through OAuth. You will be prompted to sign in to Mongoose Studio and approve the connection before the client receives access.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-base font-semibold text-content">Permissions</h2>
+      <p class="mt-2">
+        When an API key is configured, MCP access is scoped to the signed-in user's workspace permissions. During authorization, the user can explicitly grant fewer permissions, such as read-only access or a lower execution time limit. An MCP connection can never receive more access than that user already has.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-base font-semibold text-content">Supported operations</h2>
+      <p class="mt-2">
+        The MCP server supports database CRUD operations, dashboards, and script creation. It does not execute standalone scripts directly.
+      </p>
+      <p class="mt-2">
+        An MCP client can create a script and return a Mongoose Studio URL. A person can then open that URL, review or edit the code, and choose whether to dry run or execute it.
+      </p>
+    </section>
+  </div>
+</div>

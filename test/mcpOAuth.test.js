@@ -7,7 +7,7 @@ const { connection } = require('./setup.test');
 
 const API_KEY = 'test-api-key';
 const ISSUER = 'https://mothership.example.com';
-const WORKSPACE = { _id: '0123456789abcdef01234567', name: 'Test Workspace' };
+const WORKSPACE = { _id: '0123456789abcdef01234567', name: 'Test Workspace', baseUrl: 'https://app.example.com/studio' };
 const USER = { _id: '0123456789abcdef01234568', name: 'Test User', email: 'test@example.com' };
 
 describe('MCP OAuth protected resource', function() {
@@ -109,6 +109,15 @@ describe('MCP OAuth protected resource', function() {
     // OAuth `resource` back to this workspace.
     const registration = await waitForRequest('registerMCPResource');
     assert.deepStrictEqual(registration, { apiKey: API_KEY, resource: `${baseUrl}/studio/mcp` });
+  });
+
+  it('publishes the workspace MCP URL to the frontend', async function() {
+    const res = await fetch(`${baseUrl}/studio/config.js`);
+    const source = await res.text();
+    const config = JSON.parse(source.match(/window\.MONGOOSE_STUDIO_CONFIG = ([\s\S]+);$/)[1]);
+
+    assert.strictEqual(config.mcp, true);
+    assert.strictEqual(config.mcpUrl, 'https://app.example.com/studio/mcp');
   });
 
   it('lets a browser based client read the challenge cross-origin', async function() {
@@ -246,6 +255,15 @@ describe('MCP disabled', function() {
     const res = await fetch(`${baseUrl}/studio/.well-known/oauth-protected-resource`);
 
     assert.strictEqual(res.status, 404);
+  });
+
+  it('disables MCP in the frontend config', async function() {
+    const res = await fetch(`${baseUrl}/studio/config.js`);
+    const source = await res.text();
+    const config = JSON.parse(source.match(/window\.MONGOOSE_STUDIO_CONFIG = ([\s\S]+);$/)[1]);
+
+    assert.strictEqual(config.mcp, false);
+    assert.strictEqual(config.mcpUrl, null);
   });
 
   it('still serves the Studio API', async function() {

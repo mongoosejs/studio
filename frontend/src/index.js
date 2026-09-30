@@ -335,6 +335,11 @@ const router = VueRouter.createRouter({
 
 // Add global navigation guard
 router.beforeEach((to, from, next) => {
+  if (to.name === 'mcp' && window.MONGOOSE_STUDIO_CONFIG.mcp === false) {
+    next({ name: window.state?.roles?.[0] === 'dashboards' ? 'dashboards' : 'root' });
+    return;
+  }
+
   // Skip auth check for authorized (public) routes
   if (to.meta.authorized) {
     next();
