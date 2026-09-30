@@ -40,6 +40,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
       })
       .then(res => res.json()));
   }
+  options.workspace = workspace;
 
   if (!workspace && bindIp !== null) {
     router.use((req, res, next) => {

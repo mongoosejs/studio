@@ -108,6 +108,14 @@ module.exports = {
       meta: {
         authorized: true
       }
+    },
+    {
+      path: '/script/:scriptId',
+      name: 'script',
+      component: 'script',
+      meta: {
+        authorized: true
+      }
     }
   ],
   roleAccess,

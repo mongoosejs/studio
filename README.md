@@ -58,7 +58,7 @@ app.use('/studio', await studio('/studio/api', mongoose, {
 
 The Express integration also exposes a Streamable HTTP MCP endpoint at `/studio/mcp`.
 Set `mcp: false` to turn it off, along with the OAuth protected resource metadata that advertises it.
-It provides every Dashboard and Model action the caller is authorized to use as an MCP tool.
+It provides authorized Dashboard and Model actions, plus `Script.createScript`, as MCP tools.
 With a Pro API key, pass the logged-in Studio access token in the `Authorization` header (either directly or as a bearer token); tools receive that user's roles and permissions.
 Without workspace authentication, the MCP endpoint uses the same localhost and `bindIp` restrictions as the rest of Studio.
 

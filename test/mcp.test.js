@@ -19,12 +19,19 @@ describe('MCP', function() {
   // the limits it runs under both come from the request's authorization.
   async function connect({ roles, limits }) {
     const app = express();
-    const backend = applySpec({ Dashboard: Actions.Dashboard, Model: Actions.Model }, {});
+    const backend = applySpec({ Dashboard: Actions.Dashboard, Model: Actions.Model, Script: Actions.Script }, {});
     backend.Dashboard.getDashboards = Object.assign(async params => {
       receivedParams = params;
       return { dashboards: [{ title: 'Test dashboard' }] };
     }, Actions.Dashboard.getDashboards);
     backend.Model.listModels = Object.assign(async() => ({ models: ['User'] }), Actions.Model.listModels);
+    backend.Script.createScript = Object.assign(async params => {
+      receivedParams = params;
+      return {
+        script: { _id: 'script-id', script: params.script },
+        url: 'https://example.com/studio/#/script/script-id'
+      };
+    }, Actions.Script.createScript);
 
     app.use(express.json());
     app.use('/mcp', (req, res, next) => {
@@ -47,8 +54,10 @@ describe('MCP', function() {
   }
 
   function authorizedTools(roles) {
-    return ['Dashboard', 'Model'].flatMap(namespace =>
-      Object.keys(Actions[namespace]).map(action => `${namespace}.${action}`)
+    return ['Dashboard', 'Model', 'Script'].flatMap(namespace =>
+      Object.entries(Actions[namespace]).
+        filter(([, actionFn]) => actionFn.mcp !== false).
+        map(([action]) => `${namespace}.${action}`)
     ).filter(action => {
       try {
         authorize(action, roles);
@@ -68,7 +77,7 @@ describe('MCP', function() {
     await new Promise(resolve => httpServer.close(resolve));
   });
 
-  it('exposes Dashboard and Model actions as tools', async function() {
+  it('exposes Dashboard, Model, and Script actions as tools', async function() {
     await connect({ roles: ['owner'] });
     const { tools } = await client.listTools();
     assert.deepStrictEqual(tools.map(tool => tool.name).sort(), authorizedTools(['owner']));
@@ -83,6 +92,23 @@ describe('MCP', function() {
     assert.ok(!Object.hasOwn(getDocuments.inputSchema.properties, 'roles'));
     assert.deepStrictEqual(getDocuments.inputSchema.required, ['model']);
     assert.strictEqual(getDocuments.inputSchema.properties.limit.default, 20);
+
+    const createScript = tools.find(tool => tool.name === 'Script.createScript');
+    assert.ok(createScript);
+    assert.match(createScript.description, /does not execute the script and returns a review URL/);
+    assert.deepStrictEqual(createScript.inputSchema.required, ['script']);
+    assert.ok(!Object.hasOwn(createScript.inputSchema.properties, 'initiatedById'));
+    assert.ok(!Object.hasOwn(createScript.inputSchema.properties, 'dryRun'));
+    assert.ok(!tools.some(tool => tool.name === 'Script.executeScript'));
+
+    const result = await client.callTool({
+      name: 'Script.createScript',
+      arguments: { script: 'return 42;' }
+    });
+    const created = JSON.parse(result.content[0].text);
+    assert.strictEqual(created.script.script, 'return 42;');
+    assert.strictEqual(created.url, 'https://example.com/studio/#/script/script-id');
+    assert.strictEqual(receivedParams.initiatedById, '0123456789abcdef01234567');
   });
 
   it('only exposes tools the request is authorized to call', async function() {
@@ -92,6 +118,8 @@ describe('MCP', function() {
 
     assert.deepStrictEqual(toolNames, authorizedTools(['readonly']));
     assert.ok(toolNames.includes('Model.getDocuments'));
+    assert.ok(toolNames.includes('Script.createScript'));
+    assert.ok(!toolNames.includes('Script.executeScript'));
     assert.ok(!toolNames.includes('Model.updateDocuments'));
     assert.ok(!toolNames.includes('Model.dropCollection'));
     assert.ok(!toolNames.includes('Dashboard.deleteDashboard'));

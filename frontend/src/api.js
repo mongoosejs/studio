@@ -164,6 +164,17 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
       return client.post('', { action: 'ChatMessage.executeScript', ...params }).then(res => res.data);
     }
   };
+  exports.Script = {
+    createScript(params) {
+      return client.post('', { action: 'Script.createScript', ...params }).then(res => res.data);
+    },
+    executeScript(params) {
+      return client.post('', { action: 'Script.executeScript', ...params }).then(res => res.data);
+    },
+    getScript(params) {
+      return client.post('', { action: 'Script.getScript', ...params }).then(res => res.data);
+    }
+  };
   exports.Model = {
     addField(params) {
       return client.post('', { action: 'Model.addField', ...params }).then(res => res.data);
@@ -361,6 +372,17 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
   exports.ChatMessage = {
     executeScript: function executeScript(params) {
       return client.post('/ChatMessage/executeScript', params).then(res => res.data);
+    }
+  };
+  exports.Script = {
+    createScript: function createScript(params) {
+      return client.post('/Script/createScript', params).then(res => res.data);
+    },
+    executeScript: function executeScript(params) {
+      return client.post('/Script/executeScript', params).then(res => res.data);
+    },
+    getScript: function getScript(params) {
+      return client.post('/Script/getScript', params).then(res => res.data);
     }
   };
   exports.Model = {

@@ -63,10 +63,10 @@ function createServer(backend, requestContext, req) {
     version: packageJson.version
   });
 
-  for (const namespace of ['Dashboard', 'Model']) {
+  for (const namespace of ['Dashboard', 'Model', 'Script']) {
     for (const [action, actionFn] of Object.entries(backend[namespace])) {
       const actionName = `${namespace}.${action}`;
-      if (!isAuthorized(actionName, requestContext.roles)) {
+      if (actionFn.mcp === false || !isAuthorized(actionName, requestContext.roles)) {
         continue;
       }
       const tags = actionFn.tags || [];
@@ -75,7 +75,7 @@ function createServer(backend, requestContext, req) {
         Object.keys(inputSchema.shape).filter(key => reservedParams.has(key)).map(key => [key, true])
       );
       server.registerTool(actionName, {
-        description: `Run the Mongoose Studio ${actionName} action`,
+        description: actionFn.description || `Run the Mongoose Studio ${actionName} action`,
         inputSchema: inputSchema.omit(internalParams),
         annotations: {
           readOnlyHint: tags.includes('readOnly'),

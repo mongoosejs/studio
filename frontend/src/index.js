@@ -20,7 +20,7 @@ const {
 } = require('./_util/recent-pages-history');
 appendCSS(require('vue-toastification/dist/index.css'));
 
-const TRACKED_RECENT_PAGE_ROUTE_NAMES = new Set(['model', 'document', 'dashboard', 'chat']);
+const TRACKED_RECENT_PAGE_ROUTE_NAMES = new Set(['model', 'document', 'dashboard', 'chat', 'script']);
 const CHAT_ROUTE_NAMES = new Set(['chat index', 'chat']);
 
 function formatHistoryLabel(route) {
@@ -41,6 +41,9 @@ function formatHistoryLabel(route) {
   }
   if (route.name === 'chat') {
     return route.params?.threadId ? `Chat: ${route.params.threadId}` : 'Chat';
+  }
+  if (route.name === 'script') {
+    return route.params?.scriptId ? `Script: ${route.params.scriptId}` : 'Script';
   }
   const normalizedPath = route.path.replace(/^\//, '');
   return normalizedPath || 'Home';
