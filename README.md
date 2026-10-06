@@ -56,23 +56,24 @@ app.use('/studio', await studio('/studio/api', mongoose, {
 }));
 ```
 
-The Express integration also exposes a Streamable HTTP MCP endpoint at `/studio/mcp`.
-Set `mcp: false` to turn it off, along with the OAuth protected resource metadata that advertises it.
+Without an API key, the Express integration exposes a Streamable HTTP MCP endpoint at `/studio/mcp` by default.
+Set `mcp: false` to turn it off.
 It provides authorized Dashboard and Model actions, plus `Script.createScript`, as MCP tools.
 With a Pro API key, pass the logged-in Studio access token in the `Authorization` header (either directly or as a bearer token); tools receive that user's roles and permissions.
-Without workspace authentication, the MCP endpoint uses the same localhost and `bindIp` restrictions as the rest of Studio.
+Without workspace authentication, the MCP endpoint uses the same localhost and `bindIp` restrictions as the rest of Mongoose Studio.
 
 #### Connecting ChatGPT or Claude with OAuth
 
-With a Pro API key, `/studio/mcp` is also an OAuth 2.1 protected resource, so MCP clients such as ChatGPT and Claude can connect to it directly.
+With a Pro API key, MCP is disabled by default. Set `mcp: true` to expose `/studio/mcp` as an OAuth 2.1 protected resource so MCP clients such as ChatGPT and Claude can connect to it directly.
 Point the client at your `/studio/mcp` URL and it will discover the Mongoose Studio authorization server, walk the user through signing in and approving access, and receive a short-lived access token.
 Users review and revoke these connections from their Mongoose Studio account page, and the access an AI client gets can never exceed the access the user who approved it already has.
 
 Mongoose Studio advertises itself to MCP clients using its externally reachable URL.
-When MCP and a Pro API key are enabled, set `publicUrl` to the URL where Mongoose Studio is mounted:
+When enabling MCP with a Pro API key, also set `publicUrl` to the URL where Mongoose Studio is mounted:
 
 ```javascript
 opts.publicUrl = 'https://app.example.com/studio';
+opts.mcp = true;
 ```
 
 Mongoose Studio finds the authorization server through the mothership it is already configured to use, so it needs no separate authorization server configuration.

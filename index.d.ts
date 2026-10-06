@@ -9,7 +9,7 @@ declare module '@mongoosejs/studio' {
       apiKey?: string;
       bindIp?: string | string[] | null;
       maxTimeMS?: number;
-      /** Serve the MCP endpoint at `<mount>/mcp`. Defaults to true. */
+      /** Serve the MCP endpoint at `<mount>/mcp`. Defaults to true without apiKey and false with apiKey. */
       mcp?: boolean;
       readPreference?: 'primary' | 'secondaryPreferred' | 'secondary';
       /** Public base URL Mongoose Studio is mounted on. Required when MCP and apiKey are enabled. */

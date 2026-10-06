@@ -37,7 +37,7 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
     baseURL: apiUrl,
     isLambda,
     mcp: options?.mcp !== false,
-    mcpUrl: workspaceBaseUrl ? `${workspaceBaseUrl}/mcp` : null,
+    mcpUrl: options?.mcp !== false && workspaceBaseUrl ? `${workspaceBaseUrl}/mcp` : null,
     mothershipUrl: apiKey ? mothershipUrl : null,
     workspace: workspaceData
   };
