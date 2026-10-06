@@ -4,7 +4,7 @@ const Backend = require('./backend');
 const express = require('express');
 const frontend = require('./frontend');
 const mcp = require('./backend/mcp');
-const mcpOAuthResource = require('./backend/mcpOAuthResource');
+const mothership = require('./backend/integrations/mothership');
 const isBindIPConnection = require('./backend/helpers/isBindIPConnection');
 const isLocalhostConnection = require('./backend/helpers/isLocalhostConnection');
 const normalizeBindIPOption = require('./backend/helpers/normalizeBindIPOption');
@@ -12,10 +12,14 @@ const { toRoute, objectRouter } = require('extrovert');
 const { defaultMothershipURL } = require('./constants');
 
 const jsonParser = express.json();
+const MCP_ACCESS_TOKEN_PREFIX = 'mcp_at_';
 
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
   options = options ? { changeStream: true, ...options } : { changeStream: true };
+  if (options.mcp !== false && options.apiKey && !options.publicUrl) {
+    throw new Error('Mongoose Studio requires the publicUrl option when MCP is enabled with an API key');
+  }
   const hasBindIpOption = Object.prototype.hasOwnProperty.call(options, 'bindIp');
   const bindIp = normalizeBindIPOption(options.bindIp);
 
@@ -117,59 +121,85 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   );
 
   // MCP clients (ChatGPT, Claude, ...) authenticate with OAuth access tokens
-  // issued by the mothership. Studio is the protected resource: it publishes the
+  // issued by the mothership. Mongoose Studio is the protected resource: it publishes the
   // metadata that points clients at the authorization server, and resolves each
   // token to its current grant before handling the request.
   const mcpEnabled = options.mcp !== false;
-  const mcpResource = mcpEnabled && workspace ?
-    mcpOAuthResource({
-      mothershipUrl,
-      apiKey: options.apiKey,
-      publicUrl: options.publicUrl,
-      authorizationServerUrl: options.authorizationServerUrl,
-      oauthUrl: options._mcpOAuthUrl
-    }) :
-    null;
+  const registeredMCPResources = new Set();
+  const mcpAuthorizationServerUrl = new URL(mothershipUrl).origin;
+  const mcpResource = workspace ? canonicalize(`${options.publicUrl.replace(/\/+$/, '')}/mcp`) : null;
 
-  function serveProtectedResourceMetadata(req, res, next) {
-    if (!mcpResource) {
-      return res.status(404).json({ message: 'Mongoose Studio MCP OAuth requires an API key' });
+  async function registerMCPResource(resource) {
+    if (registeredMCPResources.has(resource)) {
+      return;
     }
-    mcpResource.metadataFor(req).
-      then(metadata => {
-        res.setHeader('Cache-Control', 'no-store');
-        res.json(metadata);
-      }).
-      catch(next);
+    try {
+      await mothership.Workspace.registerMCPResource({ apiKey: options.apiKey, resource }, options);
+      registeredMCPResources.add(resource);
+    } catch (err) {
+      // Not fatal: metadata is still worth serving, and the next request retries.
+      console.warn(`[MONGOOSE STUDIO] Could not register MCP resource ${resource}: ${err.message}`);
+    }
   }
 
-  if (mcpEnabled) {
+  function mcpChallenge({ error, description } = {}) {
+    // A client may go straight to the authorization server without requesting
+    // metadata first, so register the resource when sending the challenge too.
+    registerMCPResource(mcpResource).catch(() => {});
+    const metadataUrl = `${mcpResource.replace(/\/mcp$/, '')}/.well-known/oauth-protected-resource`;
+    const parts = [`Bearer resource_metadata="${metadataUrl}"`];
+    if (error) {
+      parts.push(`error="${error}"`);
+    }
+    if (description) {
+      parts.push(`error_description="${`${description}`.replace(/"/g, '')}"`);
+    }
+    return parts.join(', ');
+  }
+
+  async function serveProtectedResourceMetadata(req, res, next) {
+    try {
+      await registerMCPResource(mcpResource);
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        resource: mcpResource,
+        authorization_servers: [mcpAuthorizationServerUrl],
+        scopes_supported: ['mcp'],
+        bearer_methods_supported: ['header'],
+        resource_documentation: 'https://mongoosestudio.app/docs/'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  if (mcpEnabled && workspace) {
     // Browser based MCP clients discover and connect cross-origin, so both the
     // metadata and the MCP endpoint itself need CORS, including a preflight.
-    router.use('/.well-known/oauth-protected-resource', mcpOAuthResource.cors);
+    router.use('/.well-known/oauth-protected-resource', mcpCors);
     router.get('/.well-known/oauth-protected-resource', serveProtectedResourceMetadata);
     router.get('/.well-known/oauth-protected-resource/mcp', serveProtectedResourceMetadata);
   }
   if (mcpEnabled) {
-    router.use('/mcp', mcpOAuthResource.cors, authorizeMCPRequest, jsonParser, mcp(backend));
+    router.use('/mcp', mcpCors, authorizeMCPRequest, jsonParser, mcp(backend));
   }
 
   function authorizeMCPRequest(req, res, next) {
-    if (!mcpResource) {
+    if (!workspace) {
       return authorizeRequest(req, res, next);
     }
     const token = `${req.headers.authorization || ''}`.replace(/^Bearer\s+/i, '').trim();
     if (!token) {
-      res.setHeader('WWW-Authenticate', mcpResource.challenge(req));
+      res.setHeader('WWW-Authenticate', mcpChallenge());
       return res.status(401).json({ message: 'Not authorized' });
     }
-    if (!mcpResource.isMCPAccessToken(token)) {
+    if (!token.startsWith(MCP_ACCESS_TOKEN_PREFIX)) {
       // A Studio session token, for example the Studio UI talking to its own
       // MCP endpoint. Fall back to the regular Studio authorization path.
       return authorizeRequest(req, res, next);
     }
 
-    mcpResource.introspect(req, token).
+    mothership.MCPOAuthToken.introspectMCPAccessToken({ apiKey: options.apiKey, token, resource: mcpResource }, options).
       then(({ user, permissions }) => {
         req._internals = req._internals || {};
         req._internals.authorization = token;
@@ -186,8 +216,8 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
         next();
       }).
       catch(err => {
-        if (err.status === 401) {
-          res.setHeader('WWW-Authenticate', mcpResource.challenge(req, { error: 'invalid_token', description: err.message }));
+        if (err.status === 401 || err.status === 403) {
+          res.setHeader('WWW-Authenticate', mcpChallenge({ error: 'invalid_token', description: err.message }));
           return res.status(401).json({ message: err.message });
         }
         return res.status(500).json({ message: err.message });
@@ -208,4 +238,28 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   }
 
   return router;
+}
+
+function mcpCors(req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, Mcp-Protocol-Version, Mcp-Session-Id, Last-Event-ID');
+  res.setHeader('Access-Control-Expose-Headers', 'WWW-Authenticate, Mcp-Session-Id, Mcp-Protocol-Version');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+}
+
+function canonicalize(resource) {
+  const url = new URL(resource);
+  url.hash = '';
+  url.search = '';
+  if (url.pathname.length > 1 && url.pathname.endsWith('/')) {
+    url.pathname = url.pathname.replace(/\/+$/, '');
+  }
+  return url.toString();
 }

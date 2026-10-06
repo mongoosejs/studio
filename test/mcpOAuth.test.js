@@ -6,9 +6,33 @@ const studio = require('../express');
 const { connection } = require('./setup.test');
 
 const API_KEY = 'test-api-key';
-const ISSUER = 'https://mothership.example.com';
 const WORKSPACE = { _id: '0123456789abcdef01234567', name: 'Test Workspace', baseUrl: 'https://app.example.com/studio' };
 const USER = { _id: '0123456789abcdef01234568', name: 'Test User', email: 'test@example.com' };
+
+describe('MCP OAuth configuration', function() {
+  it('requires publicUrl when MCP and an API key are enabled', async function() {
+    await assert.rejects(
+      () => studio('/studio/api', connection, { apiKey: API_KEY, changeStream: false }),
+      /requires the publicUrl option/
+    );
+  });
+
+  it('does not mount protected resource metadata without an API key', async function() {
+    const app = express();
+    app.use('/studio', await studio('/studio/api', connection, { changeStream: false }));
+    const server = await new Promise(resolve => {
+      const listeningServer = app.listen(0, '127.0.0.1', () => resolve(listeningServer));
+    });
+
+    try {
+      const res = await fetch(`http://127.0.0.1:${server.address().port}/studio/.well-known/oauth-protected-resource`);
+      assert.strictEqual(res.status, 404);
+    } finally {
+      server.closeAllConnections();
+      await new Promise(resolve => server.close(resolve));
+    }
+  });
+});
 
 describe('MCP OAuth protected resource', function() {
   let mothership;
@@ -25,7 +49,7 @@ describe('MCP OAuth protected resource', function() {
     mothershipApp.post('/getWorkspace', (req, res) => res.json({ workspace: { ...WORKSPACE, apiKey: API_KEY } }));
     mothershipApp.post('/mcp-oauth/Workspace/registerMCPResource', (req, res) => {
       mothershipRequests.push(['registerMCPResource', req.body]);
-      res.json({ resource: req.body.resource, issuer: ISSUER });
+      res.json({ resource: req.body.resource, issuer: 'https://other-auth.example.com' });
     });
     mothershipApp.post('/mcp-oauth/MCPOAuthToken/introspectMCPAccessToken', (req, res) => {
       mothershipRequests.push(['introspectMCPAccessToken', req.body]);
@@ -43,6 +67,7 @@ describe('MCP OAuth protected resource', function() {
     app.use('/studio', await studio('/studio/api', connection, {
       apiKey: API_KEY,
       changeStream: false,
+      publicUrl: WORKSPACE.baseUrl,
       _mothershipUrl: `http://127.0.0.1:${mothership.address().port}`
     }));
     await new Promise(resolve => {
@@ -99,16 +124,16 @@ describe('MCP OAuth protected resource', function() {
     const metadata = await res.json();
 
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(metadata.resource, `${baseUrl}/studio/mcp`);
-    // The authorization server reported its own issuer when Studio registered,
-    // which is not the URL Studio talks to it on.
-    assert.deepStrictEqual(metadata.authorization_servers, [ISSUER]);
+    assert.strictEqual(metadata.resource, `${WORKSPACE.baseUrl}/mcp`);
+    // The configured mothership remains the authorization server even if a
+    // registration response includes a different issuer.
+    assert.deepStrictEqual(metadata.authorization_servers, [`http://127.0.0.1:${mothership.address().port}`]);
     assert.deepStrictEqual(metadata.scopes_supported, ['mcp']);
 
     // Studio announces its MCP URL, so the authorization server can map the
     // OAuth `resource` back to this workspace.
     const registration = await waitForRequest('registerMCPResource');
-    assert.deepStrictEqual(registration, { apiKey: API_KEY, resource: `${baseUrl}/studio/mcp` });
+    assert.deepStrictEqual(registration, { apiKey: API_KEY, resource: `${WORKSPACE.baseUrl}/mcp` });
   });
 
   it('publishes the workspace MCP URL to the frontend', async function() {
@@ -170,7 +195,7 @@ describe('MCP OAuth protected resource', function() {
     assert.strictEqual(res.status, 401);
     assert.strictEqual(
       res.headers.get('www-authenticate'),
-      `Bearer resource_metadata="${baseUrl}/studio/.well-known/oauth-protected-resource"`
+      `Bearer resource_metadata="${WORKSPACE.baseUrl}/.well-known/oauth-protected-resource"`
     );
   });
 
@@ -213,7 +238,7 @@ describe('MCP OAuth protected resource', function() {
     assert.deepStrictEqual(introspect[1], {
       apiKey: API_KEY,
       token: 'mcp_at_valid',
-      resource: `${baseUrl}/studio/mcp`
+      resource: `${WORKSPACE.baseUrl}/mcp`
     });
   });
 });

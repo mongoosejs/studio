@@ -13,7 +13,6 @@ declare module '@mongoosejs/studio/nest' {
     mcp?: boolean;
     readPreference?: 'primary' | 'secondaryPreferred' | 'secondary';
     publicUrl?: string;
-    authorizationServerUrl?: string;
     [key: string]: any;
   }
 

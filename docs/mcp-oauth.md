@@ -84,8 +84,8 @@ They can only narrow what the host application already allows: `maxTimeMS` is ca
 
 ## Configuration
 
-The Studio side needs a Pro API key and needs to know its own externally reachable URL, since the resource identifier is that URL.
-Studio derives it from `X-Forwarded-Proto` and `X-Forwarded-Host`, or you can set it explicitly:
+The Mongoose Studio side needs a Pro API key and its own externally reachable URL, since the resource identifier is that URL.
+Set `publicUrl` to the URL where Mongoose Studio is mounted:
 
 ```javascript
 app.use('/studio', await studio('/studio/api', mongoose, {
@@ -96,11 +96,10 @@ app.use('/studio', await studio('/studio/api', mongoose, {
 
 Pass `mcp: false` to serve Studio without an MCP endpoint at all.
 Neither the endpoint nor its protected resource metadata is then mounted, so there is nothing for an MCP client to discover.
+Without an API key, the MCP endpoint follows the normal localhost or `bindIp` restrictions and does not mount OAuth protected resource metadata.
 
-Studio registers that URL with the authorization server the first time a client asks for its protected resource metadata, which is how an OAuth `resource` parameter is mapped back to a workspace.
-That registration response also reports the authorization server's own issuer identifier, which Studio then advertises in `authorization_servers`.
-So the issuer has one source of truth: the `MCP_OAUTH_ISSUER` the mothership runs with.
-Set `authorizationServerUrl` to override it, which is worth doing when Studio reaches its mothership on a different URL than MCP clients do.
+Mongoose Studio registers that URL with the authorization server the first time a client asks for its protected resource metadata, which is how an OAuth `resource` parameter is mapped back to a workspace.
+It advertises the configured mothership's origin in `authorization_servers`, keeping authentication with the same service Mongoose Studio already uses.
 
 Browser based MCP clients, claude.ai among them, run discovery from the page rather than from a server.
 Studio therefore serves the MCP endpoint and its metadata with CORS, and exposes `WWW-Authenticate` via `Access-Control-Expose-Headers`.

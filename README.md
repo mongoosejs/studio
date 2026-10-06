@@ -68,19 +68,14 @@ With a Pro API key, `/studio/mcp` is also an OAuth 2.1 protected resource, so MC
 Point the client at your `/studio/mcp` URL and it will discover the Mongoose Studio authorization server, walk the user through signing in and approving access, and receive a short-lived access token.
 Users review and revoke these connections from their Mongoose Studio account page, and the access an AI client gets can never exceed the access the user who approved it already has.
 
-Studio advertises itself to MCP clients using its externally reachable URL.
-Set `publicUrl` when Studio sits behind a proxy that does not send `X-Forwarded-Proto` and `X-Forwarded-Host`:
+Mongoose Studio advertises itself to MCP clients using its externally reachable URL.
+When MCP and a Pro API key are enabled, set `publicUrl` to the URL where Mongoose Studio is mounted:
 
 ```javascript
 opts.publicUrl = 'https://app.example.com/studio';
 ```
 
-Studio finds the authorization server through the mothership it is already configured to use, so this needs no configuration against the hosted mothership.
-When running your own mothership on a URL that differs from the one Studio calls it on, for example behind a tunnel during development, name its issuer explicitly:
-
-```javascript
-opts.authorizationServerUrl = 'https://mothership.example.com';
-```
+Mongoose Studio finds the authorization server through the mothership it is already configured to use, so it needs no separate authorization server configuration.
 
 See `docs/mcp-oauth.md` for how the flow and the delegated access policy work.
 

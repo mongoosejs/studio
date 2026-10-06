@@ -12,10 +12,8 @@ declare module '@mongoosejs/studio' {
       /** Serve the MCP endpoint at `<mount>/mcp`. Defaults to true. */
       mcp?: boolean;
       readPreference?: 'primary' | 'secondaryPreferred' | 'secondary';
-      /** Public base URL Studio is mounted on, used as the MCP OAuth resource identifier. */
+      /** Public base URL Mongoose Studio is mounted on. Required when MCP and apiKey are enabled. */
       publicUrl?: string;
-      /** Issuer URL of the MCP OAuth authorization server. Defaults to the Mongoose Studio mothership. */
-      authorizationServerUrl?: string;
     }
   ) => Promise<RequestHandler>;
 
