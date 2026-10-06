@@ -4,7 +4,8 @@ const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const createSandbox = require('../../sandbox/createSandbox');
 const mongoose = require('mongoose');
-const omitNullish = require('../../helpers/omitNullish');
+const readOperationOptions = require('../../helpers/readOperationOptions');
+const operationOptions = require('../../helpers/operationOptions');
 
 const ExecuteScriptParams = new Archetype({
   initiatedById: {
@@ -22,6 +23,13 @@ const ExecuteScriptParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
+  },
+  readPreference: {
+    $type: 'string',
+    $enum: ['secondary', 'secondaryPreferred', 'primary']
   }
 }).compile('ExecuteScriptParams');
 
@@ -32,18 +40,18 @@ module.exports = ({ db, studioConnection, options }) => async function executeSc
 
   await authorize('ChatMessage.executeScript', roles);
 
-  const operationOptions = omitNullish({ maxTimeMS: options?.maxTimeMS });
-  const chatMessage = await ChatMessage.findById(chatMessageId).setOptions(operationOptions);
+  const dbOptions = operationOptions(options, params);
+  const chatMessage = await ChatMessage.findById(chatMessageId).setOptions(dbOptions);
   if (!chatMessage) {
     throw new Error('Chat message not found');
   }
-  const chatThread = await ChatThread.findById(chatMessage.chatThreadId).setOptions(operationOptions).orFail();
+  const chatThread = await ChatThread.findById(chatMessage.chatThreadId).setOptions(dbOptions).orFail();
 
   if (initiatedById && chatThread.userId?.toString() !== initiatedById.toString()) {
     throw new Error('Unauthorized');
   }
 
-  const sandbox = createSandbox({ db, maxTimeMS: options?.maxTimeMS });
+  const sandbox = createSandbox(db, { ...readOperationOptions(options, params) });
 
   let output;
   let error;
@@ -76,7 +84,7 @@ module.exports = ({ db, studioConnection, options }) => async function executeSc
           dryRun: !!dryRun
         }
       }
-    ).setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+    ).setOptions(operationOptions(options, params));
 
     throw new Error(`Script execution failed: ${error}`);
   } finally {

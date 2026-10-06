@@ -5,15 +5,16 @@ const { toNetlifyFunction } = require('extrovert');
 const { defaultMothershipURL } = require('../constants');
 
 module.exports = function netlify(conn, options) {
-  const backend = Backend(conn, options?.studioConnection, options);
-  const mothershipUrl = options?._mothershipUrl || defaultMothershipURL;
+  options = { ...options };
+  const backend = Backend(conn, options.studioConnection, options);
+  const mothershipUrl = options._mothershipUrl || defaultMothershipURL;
 
   let workspace = null;
 
   return toNetlifyFunction(async function wrappedNetlifyFunction(params) {
     const actionName = params?.action;
     const authorization = params?.authorization;
-    if (options?.apiKey) {
+    if (options.apiKey) {
       if (!authorization) {
         throw new Error('Not authorized');
       }
@@ -36,6 +37,7 @@ module.exports = function netlify(conn, options) {
             return response;
           })
           .then(res => res.json()));
+        options.workspace = workspace;
       }
 
       const { user, roles } = await fetch(`${mothershipUrl}/me?`, {

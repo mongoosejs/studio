@@ -32,9 +32,12 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
   }
 
   const { apiKey, ...workspaceData } = workspace || {};
+  const workspaceBaseUrl = workspace?.baseUrl?.replace(/\/+$/, '');
   const config = {
     baseURL: apiUrl,
     isLambda,
+    mcp: options?.mcp !== false,
+    mcpUrl: workspaceBaseUrl ? `${workspaceBaseUrl}/mcp` : null,
     mothershipUrl: apiKey ? mothershipUrl : null,
     workspace: workspaceData
   };

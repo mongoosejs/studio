@@ -3,7 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const mongoose = require('mongoose');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const ToggleAgentModeParams = new Archetype({
   chatThreadId: {
@@ -17,6 +17,9 @@ const ToggleAgentModeParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
   }
 }).compile('ToggleAgentModeParams');
 
@@ -27,7 +30,7 @@ module.exports = ({ studioConnection, options }) => async function toggleAgentMo
   await authorize('ChatThread.toggleAgentMode', roles);
 
   const chatThread = await ChatThread.findById(chatThreadId).
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    setOptions(operationOptions(options, params)).
     orFail();
   if (initiatedById != null && chatThread.userId?.toString() !== initiatedById.toString()) {
     throw new Error('Not authorized');

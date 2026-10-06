@@ -4,7 +4,8 @@ const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const createSandbox = require('../../sandbox/createSandbox');
 const mongoose = require('mongoose');
-const omitNullish = require('../../helpers/omitNullish');
+const readOperationOptions = require('../../helpers/readOperationOptions');
+const operationOptions = require('../../helpers/operationOptions');
 const { defaultMothershipURL } = require('../../../constants');
 
 const GetDashboardParams = new Archetype({
@@ -26,6 +27,13 @@ const GetDashboardParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
+  },
+  readPreference: {
+    $type: 'string',
+    $enum: ['secondary', 'secondaryPreferred', 'primary']
   }
 }).compile('GetDashboardParams');
 
@@ -37,11 +45,12 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
 
   await authorize('Dashboard.getDashboard', roles);
 
+  const dashboardOptions = operationOptions(options, params);
   const dashboard = await Dashboard.findOne({ _id: dashboardId }).
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+    setOptions(dashboardOptions);
   if (evaluate) {
     let result = null;
-    const sandbox = createSandbox({ db, maxTimeMS: options?.maxTimeMS });
+    const sandbox = createSandbox(db, { ...readOperationOptions(options, params) });
     const startExec = startDashboardEvaluate(DashboardResult, dashboardId, $workspaceId, userId);
     startExec.catch(() => {}); // Avoid unhandled promise rejections - we will handle this error later.
     try {
@@ -59,7 +68,7 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
           null,
           { message: error.message },
           'failed',
-          options
+          dashboardOptions
         );
       });
       return { dashboard, dashboardResult, error: { message: error.message } };
@@ -83,7 +92,7 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
           result,
           undefined,
           'completed',
-          options
+          dashboardOptions
         );
       });
 
@@ -98,15 +107,15 @@ module.exports = ({ db, studioConnection, options }) => async function getDashbo
       $workspaceId,
       authorization,
       mothershipUrl,
-      options
+      dashboardOptions
     );
     return { dashboard, dashboardResults };
   }
 };
 
-async function completeDashboardEvaluate(Dashboard, DashboardResult, dashboardResultId, result, error, status, options) {
+async function completeDashboardEvaluate(Dashboard, DashboardResult, dashboardResultId, result, error, status, dashboardOptions) {
   const dashboardResult = await DashboardResult.findById(dashboardResultId).
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    setOptions(dashboardOptions).
     orFail();
   const finishedEvaluatingAt = new Date();
   dashboardResult.finishedEvaluatingAt = finishedEvaluatingAt;
@@ -115,7 +124,7 @@ async function completeDashboardEvaluate(Dashboard, DashboardResult, dashboardRe
   dashboardResult.status = status;
   await dashboardResult.save();
   await Dashboard.updateOne({ _id: dashboardResult.dashboardId }, { $set: { lastEvaluatedAt: finishedEvaluatingAt } }).
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+    setOptions(dashboardOptions);
   return { dashboardResult };
 }
 
@@ -131,7 +140,7 @@ async function startDashboardEvaluate(DashboardResult, dashboardId, workspaceId,
   return { dashboardResult };
 }
 
-async function getDashboardResults(DashboardResult, dashboardId, workspaceId, authorization, mothershipUrl, options) {
+async function getDashboardResults(DashboardResult, dashboardId, workspaceId, authorization, mothershipUrl, dashboardOptions) {
   const filter = { dashboardId };
   if (workspaceId != null) {
     filter.workspaceId = workspaceId;
@@ -141,7 +150,7 @@ async function getDashboardResults(DashboardResult, dashboardId, workspaceId, au
     DashboardResult.find(filter).
       sort({ _id: -1 }).
       limit(10).
-      setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })),
+      setOptions(dashboardOptions),
     getMothershipDashboardResults(dashboardId, workspaceId, authorization, mothershipUrl)
   ]);
 
@@ -212,3 +221,6 @@ function addDocumentSchemaPaths(result) {
   }
   result.$document.schemaPaths = schemaPaths;
 }
+
+module.exports.paramsType = GetDashboardParams;
+module.exports.tags = ['readOnly'];

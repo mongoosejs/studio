@@ -2,13 +2,16 @@
 
 const Archetype = require('archetype');
 const escape = require('regexp.escape');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const GetTaskOverviewParams = new Archetype({
   start: { $type: Date },
   end: { $type: Date },
   status: { $type: 'string' },
-  name: { $type: 'string' }
+  name: { $type: 'string' },
+  maxTimeMS: {
+    $type: 'number'
+  }
 }).compile('GetTaskOverviewParams');
 
 /** Statuses shown on the Task overview page. */
@@ -94,7 +97,7 @@ module.exports = ({ db, options }) => async function getTaskOverview(params) {
     }
   ];
 
-  const [result] = await Task.aggregate(pipeline).option(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+  const [result] = await Task.aggregate(pipeline).option(operationOptions(options, params));
 
   return {
     statusCounts: result.statusCounts?.[0] ?? {},

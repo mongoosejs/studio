@@ -62,3 +62,6 @@ const systemPrompt = `
 
   Return only the updated document body as a JavaScript object literal. Do not use Markdown or code fences.
 `.trim();
+
+module.exports.paramsType = CreateChatMessageParams;
+module.exports.tags = ['readOnly'];

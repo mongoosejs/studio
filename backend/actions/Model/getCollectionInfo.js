@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const readOperationOptions = require('../../helpers/readOperationOptions');
 
 const GetCollectionInfoParams = new Archetype({
   model: {
@@ -11,6 +11,13 @@ const GetCollectionInfoParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
+  },
+  readPreference: {
+    $type: 'string',
+    $enum: ['secondary', 'secondaryPreferred', 'primary']
   }
 }).compile('GetCollectionInfoParams');
 
@@ -24,9 +31,9 @@ module.exports = ({ db, options }) => async function getCollectionInfo(params) {
     throw new Error(`Model ${model} not found`);
   }
 
-  const operationOptions = omitNullish({ maxTimeMS: options?.maxTimeMS });
+  const dbOptions = readOperationOptions(options, params);
   const [collectionOptions, stats] = await Promise.all([
-    Model.collection.options(operationOptions),
+    Model.collection.options(dbOptions),
     Model.aggregate([
       {
         $collStats: {
@@ -34,7 +41,7 @@ module.exports = ({ db, options }) => async function getCollectionInfo(params) {
           count: {}
         }
       }
-    ]).option(operationOptions).then(res => res[0] ?? {})
+    ]).option(dbOptions).then(res => res[0] ?? {})
   ]);
 
   return {
@@ -49,3 +56,6 @@ module.exports = ({ db, options }) => async function getCollectionInfo(params) {
     }
   };
 };
+
+module.exports.paramsType = GetCollectionInfoParams;
+module.exports.tags = ['readOnly'];

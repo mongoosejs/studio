@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const readOperationOptions = require('../../helpers/readOperationOptions');
 const validateDocumentWithTimeout = require('../../helpers/validateDocumentWithTimeout');
 
 const ValidateDocumentParams = new Archetype({
@@ -16,6 +16,13 @@ const ValidateDocumentParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
+  },
+  readPreference: {
+    $type: 'string',
+    $enum: ['secondary', 'secondaryPreferred', 'primary']
   }
 }).compile('ValidateDocumentParams');
 
@@ -30,9 +37,12 @@ module.exports = ({ db, options }) => async function validateDocument(params) {
   }
 
   const doc = await Model.findById(documentId).
-    setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
+    setOptions(readOperationOptions(options, { sanitizeFilter: true })).
     orFail();
   return {
     result: await validateDocumentWithTimeout(doc)
   };
 };
+
+module.exports.paramsType = ValidateDocumentParams;
+module.exports.tags = ['readOnly'];

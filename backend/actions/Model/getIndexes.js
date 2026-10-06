@@ -35,3 +35,6 @@ module.exports = ({ db }) => async function getIndexes(params) {
     diffIndexes
   };
 };
+
+module.exports.paramsType = GetDocumentsParams;
+module.exports.tags = ['readOnly'];

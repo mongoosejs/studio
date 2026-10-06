@@ -4,9 +4,10 @@ const Backend = require('./');
 const { defaultMothershipURL } = require('../constants');
 
 module.exports = function next(conn, options) {
-  const backend = Backend(conn, options?.studioConnection, options);
+  options = { ...options };
+  const backend = Backend(conn, options.studioConnection, options);
 
-  const mothershipUrl = options?._mothershipUrl || defaultMothershipURL;
+  const mothershipUrl = options._mothershipUrl || defaultMothershipURL;
   let workspace = null;
 
   return async function wrappedNextJSFunction(req, res) {
@@ -14,7 +15,7 @@ module.exports = function next(conn, options) {
     const actionName = params?.action;
 
     const authorization = params?.authorization;
-    if (options?.apiKey) {
+    if (options.apiKey) {
       if (!authorization) {
         throw new Error('Not authorized');
       }
@@ -37,6 +38,7 @@ module.exports = function next(conn, options) {
             return response;
           })
           .then(res => res.json()));
+        options.workspace = workspace;
       }
 
       const { user, roles } = await fetch(`${mothershipUrl}/me?`, {

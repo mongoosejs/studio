@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const DeleteDocumentParams = new Archetype({
   model: {
@@ -15,6 +15,9 @@ const DeleteDocumentParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
   }
 }).compile('DeleteDocumentParams');
 
@@ -31,8 +34,11 @@ module.exports = ({ db, options }) => async function DeleteDocument(params) {
 
   const doc = await Model.
     deleteOne({ _id: documentId }).
-    setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
+    setOptions(operationOptions(options, params, { sanitizeFilter: true })).
     orFail();
 
   return { doc };
 };
+
+module.exports.paramsType = DeleteDocumentParams;
+module.exports.tags = ['destructive'];

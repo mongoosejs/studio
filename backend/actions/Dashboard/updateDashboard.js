@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const UpdateDashboardParams = new Archetype({
   dashboardId: {
@@ -23,6 +23,9 @@ const UpdateDashboardParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
   }
 }).compile('UpdateDashboardParams');
 
@@ -55,7 +58,10 @@ module.exports = ({ studioConnection, options }) => async function updateDashboa
     dashboardId,
     updateObj,
     { sanitizeFilter: true, returnDocument: 'after' }
-  ).setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+  ).setOptions(operationOptions(options, params));
 
   return { doc };
 };
+
+module.exports.paramsType = UpdateDashboardParams;
+module.exports.tags = [];

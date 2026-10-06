@@ -2,7 +2,7 @@
 
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const UpdateDocumentsParams = new Archetype({
   model: {
@@ -22,6 +22,9 @@ const UpdateDocumentsParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
   }
 }).compile('UpdateDocumentsParams');
 
@@ -60,6 +63,9 @@ module.exports = ({ db, options }) => async function updateDocument(params) {
 
   const doc = await Model.
     findByIdAndUpdate(_id, updateOperation, { sanitizeFilter: true, returnDocument: 'after', overwriteImmutable: true, runValidators: false }).
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS }));
+    setOptions(operationOptions(options, params));
   return { doc };
 };
+
+module.exports.paramsType = UpdateDocumentsParams;
+module.exports.tags = [];

@@ -55,3 +55,6 @@ module.exports = ({ db }) => async function listModels(params) {
     readyState
   };
 };
+
+module.exports.paramsType = ListModelsParams;
+module.exports.tags = ['readOnly'];

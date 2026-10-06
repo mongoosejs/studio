@@ -68,6 +68,56 @@ describe('maxTimeMS option', function() {
     assert.strictEqual(connection.get('maxTimeMS'), USER_CONNECTION_MAX_TIME_MS);
   });
 
+  describe('per-request limits', function() {
+    it('uses a request limit that is lower than the configured one', async function() {
+      const operations = await captureOperations(connection, async() => {
+        await actions.Model.getDocuments({ model: 'Test', roles: ['admin'], maxTimeMS: 1000 });
+      });
+
+      assertOperationOption(operations, 'find', 'maxTimeMS', 1000);
+    });
+
+    it('caps a request limit at the configured maxTimeMS', async function() {
+      const operations = await captureOperations(connection, async() => {
+        await actions.Model.getDocuments({ model: 'Test', roles: ['admin'], maxTimeMS: MAX_TIME_MS * 10 });
+      });
+
+      assertOperationOption(operations, 'find', 'maxTimeMS', MAX_TIME_MS);
+    });
+
+    it('applies a request read preference to reads', async function() {
+      const operations = await captureOperations(connection, async() => {
+        await actions.Model.getDocuments({ model: 'Test', roles: ['admin'], readPreference: 'secondaryPreferred' });
+      });
+
+      assertOperationOption(operations, 'find', 'readPreference', 'secondaryPreferred');
+    });
+
+    it('caps script operations in the dashboard sandbox', async function() {
+      const Dashboard = studioConnection.model('__Studio_Dashboard');
+      const dashboard = await Dashboard.create({
+        title: 'per-request dashboard',
+        code: `
+          await db.models.Test.collection.findOne({}, { maxTimeMS: 99999 });
+          return { ok: true };
+        `
+      });
+
+      const operations = await captureOperations(connection, async() => {
+        await actions.Dashboard.getDashboard({
+          dashboardId: dashboard._id,
+          evaluate: true,
+          roles: ['admin'],
+          maxTimeMS: 1000,
+          readPreference: 'secondaryPreferred'
+        });
+      });
+
+      assertOperationOption(operations, 'findOne', 'maxTimeMS', 1000);
+      assertOperationOption(operations, 'findOne', 'readPreference', 'secondaryPreferred');
+    });
+  });
+
   it('overrides script maxTimeMS in dashboard sandbox operations', async function() {
     const Dashboard = studioConnection.model('__Studio_Dashboard');
     const dashboard = await Dashboard.create({
@@ -143,6 +193,15 @@ function assertOperationHasMaxTimeMS(operations, methodName) {
   assert.ok(
     operation.args.some(arg => arg?.maxTimeMS === MAX_TIME_MS),
     `Expected ${methodName} to use maxTimeMS=${MAX_TIME_MS}: ${JSON.stringify(operation.args)}`
+  );
+}
+
+function assertOperationOption(operations, methodName, option, expected) {
+  const operation = operations.find(operation => operation.methodName === methodName);
+  assert.ok(operation, `Expected a ${methodName} operation`);
+  assert.ok(
+    operation.args.some(arg => arg?.[option] === expected),
+    `Expected ${methodName} to use ${option}=${expected}: ${JSON.stringify(operation.args)}`
   );
 }
 

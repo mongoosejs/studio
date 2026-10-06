@@ -27,3 +27,6 @@ module.exports = ({ db }) => async function dropCollection(params) {
 
   return { ok: true };
 };
+
+module.exports.paramsType = DropCollectionParams;
+module.exports.tags = ['destructive'];

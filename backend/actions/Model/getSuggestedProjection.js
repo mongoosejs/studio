@@ -31,3 +31,6 @@ module.exports = ({ db }) => async function getSuggestedProjectionAction(params)
 
   return { suggestedFields };
 };
+
+module.exports.paramsType = GetSuggestedProjectionParams;
+module.exports.tags = ['readOnly'];

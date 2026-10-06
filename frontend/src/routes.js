@@ -70,6 +70,14 @@ module.exports = {
       }
     },
     {
+      path: '/mcp',
+      name: 'mcp',
+      component: 'mcp',
+      meta: {
+        authorized: true
+      }
+    },
+    {
       path: '/tasks',
       name: 'tasks',
       component: 'tasks',
@@ -105,6 +113,14 @@ module.exports = {
       path: '/chat/:threadId',
       name: 'chat',
       component: 'chat',
+      meta: {
+        authorized: true
+      }
+    },
+    {
+      path: '/script/:scriptId',
+      name: 'script',
+      component: 'script',
       meta: {
         authorized: true
       }

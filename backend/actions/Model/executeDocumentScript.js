@@ -3,7 +3,8 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const createSandbox = require('../../sandbox/createSandbox');
-const omitNullish = require('../../helpers/omitNullish');
+const readOperationOptions = require('../../helpers/readOperationOptions');
+const operationOptions = require('../../helpers/operationOptions');
 
 const ExecuteDocumentScriptParams = new Archetype({
   model: {
@@ -20,6 +21,13 @@ const ExecuteDocumentScriptParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
+  },
+  readPreference: {
+    $type: 'string',
+    $enum: ['secondary', 'secondaryPreferred', 'primary']
   }
 }).compile('ExecuteDocumentScriptParams');
 
@@ -32,12 +40,12 @@ module.exports = ({ db, options }) => async function executeDocumentScript(param
     throw new Error(`Model ${model} not found`);
   }
 
-  const sandbox = createSandbox({ db, maxTimeMS: options?.maxTimeMS });
+  const sandbox = createSandbox(db, { ...readOperationOptions(options, params) });
 
   try {
     const Model = sandbox.db.models[model];
     const doc = await Model.findById(documentId).
-      setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
+      setOptions(operationOptions(options, params, { sanitizeFilter: true })).
       orFail();
     sandbox.context.doc = doc;
 
@@ -55,3 +63,6 @@ module.exports = ({ db, options }) => async function executeDocumentScript(param
     }
   }
 };
+
+module.exports.paramsType = ExecuteDocumentScriptParams;
+module.exports.tags = [];

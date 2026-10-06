@@ -3,7 +3,7 @@
 const Archetype = require('archetype');
 const authorize = require('../../authorize');
 const mongoose = require('mongoose');
-const omitNullish = require('../../helpers/omitNullish');
+const operationOptions = require('../../helpers/operationOptions');
 
 const ShareChatThreadParams = new Archetype({
   chatThreadId: {
@@ -20,6 +20,9 @@ const ShareChatThreadParams = new Archetype({
   },
   $workspaceId: {
     $type: mongoose.Types.ObjectId
+  },
+  maxTimeMS: {
+    $type: 'number'
   }
 }).compile('ShareChatThreadParams');
 
@@ -30,7 +33,7 @@ module.exports = ({ studioConnection, options }) => async function shareChatThre
   await authorize('ChatThread.shareChatThread', roles);
 
   const chatThread = await ChatThread.findById(chatThreadId).
-    setOptions(omitNullish({ maxTimeMS: options?.maxTimeMS })).
+    setOptions(operationOptions(options, params)).
     orFail();
   if (initiatedById != null && chatThread.userId?.toString() !== initiatedById.toString()) {
     throw new Error('Not authorized');

@@ -14,6 +14,7 @@ const actionsToRequiredRoles = {
   'Dashboard.getDashboards': ['owner', 'admin', 'member', 'readonly', 'dashboards'],
   'Dashboard.updateDashboard': ['owner', 'admin', 'member'],
   'Model.createDocument': ['owner', 'admin', 'member'],
+  'Model.createChatMessage': ['owner', 'admin', 'member'],
   'Model.analyzeSchema': ['owner', 'admin', 'member', 'readonly'],
   'Model.updateDocument': ['owner', 'admin', 'member'],
   'Model.validateDocument': ['owner', 'admin', 'member', 'readonly'],
@@ -24,6 +25,7 @@ const actionsToRequiredRoles = {
   'Model.executeDocumentScript': ['owner', 'admin', 'member'],
   'Model.exportQueryResults': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocument': ['owner', 'admin', 'member', 'readonly'],
+  'Model.getCollectionInfo': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocuments': ['owner', 'admin', 'member', 'readonly'],
   'Model.getDocumentsStream': ['owner', 'admin', 'member', 'readonly'],
   'Model.getSuggestedProjection': ['owner', 'admin', 'member', 'readonly'],
@@ -32,7 +34,10 @@ const actionsToRequiredRoles = {
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
   'Model.streamDocumentChanges': ['owner', 'admin', 'member', 'readonly'],
   'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly'],
-  'Model.updateDocuments': ['owner', 'admin', 'member']
+  'Model.updateDocuments': ['owner', 'admin', 'member'],
+  'Script.createScript': ['owner', 'admin', 'member', 'readonly'],
+  'Script.executeScript': ['owner', 'admin', 'member', 'readonly'],
+  'Script.getScript': ['owner', 'admin', 'member', 'readonly']
 };
 
 module.exports = function authorize(action, roles) {

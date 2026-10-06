@@ -10,6 +10,8 @@ declare module '@mongoosejs/studio/vercel' {
     changeStream?: boolean;
     /** Maximum execution time in milliseconds for MongoDB operations. */
     maxTimeMS?: number;
+    /** Read preference for Studio reads against the application database. */
+    readPreference?: 'primary' | 'secondaryPreferred' | 'secondary';
     /** Chat model name, e.g. 'gpt-4o-mini' */
     model?: string;
     openAIAPIKey?: string;

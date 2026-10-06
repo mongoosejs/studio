@@ -51,8 +51,10 @@ after(async function() {
   }
 });
 
-const actions = Backend(connection, studioConnection, { changeStream: true });
+const options = { changeStream: true };
+const actions = Backend(connection, studioConnection, options);
 
 exports.actions = actions;
 exports.connection = connection;
+exports.options = options;
 exports.studioConnection = studioConnection;

@@ -13,6 +13,7 @@ module.exports = defineConfig([
       sourceType: 'commonjs',
       globals: {
         fetch: true,
+        URL: true,
         setTimeout: true,
         process: true,
         console: true,

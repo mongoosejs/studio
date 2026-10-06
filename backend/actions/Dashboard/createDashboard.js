@@ -37,3 +37,6 @@ module.exports = ({ studioConnection }) => async function createDashboard(params
 
   return { dashboard };
 };
+
+module.exports.paramsType = CreateDashboardParams;
+module.exports.tags = [];

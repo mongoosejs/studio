@@ -4,7 +4,7 @@ const Archetype = require('archetype');
 const getRefFromSchemaType = require('../../helpers/getRefFromSchemaType');
 const removeSpecifiedPaths = require('../../helpers/removeSpecifiedPaths');
 const authorize = require('../../authorize');
-const omitNullish = require('../../helpers/omitNullish');
+const readOperationOptions = require('../../helpers/readOperationOptions');
 
 const GetDocumentParams = new Archetype({
   model: {
@@ -17,6 +17,13 @@ const GetDocumentParams = new Archetype({
   },
   roles: {
     $type: ['string']
+  },
+  maxTimeMS: {
+    $type: 'number'
+  },
+  readPreference: {
+    $type: 'string',
+    $enum: ['secondary', 'secondaryPreferred', 'primary']
   }
 }).compile('GetDocumentParams');
 
@@ -32,7 +39,7 @@ module.exports = ({ db, options }) => async function getDocument(params) {
 
   const doc = await Model.
     findById(documentId).
-    setOptions(omitNullish({ sanitizeFilter: true, maxTimeMS: options?.maxTimeMS })).
+    setOptions(readOperationOptions(options, { sanitizeFilter: true })).
     orFail();
   const schemaPaths = {};
   for (const path of Object.keys(Model.schema.paths)) {
@@ -50,3 +57,6 @@ module.exports = ({ db, options }) => async function getDocument(params) {
 
   return { doc: doc.toJSON({ virtuals: true, getters: false, transform: false }), schemaPaths, virtualPaths };
 };
+
+module.exports.paramsType = GetDocumentParams;
+module.exports.tags = ['readOnly'];
