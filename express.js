@@ -17,7 +17,8 @@ const MCP_ACCESS_TOKEN_PREFIX = 'mcp_at_';
 module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) {
   const router = express.Router();
   options = options ? { changeStream: true, ...options } : { changeStream: true };
-  if (options.mcp !== false && options.apiKey && !options.publicUrl) {
+  options.mcp = options.mcp ?? !options.apiKey;
+  if (options.mcp && options.apiKey && !options.publicUrl) {
     throw new Error('Mongoose Studio requires the publicUrl option when MCP is enabled with an API key');
   }
   const hasBindIpOption = Object.prototype.hasOwnProperty.call(options, 'bindIp');
@@ -124,10 +125,10 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   // issued by the mothership. Mongoose Studio is the protected resource: it publishes the
   // metadata that points clients at the authorization server, and resolves each
   // token to its current grant before handling the request.
-  const mcpEnabled = options.mcp !== false;
+  const mcpEnabled = options.mcp;
   const registeredMCPResources = new Set();
   const mcpAuthorizationServerUrl = new URL(mothershipUrl).origin;
-  const mcpResource = workspace ? canonicalize(`${options.publicUrl.replace(/\/+$/, '')}/mcp`) : null;
+  const mcpResource = mcpEnabled && workspace ? canonicalize(`${options.publicUrl.replace(/\/+$/, '')}/mcp`) : null;
 
   async function registerMCPResource(resource) {
     if (registeredMCPResources.has(resource)) {

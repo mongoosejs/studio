@@ -10,6 +10,7 @@ declare module '@mongoosejs/studio/nest' {
     apiKey?: string;
     bindIp?: string | string[] | null;
     maxTimeMS?: number;
+    /** Serve the MCP endpoint. Defaults to true without apiKey and false with apiKey. */
     mcp?: boolean;
     readPreference?: 'primary' | 'secondaryPreferred' | 'secondary';
     publicUrl?: string;

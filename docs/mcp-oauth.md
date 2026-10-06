@@ -84,17 +84,18 @@ They can only narrow what the host application already allows: `maxTimeMS` is ca
 
 ## Configuration
 
-The Mongoose Studio side needs a Pro API key and its own externally reachable URL, since the resource identifier is that URL.
-Set `publicUrl` to the URL where Mongoose Studio is mounted:
+MCP is disabled by default when Mongoose Studio has a Pro API key.
+To enable it, set `mcp: true` and set `publicUrl` to the externally reachable URL where Mongoose Studio is mounted:
 
 ```javascript
 app.use('/studio', await studio('/studio/api', mongoose, {
   apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
+  mcp: true,
   publicUrl: 'https://app.example.com/studio'
 }));
 ```
 
-Pass `mcp: false` to serve Studio without an MCP endpoint at all.
+Pass `mcp: false` to serve Mongoose Studio without an MCP endpoint at all.
 Neither the endpoint nor its protected resource metadata is then mounted, so there is nothing for an MCP client to discover.
 Without an API key, the MCP endpoint follows the normal localhost or `bindIp` restrictions and does not mount OAuth protected resource metadata.
 
@@ -102,5 +103,5 @@ Mongoose Studio registers that URL with the authorization server the first time 
 It advertises the configured mothership's origin in `authorization_servers`, keeping authentication with the same service Mongoose Studio already uses.
 
 Browser based MCP clients, claude.ai among them, run discovery from the page rather than from a server.
-Studio therefore serves the MCP endpoint and its metadata with CORS, and exposes `WWW-Authenticate` via `Access-Control-Expose-Headers`.
+Mongoose Studio therefore serves the MCP endpoint and its metadata with CORS, and exposes `WWW-Authenticate` via `Access-Control-Expose-Headers`.
 Without that last header a browser hides the challenge from the client, and the client cannot find the authorization server at all.

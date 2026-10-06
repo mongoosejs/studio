@@ -12,7 +12,7 @@ const USER = { _id: '0123456789abcdef01234568', name: 'Test User', email: 'test@
 describe('MCP OAuth configuration', function() {
   it('requires publicUrl when MCP and an API key are enabled', async function() {
     await assert.rejects(
-      () => studio('/studio/api', connection, { apiKey: API_KEY, changeStream: false }),
+      () => studio('/studio/api', connection, { apiKey: API_KEY, changeStream: false, mcp: true }),
       /requires the publicUrl option/
     );
   });
@@ -67,6 +67,7 @@ describe('MCP OAuth protected resource', function() {
     app.use('/studio', await studio('/studio/api', connection, {
       apiKey: API_KEY,
       changeStream: false,
+      mcp: true,
       publicUrl: WORKSPACE.baseUrl,
       _mothershipUrl: `http://127.0.0.1:${mothership.address().port}`
     }));
@@ -118,6 +119,37 @@ describe('MCP OAuth protected resource', function() {
     }
     throw new Error(`Timed out waiting for a ${name} request`);
   }
+
+  it('disables MCP by default when an API key is set', async function() {
+    const app = express();
+    app.use('/studio', await studio('/studio/api', connection, {
+      apiKey: API_KEY,
+      changeStream: false,
+      _mothershipUrl: `http://127.0.0.1:${mothership.address().port}`
+    }));
+    const disabledServer = await new Promise(resolve => {
+      const listeningServer = app.listen(0, '127.0.0.1', () => resolve(listeningServer));
+    });
+    const disabledBaseUrl = `http://127.0.0.1:${disabledServer.address().port}`;
+
+    try {
+      const [mcpResponse, metadataResponse, configResponse] = await Promise.all([
+        fetch(`${disabledBaseUrl}/studio/mcp`, { method: 'POST' }),
+        fetch(`${disabledBaseUrl}/studio/.well-known/oauth-protected-resource`),
+        fetch(`${disabledBaseUrl}/studio/config.js`)
+      ]);
+      const configSource = await configResponse.text();
+      const config = JSON.parse(configSource.match(/window\.MONGOOSE_STUDIO_CONFIG = ([\s\S]+);$/)[1]);
+
+      assert.strictEqual(mcpResponse.status, 404);
+      assert.strictEqual(metadataResponse.status, 404);
+      assert.strictEqual(config.mcp, false);
+      assert.strictEqual(config.mcpUrl, null);
+    } finally {
+      disabledServer.closeAllConnections();
+      await new Promise(resolve => disabledServer.close(resolve));
+    }
+  });
 
   it('publishes protected resource metadata pointing at the authorization server', async function() {
     const res = await fetch(`${baseUrl}/studio/.well-known/oauth-protected-resource`);
