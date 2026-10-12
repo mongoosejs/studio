@@ -24,7 +24,7 @@ It publishes metadata that tells clients where the authorization server is, and 
 8. On every MCP request, Studio asks the authorization server to resolve the access token, and runs the request under the policy it returns.
 
 Authorization Code with PKCE (`S256`) is required, and there are no client secrets: MCP clients are public clients.
-Access tokens live 15 minutes.
+Access tokens live 24 hours.
 Refresh tokens live 30 days and rotate on every use, so a user does not have to reconnect the client regularly.
 
 ## Authorization grants
