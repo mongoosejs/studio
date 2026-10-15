@@ -8,13 +8,16 @@ module.exports = {
     mcpUrl() {
       const configuredUrl = window.MONGOOSE_STUDIO_CONFIG.mcpUrl;
       if (configuredUrl) {
-        return configuredUrl;
+        if (/^https?:\/\//i.test(configuredUrl)) {
+          return configuredUrl;
+        }
+        return new URL(configuredUrl, window.location.href).toString();
       }
 
       const url = new URL(window.location.href);
       url.hash = '';
       url.search = '';
-      url.pathname = `${url.pathname.replace(/\/+$/, '')}/mcp`;
+      url.pathname = `${url.pathname.replace(/\/index\.html$/, '').replace(/\/+$/, '')}/mcp`;
       return url.toString();
     }
   },

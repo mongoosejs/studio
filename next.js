@@ -11,14 +11,24 @@ module.exports = withMongooseStudio;
  *
  * @param {object} nextConfig - Existing Next.js config
  * @param {object} [options]
- * @param {string} [options.studioPath="/studio"] - Public base path for Studio frontend
+ * @param {string} [options.apiKey] - Mongoose Studio Pro API key, only used to pick the `mcp` default
+ * @param {boolean} [options.mcp] - Whether to show MCP in the frontend. Defaults to true without an API key, false with one.
+ * @param {string} [options.publicUrl] - Externally reachable Studio URL
  */
-function withMongooseStudio(nextConfig = {}) {
+function withMongooseStudio(nextConfig = {}, options = {}) {
   const studioPath = normalizeBasePath(nextConfig.studioPath || '/studio');
 
   try {
+    // With only frontend options, frontend() writes config.js before its first
+    // await. Copy that config together with the other static assets. Don't
+    // pass apiKey through, because that makes frontend() fetch the workspace first.
+    const frontendPromise = frontend('/api/studio', true, {
+      mcp: options.mcp ?? !options.apiKey,
+      publicUrl: options.publicUrl,
+      _mcpPath: 'mcp'
+    });
     copyStudioFrontend(studioPath);
-    frontend('/api/studio', true)
+    frontendPromise
       .then(() => console.log(`✅ Mongoose Studio: copied frontend+config to public${studioPath}`))
       .catch(err => console.error(`❌ Mongoose Studio: failed to copy frontend`, err));
   } catch (err) {
@@ -27,6 +37,27 @@ function withMongooseStudio(nextConfig = {}) {
 
   return {
     ...nextConfig,
+
+    async rewrites() {
+      const userRewrites = typeof nextConfig.rewrites === 'function'
+        ? await nextConfig.rewrites()
+        : nextConfig.rewrites || [];
+      const studioRewrites = [
+        { source: `${studioPath}/mcp`, destination: '/api/studio/mcp' },
+        {
+          source: `${studioPath}/\\.well-known/oauth-protected-resource`,
+          destination: '/api/studio/.well-known/oauth-protected-resource'
+        }
+      ];
+      if (Array.isArray(userRewrites)) {
+        return { beforeFiles: studioRewrites, afterFiles: userRewrites, fallback: [] };
+      }
+      return {
+        beforeFiles: [...studioRewrites, ...(userRewrites.beforeFiles || [])],
+        afterFiles: userRewrites.afterFiles || [],
+        fallback: userRewrites.fallback || []
+      };
+    },
 
     async redirects() {
       const userRedirects =
@@ -54,11 +85,7 @@ function normalizeBasePath(p) {
 
 /** Copies all built frontend assets into /public/{studioPath} */
 function copyStudioFrontend(studioPath) {
-  const src = path.join(
-    path.dirname(require.resolve('@mongoosejs/studio/package.json')),
-    'frontend',
-    'public'
-  );
+  const src = path.join(__dirname, 'frontend', 'public');
   const dest = path.join(process.cwd(), 'public', studioPath.replace(/^\//, ''));
 
   if (!fs.existsSync(src)) {

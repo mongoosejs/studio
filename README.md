@@ -91,27 +91,108 @@ import withMongooseStudio from '@mongoosejs/studio/next';
 export default withMongooseStudio({
   // Your Next.js config here
   reactStrictMode: true,
+}, {
+  mcp: true,
+  publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL
 });
 ```
 
-Then, add `pages/api/studio.js` to your Next.js project to host the Mongoose Studio API:
+Add `pages/api/studio/[[...studioRoute]].js` to your Next.js project to host
+both the Mongoose Studio API and MCP. If you already have
+`pages/api/studio.js`, move its handler into the new file and remove the old
+file. The optional catch-all keeps `/api/studio` working for existing Studio
+actions and also accepts `/api/studio/mcp` and the OAuth metadata path.
 
 ```javascript
+// pages/api/studio/[[...studioRoute]].js
 // Make sure to import the database connection
-import db from '../../src/db';
-import studio from '@mongoosejs/studio/backend/next';
+import db from '../../../src/db';
+import { vercelAPIRouteHandler } from '@mongoosejs/studio/vercel';
 
-const handler = studio(
+const handler = vercelAPIRouteHandler(
   db, // Mongoose connection or Mongoose global. Or null to use `import mongoose`.
   {
     apiKey: process.env.MONGOOSE_STUDIO_API_KEY, // optional
     connection: db, // Optional: Connection or Mongoose global. If omitted, will use `import mongoose`
     connectToDB: async () => { /* connection logic here */ }, // Optional: if you need to call a function to connect to the database put it here
+    mcp: true, // Also enabled by default without an API key
+    publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL // Required with an API key; e.g. https://app.example.com/studio
   }
 );
 
 export default handler;
 ```
+
+With `mcp: true`, the same API function handles Streamable HTTP
+at `/studio/mcp`. With an API key, it also serves OAuth discovery at
+`/studio/.well-known/oauth-protected-resource`. `withMongooseStudio` installs
+rewrites from those public URLs to the catch-all API route and shows
+`/studio/mcp` in the frontend. No additional API function or `mcpUrl` setting
+is needed. The rewrites are needed to keep the public URL at `/studio/mcp`;
+the catch-all file itself lives under `/api/studio`. A Pro API key is required
+for OAuth-based Vercel MCP. Without an API key, MCP is enabled by default and
+is limited to localhost unless `bindIp` is configured. Set `bindIp` to an IP
+address or an array of IP addresses to permit other clients; set it to `null`
+to allow access from any IP. The same restriction applies to Studio API actions.
+With an API key, set `publicUrl` to the externally reachable `/studio` URL. The OAuth resource
+URL is derived from it, even if the workspace's `baseUrl` differs.
+
+The handler is stateless and returns a JSON response for each POST. No Redis,
+sticky sessions, or long-lived SSE connection is needed. Tool calls still count
+against Vercel Function duration and payload limits, so set an appropriate
+`maxDuration` for longer database operations and keep results reasonably sized.
+
+### Standalone Vercel Functions
+
+If your project uses `api/studio.js` rather than Next.js, keep it for Studio
+actions and add a separate `api/studio-mcp.js` function for MCP. Next.js
+optional catch-all filenames such as `[[...studioRoute]].js` do not apply to
+standalone Vercel Functions:
+
+```javascript
+// api/studio-mcp.js
+// Make sure to import the database connection
+import db from '../../../src/db';
+const { vercelMCPRouteHandler } = require('@mongoosejs/studio/vercel');
+
+module.exports = vercelMCPRouteHandler(db, {
+  apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
+  publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL
+});
+```
+
+Set `MONGOOSE_STUDIO_PUBLIC_URL` to the externally reachable Studio URL, for
+example `https://app.example.com/studio`, when using an API key. Without an
+API key, MCP is enabled by default and follows the same localhost and `bindIp`
+restriction described above. Connect MCP clients to `/api/studio-mcp`; no
+rewrite is required.
+
+For OAuth, the protected resource metadata is generated in the Studio frontend
+by the same `frontend()` call used to write `config.js`. It registers the MCP
+resource before the returned promise resolves, so copy the frontend after
+that promise resolves. Existing `publicUrl` fallbacks can stay as they are;
+the copy source must include hidden files:
+
+```javascript
+const { execSync } = require('child_process');
+const opts = {
+  apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
+  mcp: true,
+  publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL
+};
+require('@mongoosejs/studio/frontend')('/api/studio', true, opts).then(() => {
+  execSync('mkdir -p ./public/studio && cp -r ./node_modules/@mongoosejs/studio/frontend/public/. ./public/studio/');
+});
+```
+
+The `/.` source copies hidden directories such as `.well-known`; a `/*` source
+does not. This places `public/studio/.well-known/oauth-protected-resource`
+and registers `/api/studio-mcp` with the authorization server. The metadata is
+needed only with an API key. Set `Content-Type: application/json` and
+`Access-Control-Allow-Origin: *` for that static path, as in the
+[standalone Vercel example](development/movies-vercel/vercel.json). Its
+[build script](development/movies-vercel/build.js) shows the complete asset
+copy and metadata generation sequence.
 
 ### Nest.js
 
