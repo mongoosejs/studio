@@ -21,7 +21,7 @@ module.exports = async function mongooseStudioExpressApp(apiUrl, conn, options) 
   if (options.mcp && options.apiKey && !options.publicUrl) {
     throw new Error('Mongoose Studio requires the publicUrl option when MCP is enabled with an API key');
   }
-  const hasBindIpOption = Object.prototype.hasOwnProperty.call(options, 'bindIp');
+  const hasBindIpOption = options.bindIp != null;
   const bindIp = normalizeBindIPOption(options.bindIp);
 
   const mothershipUrl = options._mothershipUrl || defaultMothershipURL;

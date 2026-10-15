@@ -7,7 +7,7 @@ const vercelMCPConfig = require('./mcpConfig');
 const { defaultMothershipURL } = require('../../constants');
 
 module.exports = function createVercelMCPHandlers(conn, options, existingBackend) {
-  if (options.mcp !== true) {
+  if (!options.mcp) {
     throw new Error('Mongoose Studio requires mcp: true for the Vercel MCP handler');
   }
   const config = options.apiKey ? vercelMCPConfig(options) : null;

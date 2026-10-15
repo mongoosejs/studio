@@ -11,7 +11,8 @@ module.exports = withMongooseStudio;
  *
  * @param {object} nextConfig - Existing Next.js config
  * @param {object} [options]
- * @param {boolean} [options.mcp] - Whether to show MCP in the frontend
+ * @param {string} [options.apiKey] - Mongoose Studio Pro API key, only used to pick the `mcp` default
+ * @param {boolean} [options.mcp] - Whether to show MCP in the frontend. Defaults to true without an API key, false with one.
  * @param {string} [options.publicUrl] - Externally reachable Studio URL
  */
 function withMongooseStudio(nextConfig = {}, options = {}) {
@@ -19,9 +20,10 @@ function withMongooseStudio(nextConfig = {}, options = {}) {
 
   try {
     // With only frontend options, frontend() writes config.js before its first
-    // await. Copy that config together with the other static assets.
+    // await. Copy that config together with the other static assets. Don't
+    // pass apiKey through, because that makes frontend() fetch the workspace first.
     const frontendPromise = frontend('/api/studio', true, {
-      mcp: options.mcp,
+      mcp: options.mcp ?? !options.apiKey,
       publicUrl: options.publicUrl,
       _mcpPath: 'mcp'
     });

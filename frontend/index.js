@@ -37,11 +37,12 @@ module.exports = async function frontend(apiUrl, isLambda, options, workspace) {
   const workspaceBaseUrl = workspace?.baseUrl?.replace(/\/+$/, '');
   const publicBaseUrl = options?.publicUrl?.replace(/\/+$/, '') || workspaceBaseUrl;
   const mcpPath = options?._mcpPath || (isLambda && options?.mcp === true ? '/api/studio-mcp' : null);
+  const mcpEnabled = options?.mcp ?? !options?.apiKey;
   const config = {
     baseURL: apiUrl,
     isLambda,
-    mcp: options?.mcp !== false,
-    mcpUrl: options?.mcp !== false
+    mcp: mcpEnabled,
+    mcpUrl: mcpEnabled
       ? mcpPath
         ? publicBaseUrl ? new URL(mcpPath, `${publicBaseUrl}/`).toString() : mcpPath
         : publicBaseUrl ? `${publicBaseUrl}/mcp` : null

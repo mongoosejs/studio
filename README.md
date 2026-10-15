@@ -151,10 +151,11 @@ standalone Vercel Functions:
 
 ```javascript
 // api/studio-mcp.js
-const mongoose = require('mongoose');
+// Make sure to import the database connection
+import db from '../../../src/db';
 const { vercelMCPRouteHandler } = require('@mongoosejs/studio/vercel');
 
-module.exports = vercelMCPRouteHandler(mongoose, {
+module.exports = vercelMCPRouteHandler(db, {
   apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
   publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL
 });
@@ -176,7 +177,7 @@ the copy source must include hidden files:
 const { execSync } = require('child_process');
 const opts = {
   apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
-  mcp: Boolean(process.env.MONGOOSE_STUDIO_API_KEY),
+  mcp: true,
   publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL
 };
 require('@mongoosejs/studio/frontend')('/api/studio', true, opts).then(() => {

@@ -5,7 +5,7 @@ const isLocalhostConnection = require('../helpers/isLocalhostConnection');
 const normalizeBindIPOption = require('../helpers/normalizeBindIPOption');
 
 module.exports = function checkVercelBindIp(options) {
-  const hasBindIpOption = Object.prototype.hasOwnProperty.call(options, 'bindIp');
+  const hasBindIpOption = options.bindIp != null;
   const bindIp = normalizeBindIPOption(options.bindIp);
 
   return function checkRequest(req, res) {
