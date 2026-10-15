@@ -1,17 +1,41 @@
 'use strict';
 
 const Backend = require('./');
+const vercelMCP = require('./vercel/vercelMCP');
+const checkVercelBindIp = require('./vercel/checkBindIp');
 const { defaultMothershipURL } = require('../constants');
 
 module.exports = function next(conn, options) {
   options = { ...options };
+  options.mcp = options.mcp ?? !options.apiKey;
+  const checkRequest = checkVercelBindIp(options);
   const backend = Backend(conn, options.studioConnection, options);
+  const mcpHandlers = options.mcp ? vercelMCP(conn, options, backend) : null;
 
   const mothershipUrl = options._mothershipUrl || defaultMothershipURL;
   let workspace = null;
 
   return async function wrappedNextJSFunction(req, res) {
+    if (!checkRequest(req, res)) {
+      return;
+    }
+
+    const route = req.query?.studioRoute;
+    if (route != null && (!Array.isArray(route) || route.length > 0)) {
+      const routePath = Array.isArray(route) ? route.join('/') : null;
+      if (routePath !== 'mcp' && routePath !== '.well-known/oauth-protected-resource') {
+        return res.status(404).json({ message: 'Not found' });
+      }
+      if (!mcpHandlers) {
+        return res.status(404).json({ message: 'Not found' });
+      }
+      return routePath === 'mcp'
+        ? mcpHandlers.endpoint(req, res)
+        : mcpHandlers.metadata(req, res);
+    }
+
     const params = { ...req.query, ...req.body, ...req.params, authorization: req.headers.authorization };
+    delete params.studioRoute;
     const actionName = params?.action;
 
     const authorization = params?.authorization;

@@ -4,6 +4,12 @@ declare module '@mongoosejs/studio/vercel' {
   export interface VercelAPIRouteHandlerOptions {
     /** Mongoose Studio Pro API key. When set, requests must be authorized. */
     apiKey?: string;
+    /** Enable /studio/mcp; defaults to true without an API key, false with one. */
+    mcp?: boolean;
+    /** Public /studio URL. Required when MCP is enabled with an API key. */
+    publicUrl?: string;
+    /** Without an API key, restrict access to these exact client IPs. Defaults to localhost; null allows any IP. */
+    bindIp?: string | string[] | null;
     /** Separate connection for Studio's own collections (dashboards, chat threads). */
     studioConnection?: Connection;
     /** Watch the connection for changes and stream them to the Studio frontend. */
@@ -40,10 +46,17 @@ declare module '@mongoosejs/studio/vercel' {
 
   /**
    * Creates a Mongoose Studio API handler for Next.js Pages Router API routes
-   * (`pages/api/studio.js`) and other Vercel-style serverless functions.
+   * (`pages/api/studio/[[...studioRoute]].js`) or standalone Vercel Studio
+   * actions (`api/studio.js`).
    * Pass `null` to use the default Mongoose global.
    */
   export function vercelAPIRouteHandler(
+    conn?: Connection | Mongoose | null,
+    options?: VercelAPIRouteHandlerOptions
+  ): (req: VercelAPIRouteHandlerRequest, res: VercelAPIRouteHandlerResponse) => Promise<any>;
+
+  /** Creates a standalone /api/studio-mcp Vercel Function handler. */
+  export function vercelMCPRouteHandler(
     conn?: Connection | Mongoose | null,
     options?: VercelAPIRouteHandlerOptions
   ): (req: VercelAPIRouteHandlerRequest, res: VercelAPIRouteHandlerResponse) => Promise<any>;
