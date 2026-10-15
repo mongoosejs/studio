@@ -2,6 +2,46 @@
 
 ## 0.7.0
 
+### MCP support for Next.js and Vercel
+
+Mongoose Studio's MCP endpoint now works on Next.js and standalone Vercel Functions, not only Express.
+MCP uses the same defaults as Express: it is enabled by default without an `apiKey`, and with an `apiKey` it requires `mcp: true` and `publicUrl` and uses OAuth.
+
+For Next.js, rename `pages/api/studio.js` to the optional catch-all route `pages/api/studio/[[...studioRoute]].js`.
+The same `vercelAPIRouteHandler()` handles Studio actions at `/api/studio`, MCP at `/api/studio/mcp`, and OAuth metadata at `/api/studio/.well-known/oauth-protected-resource`.
+`withMongooseStudio()` now accepts a second `options` argument with `mcp`, `apiKey`, and `publicUrl`, and adds rewrites so MCP clients connect to `/studio/mcp`:
+
+```javascript
+// next.config.js
+export default withMongooseStudio({ reactStrictMode: true }, {
+  mcp: true,
+  publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL
+});
+
+// pages/api/studio/[[...studioRoute]].js
+export default vercelAPIRouteHandler(db, {
+  apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
+  mcp: true,
+  publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL
+});
+```
+
+For standalone Vercel Functions, keep `api/studio.js` for Studio actions and add `api/studio-mcp.js` using the new `vercelMCPRouteHandler()`:
+
+```javascript
+// api/studio-mcp.js
+const { vercelMCPRouteHandler } = require('@mongoosejs/studio/vercel');
+
+module.exports = vercelMCPRouteHandler(mongoose, {
+  apiKey: process.env.MONGOOSE_STUDIO_API_KEY,
+  publicUrl: process.env.MONGOOSE_STUDIO_PUBLIC_URL
+});
+```
+
+With an `apiKey` and `mcp: true`, building the frontend with `frontend()` now writes the OAuth protected resource metadata to `frontend/public/.well-known/oauth-protected-resource` and registers `/api/studio-mcp` with the authorization server.
+Copy the frontend only after the `frontend()` promise resolves, and make sure the copy includes hidden directories such as `.well-known`.
+See the README for the full Vercel setup.
+
 ### Breaking: Vercel and Next.js handlers without an API key are limited to localhost
 
 `vercelAPIRouteHandler()` now applies the same `bindIp` restriction as the Express integration.
