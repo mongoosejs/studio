@@ -81,3 +81,4 @@ const systemPrompt = `
 
 module.exports.paramsType = StreamChatMessageParams;
 module.exports.tags = ['readOnly'];
+module.exports.mcp = false;

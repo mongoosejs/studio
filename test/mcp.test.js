@@ -100,6 +100,8 @@ describe('MCP', function() {
     assert.ok(!Object.hasOwn(createScript.inputSchema.properties, 'initiatedById'));
     assert.ok(!Object.hasOwn(createScript.inputSchema.properties, 'dryRun'));
     assert.ok(!tools.some(tool => tool.name === 'Script.executeScript'));
+    assert.ok(!tools.some(tool => tool.name === 'Model.createChatMessage'));
+    assert.ok(!tools.some(tool => tool.name === 'Model.streamChatMessage'));
 
     const result = await client.callTool({
       name: 'Script.createScript',

@@ -65,3 +65,4 @@ const systemPrompt = `
 
 module.exports.paramsType = CreateChatMessageParams;
 module.exports.tags = ['readOnly'];
+module.exports.mcp = false;
