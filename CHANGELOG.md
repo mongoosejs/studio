@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+* fix: Remove createChatMessage and streamChatMessage from MCP, MCP should not be using LLM chat
+
 ## 0.7.0
 
 ### MCP support for Next.js and Vercel
