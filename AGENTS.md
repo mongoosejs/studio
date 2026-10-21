@@ -27,6 +27,12 @@ Prefer safe property access directly in HTML over computed properties or methods
 
 Prefer using mustache interpolation (`{{ expr }}`) over `v-text` for rendering text values in Vue templates.
 
+## Template vs JS logic
+
+Template should own display logic, JS should own business logic including important state changes.
+For example, JS should not have methods or computed properties that return different CSS classes - that can be handled with `v-if` or `:class` in the template logic.
+But similarly, api calls and data updates should not live in templates, they should defer to the JS.
+
 ## Component API Ownership
 
 Components that present an async action must own the API request for that action. Do not emit an event to a parent solely so the parent can make the HTTP request. Emit events after the component finishes the request when the parent needs to close a modal, refresh a list, or update surrounding state.

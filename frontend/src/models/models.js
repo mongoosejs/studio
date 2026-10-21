@@ -153,8 +153,6 @@ module.exports = app => app.component('models', {
     numDocuments: null,
     numDocumentsError: null,
     documentsError: null,
-    mongoDBIndexes: [],
-    schemaIndexes: [],
     status: 'loading',
     loadingMore: false,
     loadedAllDocs: false,
@@ -811,11 +809,6 @@ module.exports = app => app.component('models', {
         });
       }
     },
-    async dropIndex(name) {
-      const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
-      this.mongoDBIndexes = mongoDBIndexes;
-      this.$toast.success('Index dropped!');
-    },
     async closeCreationModal() {
       this.shouldShowCreateModal = false;
       await this.getDocuments();
@@ -932,12 +925,9 @@ module.exports = app => app.component('models', {
         this.$refs.documentSearch.addPathFilter(path);
       }
     },
-    async openIndexModal() {
+    openIndexModal() {
       this.closeActionsMenu();
       this.shouldShowIndexModal = true;
-      const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel });
-      this.mongoDBIndexes = mongoDBIndexes;
-      this.schemaIndexes = schemaIndexes;
     },
     openAnalyzeSchemaModal() {
       this.closeActionsMenu();
@@ -1002,38 +992,6 @@ module.exports = app => app.component('models', {
       this.selectedDocuments = [];
       this.$toast.success(`Collection ${this.currentModel} dropped.`);
       await this.getDocuments();
-    },
-    isTTLIndex(index) {
-      return index != null && index.expireAfterSeconds != null;
-    },
-    formatTTL(expireAfterSeconds) {
-      if (typeof expireAfterSeconds !== 'number') {
-        return '';
-      }
-
-      let remaining = expireAfterSeconds;
-      const days = Math.floor(remaining / (24 * 60 * 60));
-      remaining = remaining % (24 * 60 * 60);
-      const hours = Math.floor(remaining / (60 * 60));
-      remaining = remaining % (60 * 60);
-      const minutes = Math.floor(remaining / 60);
-      const seconds = remaining % 60;
-
-      const parts = [];
-      if (days > 0) {
-        parts.push(`${days} day${days === 1 ? '' : 's'}`);
-      }
-      if (hours > 0) {
-        parts.push(`${hours} hour${hours === 1 ? '' : 's'}`);
-      }
-      if (minutes > 0) {
-        parts.push(`${minutes} minute${minutes === 1 ? '' : 's'}`);
-      }
-      if (seconds > 0 || parts.length === 0) {
-        parts.push(`${seconds} second${seconds === 1 ? '' : 's'}`);
-      }
-
-      return parts.join(', ');
     },
     formatCollectionSize(size) {
       if (typeof size !== 'number') {

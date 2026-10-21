@@ -551,29 +551,10 @@
   </modal>
   <modal v-if="shouldShowIndexModal">
     <template v-slot:body>
-      <div class="modal-exit" @click="shouldShowIndexModal = false">&times;</div>
-      <div class="text-xl font-bold mb-2">Indexes</div>
-      <div v-for="index in mongoDBIndexes" class="w-full flex items-center">
-        <div class="grow shrink text-left flex justify-between items-center" v-if="index.name != '_id_'">
-          <div>
-            <div class="font-bold flex items-center gap-2">
-              <div>{{ index.name }}</div>
-              <div v-if="isTTLIndex(index)" class="rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-semibold text-primary">
-                TTL: {{ formatTTL(index.expireAfterSeconds) }}
-              </div>
-            </div>
-            <div class="text-sm font-mono">{{ JSON.stringify(index.key) }}</div>
-          </div>
-          <div>
-            <async-button
-              type="button"
-              @click="dropIndex(index.name)"
-              class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
-              Drop
-            </async-button>
-          </div>
-        </div>
-      </div>
+      <index-list
+        :current-model="currentModel"
+        @close="shouldShowIndexModal = false"
+      ></index-list>
     </template>
   </modal>
   <modal v-if="shouldShowAnalyzeSchemaModal" containerClass="md:!w-[70vw]">
