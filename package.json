@@ -34,7 +34,7 @@
   },
   "peerDependencies": {
     "@nestjs/common": "10.x || 11.x",
-    "mongoose": "7.x || 8.x || ^9.0.0"
+    "mongoose": "9.x"
   },
   "peerDependenciesMeta": {
     "@nestjs/common": {
