@@ -33,6 +33,7 @@ describe('Model.createIndex()', function() {
       options: diffIndexes.toCreate[0][1],
       roles: ['admin']
     });
+    assert.strictEqual(res.indexName, 'email_1');
     assert.deepStrictEqual(res.diffIndexes.toCreate, [
       [{ createdAt: 1 }, { name: 'createdAtTTL', expireAfterSeconds: 86400 }]
     ]);
@@ -43,6 +44,7 @@ describe('Model.createIndex()', function() {
       options: res.diffIndexes.toCreate[0][1],
       roles: ['admin']
     });
+    assert.strictEqual(res.indexName, 'createdAtTTL');
     assert.deepStrictEqual(res.diffIndexes.toCreate, []);
 
     const { mongoDBIndexes, diffIndexes: diffAfterCreate } = await actions.Model.createIndex({

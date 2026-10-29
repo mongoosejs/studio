@@ -139,6 +139,15 @@ module.exports = {
             '900': '#293a51',
             '950': '#1b2536',
         }
+      },
+      keyframes: {
+        'success-fade': {
+          from: { backgroundColor: 'var(--studio-bg-success-active)' }
+        }
+      },
+      animation: {
+        /* Light green background that fades out after 6 seconds */
+        'success-fade': 'success-fade 1s ease-in 6s backwards'
       }
     }
   }

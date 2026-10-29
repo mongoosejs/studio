@@ -24,8 +24,9 @@
         <template v-for="(index, rowIndex) in mongoDBIndexes" :key="index.name">
           <tr
             class="cursor-pointer border-b border-edge hover:bg-surface-hover"
-            :class="{ 'bg-muted': expandedIndexes.has(index.name) }"
+            :class="{ 'bg-muted': expandedIndexes.has(index.name), 'animate-success-fade': createdIndexNames.has(index.name) }"
             @click="toggleIndex(index.name)"
+            @animationend.self="createdIndexNames.delete(index.name)"
           >
             <td class="px-3 py-2 align-top">
               <button
@@ -63,8 +64,14 @@
               </div>
             </td>
             <td class="px-3 py-1.5 text-right align-top" @click.stop>
+              <span v-if="createdIndexNames.has(index.name)" role="status" class="inline-flex border border-transparent px-2 py-1 text-green-600">
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
+                </svg>
+                <span class="sr-only">Index {{ index.name }} created</span>
+              </span>
               <async-button
-                v-if="index.name !== '_id_'"
+                v-else-if="index.name !== '_id_'"
                 type="button"
                 @click="dropIndex(index.name)"
                 :aria-label="'Drop index ' + index.name"

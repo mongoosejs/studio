@@ -30,11 +30,12 @@ module.exports = ({ db }) => async function createIndex(params) {
     throw new Error(`Model ${model} not found`);
   }
 
-  await Model.collection.createIndex(key, options);
+  const indexName = await Model.collection.createIndex(key, options);
 
   const mongoDBIndexes = await Model.listIndexes();
   const diffIndexes = await Model.diffIndexes({ indexOptionsToCreate: true });
   return {
+    indexName,
     mongoDBIndexes,
     diffIndexes
   };

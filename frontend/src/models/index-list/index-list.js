@@ -10,7 +10,8 @@ module.exports = app => app.component('index-list', {
   data: () => ({
     mongoDBIndexes: null,
     diffIndexes: null,
-    expandedIndexes: new Set()
+    expandedIndexes: new Set(),
+    createdIndexNames: new Set()
   }),
   async mounted() {
     const { mongoDBIndexes, diffIndexes } = await api.Model.getIndexes({ model: this.currentModel });
@@ -26,10 +27,10 @@ module.exports = app => app.component('index-list', {
       }
     },
     async createIndex(key, options) {
-      const { mongoDBIndexes, diffIndexes } = await api.Model.createIndex({ model: this.currentModel, key, options });
+      const { indexName, mongoDBIndexes, diffIndexes } = await api.Model.createIndex({ model: this.currentModel, key, options });
       this.mongoDBIndexes = mongoDBIndexes;
       this.diffIndexes = diffIndexes;
-      this.$toast.success('Index created!');
+      this.createdIndexNames.add(indexName);
     },
     async dropIndex(name) {
       const { mongoDBIndexes, diffIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
