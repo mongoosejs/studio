@@ -30,8 +30,10 @@ module.exports = ({ db }) => async function getIndexes(params) {
   await Model.collection.dropIndex(name);
 
   const mongoDBIndexes = await Model.listIndexes();
+  const diffIndexes = await Model.diffIndexes({ indexOptionsToCreate: true });
   return {
-    mongoDBIndexes
+    mongoDBIndexes,
+    diffIndexes
   };
 };
 

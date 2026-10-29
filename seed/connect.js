@@ -7,7 +7,7 @@ const uri = 'mongodb://127.0.0.1:27017/mongoose_studio_test';
 module.exports = async function connect() {
   await mongoose.connect(uri);
 
-  mongoose.model('User', new mongoose.Schema({
+  const userSchema = new mongoose.Schema({
     name: String,
     email: String,
     location: new mongoose.Schema({
@@ -26,7 +26,9 @@ module.exports = async function connect() {
     },
     createdAt: Date,
     updatedAt: Date
-  }, { collection: 'User' }));
+  }, { collection: 'User', autoIndex: false });
+  userSchema.index({ email: 1 }, { unique: true });
+  mongoose.model('User', userSchema);
 
   return mongoose.connection;
 };

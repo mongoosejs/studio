@@ -268,6 +268,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     getIndexes: function getIndexes(params) {
       return client.post('', { action: 'Model.getIndexes', ...params }).then(res => res.data);
     },
+    createIndex: function createIndex(params) {
+      return client.post('', { action: 'Model.createIndex', ...params }).then(res => res.data);
+    },
     dropIndex: function dropIndex(params) {
       return client.post('', { action: 'Model.dropIndex', ...params }).then(res => res.data);
     },
@@ -476,6 +479,9 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     getIndexes: function getIndexes(params) {
       return client.post('/Model/getIndexes', params).then(res => res.data);
+    },
+    createIndex: function createIndex(params) {
+      return client.post('/Model/createIndex', params).then(res => res.data);
     },
     dropIndex: function dropIndex(params) {
       return client.post('/Model/dropIndex', params).then(res => res.data);
