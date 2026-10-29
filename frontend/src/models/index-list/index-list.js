@@ -11,7 +11,9 @@ module.exports = app => app.component('index-list', {
     mongoDBIndexes: null,
     diffIndexes: null,
     expandedIndexes: new Set(),
-    createdIndexNames: new Set()
+    createdIndexNames: new Set(),
+    indexToDrop: null,
+    dropIndexConfirmName: ''
   }),
   async mounted() {
     const { mongoDBIndexes, diffIndexes } = await api.Model.getIndexes({ model: this.currentModel });
@@ -32,11 +34,17 @@ module.exports = app => app.component('index-list', {
       this.diffIndexes = diffIndexes;
       this.createdIndexNames.add(indexName);
     },
+    openDropIndexModal(name) {
+      this.indexToDrop = name;
+      this.dropIndexConfirmName = '';
+      this.$nextTick(() => this.$refs.dropIndexConfirmInput.focus());
+    },
     async dropIndex(name) {
       const { mongoDBIndexes, diffIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
       this.mongoDBIndexes = mongoDBIndexes;
       this.diffIndexes = diffIndexes;
       this.expandedIndexes.delete(name);
+      this.indexToDrop = null;
       this.$toast.success('Index dropped!');
     },
     formatTTL(expireAfterSeconds) {

@@ -70,13 +70,13 @@
                 </svg>
                 <span class="sr-only">Index {{ index.name }} created</span>
               </span>
-              <async-button
+              <button
                 v-else-if="index.name !== '_id_'"
                 type="button"
-                @click="dropIndex(index.name)"
+                @click="openDropIndexModal(index.name)"
                 :aria-label="'Drop index ' + index.name"
-                class="rounded border border-edge px-2 py-1 text-xs font-medium text-valencia-600 hover:border-valencia-500 hover:bg-valencia-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-              >Drop</async-button>
+                class="rounded border border-edge px-2 py-1 text-xs font-medium text-valencia-600 hover:border-valencia-500 hover:bg-valencia-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600"
+              >Drop</button>
             </td>
           </tr>
           <tr v-if="expandedIndexes.has(index.name)" :id="'index-details-' + rowIndex" class="border-b border-edge bg-muted">
@@ -134,4 +134,40 @@
       </tbody>
     </table>
   </div>
+  <modal v-if="indexToDrop != null" containerClass="!max-w-md" bodyClass="p-1">
+    <template #body>
+      <button type="button" class="modal-exit" aria-label="Cancel dropping index" @click="indexToDrop = null">&times;</button>
+      <h2 class="mb-3 text-lg font-bold">Drop index?</h2>
+      <p class="mb-3 text-sm text-content-secondary">
+        This will permanently drop the <span class="font-mono font-semibold text-content">{{ indexToDrop }}</span> index from the <span class="font-semibold text-content">{{ currentModel }}</span> collection.
+      </p>
+      <label for="drop-index-confirm-name" class="mb-1 block text-sm text-content-secondary">
+        Type <span class="font-mono font-semibold text-content">{{ indexToDrop }}</span> to confirm.
+      </label>
+      <input
+        id="drop-index-confirm-name"
+        ref="dropIndexConfirmInput"
+        v-model="dropIndexConfirmName"
+        @keydown.enter="$refs.dropIndexButton.$el.click()"
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        class="mb-4 w-full rounded border border-edge bg-surface px-2 py-1 font-mono text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-inset focus:ring-primary"
+      />
+      <div class="flex justify-end gap-2">
+        <button
+          type="button"
+          @click="indexToDrop = null"
+          class="rounded border border-edge px-3 py-1.5 text-sm font-medium text-content-secondary hover:bg-muted"
+        >Cancel</button>
+        <async-button
+          ref="dropIndexButton"
+          type="button"
+          @click="dropIndex(indexToDrop)"
+          :disabled="dropIndexConfirmName !== indexToDrop"
+          class="rounded bg-primary px-3 py-1.5 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+        >Drop index</async-button>
+      </div>
+    </template>
+  </modal>
 </div>
