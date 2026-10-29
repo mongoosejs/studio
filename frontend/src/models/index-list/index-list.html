@@ -1,25 +1,93 @@
-<div>
-  <div class="modal-exit" @click="$emit('close')">&times;</div>
-  <div class="text-xl font-bold mb-2">Indexes</div>
-  <div v-for="index in mongoDBIndexes" :key="index.name" class="w-full flex items-center">
-    <div class="grow shrink text-left flex justify-between items-center">
-      <div>
-        <div class="font-bold flex items-center gap-2">
-          <div>{{ index.name }}</div>
-          <div v-if="index.expireAfterSeconds != null" class="rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-semibold text-primary">
-            TTL: {{ formatTTL(index.expireAfterSeconds) }}
-          </div>
-        </div>
-        <div class="text-sm font-mono">{{ JSON.stringify(index.key) }}</div>
-      </div>
-      <div v-if="index.name !== '_id_'">
-        <async-button
-          type="button"
-          @click="dropIndex(index.name)"
-          class="rounded-md bg-valencia-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-valencia-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
-          Drop
-        </async-button>
-      </div>
-    </div>
+<div class="text-content">
+  <button type="button" class="modal-exit" aria-label="Close indexes" @click="$emit('close')">&times;</button>
+  <div class="mb-4 flex items-center gap-2">
+    <h2 class="text-xl font-bold">Indexes</h2>
+    <span v-if="mongoDBIndexes" class="rounded bg-muted px-1.5 py-0.5 text-xs text-content-secondary">{{ mongoDBIndexes.length }}</span>
+  </div>
+  <div class="overflow-x-auto rounded border border-edge">
+    <table class="w-full border-collapse text-left text-xs">
+      <thead class="border-b border-edge bg-muted text-content-secondary">
+        <tr>
+          <th scope="col" class="px-3 py-2 font-semibold">Name</th>
+          <th scope="col" class="px-3 py-2 font-semibold">Index spec</th>
+          <th scope="col" class="px-3 py-2 font-semibold">Properties</th>
+          <th scope="col" class="w-16 px-3 py-2"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-if="mongoDBIndexes == null">
+          <td colspan="4" role="status" class="px-3 py-6 text-center text-content-tertiary">Loading indexes…</td>
+        </tr>
+        <tr v-else-if="mongoDBIndexes.length === 0">
+          <td colspan="4" class="px-3 py-6 text-center text-content-tertiary">No indexes found.</td>
+        </tr>
+        <template v-for="(index, rowIndex) in mongoDBIndexes" :key="index.name">
+          <tr
+            class="cursor-pointer border-b border-edge hover:bg-surface-hover"
+            :class="{ 'bg-muted': expandedIndexes.has(index.name) }"
+            @click="toggleIndex(index.name)"
+          >
+            <td class="px-3 py-2 align-top">
+              <button
+                type="button"
+                class="flex items-start gap-2 rounded text-left font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                :aria-expanded="expandedIndexes.has(index.name)"
+                :aria-controls="'index-details-' + rowIndex"
+                @click.stop="toggleIndex(index.name)"
+              >
+                <svg
+                  class="mt-0.5 h-3 w-3 shrink-0 text-content-tertiary transition-transform"
+                  :class="{ 'rotate-90': expandedIndexes.has(index.name) }"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  aria-hidden="true"
+                ><path d="m6 3 5 5-5 5" /></svg>
+                <span class="break-all">{{ index.name }}</span>
+              </button>
+            </td>
+            <td class="px-3 py-2 align-top font-mono">
+              <div class="flex flex-wrap gap-x-3 gap-y-1">
+                <span v-for="(direction, field) in index.key" :key="field" class="break-all">{{ field }}: {{ JSON.stringify(direction) }}</span>
+              </div>
+            </td>
+            <td class="px-3 py-2 align-top">
+              <div class="flex flex-wrap gap-1">
+                <span v-if="index.unique || index.name === '_id_'" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Unique</span>
+                <span v-if="index.sparse" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Sparse</span>
+                <span v-if="index.partialFilterExpression" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Partial</span>
+                <span v-if="index.hidden" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Hidden</span>
+                <span v-if="index.expireAfterSeconds != null" class="rounded bg-primary-subtle px-1.5 py-0.5 text-primary">TTL: {{ formatTTL(index.expireAfterSeconds) }}</span>
+                <span v-if="!index.unique && index.name !== '_id_' && !index.sparse && !index.partialFilterExpression && !index.hidden && index.expireAfterSeconds == null" class="text-content-tertiary">—</span>
+              </div>
+            </td>
+            <td class="px-3 py-1.5 text-right align-top" @click.stop>
+              <async-button
+                v-if="index.name !== '_id_'"
+                type="button"
+                @click="dropIndex(index.name)"
+                :aria-label="'Drop index ' + index.name"
+                class="rounded border border-edge px-2 py-1 text-xs font-medium text-valencia-600 hover:border-valencia-500 hover:bg-valencia-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >Drop</async-button>
+            </td>
+          </tr>
+          <tr v-if="expandedIndexes.has(index.name)" :id="'index-details-' + rowIndex" class="border-b border-edge bg-muted">
+            <td colspan="4" class="px-5 py-3">
+              <div class="grid gap-4 md:grid-cols-2">
+                <div class="min-w-0">
+                  <h3 class="mb-2 text-xs font-semibold text-content-secondary">Index spec</h3>
+                  <pre class="overflow-x-auto rounded border border-edge bg-surface p-3 text-xs font-mono">{{ JSON.stringify(index.key, null, 2) }}</pre>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="mb-2 text-xs font-semibold text-content-secondary">Raw index options</h3>
+                  <pre class="overflow-x-auto rounded border border-edge bg-surface p-3 text-xs font-mono">{{ JSON.stringify(index, null, 2) }}</pre>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
   </div>
 </div>

@@ -549,7 +549,7 @@
       </export-query-results>
     </template>
   </modal>
-  <modal v-if="shouldShowIndexModal">
+  <modal v-if="shouldShowIndexModal" containerClass="md:!w-[80vw] md:max-w-6xl">
     <template v-slot:body>
       <index-list
         :current-model="currentModel"
