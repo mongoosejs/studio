@@ -14,6 +14,7 @@ const actionsToRequiredRoles = {
   'Dashboard.getDashboards': ['owner', 'admin', 'member', 'readonly', 'dashboards'],
   'Dashboard.updateDashboard': ['owner', 'admin', 'member'],
   'Model.createDocument': ['owner', 'admin', 'member'],
+  'Model.createIndex': ['owner', 'admin'],
   'Model.createChatMessage': ['owner', 'admin', 'member'],
   'Model.analyzeSchema': ['owner', 'admin', 'member', 'readonly'],
   'Model.updateDocument': ['owner', 'admin', 'member'],

@@ -88,6 +88,43 @@
           </tr>
         </template>
       </tbody>
+      <tbody v-if="diffIndexes?.toCreate.length > 0">
+        <tr class="border-b border-edge bg-muted text-content-secondary">
+          <th scope="colgroup" colspan="4" class="px-3 py-2 font-semibold">
+            Schema indexes not in MongoDB
+            <span class="ml-1 rounded bg-surface px-1.5 py-0.5 font-normal">{{ diffIndexes.toCreate.length }}</span>
+          </th>
+        </tr>
+        <tr v-for="[key, options] in diffIndexes.toCreate" :key="JSON.stringify([key, options])" class="border-b border-edge bg-blue-100">
+          <td class="py-2 pl-8 pr-3 align-top font-medium">
+            <span v-if="options.name" class="break-all">{{ options.name }}</span>
+            <span v-else class="text-content-tertiary">—</span>
+          </td>
+          <td class="px-3 py-2 align-top font-mono">
+            <div class="flex flex-wrap gap-x-3 gap-y-1">
+              <span v-for="(direction, field) in key" :key="field" class="break-all">{{ field }}: {{ JSON.stringify(direction) }}</span>
+            </div>
+          </td>
+          <td class="px-3 py-2 align-top">
+            <div class="flex flex-wrap gap-1">
+              <span v-if="options.unique" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Unique</span>
+              <span v-if="options.sparse" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Sparse</span>
+              <span v-if="options.partialFilterExpression" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Partial</span>
+              <span v-if="options.hidden" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Hidden</span>
+              <span v-if="options.expireAfterSeconds != null" class="rounded bg-primary-subtle px-1.5 py-0.5 text-primary">TTL: {{ formatTTL(options.expireAfterSeconds) }}</span>
+              <span v-if="!options.unique && !options.sparse && !options.partialFilterExpression && !options.hidden && options.expireAfterSeconds == null" class="text-content-tertiary">—</span>
+            </div>
+          </td>
+          <td class="px-3 py-1.5 text-right align-top">
+            <async-button
+              type="button"
+              @click="createIndex(key, options)"
+              :aria-label="'Create index ' + (options.name ?? JSON.stringify(key))"
+              class="rounded border border-edge bg-surface px-2 py-1 text-xs font-medium text-blue-600 hover:border-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >Create</async-button>
+          </td>
+        </tr>
+      </tbody>
     </table>
   </div>
 </div>

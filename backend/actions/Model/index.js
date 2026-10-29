@@ -4,6 +4,7 @@ exports.addField = require('./addField');
 exports.analyzeSchema = require('./analyzeSchema');
 exports.createChatMessage = require('./createChatMessage');
 exports.createDocument = require('./createDocument');
+exports.createIndex = require('./createIndex');
 exports.deleteDocument = require('./deleteDocument');
 exports.deleteDocuments = require('./deleteDocuments');
 exports.dropCollection = require('./dropCollection');

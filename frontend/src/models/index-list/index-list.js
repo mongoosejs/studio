@@ -9,13 +9,13 @@ module.exports = app => app.component('index-list', {
   emits: ['close'],
   data: () => ({
     mongoDBIndexes: null,
-    schemaIndexes: [],
+    diffIndexes: null,
     expandedIndexes: new Set()
   }),
   async mounted() {
-    const { mongoDBIndexes, schemaIndexes } = await api.Model.getIndexes({ model: this.currentModel });
+    const { mongoDBIndexes, diffIndexes } = await api.Model.getIndexes({ model: this.currentModel });
     this.mongoDBIndexes = mongoDBIndexes;
-    this.schemaIndexes = schemaIndexes;
+    this.diffIndexes = diffIndexes;
   },
   methods: {
     toggleIndex(name) {
@@ -25,9 +25,16 @@ module.exports = app => app.component('index-list', {
         this.expandedIndexes.add(name);
       }
     },
-    async dropIndex(name) {
-      const { mongoDBIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
+    async createIndex(key, options) {
+      const { mongoDBIndexes, diffIndexes } = await api.Model.createIndex({ model: this.currentModel, key, options });
       this.mongoDBIndexes = mongoDBIndexes;
+      this.diffIndexes = diffIndexes;
+      this.$toast.success('Index created!');
+    },
+    async dropIndex(name) {
+      const { mongoDBIndexes, diffIndexes } = await api.Model.dropIndex({ model: this.currentModel, name });
+      this.mongoDBIndexes = mongoDBIndexes;
+      this.diffIndexes = diffIndexes;
       this.expandedIndexes.delete(name);
       this.$toast.success('Index dropped!');
     },
