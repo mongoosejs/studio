@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0
+
+### New indexes modal
+
+The indexes modal now shows each index's spec and properties, like Unique and TTL, in an expandable table.
+It also lists indexes defined in your Mongoose schema but missing from MongoDB, and lets owners and admins create them with one click.
+Dropping an index now requires typing the index name to confirm.
+
+### Breaking: drop support for Mongoose 7 and Mongoose 8 before 8.10
+
+The indexes modal relies on the `indexOptionsToCreate` option for `diffIndexes()`, which was added in Mongoose 8.10.0.
+Mongoose Studio now requires Mongoose 8.10 or later, or Mongoose 9.
+
 ## 0.7.1
 
 * fix: Remove createChatMessage and streamChatMessage from MCP, MCP should not be using LLM chat
