@@ -17,7 +17,7 @@ module.exports = async function connect() {
     role: String,
     plan: String,
     status: String,
-    isDeleted: Boolean,
+    deletedAt: Boolean,
     lastLoginAt: Date,
     picture: {
       url: String,
@@ -27,7 +27,14 @@ module.exports = async function connect() {
     createdAt: Date,
     updatedAt: Date
   }, { collection: 'User', autoIndex: false });
-  userSchema.index({ email: 1 }, { unique: true });
+  userSchema.index(
+    { email: 1, isDeleted: 1 },
+    { unique: true, partialFilterExpression: { deletedAt: null } }
+  );
+  userSchema.index({ location: '2dsphere' });
+  userSchema.index(
+    { role: 1 }
+  );
   mongoose.model('User', userSchema);
 
   return mongoose.connection;

@@ -3,6 +3,13 @@
   <div class="mb-4 flex items-center gap-2">
     <h2 class="text-xl font-bold">Indexes</h2>
     <span v-if="mongoDBIndexes" class="rounded bg-muted px-1.5 py-0.5 text-xs text-content-secondary">{{ mongoDBIndexes.length }}</span>
+    <button
+      type="button"
+      @click="openSyncIndexesModal"
+      :disabled="!diffIndexes || diffIndexes.toCreate.length + diffIndexes.toDrop.length === 0"
+      :title="diffIndexes?.toCreate.length + diffIndexes?.toDrop.length === 0 ? 'Indexes already match the schema' : null"
+      class="ml-2 rounded border border-edge bg-surface px-2 py-1 text-xs font-medium text-content-secondary hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+    >Sync Indexes</button>
   </div>
   <div class="overflow-x-auto rounded border border-edge">
     <table class="w-full border-collapse text-left text-xs">
@@ -14,87 +21,95 @@
           <th scope="col" class="w-16 px-3 py-2"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
-      <tbody>
-        <tr v-if="mongoDBIndexes == null">
-          <td colspan="4" role="status" class="px-3 py-6 text-center text-content-tertiary">Loading indexes…</td>
-        </tr>
-        <tr v-else-if="mongoDBIndexes.length === 0">
-          <td colspan="4" class="px-3 py-6 text-center text-content-tertiary">No indexes found.</td>
-        </tr>
-        <template v-for="(index, rowIndex) in mongoDBIndexes" :key="index.name">
-          <tr
-            class="cursor-pointer border-b border-edge hover:bg-surface-hover"
-            :class="{ 'bg-muted': expandedIndexes.has(index.name), 'animate-success-fade': createdIndexNames.has(index.name) }"
-            @click="toggleIndex(index.name)"
-            @animationend.self="createdIndexNames.delete(index.name)"
-          >
-            <td class="px-3 py-2 align-top">
-              <button
-                type="button"
-                class="flex items-start gap-2 rounded text-left font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                :aria-expanded="expandedIndexes.has(index.name)"
-                :aria-controls="'index-details-' + rowIndex"
-                @click.stop="toggleIndex(index.name)"
-              >
-                <svg
-                  class="mt-0.5 h-3 w-3 shrink-0 text-content-tertiary transition-transform"
-                  :class="{ 'rotate-90': expandedIndexes.has(index.name) }"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  aria-hidden="true"
-                ><path d="m6 3 5 5-5 5" /></svg>
-                <span class="break-all">{{ index.name }}</span>
-              </button>
-            </td>
-            <td class="px-3 py-2 align-top font-mono">
-              <div class="flex flex-wrap gap-x-3 gap-y-1">
-                <span v-for="(direction, field) in index.key" :key="field" class="break-all">{{ field }}: {{ JSON.stringify(direction) }}</span>
-              </div>
-            </td>
-            <td class="px-3 py-2 align-top">
-              <div class="flex flex-wrap gap-1">
-                <span v-if="index.unique || index.name === '_id_'" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Unique</span>
-                <span v-if="index.sparse" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Sparse</span>
-                <span v-if="index.partialFilterExpression" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Partial</span>
-                <span v-if="index.hidden" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Hidden</span>
-                <span v-if="index.expireAfterSeconds != null" class="rounded bg-primary-subtle px-1.5 py-0.5 text-primary">TTL: {{ formatTTL(index.expireAfterSeconds) }}</span>
-                <span v-if="!index.unique && index.name !== '_id_' && !index.sparse && !index.partialFilterExpression && !index.hidden && index.expireAfterSeconds == null" class="text-content-tertiary">—</span>
-              </div>
-            </td>
-            <td class="px-3 py-1.5 text-right align-top" @click.stop>
-              <span v-if="createdIndexNames.has(index.name)" role="status" class="inline-flex border border-transparent px-2 py-1 text-green-600">
-                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
-                </svg>
-                <span class="sr-only">Index {{ index.name }} created</span>
-              </span>
-              <button
-                v-else-if="index.name !== '_id_'"
-                type="button"
-                @click="openDropIndexModal(index.name)"
-                :aria-label="'Drop index ' + index.name"
-                class="rounded border border-edge px-2 py-1 text-xs font-medium text-valencia-600 hover:border-valencia-500 hover:bg-valencia-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600"
-              >Drop</button>
-            </td>
+      <template v-for="extraneous in [false, true]" :key="extraneous">
+        <tbody v-if="!extraneous || diffIndexes?.toDrop.length > 0">
+          <tr v-if="extraneous" class="border-b border-edge bg-muted text-content-secondary">
+            <th scope="colgroup" colspan="4" class="px-3 py-2 font-semibold">
+              MongoDB indexes not in schema
+              <span class="ml-1 rounded bg-surface px-1.5 py-0.5 font-normal">{{ diffIndexes.toDrop.length }}</span>
+            </th>
           </tr>
-          <tr v-if="expandedIndexes.has(index.name)" :id="'index-details-' + rowIndex" class="border-b border-edge bg-muted">
-            <td colspan="4" class="px-5 py-3">
-              <div class="grid gap-4 md:grid-cols-2">
-                <div class="min-w-0">
-                  <h3 class="mb-2 text-xs font-semibold text-content-secondary">Index spec</h3>
-                  <pre class="overflow-x-auto rounded border border-edge bg-surface p-3 text-xs font-mono">{{ JSON.stringify(index.key, null, 2) }}</pre>
-                </div>
-                <div class="min-w-0">
-                  <h3 class="mb-2 text-xs font-semibold text-content-secondary">Raw index options</h3>
-                  <pre class="overflow-x-auto rounded border border-edge bg-surface p-3 text-xs font-mono">{{ JSON.stringify(index, null, 2) }}</pre>
-                </div>
-              </div>
-            </td>
+          <tr v-else-if="mongoDBIndexes == null">
+            <td colspan="4" role="status" class="px-3 py-6 text-center text-content-tertiary">Loading indexes…</td>
           </tr>
-        </template>
-      </tbody>
+          <tr v-else-if="mongoDBIndexes.length === 0">
+            <td colspan="4" class="px-3 py-6 text-center text-content-tertiary">No indexes found.</td>
+          </tr>
+          <template v-for="index in mongoDBIndexes?.filter(index => diffIndexes.toDrop.includes(index.name) === extraneous)" :key="index.name">
+            <tr
+              class="cursor-pointer border-b border-edge hover:bg-surface-hover"
+              :class="{ 'bg-yellow-50': extraneous, 'bg-muted': !extraneous && expandedIndexes.has(index.name), 'animate-success-fade': createdIndexNames.has(index.name) }"
+              @click="toggleIndex(index.name)"
+              @animationend.self="createdIndexNames.delete(index.name)"
+            >
+              <td class="px-3 py-2 align-top">
+                <button
+                  type="button"
+                  class="flex items-start gap-2 rounded text-left font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  :aria-expanded="expandedIndexes.has(index.name)"
+                  :aria-controls="'index-details-' + index.name"
+                  @click.stop="toggleIndex(index.name)"
+                >
+                  <svg
+                    class="mt-0.5 h-3 w-3 shrink-0 text-content-tertiary transition-transform"
+                    :class="{ 'rotate-90': expandedIndexes.has(index.name) }"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                  ><path d="m6 3 5 5-5 5" /></svg>
+                  <span class="break-all">{{ index.name }}</span>
+                </button>
+              </td>
+              <td class="px-3 py-2 align-top font-mono">
+                <div class="flex flex-wrap gap-x-3 gap-y-1">
+                  <span v-for="(direction, field) in index.key" :key="field" class="break-all">{{ field }}: {{ JSON.stringify(direction) }}</span>
+                </div>
+              </td>
+              <td class="px-3 py-2 align-top">
+                <div class="flex flex-wrap gap-1">
+                  <span v-if="index.unique || index.name === '_id_'" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Unique</span>
+                  <span v-if="index.sparse" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Sparse</span>
+                  <span v-if="index.partialFilterExpression" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Partial</span>
+                  <span v-if="index.hidden" class="rounded border border-edge px-1.5 py-0.5 text-content-secondary">Hidden</span>
+                  <span v-if="index.expireAfterSeconds != null" class="rounded bg-primary-subtle px-1.5 py-0.5 text-primary">TTL: {{ formatTTL(index.expireAfterSeconds) }}</span>
+                  <span v-if="!index.unique && index.name !== '_id_' && !index.sparse && !index.partialFilterExpression && !index.hidden && index.expireAfterSeconds == null" class="text-content-tertiary">—</span>
+                </div>
+              </td>
+              <td class="px-3 py-1.5 text-right align-top" @click.stop>
+                <span v-if="createdIndexNames.has(index.name)" role="status" class="inline-flex border border-transparent px-2 py-1 text-green-600">
+                  <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
+                  </svg>
+                  <span class="sr-only">Index {{ index.name }} created</span>
+                </span>
+                <button
+                  v-else-if="index.name !== '_id_'"
+                  type="button"
+                  @click="openDropIndexModal(index.name)"
+                  :aria-label="'Drop index ' + index.name"
+                  class="rounded border border-edge px-2 py-1 text-xs font-medium text-valencia-600 hover:border-valencia-500 hover:bg-valencia-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600"
+                >Drop</button>
+              </td>
+            </tr>
+            <tr v-if="expandedIndexes.has(index.name)" :id="'index-details-' + index.name" class="border-b border-edge bg-muted">
+              <td colspan="4" class="px-5 py-3">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="min-w-0">
+                    <h3 class="mb-2 text-xs font-semibold text-content-secondary">Index spec</h3>
+                    <pre class="overflow-x-auto rounded border border-edge bg-surface p-3 text-xs font-mono">{{ JSON.stringify(index.key, null, 2) }}</pre>
+                  </div>
+                  <div class="min-w-0">
+                    <h3 class="mb-2 text-xs font-semibold text-content-secondary">Raw index options</h3>
+                    <pre class="overflow-x-auto rounded border border-edge bg-surface p-3 text-xs font-mono">{{ JSON.stringify(index, null, 2) }}</pre>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </template>
       <tbody v-if="diffIndexes?.toCreate.length > 0">
         <tr class="border-b border-edge bg-muted text-content-secondary">
           <th scope="colgroup" colspan="4" class="px-3 py-2 font-semibold">
@@ -167,6 +182,63 @@
           :disabled="dropIndexConfirmName !== indexToDrop"
           class="rounded bg-primary px-3 py-1.5 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
         >Drop index</async-button>
+      </div>
+    </template>
+  </modal>
+  <modal v-if="syncPlan != null" containerClass="!max-w-xl" bodyClass="p-1">
+    <template #body>
+      <button v-if="syncStatus !== 'inProgress'" type="button" class="modal-exit" aria-label="Close sync indexes" @click="syncPlan = null">&times;</button>
+      <h2 class="mb-3 text-lg font-bold">Sync indexes?</h2>
+      <p class="mb-3 text-sm text-content-secondary">
+        This will change the indexes on the <span class="font-semibold text-content">{{ currentModel }}</span> collection to match its Mongoose schema.
+        Dropped indexes are removed permanently, and building indexes on a large collection can take a while.
+      </p>
+      <template v-for="list in ['toDrop', 'toCreate']" :key="list">
+        <section v-if="syncPlan[list].length > 0" class="mb-3">
+          <h3 class="mb-1 text-sm font-semibold">
+            {{ list === 'toDrop' ? 'Indexes to drop' : 'Indexes to create' }}
+            <span class="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-content-secondary">{{ syncPlan[list].length }}</span>
+          </h3>
+          <ul class="max-h-80 divide-y divide-edge overflow-y-auto rounded border border-edge text-xs">
+            <li v-for="(index, position) in syncPlan[list]" :key="position" class="px-3 py-2">
+              <div class="flex items-start justify-between gap-3">
+                <span class="break-all font-mono">{{ list === 'toDrop' ? index : index[1]?.name ?? JSON.stringify(index[0]) }}</span>
+                <span v-if="syncStatus !== 'confirm'" role="status" class="shrink-0">
+                  <span v-if="syncEvents[list][position]?.status === 'succeeded'" class="text-green-600">Done</span>
+                  <span v-else-if="syncEvents[list][position]?.status === 'failed'" class="text-valencia-600">Failed</span>
+                  <span v-else-if="syncEvents[list][position]?.status === 'inProgress'" class="text-primary">In progress</span>
+                  <span v-else class="text-content-tertiary">Pending</span>
+                </span>
+              </div>
+              <p v-if="syncEvents[list][position]?.error" class="mt-1 break-words text-valencia-600">{{ syncEvents[list][position].error }}</p>
+              <template v-if="syncStatus === 'inProgress'">
+                <div v-for="(progress, phase) in syncEvents[list][position]?.phases" :key="phase" class="mt-2">
+                  <div class="mb-1 flex justify-between gap-3 text-content-tertiary">
+                    <span class="break-words first-letter:uppercase">{{ phase }}</span>
+                    <span class="shrink-0">{{ getPhasePercent(syncEvents[list][position], phase) }}%</span>
+                  </div>
+                  <div class="h-1.5 overflow-hidden rounded bg-muted">
+                    <div class="h-full bg-primary" :style="{ width: getPhasePercent(syncEvents[list][position], phase) + '%' }"></div>
+                  </div>
+                </div>
+              </template>
+            </li>
+          </ul>
+        </section>
+      </template>
+      <div class="flex justify-end gap-2">
+        <button
+          v-if="syncStatus !== 'inProgress'"
+          type="button"
+          @click="syncPlan = null"
+          class="rounded border border-edge px-3 py-1.5 text-sm font-medium text-content-secondary hover:bg-muted"
+        >{{ syncStatus === 'finished' ? 'Close' : 'Cancel' }}</button>
+        <async-button
+          v-if="syncStatus !== 'finished'"
+          type="button"
+          @click="syncIndexes"
+          class="rounded bg-primary px-3 py-1.5 text-sm font-semibold text-primary-text shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+        >Sync indexes</async-button>
       </div>
     </template>
   </modal>
