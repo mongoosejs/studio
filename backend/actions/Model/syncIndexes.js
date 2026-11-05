@@ -4,7 +4,7 @@ const Archetype = require('archetype');
 const { setTimeout: sleep } = require('timers/promises');
 const authorize = require('../../authorize');
 
-const progressIntervalMS = 1000;
+const progressIntervalMS = 250;
 
 const SyncIndexesParams = new Archetype({
   model: {

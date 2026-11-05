@@ -218,7 +218,7 @@
                     <span class="shrink-0">{{ getPhasePercent(syncEvents[list][position], phase) }}%</span>
                   </div>
                   <div class="h-1.5 overflow-hidden rounded bg-muted">
-                    <div class="h-full bg-primary" :style="{ width: getPhasePercent(syncEvents[list][position], phase) + '%' }"></div>
+                    <div class="h-full bg-primary transition-all duration-300" :style="{ width: getPhasePercent(syncEvents[list][position], phase) + '%' }"></div>
                   </div>
                 </div>
               </template>

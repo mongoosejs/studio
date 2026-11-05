@@ -21,11 +21,9 @@ Use `videos/recordSyncIndexes.js` as the template: copy it, then replace `record
 1. Check that both services are up, and that the served `app.js` contains the feature.
 2. Read the current state through the API without changing anything.
    A demo often runs real actions against the local database, so know what it will change.
-3. Make sure the demo has real data worth showing.
-   The sync indexes demo uses 5M seeded users (`npm run seed -- 5000000`) so that the progress bars are visible.
+3. Make sure the demo has real data worth showing - the feature should be visible, but not feel overly slow.
 4. If the demo can only run once, add a `--reset` flag that undoes exactly what the demo changes, and nothing else.
    Retakes are expected, so plan for them.
-   Have the script refuse to start if there is nothing to demo.
 
 ## How the script works
 
@@ -68,6 +66,9 @@ Use `videos/recordSyncIndexes.js` as the template: copy it, then replace `record
   Puppeteer defaults to WebM even when the path ends in `.mp4`, so record WebM and convert afterward.
 - **Allow for encoding time.**
   `recorder.stop()` can take 20 seconds or more, so don't use a short timeout.
+- **Don't chain steps after the recording.**
+  If the script exits early, a later `--reset` drops indexes the take didn't build, and checks run against the previous video.
+  Stop on failure, and confirm the output file's modified time changed before checking it.
 
 ## Verify every take
 

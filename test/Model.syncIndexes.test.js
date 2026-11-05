@@ -95,7 +95,6 @@ describe('Model.syncIndexes()', function() {
   });
 
   it('reports the progress of each build phase from $currentOp', async function() {
-    this.timeout(6000);
     const scanning = 'Index Build: scanning collection Index Build: scanning collection';
     const sorting = 'Index Build: inserting keys from external sorter into index Index Build: inserting keys from external sorter into index';
     const ops = [
@@ -106,7 +105,7 @@ describe('Model.syncIndexes()', function() {
     ];
     const aggregate = sinon.stub().callsFake(() => ({ toArray: async() => [ops.shift()] }));
     sinon.stub(SyncIndexesTest.db, 'getClient').returns({ db: () => ({ aggregate }) });
-    slowDownCreateIndex(4100);
+    slowDownCreateIndex(1120);
 
     const events = await collectEvents({ toCreate: [[{ email: 1 }, {}]] });
 
@@ -141,14 +140,13 @@ describe('Model.syncIndexes()', function() {
   });
 
   it('still syncs and sends heartbeats if $currentOp fails', async function() {
-    this.timeout(5000);
     const aggregate = sinon.stub().returns({
       toArray: async() => {
         throw new Error('$currentOp is not allowed');
       }
     });
     sinon.stub(SyncIndexesTest.db, 'getClient').returns({ db: () => ({ aggregate }) });
-    slowDownCreateIndex(2100);
+    slowDownCreateIndex(620);
 
     const events = await collectEvents({ toCreate: [[{ email: 1 }, {}]] });
 
