@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.1 / 2026-11-05
+
+### New sync indexes modal
+
+The indexes modal now has a "sync indexes" button you can use to make the indexes in MongoDB match the indexes in your schema - create schema indexes that aren't in MongoDB, and drop indexes that are in MongoDB but not in your schema.
+The sync indexes modal uses Mongoose's `diffIndexes()` to calculate the indexes to create and drop; but it does **not** use Mongoose's `syncIndexes()` because 1) easier to track index progress, 2) we want to confirm the indexes you see in the confirmation modal are the ones that get built or dropped even if the indexes change after the modal loaded.
+
+Here's a [video demo](https://assets.meanit.stream/sync-indexes-demo.mp4).
+
 ## 0.8.0
 
 ### New indexes modal
