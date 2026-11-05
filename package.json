@@ -54,6 +54,7 @@
     "mocha": "10.2.0",
     "mongodb-memory-server": "^11.0.1",
     "mongoose": "9.x",
+    "puppeteer": "^25.16.0",
     "sinon": "^21.0.1"
   },
   "scripts": {

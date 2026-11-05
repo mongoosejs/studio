@@ -13,7 +13,10 @@ module.exports = app => app.component('index-list', {
     expandedIndexes: new Set(),
     createdIndexNames: new Set(),
     indexToDrop: null,
-    dropIndexConfirmName: ''
+    dropIndexConfirmName: '',
+    syncPlan: null,
+    syncEvents: null,
+    syncStatus: null
   }),
   async mounted() {
     const { mongoDBIndexes, diffIndexes } = await api.Model.getIndexes({ model: this.currentModel });
@@ -46,6 +49,44 @@ module.exports = app => app.component('index-list', {
       this.expandedIndexes.delete(name);
       this.indexToDrop = null;
       this.$toast.success('Index dropped!');
+    },
+    openSyncIndexesModal() {
+      this.syncPlan = this.diffIndexes;
+      this.syncEvents = { toDrop: [], toCreate: [] };
+      this.syncStatus = 'confirm';
+    },
+    async syncIndexes() {
+      this.syncStatus = 'inProgress';
+      const { toCreate, toDrop } = this.syncPlan;
+      try {
+        for await (const event of api.Model.syncIndexes({ model: this.currentModel, toCreate, toDrop })) {
+          this.syncEvents[event.list][event.position] = event;
+        }
+      } finally {
+        // Refresh here rather than from the stream, which may have been cut off mid sync
+        this.syncStatus = 'finished';
+        const { mongoDBIndexes, diffIndexes } = await api.Model.getIndexes({ model: this.currentModel });
+        this.mongoDBIndexes = mongoDBIndexes;
+        this.diffIndexes = diffIndexes;
+      }
+
+      const created = this.syncEvents.toCreate.filter(event => event.status === 'succeeded');
+      created.forEach(event => this.createdIndexNames.add(event.name));
+
+      // Otherwise leave the modal open so the user can see which indexes didn't sync
+      const dropped = this.syncEvents.toDrop.filter(event => event.status === 'succeeded');
+      if (created.length === toCreate.length && dropped.length === toDrop.length) {
+        this.syncPlan = null;
+        this.$toast.success('Indexes synced!');
+      }
+    },
+    getPhasePercent({ status, phases }, phase) {
+      // Progress is polled, so the last update for a finished phase may be short of 100%
+      const names = Object.keys(phases);
+      if (status === 'succeeded' || phase !== names[names.length - 1]) {
+        return 100;
+      }
+      return Math.floor(100 * phases[phase].done / phases[phase].total);
     },
     formatTTL(expireAfterSeconds) {
       if (typeof expireAfterSeconds !== 'number') {

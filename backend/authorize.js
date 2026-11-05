@@ -35,6 +35,7 @@ const actionsToRequiredRoles = {
   'Model.listModels': ['owner', 'admin', 'member', 'readonly'],
   'Model.streamDocumentChanges': ['owner', 'admin', 'member', 'readonly'],
   'Model.streamChatMessage': ['owner', 'admin', 'member', 'readonly'],
+  'Model.syncIndexes': ['owner', 'admin'],
   'Model.updateDocuments': ['owner', 'admin', 'member'],
   'Script.createScript': ['owner', 'admin', 'member', 'readonly'],
   'Script.executeScript': ['owner', 'admin', 'member', 'readonly'],

@@ -10,7 +10,7 @@ jobs:
       matrix:
         node: [20, 22, 24]
         os: [ubuntu-22.04, ubuntu-24.04]
-        mongodb: [7.0.12, 8.0.0]
+        mongodb: [7.0.12, 8.2.0, 9.0.2]
     name: Node ${{ matrix.node }} MongoDB ${{ matrix.mongodb }} OS ${{ matrix.os }}
     env:
       MONGOMS_VERSION: ${{ matrix.mongodb }}

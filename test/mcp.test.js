@@ -102,6 +102,7 @@ describe('MCP', function() {
     assert.ok(!tools.some(tool => tool.name === 'Script.executeScript'));
     assert.ok(!tools.some(tool => tool.name === 'Model.createChatMessage'));
     assert.ok(!tools.some(tool => tool.name === 'Model.streamChatMessage'));
+    assert.ok(!tools.some(tool => tool.name === 'Model.syncIndexes'));
 
     const result = await client.callTool({
       name: 'Script.createScript',

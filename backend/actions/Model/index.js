@@ -21,6 +21,7 @@ exports.getEstimatedDocumentCounts = require('./getEstimatedDocumentCounts');
 exports.listModels = require('./listModels');
 exports.streamDocumentChanges = require('./streamDocumentChanges');
 exports.streamChatMessage = require('./streamChatMessage');
+exports.syncIndexes = require('./syncIndexes');
 exports.updateDocument = require('./updateDocument');
 exports.updateDocuments = require('./updateDocuments');
 exports.validateDocument = require('./validateDocument');

@@ -274,6 +274,30 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     dropIndex: function dropIndex(params) {
       return client.post('', { action: 'Model.dropIndex', ...params }).then(res => res.data);
     },
+    syncIndexes: async function* syncIndexes({ toCreate = [], toDrop = [], ...params }) {
+      // Don't stream on Next.js or Netlify for now. One request per index still reports
+      // each index as it finishes, just not the progress of an individual build.
+      for (const [position, name] of toDrop.entries()) {
+        const event = { list: 'toDrop', position, name };
+        yield { ...event, status: 'inProgress' };
+        try {
+          await exports.Model.dropIndex({ ...params, name });
+          yield { ...event, status: 'succeeded' };
+        } catch (err) {
+          yield { ...event, status: 'failed', error: err.message };
+        }
+      }
+      for (const [position, [key, options]] of toCreate.entries()) {
+        const event = { list: 'toCreate', position, name: options?.name };
+        yield { ...event, status: 'inProgress' };
+        try {
+          const { indexName } = await exports.Model.createIndex({ ...params, key, options });
+          yield { ...event, name: indexName, status: 'succeeded' };
+        } catch (err) {
+          yield { ...event, status: 'failed', error: err.message };
+        }
+      }
+    },
     dropCollection: function dropCollection(params) {
       return client.post('', { action: 'Model.dropCollection', ...params }).then(res => res.data);
     },
@@ -485,6 +509,19 @@ if (window.MONGOOSE_STUDIO_CONFIG.isLambda) {
     },
     dropIndex: function dropIndex(params) {
       return client.post('/Model/dropIndex', params).then(res => res.data);
+    },
+    syncIndexes: async function* syncIndexes(params) {
+      const accessToken = window.localStorage.getItem('_mongooseStudioAccessToken') || null;
+
+      // POST because this modifies indexes and the index specs don't fit in a query string
+      yield* streamSSE(window.MONGOOSE_STUDIO_CONFIG.baseURL + '/Model/syncIndexes', {
+        method: 'POST',
+        headers: {
+          Authorization: `${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(params)
+      });
     },
     listModels: function listModels() {
       return client.post('/Model/listModels', {}).then(res => res.data);
