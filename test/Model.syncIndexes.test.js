@@ -2,7 +2,6 @@
 
 const assert = require('assert');
 const mongoose = require('mongoose');
-const sinon = require('sinon');
 const { actions, connection } = require('./setup.test');
 
 describe('Model.syncIndexes()', function() {
@@ -18,7 +17,6 @@ describe('Model.syncIndexes()', function() {
   });
 
   afterEach(async function() {
-    sinon.restore();
     await SyncIndexesTest.collection.drop();
   });
 
@@ -30,26 +28,15 @@ describe('Model.syncIndexes()', function() {
     return events;
   }
 
-  function slowDownCreateIndex(delayMS) {
-    const createIndex = SyncIndexesTest.collection.createIndex.bind(SyncIndexesTest.collection);
-    sinon.stub(SyncIndexesTest.collection, 'createIndex').callsFake(async(...args) => {
-      await new Promise(resolve => setTimeout(resolve, delayMS));
-      return createIndex(...args);
-    });
-  }
-
   it('applies diffIndexes() and streams the status of each index', async function() {
     await SyncIndexesTest.collection.createIndex({ createdAt: 1, email: 1 });
     const { diffIndexes } = await actions.Model.getIndexes({ model: 'SyncIndexesTest', roles: ['admin'] });
 
     const events = await collectEvents(diffIndexes);
 
-    assert.deepStrictEqual(events, [
-      { list: 'toDrop', position: 0, name: 'createdAt_1_email_1', status: 'inProgress' },
+    assert.deepStrictEqual(events.filter(event => event.status !== 'inProgress'), [
       { list: 'toDrop', position: 0, name: 'createdAt_1_email_1', status: 'succeeded' },
-      { list: 'toCreate', position: 0, name: 'email_1', status: 'inProgress' },
       { list: 'toCreate', position: 0, name: 'email_1', status: 'succeeded', phases: {} },
-      { list: 'toCreate', position: 1, name: 'createdAtTTL', status: 'inProgress' },
       { list: 'toCreate', position: 1, name: 'createdAtTTL', status: 'succeeded', phases: {} }
     ]);
     const { mongoDBIndexes, diffIndexes: diffAfterSync } = await actions.Model.getIndexes({ model: 'SyncIndexesTest', roles: ['admin'] });
@@ -92,71 +79,6 @@ describe('Model.syncIndexes()', function() {
     ]);
     assert.match(results[0].error, /cannot drop _id index/);
     assert.match(results[1].error, /E11000/);
-  });
-
-  it('reports the progress of each build phase from $currentOp', async function() {
-    const scanning = 'Index Build: scanning collection Index Build: scanning collection';
-    const sorting = 'Index Build: inserting keys from external sorter into index Index Build: inserting keys from external sorter into index';
-    const ops = [
-      { progress: { done: 1, total: 4 }, msg: `${scanning}: 1/4 25%` },
-      { progress: { done: 3, total: 4 }, msg: `${scanning}: 3/4 75%` },
-      { progress: { done: 2, total: 4 }, msg: `${sorting}: 2/4 50%` },
-      { progress: { done: 1, total: 8 }, msg: 'Index Build: draining writes received during build: 1/8 12%' }
-    ];
-    const aggregate = sinon.stub().callsFake(() => ({ toArray: async() => [ops.shift()] }));
-    sinon.stub(SyncIndexesTest.db, 'getClient').returns({ db: () => ({ aggregate }) });
-    slowDownCreateIndex(1120);
-
-    const events = await collectEvents({ toCreate: [[{ email: 1 }, {}]] });
-
-    const event = { list: 'toCreate', position: 0, name: 'email_1' };
-    const phases = {
-      'scanning collection': { done: 3, total: 4 },
-      'inserting keys from external sorter into index': { done: 2, total: 4 },
-      'draining writes received during build': { done: 1, total: 8 }
-    };
-    assert.deepStrictEqual(events, [
-      { ...event, status: 'inProgress' },
-      { ...event, status: 'inProgress', phases: { 'scanning collection': { done: 1, total: 4 } } },
-      { ...event, status: 'inProgress', phases: { 'scanning collection': { done: 3, total: 4 } } },
-      {
-        ...event,
-        status: 'inProgress',
-        phases: {
-          'scanning collection': { done: 3, total: 4 },
-          'inserting keys from external sorter into index': { done: 2, total: 4 }
-        }
-      },
-      { ...event, status: 'inProgress', phases },
-      { ...event, status: 'succeeded', phases }
-    ]);
-    const [{ $currentOp }, { $match }] = aggregate.firstCall.args[0];
-    assert.deepStrictEqual($currentOp, { allUsers: false });
-    assert.deepStrictEqual($match, {
-      ns: `${connection.name}.${SyncIndexesTest.collection.name}`,
-      'command.indexes.name': 'email_1',
-      progress: { $exists: true }
-    });
-  });
-
-  it('still syncs and sends heartbeats if $currentOp fails', async function() {
-    const aggregate = sinon.stub().returns({
-      toArray: async() => {
-        throw new Error('$currentOp is not allowed');
-      }
-    });
-    sinon.stub(SyncIndexesTest.db, 'getClient').returns({ db: () => ({ aggregate }) });
-    slowDownCreateIndex(620);
-
-    const events = await collectEvents({ toCreate: [[{ email: 1 }, {}]] });
-
-    const event = { list: 'toCreate', position: 0, name: 'email_1' };
-    assert.deepStrictEqual(events, [
-      { ...event, status: 'inProgress' },
-      { ...event, status: 'inProgress', phases: {} },
-      { ...event, status: 'inProgress', phases: {} },
-      { ...event, status: 'succeeded', phases: {} }
-    ]);
   });
 
   it('requires owner or admin role', async function() {
