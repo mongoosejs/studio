@@ -80,17 +80,17 @@ describe('Model.syncIndexes()', function() {
     await SyncIndexesTest.collection.insertMany([{ email: 'a' }, { email: 'a' }]);
 
     const events = await collectEvents({
-      toDrop: ['doesNotExist'],
+      toDrop: ['_id_'],
       toCreate: [[{ email: 1 }, { unique: true }], [{ createdAt: 1 }, {}]]
     });
 
     const results = events.filter(event => event.status !== 'inProgress');
     assert.deepStrictEqual(results.map(({ name, status }) => ({ name, status })), [
-      { name: 'doesNotExist', status: 'failed' },
+      { name: '_id_', status: 'failed' },
       { name: 'email_1', status: 'failed' },
       { name: 'createdAt_1', status: 'succeeded' }
     ]);
-    assert.match(results[0].error, /index not found/);
+    assert.match(results[0].error, /cannot drop _id index/);
     assert.match(results[1].error, /E11000/);
   });
 
